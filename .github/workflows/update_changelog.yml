@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
   schedule:
-    - cron: "0 3 * * *"  # Kør hver nat kl. 03:00 UTC (tilpas efter behov)
+    - cron: "0 3 * * *"  
 
 jobs:
   changelog:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest   
 
     # Giv workflowet lov til at skrive til repo
     permissions:
@@ -34,16 +34,17 @@ jobs:
           else
             echo "Ingen tests-mappe fundet, springer over."
           fi
-        shell: bash
-
 
       - name: Run update_changelog.py
         run: python bot/update_changelog.py
 
+      - name: Set up Git user
+        run: |
+          git config --global user.name "Auto Changelog Bot"
+          git config --global user.email "changelog@bot.local"
+
       - name: Commit and push CHANGELOG.md
         run: |
-          git config user.name "Auto Changelog Bot"
-          git config user.email "changelog@bot.local"
           git add CHANGELOG.md
           git commit -m "Auto-update CHANGELOG.md" || echo "No changes to commit"
           git push
@@ -53,7 +54,7 @@ jobs:
       - name: Send Telegram notification
         uses: appleboy/telegram-action@v0.1.1
         with:
-          to: ${{ secrets.TELEGRAM_TO }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "✅ CHANGELOG.md er automatisk opdateret og committet! 🚀"
 
