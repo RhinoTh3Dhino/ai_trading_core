@@ -3,32 +3,65 @@ name: Auto Update Changelog
 on:
   push:
     branches: [ main ]
+  schedule:
+    - cron: "0 3 * * *"  # Kør hver nat kl. 03:00 UTC (tilpas efter behov)
 
 jobs:
   changelog:
     runs-on: windows-latest
 
+    # Giv workflowet lov til at skrive til repo
+    permissions:
+      contents: write
+
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-      with:
-        persist-credentials: true
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
 
-    - name: Run update_changelog.py
-      run: python bot/update_changelog.py
+      # (Valgfrit) Kør tests inden du opdaterer changelog
+      - name: Run tests
+        run: |
+          if [ -d "tests" ]; then
+            pytest tests/ || exit 1
+          else
+            echo "Ingen tests-mappe fundet. Springer tests over."
+          fi
 
-    - name: Commit and push CHANGELOG.md
-      if: success()
-      uses: EndBug/add-and-commit@v9
-      with:
-        author_name: Auto Changelog Bot
-        author_email: changelog@bot.local
-        message: "Auto-update CHANGELOG.md"
-        add: "CHANGELOG.md"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run update_changelog.py
+        run: python bot/update_changelog.py
+
+      - name: Commit and push CHANGELOG.md
+        run: |
+          git config user.name "Auto Changelog Bot"
+          git config user.email "changelog@bot.local"
+          git add CHANGELOG.md
+          git commit -m "Auto-update CHANGELOG.md" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "✅ CHANGELOG.md er automatisk opdateret og committet! 🚀"
+
+      # (Ekstra: Auto-tagging – fjern kommentar for at aktivere)
+      # - name: Create Tag
+      #   uses: EndBug/latest-tag@v1
+      #   with:
+      #     tag: v${{ github.run_number }}
+
+      # (Ekstra: Auto-generer changelog med release-drafter)
+      # - name: Draft Release Notes
+      #   uses: release-drafter/release-drafter@v5
+      #   with:
+      #     config-name: release-drafter.yml
