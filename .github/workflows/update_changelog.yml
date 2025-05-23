@@ -9,19 +9,23 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
 
-      - name: Configure git user
-        run: |
-          git config --global user.name "Auto Changelog Bot"
-          git config --global user.email "changelog@bot.local"
+    - name: Run update_changelog.py
+      run: python bot/update_changelog.py
 
-      - name: Kør update_changelog.py
-        run: python bot/update_changelog.py
-
+    - name: Commit and push CHANGELOG.md
+      run: |
+        git config user.name "Auto Changelog Bot"
+        git config user.email "changelog@bot.local"
+        git add CHANGELOG.md
+        git commit -m "Auto-update CHANGELOG.md" || echo "No changes to commit"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
