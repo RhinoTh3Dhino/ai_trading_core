@@ -29,10 +29,13 @@ jobs:
       - name: Run tests
         run: |
           if [ -d "tests" ]; then
-            pytest tests/ || exit 1
+            echo "Kører tests..."
+            pytest tests/
           else
-            echo "Ingen tests-mappe fundet. Springer tests over."
+            echo "Ingen tests-mappe fundet, springer over."
           fi
+        shell: bash
+
 
       - name: Run update_changelog.py
         run: python bot/update_changelog.py
