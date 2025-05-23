@@ -40,13 +40,14 @@ jobs:
 
       - name: Set up Git user
         run: |
-          git config --global user.name "Auto Changelog Bot"
-          git config --global user.email "changelog@bot.local"
+          git config --global user.name "RhinoTh3Dhino"
+          git config --global user.email "reno_123@live.dk"
 
       - name: Commit and push CHANGELOG.md
         run: |
           git add CHANGELOG.md
           git commit -m "Auto-update CHANGELOG.md" || echo "No changes to commit"
+          git pull --rebase origin main
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
