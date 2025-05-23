@@ -18,4 +18,5 @@ jobs:
           python-version: 3.11
 
       - name: Kør update_changelog.py
-        run: python update_changelog.py
+        run: python bot/update_changelog.py
+
