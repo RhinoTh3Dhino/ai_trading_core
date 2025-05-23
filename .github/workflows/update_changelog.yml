@@ -17,6 +17,11 @@ jobs:
         with:
           python-version: 3.11
 
+      - name: Configure git user
+        run: |
+          git config --global user.name "Auto Changelog Bot"
+          git config --global user.email "changelog@bot.local"
+
       - name: Kør update_changelog.py
         run: python bot/update_changelog.py
 
