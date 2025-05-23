@@ -1,0 +1,21 @@
+name: Auto Update Changelog
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  changelog:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Kør update_changelog.py
+      run: python bot/update_changelog.py
