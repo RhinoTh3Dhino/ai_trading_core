@@ -4,15 +4,14 @@ on:
   push:
     branches: [ main ]
   schedule:
-    - cron: "0 3 * * *"  
+    - cron: "0 3 * * *"  # Kør hver nat kl. 03:00 UTC (tilpas som du vil)
 
 jobs:
   changelog:
-    runs-on: ubuntu-latest   
+    runs-on: ubuntu-latest   # Kør altid på Ubuntu for maksimal Actions-kompatibilitet
 
-    # Giv workflowet lov til at skrive til repo
     permissions:
-      contents: write
+      contents: write   # Tillad skrivning til repo (nødvendigt for auto-commit/push)
 
     steps:
       - name: Checkout repo
@@ -24,6 +23,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
+
+      # 💡 Ekstra tip: Print miljø og status for debugging
+      - name: Print system info
+        run: |
+          echo "Kører på runner: $RUNNER_OS"
+          python --version
+          git --version
 
       # (Valgfrit) Kør tests inden du opdaterer changelog
       - name: Run tests
@@ -38,35 +44,52 @@ jobs:
       - name: Run update_changelog.py
         run: python bot/update_changelog.py
 
+      # 💡 Ekstra tip: Tjek om CHANGELOG.md faktisk er ændret
+      - name: Check for CHANGELOG changes
+        id: changelog
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Git user
+        if: steps.changelog.outputs.changed == 'true'
         run: |
           git config --global user.name "RhinoTh3Dhino"
           git config --global user.email "reno_123@live.dk"
 
       - name: Commit and push CHANGELOG.md
+        if: steps.changelog.outputs.changed == 'true'
         run: |
           git add CHANGELOG.md
-          git commit -m "Auto-update CHANGELOG.md" || echo "No changes to commit"
+          git commit -m "Auto-update CHANGELOG.md"
           git pull --rebase origin main
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Send Telegram notification
+        if: steps.changelog.outputs.changed == 'true'
         uses: appleboy/telegram-action@v0.1.1
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "✅ CHANGELOG.md er automatisk opdateret og committet! 🚀"
 
-      # (Ekstra: Auto-tagging – fjern kommentar for at aktivere)
+      # (Ekstra: Auto-tagging – aktiver hvis du vil have versionsnummer/tag ved auto-commit)
       # - name: Create Tag
       #   uses: EndBug/latest-tag@v1
       #   with:
       #     tag: v${{ github.run_number }}
 
-      # (Ekstra: Auto-generer changelog med release-drafter)
+      # (Ekstra: Auto-generer changelog/release-drafter – kan bruges til at lave professionelle releases automatisk)
       # - name: Draft Release Notes
       #   uses: release-drafter/release-drafter@v5
       #   with:
       #     config-name: release-drafter.yml
+
+      # 💡 Ekstra tip: Print succes/summary til loggen for overblik
+      - name: Done summary
+        run: echo "✅ Workflow gennemført - se Telegram for besked hvis der var ændringer."
