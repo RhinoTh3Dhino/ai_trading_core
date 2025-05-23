@@ -10,7 +10,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: .
+        working-directory: bot
 
     steps:
       - name: Checkout repo
