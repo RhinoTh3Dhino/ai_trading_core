@@ -23,6 +23,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verify structure
+      # (Valgfrit) Kør tests hvis du har tests-mappe
+      - name: Run tests
         run: |
-          echo "✅ Struktur klar og dependencies installeret"
+          if exist tests (
+            echo "Kører tests..."
+            pytest tests/
+          ) else (
+            echo "Ingen tests-mappe fundet, springer over."
+          )
+        shell: cmd
+
+      - name: Verify structure
+        run: echo "✅ Struktur klar og dependencies installeret"
+
+# Tips:
+#  - Backup er nu flyttet til backup.yml for at holde workflows adskilt og mere professionelle!
+#  - Overvej at tilføje linting/quality steps her (fx black, flake8, isort) hvis du vil øge kvaliteten.
+# - Logs for backup-step vises i Actions-oversigten.

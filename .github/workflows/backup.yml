@@ -1,0 +1,39 @@
+name: Auto Backup
+
+on:
+  schedule:
+    - cron: "0 3 * * *"  # Kør dagligt kl. 03:00 UTC
+  workflow_dispatch:      # Muliggør manuel kørsel fra GitHub Actions
+
+jobs:
+  backup:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Backup-step: kør backup.py hvis den findes
+      - name: Run backup.py
+        run: |
+          if exist backup.py (
+            echo "🗄️ Kører backup-script..."
+            python backup.py
+          ) else (
+            echo "⚠️ backup.py ikke fundet – springer backup-step over."
+          )
+        shell: cmd
+
+      # (Ekstra step: log output for overblik)
+      - name: Print backup-log summary
+        run: echo "✅ Backup-workflow færdig – tjek artifacts eller logs for detaljer"
