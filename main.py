@@ -1,7 +1,7 @@
 import time
 from utils.backup import make_backup
 from utils.botstatus import update_bot_status
-from utils.changelog import append_to_changelog  # Tilføj denne import
+from utils.changelog import append_to_changelog
 
 def main_trading_cycle():
     print("✅ Botten starter trading-cyklus...")
@@ -20,8 +20,12 @@ if __name__ == "__main__":
     backup_path = None
     try:
         main_trading_cycle()
-        # Backup efter cyklus (kan også placeres før/efter bestemte trin)
-        backup_path = make_backup(keep_last=10)
+
+        # Brug de nye parametre – dato-struktur og fleksibel oprydning
+        backup_path = make_backup(
+            keep_days=7,         # Gem fx 7 dage (kan justeres)
+            keep_per_day=10      # Max 10 backups per dag
+        )
         print(f"✅ Backup gemt: {backup_path}")
     except Exception as e:
         error_msg = str(e)
