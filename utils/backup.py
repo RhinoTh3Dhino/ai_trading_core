@@ -28,7 +28,12 @@ def make_backup(backup_folders=None, backup_dir="backups", keep_last=10):
     # Lav backup-mappe med timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     backup_path = os.path.join(backup_dir, f"backup_{timestamp}")
-    os.makedirs(backup_path, exist_ok=True)
+    try:
+        os.makedirs(backup_path, exist_ok=True)
+        print(f"📦 Backup-mappe oprettet: {backup_path}")
+    except Exception as e:
+        print(f"❌ Fejl ved oprettelse af backup-mappe: {backup_path}: {e}")
+        return None
 
     for item in backup_folders:
         if os.path.exists(item):
@@ -44,7 +49,11 @@ def make_backup(backup_folders=None, backup_dir="backups", keep_last=10):
             print(f"⚠️ Advarsel: {item} findes ikke og blev ikke backet op.")
 
     # Slet gamle backups automatisk hvis for mange
-    cleanup_old_backups(backup_dir, keep_last)
+    try:
+        cleanup_old_backups(backup_dir, keep_last)
+    except Exception as e:
+        print(f"❌ Fejl under sletning af gamle backups: {e}")
+
     return backup_path
 
 def cleanup_old_backups(backup_dir, keep_last=10):
@@ -64,6 +73,6 @@ def cleanup_old_backups(backup_dir, keep_last=10):
         except Exception as e:
             print(f"❌ Kunne ikke slette: {full_path}: {e}")
 
-# Test direkte
+# Test direkte hvis filen køres solo
 if __name__ == "__main__":
     make_backup()

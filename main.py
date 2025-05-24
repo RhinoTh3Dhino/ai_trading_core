@@ -1,6 +1,7 @@
 # main.py
+
 import time
-from backup import make_backup
+from utils.backup import make_backup
 
 def main_trading_cycle():
     print("🚀 Botten starter trading-cyklus...")
