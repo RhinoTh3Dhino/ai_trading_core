@@ -1,9 +1,8 @@
-# 🤖 AI Trading Bot Status
+# BotStatus
 
-| Felt | Værdi |
-|------|-------|
-| **Sidst opdateret** | 2025-05-23 22:53:04 |
-| **Version** | v0.1 |
-| **Aktiv strategi** | N/A |
-| **Model** | N/A |
-| **Status** | Aktiv |
+**Seneste kørsel:** 2025-05-24 14:36:01  
+**Status:** ✅ Succes  
+**Sidste backup:** backups\2025-05-24\backup_14-36-01  
+**Fejl:** Ingen  
+
+---
