@@ -1,15 +1,16 @@
 import time
 from utils.backup import make_backup
-from utils.botstatus import update_bot_status   # Tilføj denne import
+from utils.botstatus import update_bot_status
+from utils.changelog import append_to_changelog  # Tilføj denne import
 
 def main_trading_cycle():
     print("✅ Botten starter trading-cyklus...")
-    # Her indsætter du din logik for:
-    # - Datadownload
-    # - Feature engineering
-    # - Modeltræning / prediction
-    # - Signalberegning / trading
-    # - Logging & Telegram
+    print("# Her indsætter du din logik for:")
+    # print("# - Datadownload")
+    # print("# - Feature engineering")
+    # print("# - Modeltræning / prediction")
+    # print("# - Signalberegning / trading")
+    # print("# - Logging & Telegram")
     print("Her kommer trading-logikken!")
     time.sleep(2)
 
@@ -30,6 +31,13 @@ if __name__ == "__main__":
         update_bot_status(
             status="✅ Succes" if error_msg is None else "❌ Fejl",
             backup_path=backup_path,
-            error_msg=error_msg
+            error_msg=error_msg if error_msg else "Ingen"
         )
-        print("✅ Bot-kørsel færdig.")
+
+        # Opdater CHANGELOG.md
+        if error_msg is None:
+            append_to_changelog(f"✅ Bot kørte og lavede backup: {backup_path}")
+        else:
+            append_to_changelog(f"❌ Bot fejlede: {error_msg}")
+
+    print("✅ Bot-kørsel færdig.")
