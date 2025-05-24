@@ -1,0 +1,58 @@
+# Ignorer backup, logs og cache
+backups/
+backup/
+logs/
+tuner_cache/
+*.log
+
+# Data og modeller
+data/
+models/
+*.h5
+*.keras
+*.pth
+*.pk1
+*.csv
+*.npz
+
+# Trade journals og store output-filer
+*.xlsx
+*.xls
+*.parquet
+
+# Miljøfiler og credentials
+.env
+.env.*
+secrets/
+config/*.json
+config/*.yml
+
+# PyCharm, VS Code, OS-filer osv.
+.vscode/
+.idea/
+__pycache__/
+.DS_Store
+Thumbs.db
+
+# Python cache og build
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+eggs/
+
+# Test/eksperimentelle filer og noter
+test_*.py
+tests/
+notes/
+notebooks/
+output/
+
+# GitHub workflows og artefakter (valgfrit)
+.github/workflows/*.log
+.github/workflows/*.bak
+
+# Undgå at committe gamle checkpoints
+checkpoints/
