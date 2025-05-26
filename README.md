@@ -41,3 +41,23 @@ git push origin ai_bot_dev
 - Tag evt. screenshot af workflows/commits til dokumentation
 
 ---------------------------------------------
+
+
+
+
+## CI/CD Milestones og Merge-flow
+
+1. **Løbende udvikling i `ai_bot_dev`**
+    - Alt nyt udvikles og testes i dev-branchen.
+2. **Milestone: Merge til TEST**
+    - Når delmål/kritiske funktioner er testet og stabile → merge til `ai_bot_test` via Pull Request.
+    - Kør alle unittests og CI/CD workflows på test.
+3. **Milestone: Merge til PROD**
+    - Når ALT er godkendt på test, og der er grønt lys på CI → merge til `ai_trading_pro`.
+    - Opdater changelog, tag version, og lav release.
+4. **Ekstra:**
+    - Feature freeze før prod-merge.
+    - Automatisk backup og notifikationer.
+    - Dokumentér alle større merges i BotStatus.md.
+
+
