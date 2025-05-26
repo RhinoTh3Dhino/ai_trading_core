@@ -37,8 +37,10 @@ def make_backup(
         print(f"🔍 Tjekker om {item} findes: {os.path.exists(item)}")
         if os.path.exists(item):
             try:
+                # Brug shutil.copytree hvis mappe, ellers copy2 hvis fil
+                dst = os.path.join(backup_path, item)
                 if os.path.isdir(item):
-                    shutil.copytree(item, os.path.join(backup_path, item))
+                    shutil.copytree(item, dst)
                 else:
                     shutil.copy2(item, backup_path)
                 print(f"✅ Backed up: {item}")

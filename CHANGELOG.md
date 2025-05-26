@@ -73,3 +73,15 @@
 ### 2025-05-24 14:36:01
 ✅ Bot kørte og lavede backup: backups\2025-05-24\backup_14-36-01
 ---
+
+### 2025-05-26 17:36:49
+✅ Bot kørte og lavede backup: backups\2025-05-26\backup_17-36-48
+---
+
+### 2025-05-26 19:04:00
+✅ Bot kørte og lavede backup: backups\2025-05-26\backup_19-03-59
+---
+
+### 2025-05-26 19:24:43
+✅ Bot kørte og lavede backup: backups\2025-05-26\backup_19-24-42
+---
