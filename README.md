@@ -61,3 +61,26 @@ git push origin ai_bot_dev
     - Dokumentér alle større merges i BotStatus.md.
 
 
+
+### Robust Test Plan for AI Trading Bot
+
+1. Fejlhåndtering af kritiske funktioner
+    - Backup: Fejl i os.makedirs, shutil.copy2, shutil.copytree
+    - Status/Changelog: Fejl i open()
+    - Telegram: Fejl i send_telegram_message
+
+2. Telegram-funktion med Mock
+    - Korrekt POST payload og endpoint
+    - Fejlhåndtering af API-fejl og exceptions
+
+3. .env/config-indlæsning
+    - Test korrekte/manglende variabler
+    - Forventede advarsler eller fejlhåndtering
+
+4. Edge-cases for cleanup/backup
+    - Cleanup uden gamle backups
+    - Backup uden enkelte eller alle mapper/filer
+
+
+
+
