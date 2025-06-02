@@ -50,13 +50,22 @@ def save_best_model(model, accuracy, model_path="models/best_model.pkl", meta_pa
         json.dump(meta, f, indent=2)
     print(f"✅ Ny bedste model gemt: {model_path} (accuracy: {accuracy:.4f})")
 
-def train_model(features_csv):
-    df = pd.read_csv(features_csv)
+def train_model(features, target_col='target'):
+    """
+    Træner en RandomForest-model på features (DataFrame eller CSV-fil).
+    Returnerer (model, model_path, feature_cols)
+    """
+    # Accepter både DataFrame og CSV-sti som input
+    if isinstance(features, str):
+        df = pd.read_csv(features)
+    else:
+        df = features.copy()
 
-    drop_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col]) or col == 'target']
-    feature_cols = [col for col in df.columns if col not in drop_cols]
+    # Fjern ikke-numeriske kolonner undtagen target
+    drop_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col]) and col != target_col]
+    feature_cols = [col for col in df.columns if col not in drop_cols + [target_col]]
     X = df[feature_cols]
-    y = df['target']
+    y = df[target_col]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -81,8 +90,11 @@ def train_model(features_csv):
     else:
         print("ℹ️ Model ikke gemt – accuracy er ikke bedre end tidligere.")
 
-    return model
+    # Returner nu også feature_cols!
+    return model, model_path, feature_cols
 
 if __name__ == "__main__":
     os.makedirs("models", exist_ok=True)
-    train_model("data/BTCUSDT_1h_features.csv")
+    # CLI-test
+    model, model_path, feature_cols = train_model("data/BTCUSDT_1h_features.csv")
+    print("Trænede på features:", feature_cols)

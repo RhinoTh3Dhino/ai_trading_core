@@ -1,40 +1,52 @@
-# Ignorer backup, logs og cache
+# === Ignorer backup, logs og cache ===
 backups/
 backup/
 logs/
 tuner_cache/
 *.log
 
-# Data og modeller
-data/
-models/
+# === Data og modeller (IGNORER ALT, men tillad relevante CSV/scripts) ===
+data/*
+models/*
+!data/*.md
+!data/*.py
+!models/*.md
+!models/*.py
+!data/model_eval.csv      # <-- tillad eval-filer
+!data/*.example           # <-- evt. tillad eksempler
+
+# TILLAD EKSEMPEL-/TEMPLATE-DATA (men ikke store CSV eller resultater)
+!data/README.md
+!data/.gitkeep
+
+# === Model- og ML-filer ===
 *.h5
 *.keras
 *.pth
-*.pk1
-*.csv
+*.pkl
 *.npz
+*.joblib
 
-# Trade journals og store output-filer
+# === Trade journals og store output-filer ===
 *.xlsx
 *.xls
 *.parquet
 
-# Miljøfiler og credentials
+# === Miljøfiler og credentials ===
 .env
 .env.*
 secrets/
 config/*.json
 config/*.yml
 
-# PyCharm, VS Code, OS-filer osv.
+# === VS Code, PyCharm, OS-filer ===
 .vscode/
 .idea/
 __pycache__/
 .DS_Store
 Thumbs.db
 
-# Python cache og build
+# === Python cache og build ===
 *.pyc
 *.pyo
 *.pyd
@@ -43,16 +55,22 @@ dist/
 build/
 eggs/
 
-# Test/eksperimentelle filer og noter
+# === Test/Eksperiment-filer og noter ===
 test_*.py
-tests/
+!tests/*.py      # <-- TILLAD test-scripts
+tests/output/
 notes/
 notebooks/
 output/
 
-# GitHub workflows og artefakter (valgfrit)
+# === GitHub workflows og artefakter (valgfrit) ===
 .github/workflows/*.log
 .github/workflows/*.bak
 
-# Undgå at committe gamle checkpoints
+# === Checkpoints og gamle model-filer ===
 checkpoints/
+
+# === GENERELLE CSV og output (tillad eval, ignorer data) ===
+*.csv
+!data/model_eval.csv
+!data/*.example
