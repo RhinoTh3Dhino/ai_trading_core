@@ -1,36 +1,69 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_score, recall_score, f1_score
 import datetime
 import os
 import json
 import joblib
+import matplotlib.pyplot as plt
+import seaborn as sns
+import subprocess
 
-def log_model_metrics(filename, accuracy, report, confusion):
-    rows = []
-    for label, metrics in report.items():
-        if isinstance(metrics, dict):
-            row = {'label': label}
-            row.update(metrics)
-            rows.append(row)
-    df = pd.DataFrame(rows)
-    df['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    df['accuracy'] = accuracy
+def get_git_hash():
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
+    except:
+        return "unknown"
 
+def log_model_metrics(filename, y_true, y_pred, model_name, version="v1"):
+    # Beregn metrics
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
+    recall = recall_score(y_true, y_pred, average="weighted", zero_division=0)
+    f1 = f1_score(y_true, y_pred, average="weighted", zero_division=0)
+    cm = confusion_matrix(y_true, y_pred)
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    git_hash = get_git_hash()
+
+    # Saml i DataFrame
+    row = {
+        "timestamp": timestamp,
+        "version": version,
+        "git_hash": git_hash,
+        "model": model_name,
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1
+    }
+    df = pd.DataFrame([row])
+
+    # Gem eller tilføj til CSV
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     if not os.path.exists(filename):
         df.to_csv(filename, index=False)
     else:
-        df.to_csv(filename, mode='a', index=False, header=False)
+        df.to_csv(filename, mode='a', header=False, index=False)
 
-    cm_file = filename.replace('.csv', '_confmat.csv')
-    cm_df = pd.DataFrame(confusion)
-    cm_df['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    if not os.path.exists(cm_file):
-        cm_df.to_csv(cm_file, index=False)
-    else:
-        cm_df.to_csv(cm_file, mode='a', index=False, header=False)
+    # Gem confusion matrix som billede (.png)
+    cm_img_file = filename.replace('.csv', f'_confmat_{timestamp.replace(" ","_").replace(":","-")}.png')
+    plt.figure(figsize=(5, 4))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.title(f"Confusion Matrix\n{model_name} {timestamp}")
+    plt.ylabel("True label")
+    plt.xlabel("Predicted label")
+    plt.tight_layout()
+    plt.savefig(cm_img_file)
+    plt.close()
+    print(f"✅ Confusion matrix gemt som billede: {cm_img_file}")
+
+    # Gem confusion matrix også som CSV (valgfrit)
+    cm_file = filename.replace('.csv', f'_confmat_{timestamp.replace(" ","_").replace(":","-")}.csv')
+    cm_df = pd.DataFrame(cm)
+    cm_df["timestamp"] = timestamp
+    cm_df.to_csv(cm_file, index=False)
+    print(f"✅ Confusion matrix gemt som CSV: {cm_file}")
 
 def load_best_accuracy(meta_path="models/best_model_meta.json"):
     if os.path.exists(meta_path):
@@ -50,12 +83,11 @@ def save_best_model(model, accuracy, model_path="models/best_model.pkl", meta_pa
         json.dump(meta, f, indent=2)
     print(f"✅ Ny bedste model gemt: {model_path} (accuracy: {accuracy:.4f})")
 
-def train_model(features, target_col='target'):
+def train_model(features, target_col='target', version="v1"):
     """
     Træner en RandomForest-model på features (DataFrame eller CSV-fil).
     Returnerer (model, model_path, feature_cols)
     """
-    # Accepter både DataFrame og CSV-sti som input
     if isinstance(features, str):
         df = pd.read_csv(features)
     else:
@@ -73,13 +105,11 @@ def train_model(features, target_col='target'):
 
     preds = model.predict(X_test)
     acc = accuracy_score(y_test, preds)
-    report = classification_report(y_test, preds, output_dict=True)
-    confmat = confusion_matrix(y_test, preds)
-
     print("Accuracy:", acc)
     print(classification_report(y_test, preds))
 
-    log_model_metrics("data/model_eval.csv", acc, report, confmat)
+    # Log metrics og confusion matrix
+    log_model_metrics("data/model_eval.csv", y_test, preds, "RandomForest", version=version)
 
     best_acc = load_best_accuracy()
     model_path = "models/best_model.pkl"
@@ -90,11 +120,10 @@ def train_model(features, target_col='target'):
     else:
         print("ℹ️ Model ikke gemt – accuracy er ikke bedre end tidligere.")
 
-    # Returner nu også feature_cols!
     return model, model_path, feature_cols
 
 if __name__ == "__main__":
     os.makedirs("models", exist_ok=True)
     # CLI-test
-    model, model_path, feature_cols = train_model("data/BTCUSDT_1h_features.csv")
+    model, model_path, feature_cols = train_model("data/BTCUSDT_1h_features.csv", version="v1.0.1")
     print("Trænede på features:", feature_cols)
