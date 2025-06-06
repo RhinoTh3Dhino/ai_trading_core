@@ -3,7 +3,7 @@ import os
 from utils.backup import make_backup
 from utils.botstatus import update_bot_status
 from utils.changelog import append_to_changelog
-from utils.telegram_utils import send_telegram_message  # ← Tilføjet import
+from utils.telegram_utils import send_telegram_message, send_telegram_photo, send_strategy_metrics, send_status_advarsel  # ← Tilføjet import
 from dotenv import load_dotenv
 load_dotenv() 
 

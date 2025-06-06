@@ -1,8 +1,8 @@
 # BotStatus
 
-**Seneste kørsel:** 2025-05-31 15:56:47  
+**Seneste kørsel:** 2025-06-05 15:38:30  
 **Status:** ✅ Succes  
-**Sidste backup:** backups\2025-05-31\backup_15-56-47  
+**Sidste backup:** backups\2025-06-05\backup_15-38-30  
 **Fejl:** Ingen  
 
 ---
