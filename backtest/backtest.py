@@ -1,8 +1,12 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pandas as pd
 import numpy as np
 import datetime
-import os
 import subprocess
+from utils.file_utils import save_with_metadata
+from utils.robust_utils import safe_run  # ← Tilføjet robusthed!
 
 def get_git_hash():
     try:
@@ -11,12 +15,8 @@ def get_git_hash():
         return "unknown"
 
 def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.02, tp_pct=0.03):
-    """
-    Avanceret backtest, der simulerer handler baseret på signaler (1=BUY, -1=SELL, 0=HOLD)
-    Understøtter long med SL/TP og trading fees.
-    """
     df = df.copy()
-    # --- Automatisk støtte for både 'timestamp' og 'datetime' ---
+    # Automatisk støtte for både 'timestamp' og 'datetime'
     if "timestamp" not in df.columns and "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
     for col in ["timestamp", "close"]:
@@ -44,7 +44,6 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
         if position == "long":
             change = (price - entry_price) / entry_price
             if change <= -sl_pct:
-                # Stop loss trigger
                 balance = balance * (1 - fee)
                 trades.append({
                     "timestamp": timestamp,
@@ -54,7 +53,6 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
                 })
                 position = None
             elif change >= tp_pct:
-                # Take profit trigger
                 balance = balance * (1 - fee)
                 trades.append({
                     "timestamp": timestamp,
@@ -64,9 +62,8 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
                 })
                 position = None
 
-        # Signal fortolkes kun hvis der ikke er åben position
         if position is None:
-            if signal == 1:  # BUY (long)
+            if signal == 1:
                 entry_price = price
                 entry_time = timestamp
                 position = "long"
@@ -77,8 +74,7 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
                     "balance": balance
                 })
             elif signal == -1:
-                # Placeholder til short
-                pass
+                pass  # Placeholder til short
 
         # Luk position ved sidste bar
         if position == "long" and i == df.index[-1]:
@@ -99,15 +95,12 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
     return trades_df, balance_df
 
 def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
-    # Profit
     profit = (balance_df["balance"].iloc[-1] - initial_balance) / initial_balance * 100
-    # Win-rate (andel af TP/SL der er gevinster)
     trade_types = trades_df["type"].values
     tp_count = np.sum(trade_types == "TP")
     sl_count = np.sum(trade_types == "SL")
     win_rate = tp_count / (tp_count + sl_count) if (tp_count + sl_count) > 0 else 0
     num_trades = len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])])
-    # Max drawdown
     peak = balance_df["balance"].cummax()
     drawdown = (balance_df["balance"] - peak) / peak
     max_drawdown = drawdown.min() * 100 if not drawdown.empty else 0
@@ -136,21 +129,22 @@ def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results
         df.to_csv(csv_path, mode='a', header=False, index=False)
     print(f"✅ Backtest-metrics logget til: {csv_path}")
 
-if __name__ == "__main__":
+def main():
     # Eksempel: Brug din featurefil med signal-kolonne
     df = pd.read_csv("data/BTCUSDT_1h_features.csv")
     # Automatisk kolonne-mapping:
     if "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
-    # Du kan ændre signal-logikken her (fx df["signal"] = ...)
     if "signal" not in df.columns:
-        # Midlertidig dummy-signal (KUN TIL TEST!)
         import numpy as np
         df["signal"] = np.random.choice([1, 0, -1], size=len(df))
     trades_df, balance_df = run_backtest(df)
     metrics = calc_backtest_metrics(trades_df, balance_df)
     save_backtest_results(metrics, version="v1.0.1")
     print("Backtest-metrics:", metrics)
-    # (Bonus) Gem balance til visualisering
-    balance_df.to_csv("data/balance.csv", index=False)
-    trades_df.to_csv("data/trades.csv", index=False)
+    # Gem resultater med metadata
+    save_with_metadata(balance_df, "data/balance.csv", version="v1.0.1")
+    save_with_metadata(trades_df, "data/trades.csv", version="v1.0.1")
+
+if __name__ == "__main__":
+    safe_run(main)

@@ -1,4 +1,7 @@
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pandas as pd
 from datetime import datetime
 
@@ -7,6 +10,7 @@ from backtest.backtest import run_backtest
 from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
 from utils.telegram_utils import send_telegram_photo, send_telegram_message
+from utils.robust_utils import safe_run   # ← Tilføjet robusthed
 
 DATA_PATH = "data/BTCUSDT_1h_features.csv"
 SYMBOL = "BTC"
@@ -52,4 +56,4 @@ def main():
     print("🎉 Hele flowet er nu automatisk!")
 
 if __name__ == "__main__":
-    main()
+    safe_run(main)
