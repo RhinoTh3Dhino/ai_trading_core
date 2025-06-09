@@ -15,6 +15,17 @@
 
 ---
 
+## [v0.4.0] - 2025-06-07
+
+- Tilføjet robust_utils.py med safe_run til alle vigtige scripts
+- Import-struktur gjort robust via sys.path.append-trick
+- Automatisk Telegram-integration med tekst og billeder i hele flowet
+- Automatisk fejlhåndtering og alarm via Telegram
+- Visualiseringer (balance, drawdown, confusion matrix) gemmes og sendes automatisk
+- Versions- og backup-flow valideret og testet
+- Klar til cronjobs, batch eller SaaS-deployment
+
+
 
 ## [2025-05-23]
 ✅ Step 4 test
