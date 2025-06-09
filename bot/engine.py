@@ -10,7 +10,10 @@ from backtest.backtest import run_backtest
 from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
 from utils.telegram_utils import send_telegram_photo, send_telegram_message
-from utils.robust_utils import safe_run   # ← Tilføjet robusthed
+from utils.robust_utils import safe_run
+
+from models.ensemble import majority_vote_ensemble
+from strategies.rsi_strategy import rsi_rule_based_signals
 
 DATA_PATH = "data/BTCUSDT_1h_features.csv"
 SYMBOL = "BTC"
@@ -23,7 +26,6 @@ def main():
     print(f"✅ Data indlæst ({df.shape[0]} rækker)")
     print(f"Kolonner før evt. omdøbning: {list(df.columns)}")
 
-    # Omdøb "datetime" til "timestamp" hvis nødvendigt
     if "datetime" in df.columns and "timestamp" not in df.columns:
         df["timestamp"] = df["datetime"]
         print("ℹ️ Tilføjede 'timestamp' kolonne ud fra 'datetime'")
@@ -35,11 +37,15 @@ def main():
     model, model_path, feature_cols = train_model(df)
     print(f"✅ Model klar: {model_path}")
 
-    # 3. Generér signaler og kør backtest
+    # 3. Generér signaler (ML) + Indikator + Ensemble Voting
     print("🔄 Genererer signaler og kører backtest...")
+
     X_pred = df[feature_cols]
-    signals = model.predict(X_pred)
-    trades_df, balance_df = run_backtest(df, signals)
+    ml_signals = model.predict(X_pred)
+    indi_signals = rsi_rule_based_signals(df, low=30, high=70)
+    ensemble_signals = majority_vote_ensemble(ml_signals, indi_signals)
+
+    trades_df, balance_df = run_backtest(df, signals=ensemble_signals)
     print("✅ Backtest gennemført")
 
     # 4. Gem grafer

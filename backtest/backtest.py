@@ -6,7 +6,11 @@ import numpy as np
 import datetime
 import subprocess
 from utils.file_utils import save_with_metadata
-from utils.robust_utils import safe_run  # ← Tilføjet robusthed!
+from utils.robust_utils import safe_run
+
+# ← Import ensemble og strategi
+from models.ensemble import majority_vote_ensemble
+from strategies.rsi_strategy import rsi_rule_based_signals
 
 def get_git_hash():
     try:
@@ -16,7 +20,6 @@ def get_git_hash():
 
 def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.02, tp_pct=0.03):
     df = df.copy()
-    # Automatisk støtte for både 'timestamp' og 'datetime'
     if "timestamp" not in df.columns and "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
     for col in ["timestamp", "close"]:
@@ -40,7 +43,6 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
         signal = row["signal"]
         timestamp = row["timestamp"]
 
-        # Check åben position for SL/TP (kun long)
         if position == "long":
             change = (price - entry_price) / entry_price
             if change <= -sl_pct:
@@ -76,7 +78,6 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
             elif signal == -1:
                 pass  # Placeholder til short
 
-        # Luk position ved sidste bar
         if position == "long" and i == df.index[-1]:
             pct = (price - entry_price) / entry_price
             balance = balance * (1 + pct - fee)
@@ -130,21 +131,29 @@ def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results
     print(f"✅ Backtest-metrics logget til: {csv_path}")
 
 def main():
-    # Eksempel: Brug din featurefil med signal-kolonne
+    # Eksempel: Brug din featurefil uden signal-kolonne
     df = pd.read_csv("data/BTCUSDT_1h_features.csv")
-    # Automatisk kolonne-mapping:
     if "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
-    if "signal" not in df.columns:
-        import numpy as np
-        df["signal"] = np.random.choice([1, 0, -1], size=len(df))
+
+    # -- ML-predictions (fx dummy/demo – udskift med din egen predict-funktion!) --
+    # Eksempel: Lad som om du loader en ML-model
+    np.random.seed(42)
+    ml_signals = np.random.choice([1, 0, -1], size=len(df))
+
+    # -- RSI-strategi --
+    indi_signals = rsi_rule_based_signals(df, low=30, high=70)
+
+    # -- Ensemble Voting --
+    ensemble_signals = majority_vote_ensemble(ml_signals, indi_signals)
+    df["signal"] = ensemble_signals
+
     trades_df, balance_df = run_backtest(df)
     metrics = calc_backtest_metrics(trades_df, balance_df)
-    save_backtest_results(metrics, version="v1.0.1")
+    save_backtest_results(metrics, version="v1.0.1-ensemble")
     print("Backtest-metrics:", metrics)
-    # Gem resultater med metadata
-    save_with_metadata(balance_df, "data/balance.csv", version="v1.0.1")
-    save_with_metadata(trades_df, "data/trades.csv", version="v1.0.1")
+    save_with_metadata(balance_df, "data/balance.csv", version="v1.0.1-ensemble")
+    save_with_metadata(trades_df, "data/trades.csv", version="v1.0.1-ensemble")
 
 if __name__ == "__main__":
     safe_run(main)
