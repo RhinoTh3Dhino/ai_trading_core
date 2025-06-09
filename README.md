@@ -2,7 +2,7 @@
 
 Dette projekt er fundamentet for en avanceret AI trading bot.
 
-
+# test af Trigger CI workflow
 
 # 📦 Standard Commit Guide & Ekstra Tips
 

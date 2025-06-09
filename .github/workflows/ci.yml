@@ -1,43 +1,47 @@
-name: Run Basic CI on Push
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
   workflow_dispatch:
 
 jobs:
-  run-basic-ci:
-    runs-on: windows-latest
+  build-and-test:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout kode
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
+    - name: Sæt Python op
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Installer pip & afhængigheder
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-      # (Valgfrit) Kør tests hvis du har tests-mappe
-      - name: Run tests
-        run: |
-          if exist tests (
-            echo "Kører tests..."
-            pytest tests/
-          ) else (
-            echo "Ingen tests-mappe fundet, springer over."
-          )
-        shell: cmd
+    - name: Kør pytest på tests/
+      run: |
+        pytest tests/
 
-      - name: Verify structure
-        run: echo "✅ Struktur klar og dependencies installeret"
+    # Upload artifacts fra outputs/ og tests/ (fx feature-data, grafer, logs)
+    - name: Upload test-artifacts (outputs + tests)
+      if: always()  # også ved test-fejl, så du kan debugge!
+      uses: actions/upload-artifact@v4
+      with:
+        name: outputs-and-tests
+        path: |
+          outputs/
+          tests/
+          !**/*.pyc
+          !**/__pycache__/
 
-# Tips:
-#  - Backup er nu flyttet til backup.yml for at holde workflows adskilt og mere professionelle!
-#  - Overvej at tilføje linting/quality steps her (fx black, flake8, isort) hvis du vil øge kvaliteten.
-# - Logs for backup-step vises i Actions-oversigten.
+    - name: Check struktur og dependencies
+      run: echo "✅ Struktur og auto-backup/artifacts OK"
+
+# Bonus: Udvid med lint/format/coverage/artifacts/telegram senere!
