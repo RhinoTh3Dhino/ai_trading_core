@@ -8,9 +8,10 @@ import subprocess
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
 
-# ← Import ensemble og strategi
-from models.ensemble import majority_vote_ensemble
+# Ensemble og strategier
+from ensemble.majority_vote_ensemble import majority_vote_ensemble
 from strategies.rsi_strategy import rsi_rule_based_signals
+from strategies.macd_strategy import macd_cross_signals
 
 def get_git_hash():
     try:
@@ -43,6 +44,7 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
         signal = row["signal"]
         timestamp = row["timestamp"]
 
+        # Stop-loss/take-profit (kun long)
         if position == "long":
             change = (price - entry_price) / entry_price
             if change <= -sl_pct:
@@ -93,9 +95,19 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
 
     trades_df = pd.DataFrame(trades)
     balance_df = pd.DataFrame(balance_log)
+
+    # Fail-safe debug
+    if "balance" not in balance_df.columns or len(balance_df) == 0:
+        print("❌ FEJL: Ingen balance-kolonne i balance_df! Her er head():")
+        print(balance_df.head())
     return trades_df, balance_df
 
 def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
+    # Fail-safe hvis balance_df er tom eller kolonne mangler
+    if "balance" not in balance_df.columns or len(balance_df) == 0:
+        print("❌ FEJL: balance_df tom eller mangler kolonne 'balance'. Kan ikke beregne metrics.")
+        return {"profit_pct": 0, "win_rate": 0, "drawdown_pct": 0, "num_trades": 0}
+
     profit = (balance_df["balance"].iloc[-1] - initial_balance) / initial_balance * 100
     trade_types = trades_df["type"].values
     tp_count = np.sum(trade_types == "TP")
@@ -131,29 +143,44 @@ def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results
     print(f"✅ Backtest-metrics logget til: {csv_path}")
 
 def main():
-    # Eksempel: Brug din featurefil uden signal-kolonne
-    df = pd.read_csv("data/BTCUSDT_1h_features.csv")
+    # Indlæs din featurefil (juster sti hvis nødvendigt)
+    df = pd.read_csv("outputs/feature_data/btc_1h_features_v_test_20250610.csv")
     if "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
 
-    # -- ML-predictions (fx dummy/demo – udskift med din egen predict-funktion!) --
-    # Eksempel: Lad som om du loader en ML-model
+    print("Indlæst data med kolonner:", list(df.columns))
+
+    # --- Debug: Print distribution af features ---
+    print("\n--- Debug på inputfeatures ---")
+    for feat in ["rsi_14", "macd", "macd_signal"]:
+        if feat in df.columns:
+            print(f"{feat} describe():", df[feat].describe())
+        else:
+            print(f"❌ FEJL: {feat} findes ikke i features!")
+
+    # ML-predictions (dummy/demo – udskift med din egen predict-funktion!)
     np.random.seed(42)
     ml_signals = np.random.choice([1, 0, -1], size=len(df))
 
-    # -- RSI-strategi --
-    indi_signals = rsi_rule_based_signals(df, low=30, high=70)
+    # RSI og MACD-strategier (her kan du nemt justere thresholds til test)
+    rsi_signals = rsi_rule_based_signals(df, low=45, high=55)  # <--- LAV TÆTTE THRESHOLDS VED TEST
+    macd_signals = macd_cross_signals(df)
 
-    # -- Ensemble Voting --
-    ensemble_signals = majority_vote_ensemble(ml_signals, indi_signals)
+    print("\nSignal distribution ML/RSI/MACD:", 
+          pd.Series(ml_signals).value_counts().to_dict(), 
+          pd.Series(rsi_signals).value_counts().to_dict(), 
+          pd.Series(macd_signals).value_counts().to_dict())
+
+    # Ensemble Voting (majority vote mellem ML, RSI og MACD)
+    ensemble_signals = majority_vote_ensemble(ml_signals, rsi_signals, macd_signals)
     df["signal"] = ensemble_signals
 
     trades_df, balance_df = run_backtest(df)
     metrics = calc_backtest_metrics(trades_df, balance_df)
-    save_backtest_results(metrics, version="v1.0.1-ensemble")
+    save_backtest_results(metrics, version="v1.2.0-ensemble")
     print("Backtest-metrics:", metrics)
-    save_with_metadata(balance_df, "data/balance.csv", version="v1.0.1-ensemble")
-    save_with_metadata(trades_df, "data/trades.csv", version="v1.0.1-ensemble")
+    save_with_metadata(balance_df, "data/balance.csv", version="v1.2.0-ensemble")
+    save_with_metadata(trades_df, "data/trades.csv", version="v1.2.0-ensemble")
 
 if __name__ == "__main__":
     safe_run(main)
