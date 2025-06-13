@@ -29,19 +29,43 @@ jobs:
       run: |
         pytest tests/
 
-    # Upload artifacts fra outputs/ og tests/ (fx feature-data, grafer, logs)
-    - name: Upload test-artifacts (outputs + tests)
-      if: always()  # også ved test-fejl, så du kan debugge!
+    # Kør AI trading bot flow som end-to-end test (main.py)
+    - name: Kør main.py (full flow)
+      run: |
+        python main.py
+
+    # Upload artifacts: outputs, tests, logs og grafer
+    - name: Upload artifacts (outputs, tests, logs, grafer)
+      if: always()  # Kør selv ved fejl!
       uses: actions/upload-artifact@v4
       with:
         name: outputs-and-tests
         path: |
           outputs/
           tests/
+          logs/
+          graphs/
           !**/*.pyc
           !**/__pycache__/
 
+    # Tjek struktur og dependencies
     - name: Check struktur og dependencies
-      run: echo "✅ Struktur og auto-backup/artifacts OK"
+      run: echo "✅ Struktur og artifacts OK"
 
-# Bonus: Udvid med lint/format/coverage/artifacts/telegram senere!
+    # Bonus: Tilføj linters, coverage og Telegram-notifikation senere
+    # - name: Kør lint (fx black, flake8)
+    #   run: |
+    #     pip install black flake8
+    #     black --check .
+    #     flake8 .
+
+    # - name: Coverage
+    #   run: |
+    #     pip install coverage
+    #     coverage run -m pytest
+    #     coverage report
+
+    # - name: Telegram notification (optional)
+    #   run: |
+    #     python utils/telegram_utils.py --ci-report
+
