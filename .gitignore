@@ -1,25 +1,38 @@
-# === Ignorer backup, logs og cache ===
+# === Backups, logs og cache ===
 backups/
 backup/
 logs/
 tuner_cache/
 *.log
 
-# === Data og modeller (IGNORER ALT, men tillad relevante CSV/scripts) ===
+# === Output og store genererede data ===
+outputs/
+!outputs/README.md
+!outputs/.gitkeep
+
+# === Feature data og resultater (IGNORER ALT UNDTAGEN TEMPLATES) ===
+outputs/feature_data/
+!outputs/feature_data/README.md
+!outputs/feature_data/.gitkeep
+
+# === Grafer og billeder (IGNORER ALT) ===
+graphs/
+*.png
+*.jpg
+
+# === Data og modeller (IGNORER ALT, TILLAD templates, eval og eksempler) ===
 data/*
 models/*
 !data/*.md
 !data/*.py
 !models/*.md
 !models/*.py
-!data/model_eval.csv      # <-- tillad eval-filer
-!data/*.example           # <-- evt. tillad eksempler
-
-# TILLAD EKSEMPEL-/TEMPLATE-DATA (men ikke store CSV eller resultater)
+!data/model_eval.csv       # Eval-metrics må gerne trackes
+!data/*.example            # Eventuelle dataeksempler
 !data/README.md
 !data/.gitkeep
 
-# === Model- og ML-filer ===
+# === Model- og ML-filer (IGNORER ALT TUNGE/MIDLERITIDIGE) ===
 *.h5
 *.keras
 *.pth
@@ -31,6 +44,8 @@ models/*
 *.xlsx
 *.xls
 *.parquet
+trades.csv
+trades/
 
 # === Miljøfiler og credentials ===
 .env
@@ -57,20 +72,25 @@ eggs/
 
 # === Test/Eksperiment-filer og noter ===
 test_*.py
-!tests/*.py      # <-- TILLAD test-scripts
+!tests/*.py
 tests/output/
 notes/
 notebooks/
 output/
 
-# === GitHub workflows og artefakter (valgfrit) ===
+# === GitHub workflows og artefakter ===
 .github/workflows/*.log
 .github/workflows/*.bak
 
-# === Checkpoints og gamle model-filer ===
+# === Checkpoints, cache og gamle model-filer ===
 checkpoints/
+.cache/
+*.bak
 
-# === GENERELLE CSV og output (tillad eval, ignorer data) ===
+# === CSV og output (kun evals og eksempler må med) ===
 *.csv
 !data/model_eval.csv
 !data/*.example
+
+# === Tillad specifikke templates/guides (hvis nødvendigt) ===
+!*.md
