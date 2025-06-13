@@ -82,5 +82,15 @@ git push origin ai_bot_dev
     - Backup uden enkelte eller alle mapper/filer
 
 
+Sprint 3 – Delmål 4, Step 2, Step 1 afsluttet: Klargøring af ensemble weights til tuning
+
+- Beskrevet hvilke weights der skal optimeres (ML, RSI, MACD)
+- Sat interval for weights: [0.0–2.0] for alle
+- Sikret at engine.py og majority_vote_ensemble.py understøtter dynamiske weights fra tuner
+- Opdateret tuning_threshold.py så hele pipeline kører robust og kan udvides til weight-tuning
+- Kommenteret kode og roadmap
+
+
+
 
 

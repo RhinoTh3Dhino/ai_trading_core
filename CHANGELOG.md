@@ -149,3 +149,23 @@
 ### 2025-06-13 20:34:50
 ✅ Bot kørte og lavede backup: backups\2025-06-13\backup_20-34-50
 ---
+
+### 2025-06-13 21:29:45
+✅ Bot kørte og lavede backup: backups\2025-06-13\backup_21-29-45
+---
+
+### 2025-06-14 00:06:46
+✅ Bot kørte og lavede backup: backups\2025-06-14\backup_00-06-46
+---
+
+### 2025-06-14 00:12:24
+✅ Bot kørte og lavede backup: backups\2025-06-14\backup_00-12-24
+---
+
+### 2025-06-14 00:18:27
+✅ Bot kørte og lavede backup: backups\2025-06-14\backup_00-18-27
+---
+
+### 2025-06-14 00:21:35
+✅ Bot kørte og lavede backup: backups\2025-06-14\backup_00-21-35
+---

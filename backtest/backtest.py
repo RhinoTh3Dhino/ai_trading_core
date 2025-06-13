@@ -1,109 +1,81 @@
 import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import pandas as pd
 import numpy as np
 import datetime
 import subprocess
+
+# Dynamisk projektroot
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Utils og robusthed
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
 
-# Ensemble og strategier
+# Ensemble og strategier (let at udvide)
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 
+# Versionskontrol fra Git
 def get_git_hash():
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
-    except:
+    except Exception:
         return "unknown"
 
 def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.02, tp_pct=0.03):
     df = df.copy()
+    # Flexibel timestamp-håndtering
     if "timestamp" not in df.columns and "datetime" in df.columns:
-        df = df.rename(columns={"datetime": "timestamp"})
+        df.rename(columns={"datetime": "timestamp"}, inplace=True)
     for col in ["timestamp", "close"]:
         if col not in df.columns:
-            raise ValueError(f"❌ Mangler kolonnen '{col}' i DataFrame til backtest! Findes disse kolonner? {list(df.columns)}")
-
+            raise ValueError(f"❌ Mangler kolonnen '{col}' i DataFrame til backtest! ({list(df.columns)})")
     if signals is not None:
         df["signal"] = signals
     elif "signal" not in df.columns:
         raise ValueError("Ingen signaler angivet til backtest!")
 
-    trades = []
-    balance_log = []
+    trades, balance_log = [], []
     balance = initial_balance
-    position = None
-    entry_price = 0
-    entry_time = None
+    position, entry_price, entry_time = None, 0, None
 
     for i, row in df.iterrows():
-        price = row["close"]
-        signal = row["signal"]
-        timestamp = row["timestamp"]
+        price, signal, timestamp = row["close"], row["signal"], row["timestamp"]
 
-        # Stop-loss/take-profit (kun long)
+        # SL/TP kun for long
         if position == "long":
             change = (price - entry_price) / entry_price
             if change <= -sl_pct:
-                balance = balance * (1 - fee)
-                trades.append({
-                    "timestamp": timestamp,
-                    "type": "SL",
-                    "price": price,
-                    "balance": balance
-                })
+                balance *= (1 - fee)
+                trades.append({"timestamp": timestamp, "type": "SL", "price": price, "balance": balance})
                 position = None
             elif change >= tp_pct:
-                balance = balance * (1 - fee)
-                trades.append({
-                    "timestamp": timestamp,
-                    "type": "TP",
-                    "price": price,
-                    "balance": balance
-                })
+                balance *= (1 - fee)
+                trades.append({"timestamp": timestamp, "type": "TP", "price": price, "balance": balance})
                 position = None
 
-        if position is None:
-            if signal == 1:
-                entry_price = price
-                entry_time = timestamp
-                position = "long"
-                trades.append({
-                    "timestamp": timestamp,
-                    "type": "BUY",
-                    "price": price,
-                    "balance": balance
-                })
-            elif signal == -1:
-                pass  # Placeholder til short
+        if position is None and signal == 1:
+            entry_price, entry_time = price, timestamp
+            position = "long"
+            trades.append({"timestamp": timestamp, "type": "BUY", "price": price, "balance": balance})
 
         if position == "long" and i == df.index[-1]:
             pct = (price - entry_price) / entry_price
-            balance = balance * (1 + pct - fee)
-            trades.append({
-                "timestamp": timestamp,
-                "type": "CLOSE",
-                "price": price,
-                "balance": balance
-            })
+            balance *= (1 + pct - fee)
+            trades.append({"timestamp": timestamp, "type": "CLOSE", "price": price, "balance": balance})
             position = None
 
         balance_log.append({"timestamp": timestamp, "balance": balance})
 
     trades_df = pd.DataFrame(trades)
     balance_df = pd.DataFrame(balance_log)
-
-    # Fail-safe debug
     if "balance" not in balance_df.columns or len(balance_df) == 0:
         print("❌ FEJL: Ingen balance-kolonne i balance_df! Her er head():")
         print(balance_df.head())
     return trades_df, balance_df
 
 def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
-    # Fail-safe hvis balance_df er tom eller kolonne mangler
     if "balance" not in balance_df.columns or len(balance_df) == 0:
         print("❌ FEJL: balance_df tom eller mangler kolonne 'balance'. Kan ikke beregne metrics.")
         return {"profit_pct": 0, "win_rate": 0, "drawdown_pct": 0, "num_trades": 0}
@@ -128,12 +100,7 @@ def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
 def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results.csv"):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     git_hash = get_git_hash()
-    row = {
-        "timestamp": timestamp,
-        "version": version,
-        "git_hash": git_hash,
-        **metrics
-    }
+    row = {"timestamp": timestamp, "version": version, "git_hash": git_hash, **metrics}
     df = pd.DataFrame([row])
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     if not os.path.exists(csv_path):
@@ -143,38 +110,38 @@ def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results
     print(f"✅ Backtest-metrics logget til: {csv_path}")
 
 def main():
-    # Indlæs din featurefil (juster sti hvis nødvendigt)
-    df = pd.read_csv("outputs/feature_data/btc_1h_features_v_test_20250610.csv")
+    # --- Dynamisk indlæsning af featurefil ---
+    feature_path = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"  # Udskift ved behov
+    df = pd.read_csv(feature_path)
     if "datetime" in df.columns:
-        df = df.rename(columns={"datetime": "timestamp"})
-
+        df.rename(columns={"datetime": "timestamp"}, inplace=True)
     print("Indlæst data med kolonner:", list(df.columns))
 
-    # --- Debug: Print distribution af features ---
-    print("\n--- Debug på inputfeatures ---")
+    # --- Debug på inputfeatures ---
     for feat in ["rsi_14", "macd", "macd_signal"]:
         if feat in df.columns:
             print(f"{feat} describe():", df[feat].describe())
         else:
             print(f"❌ FEJL: {feat} findes ikke i features!")
 
-    # ML-predictions (dummy/demo – udskift med din egen predict-funktion!)
+    # --- Dummy ML-signaler (udskift med din egen predict-funktion) ---
     np.random.seed(42)
     ml_signals = np.random.choice([1, 0, -1], size=len(df))
 
-    # RSI og MACD-strategier (her kan du nemt justere thresholds til test)
-    rsi_signals = rsi_rule_based_signals(df, low=45, high=55)  # <--- LAV TÆTTE THRESHOLDS VED TEST
+    # --- Regelbaserede strategier ---
+    rsi_signals = rsi_rule_based_signals(df, low=45, high=55)    # Juster thresholds
     macd_signals = macd_cross_signals(df)
 
-    print("\nSignal distribution ML/RSI/MACD:", 
-          pd.Series(ml_signals).value_counts().to_dict(), 
-          pd.Series(rsi_signals).value_counts().to_dict(), 
+    print("\nSignal distribution ML/RSI/MACD:",
+          pd.Series(ml_signals).value_counts().to_dict(),
+          pd.Series(rsi_signals).value_counts().to_dict(),
           pd.Series(macd_signals).value_counts().to_dict())
 
-    # Ensemble Voting (majority vote mellem ML, RSI og MACD)
+    # --- Ensemble voting ---
     ensemble_signals = majority_vote_ensemble(ml_signals, rsi_signals, macd_signals)
     df["signal"] = ensemble_signals
 
+    # --- Kør backtest ---
     trades_df, balance_df = run_backtest(df)
     metrics = calc_backtest_metrics(trades_df, balance_df)
     save_backtest_results(metrics, version="v1.2.0-ensemble")
