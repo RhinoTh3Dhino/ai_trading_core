@@ -10,15 +10,14 @@ outputs/
 !outputs/README.md
 !outputs/.gitkeep
 
-# === Feature data og resultater (IGNORER ALT UNDTAGEN TEMPLATES) ===
+# === Feature data og resultater (IGNORER ALT UNDTAGEN TEMPLATES og .md) ===
 outputs/feature_data/
 !outputs/feature_data/README.md
 !outputs/feature_data/.gitkeep
 
-# === Grafer og billeder (IGNORER ALT) ===
+# === Grafer og billeder (IGNORER ALT, TILLAD .md) ===
 graphs/
-*.png
-*.jpg
+!graphs/*.md
 
 # === Data og modeller (IGNORER ALT, TILLAD templates, eval og eksempler) ===
 data/*
@@ -27,8 +26,8 @@ models/*
 !data/*.py
 !models/*.md
 !models/*.py
-!data/model_eval.csv       # Eval-metrics må gerne trackes
-!data/*.example            # Eventuelle dataeksempler
+!data/model_eval.csv          # Eval-metrics må gerne trackes
+!data/*.example               # Eventuelle dataeksempler
 !data/README.md
 !data/.gitkeep
 
@@ -91,6 +90,11 @@ checkpoints/
 *.csv
 !data/model_eval.csv
 !data/*.example
+
+# === Tuning og Optuna logs/results (IGNORER ALT UNDTAGEN TEMPLATES OG .md) ===
+tuning/*.txt
+!tuning/README.md
+!tuning/.gitkeep
 
 # === Tillad specifikke templates/guides (hvis nødvendigt) ===
 !*.md
