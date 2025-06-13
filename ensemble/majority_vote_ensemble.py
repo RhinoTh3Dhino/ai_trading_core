@@ -1,15 +1,24 @@
 import numpy as np
 
-def majority_vote_ensemble(*signals_list):
+def weighted_vote_ensemble(*signals_list, weights=None):
     """
-    Returnerer ensemble-signal (1=BUY, -1=SELL, 0=HOLD) baseret på majority voting
-    over flere signal-lister (ML, RSI, MACD, ...).
+    Ensemble voting med vægte.
+    Eksempel:
+        weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, weights=[1.0, 0.8, 0.6])
+    Hvis weights=None, køres simpelt majority voting (alle får vægt 1).
     """
-    signals_arr = np.column_stack(signals_list)
-    final_signals = []
-    for row in signals_arr:
-        # Majority voting: hvis flest 1, returner 1, hvis flest -1, returner -1, ellers 0
-        vals, counts = np.unique(row, return_counts=True)
-        vote = vals[np.argmax(counts)]
-        final_signals.append(vote)
-    return np.array(final_signals)
+    signals_arr = np.column_stack(signals_list)  # shape: (n, k)
+    n_strategies = signals_arr.shape[1]
+
+    # Sæt weights til 1 hvis ikke angivet (majority voting)
+    if weights is None:
+        weights = [1.0] * n_strategies
+    weights = np.array(weights)
+
+    # Vægtet sum af signaler pr. række
+    vote_scores = np.dot(signals_arr, weights)
+    final_signals = np.where(vote_scores > 0, 1, np.where(vote_scores < 0, -1, 0))
+    return final_signals
+
+# Alias – så du kan importere og bruge majority_vote_ensemble præcis som før
+majority_vote_ensemble = weighted_vote_ensemble
