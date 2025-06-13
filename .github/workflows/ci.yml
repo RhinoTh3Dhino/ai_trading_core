@@ -29,8 +29,10 @@ jobs:
       run: |
         pytest tests/
 
-    # Kør AI trading bot flow som end-to-end test (main.py)
-    - name: Kør main.py (full flow)
+    # Kør AI trading bot flow (kun én cyklus i CI)
+    - name: Kør main.py (kun én cyklus i CI)
+      env:
+        CI: "true"
       run: |
         python main.py
 
@@ -68,4 +70,3 @@ jobs:
     # - name: Telegram notification (optional)
     #   run: |
     #     python utils/telegram_utils.py --ci-report
-

@@ -8,7 +8,6 @@ from utils.botstatus import update_bot_status
 from utils.changelog import append_to_changelog
 from utils.telegram_utils import (
     send_telegram_message,
-    # Tilføj flere hvis du vil bruge dem i status osv.
 )
 from utils.robust_utils import safe_run
 
@@ -39,9 +38,6 @@ def main_trading_cycle():
     return backup_path
 
 def daily_status():
-    """
-    Sender daglig statusrapport til Telegram og logger status.
-    """
     try:
         send_telegram_message("📊 Daglig status: Botten kører fortsat! Tilpas evt. med flere metrics her.")
         append_to_changelog("📊 Daglig status sendt til Telegram.")
@@ -50,9 +46,6 @@ def daily_status():
         print(f"❌ Fejl ved daglig status: {e}")
 
 def retrain_models():
-    """
-    Kører retrain af modeller (indsæt evt. retrain-pipeline fra engine/moduler).
-    """
     try:
         send_telegram_message("🔄 Starter automatisk retrain af modeller!")
         # TODO: Kald evt. retrain-funktionalitet her
@@ -62,9 +55,6 @@ def retrain_models():
         print(f"❌ Fejl ved retrain: {e}")
 
 def heartbeat():
-    """
-    Sender 'hjertelyd' til Telegram som tegn på at botten stadig kører.
-    """
     try:
         send_telegram_message("💓 Bot heartbeat: Jeg er stadig i live!")
         print("✅ Heartbeat sendt.")
@@ -72,9 +62,6 @@ def heartbeat():
         print(f"❌ Fejl ved heartbeat: {e}")
 
 def main():
-    """
-    Styrer fejlhåndtering, backup og logging for én trading-cyklus.
-    """
     print("✅ AI Trading Bot starter...")
     error_msg = None
     backup_path = None
@@ -104,21 +91,25 @@ def main():
 if __name__ == "__main__":
     print("🚀 AI Trading Bot (Production Mode) starter med schedule!")
 
-    # === Kør første trading-cyklus straks (så du ser output/Telegram med det samme) ===
-    safe_run(main)
+    # CI: Kør kun én cyklus og afslut!
+    if os.getenv("CI", "false").lower() == "true":
+        safe_run(main)
+    else:
+        # === Kør første trading-cyklus straks (så du ser output/Telegram med det samme) ===
+        safe_run(main)
 
-    # Kør trading-cyklus hver time
-    schedule.every().hour.at(":00").do(lambda: safe_run(main))
+        # Kør trading-cyklus hver time
+        schedule.every().hour.at(":00").do(lambda: safe_run(main))
 
-    # Daglig status kl. 08:00
-    schedule.every().day.at("08:00").do(lambda: safe_run(daily_status))
+        # Daglig status kl. 08:00
+        schedule.every().day.at("08:00").do(lambda: safe_run(daily_status))
 
-    # Retrain hver nat kl. 03:00
-    schedule.every().day.at("03:00").do(lambda: safe_run(retrain_models))
+        # Retrain hver nat kl. 03:00
+        schedule.every().day.at("03:00").do(lambda: safe_run(retrain_models))
 
-    # Heartbeat hver time kl. xx:30
-    schedule.every().hour.at(":30").do(lambda: safe_run(heartbeat))
+        # Heartbeat hver time kl. xx:30
+        schedule.every().hour.at(":30").do(lambda: safe_run(heartbeat))
 
-    while True:
-        schedule.run_pending()
-        time.sleep(5)
+        while True:
+            schedule.run_pending()
+            time.sleep(5)
