@@ -17,7 +17,7 @@ from strategies.macd_strategy import macd_cross_signals
 
 # --- Optuna-tuning support ---
 try:
-    from tuning.tuning_threshold import tune_threshold  # Denne funktion skal findes i tuner/tuning_threshold.py
+    from tuning.tuning_threshold import tune_threshold  # Funktion findes i tuning/tuning_threshold.py
 except ImportError:
     tune_threshold = None
 
@@ -25,15 +25,29 @@ DATA_PATH = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"
 SYMBOL = "BTC"
 GRAPH_DIR = "graphs/"
 
-# --- Ensemble voting mode ---
-USE_WEIGHTED = True   # True = Weighted Voting, False = Majority Voting
-WEIGHTS = [1.0, 0.7, 0.4]  # ML, RSI, MACD (bruges kun hvis weighted)
-
-# --- (Ekstra) Dynamisk threshold fra tuning ---
-# Standard-threshold til strategi (hvis det skal bruges)
+# --- Standard (fallback) parametre ---
 DEFAULT_THRESHOLD = 0.7
+DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]  # ML, RSI, MACD
 
-def main(threshold=DEFAULT_THRESHOLD):
+def load_tuning_results(results_path="tuning/tuning_results_threshold.txt"):
+    """
+    Loader threshold og weights fra tuning_results_threshold.txt, hvis filen findes.
+    """
+    threshold = DEFAULT_THRESHOLD
+    weights = DEFAULT_WEIGHTS
+    if os.path.exists(results_path):
+        with open(results_path, "r") as f:
+            lines = f.readlines()
+        for line in lines:
+            if "Best threshold" in line:
+                threshold = float(line.split(":")[1].strip())
+            if "Best weights" in line:
+                # Format: Best weights: [1.0, 0.8, 0.3]
+                weight_str = line.split(":")[1].strip()
+                weights = eval(weight_str)  # Sikr at det er en liste
+    return threshold, weights
+
+def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     print("🔄 Indlæser features:", DATA_PATH)
     df = pd.read_csv(DATA_PATH)
     print(f"✅ Data indlæst ({len(df)} rækker)")
@@ -44,14 +58,13 @@ def main(threshold=DEFAULT_THRESHOLD):
     model, model_path, feature_cols = train_model(df)
     print(f"✅ ML-model klar: {model_path}")
     X_pred = df[feature_cols]
-    # Her kan du indsætte thresholding hvis din ML-model outputter probabiliteter
     ml_raw = model.predict(X_pred)
     # Hvis model.predict returnerer probabiliteter:
     if hasattr(model, "predict_proba"):
         probas = model.predict_proba(X_pred)[:, 1]
         ml_signals = (probas > threshold).astype(int)
     else:
-        ml_signals = ml_raw  # Tilpas hvis din model allerede outputter 0/1 signaler
+        ml_signals = ml_raw
 
     # Indikator-strategier
     print("🔄 Genererer strategi-signaler ...")
@@ -63,13 +76,8 @@ def main(threshold=DEFAULT_THRESHOLD):
           pd.Series(macd_signals).value_counts().to_dict())
 
     # Ensemble voting
-    if USE_WEIGHTED:
-        print(f"➡️  Bruger vægtet voting med weights: {WEIGHTS}")
-        ensemble_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, weights=WEIGHTS)
-    else:
-        print("➡️  Bruger klassisk majority voting")
-        ensemble_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals)  # weights=None
-
+    print(f"➡️  Bruger vægtet voting med weights: {weights}")
+    ensemble_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, weights=weights)
     df["signal"] = ensemble_signals
 
     # Backtest
@@ -87,8 +95,8 @@ def main(threshold=DEFAULT_THRESHOLD):
     print("🔄 Sender grafer til Telegram ...")
     send_telegram_message(
         f"✅ Backtest for {SYMBOL} afsluttet!\n"
-        f"Mode: {'Weighted' if USE_WEIGHTED else 'Majority'} voting\n"
-        f"Weights: {WEIGHTS if USE_WEIGHTED else '[1,1,1]'}\n"
+        f"Mode: Weighted voting\n"
+        f"Weights: {weights}\n"
         f"Threshold: {threshold}\n"
         f"Profit: {metrics['profit_pct']}% | Win-rate: {metrics['win_rate']*100:.1f}% | Trades: {metrics['num_trades']}"
     )
@@ -98,11 +106,16 @@ def main(threshold=DEFAULT_THRESHOLD):
     print("🎉 Hele flowet er nu automatisk!")
 
 if __name__ == "__main__":
-    # Mulighed 1: Kør tuning før main (via argument eller konfig)
+    # --- Dynamisk load af threshold og weights fra tuning, hvis valgt eller findes ---
+    # Prioritet: --tune > tuning_results.txt > defaults
     if "--tune" in sys.argv and tune_threshold:
-        send_telegram_message("🔧 Starter automatisk tuning af threshold...")
-        best_threshold = tune_threshold()
-        send_telegram_message(f"🏆 Bedste fundne threshold: {best_threshold:.3f} – genstarter backtest med ny værdi.")
-        safe_run(lambda: main(threshold=best_threshold))
+        send_telegram_message("🔧 Starter automatisk tuning af threshold og weights...")
+        best_threshold, best_weights = tune_threshold()
+        send_telegram_message(
+            f"🏆 Bedste fundne threshold: {best_threshold:.3f}, weights: {best_weights} – genstarter backtest med nye værdier."
+        )
+        safe_run(lambda: main(threshold=best_threshold, weights=best_weights))
     else:
-        safe_run(main)
+        # Prøv at loade tuning-results hvis de findes
+        threshold, weights = load_tuning_results()
+        safe_run(lambda: main(threshold=threshold, weights=weights))
