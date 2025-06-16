@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from features.features_pipeline import generate_features, save_features, load_features
 
-RAW_DATA_PATH = "data/test_data/BTCUSDT_1h_test.csv"
+RAW_DATA_PATH = "test_data/BTCUSDT_1h_test.csv"
 SYMBOL = "BTC"
 TIMEFRAME = "1h"
 VERSION = "test"
