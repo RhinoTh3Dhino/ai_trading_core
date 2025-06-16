@@ -96,6 +96,9 @@ checkpoints/
 !data/*.example
 !test_data/
 !test_data/*.csv
+!data/test_data/
+!data/test_data/*.csv
+
 
 
 # === Tuning og Optuna logs/results (IGNORER ALT UNDTAGEN TEMPLATES OG .md) ===
