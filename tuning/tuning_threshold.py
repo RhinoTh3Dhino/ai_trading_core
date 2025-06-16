@@ -6,8 +6,7 @@ import optuna
 import logging
 import pandas as pd
 from datetime import datetime
-from telegram import Bot
-from dotenv import load_dotenv  # <-- Tilføj denne linje!
+from dotenv import load_dotenv  # <-- Behold denne!
 
 from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
@@ -19,7 +18,27 @@ from ensemble.majority_vote_ensemble import weighted_vote_ensemble
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-bot = Bot(token=TELEGRAM_TOKEN)
+
+def telegram_enabled():
+    """Returnerer True hvis Telegram er korrekt konfigureret (og ikke dummy i CI)."""
+    if not TELEGRAM_TOKEN or TELEGRAM_TOKEN.lower() in ("", "none", "dummy_token"):
+        return False
+    if not TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID.lower() in ("", "none", "dummy_id"):
+        return False
+    return True
+
+# --- Robust Telegram-funktion (fejler aldrig i CI) ---
+def send_telegram_message(message):
+    if telegram_enabled():
+        try:
+            from telegram import Bot
+            bot = Bot(token=TELEGRAM_TOKEN)
+            bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        except Exception as e:
+            logger = get_tuning_logger()
+            logger.error(f"Telegram-fejl: {e}")
+    else:
+        print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {message}")
 
 # === Konstanter til tuning ===
 DATA_PATH = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"
@@ -47,13 +66,6 @@ def get_tuning_logger():
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     return logger
-
-def send_telegram_message(message):
-    try:
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-    except Exception as e:
-        logger = get_tuning_logger()
-        logger.error(f"Telegram-fejl: {e}")
 
 # === OPTUNA-OBJECTIVE: Tune threshold OG weights ===
 def objective(trial):
