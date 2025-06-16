@@ -76,7 +76,6 @@ jobs:
           else
             git commit -m "Auto-update CHANGELOG.md"
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            git pull --rebase origin $BRANCH
             git push origin $BRANCH
           fi
         env:
