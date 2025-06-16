@@ -24,6 +24,12 @@ jobs:
         with:
           python-version: 3.11
 
+      # 💡 Installer pip & afhængigheder (NYT STEP - før tests)
+      - name: Installer pip & afhængigheder
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       # 💡 Ekstra tip: Print miljø og status for debugging
       - name: Print system info
         run: |
