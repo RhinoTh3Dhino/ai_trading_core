@@ -17,7 +17,7 @@ from strategies.macd_strategy import macd_cross_signals
 
 # --- Optuna-tuning support ---
 try:
-    from tuning.tuning_threshold import tune_threshold  # Funktion findes i tuning/tuning_threshold.py
+    from tuning.tuning_threshold import tune_threshold
 except ImportError:
     tune_threshold = None
 
@@ -42,9 +42,8 @@ def load_tuning_results(results_path="tuning/tuning_results_threshold.txt"):
             if "Best threshold" in line:
                 threshold = float(line.split(":")[1].strip())
             if "Best weights" in line:
-                # Format: Best weights: [1.0, 0.8, 0.3]
                 weight_str = line.split(":")[1].strip()
-                weights = eval(weight_str)  # Sikr at det er en liste
+                weights = eval(weight_str)
     return threshold, weights
 
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
@@ -59,7 +58,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     print(f"✅ ML-model klar: {model_path}")
     X_pred = df[feature_cols]
     ml_raw = model.predict(X_pred)
-    # Hvis model.predict returnerer probabiliteter:
     if hasattr(model, "predict_proba"):
         probas = model.predict_proba(X_pred)[:, 1]
         ml_signals = (probas > threshold).astype(int)
@@ -91,7 +89,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     plot_path = plot_backtest(balance_df, symbol=SYMBOL, save_dir=GRAPH_DIR)
     drawdown_path = plot_drawdown(balance_df, symbol=SYMBOL, save_dir=GRAPH_DIR)
 
-    # Telegram
+    # Telegram (robust: fejler aldrig i CI/test)
     print("🔄 Sender grafer til Telegram ...")
     send_telegram_message(
         f"✅ Backtest for {SYMBOL} afsluttet!\n"
@@ -107,7 +105,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
 
 if __name__ == "__main__":
     # --- Dynamisk load af threshold og weights fra tuning, hvis valgt eller findes ---
-    # Prioritet: --tune > tuning_results.txt > defaults
     if "--tune" in sys.argv and tune_threshold:
         send_telegram_message("🔧 Starter automatisk tuning af threshold og weights...")
         best_threshold, best_weights = tune_threshold()

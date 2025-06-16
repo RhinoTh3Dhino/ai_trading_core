@@ -6,10 +6,18 @@ import datetime
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
+def telegram_enabled():
+    """Returnerer True hvis Telegram er korrekt konfigureret (og ikke dummy i CI)."""
+    if not TELEGRAM_TOKEN or TELEGRAM_TOKEN.lower() in ("", "none", "dummy_token"):
+        return False
+    if not TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID.lower() in ("", "none", "dummy_id"):
+        return False
+    return True
+
 def send_telegram_message(msg, parse_mode=None):
     """Sender en tekstbesked til din Telegram-bot."""
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Telegram ikke konfigureret (TELEGRAM_BOT_TOKEN/CHAT_ID mangler).")
+    if not telegram_enabled():
+        print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     data = {
@@ -29,8 +37,8 @@ def send_telegram_message(msg, parse_mode=None):
 
 def send_telegram_photo(photo_path, caption=""):
     """Sender et billede (fx graf) til Telegram."""
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Telegram ikke konfigureret.")
+    if not telegram_enabled():
+        print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     data = {
@@ -50,8 +58,8 @@ def send_telegram_photo(photo_path, caption=""):
 
 def send_telegram_document(doc_path, caption=""):
     """Sender et dokument/CSV til Telegram."""
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ Telegram ikke konfigureret.")
+    if not telegram_enabled():
+        print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
     data = {
