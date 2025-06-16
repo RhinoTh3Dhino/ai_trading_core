@@ -1,6 +1,8 @@
 name: Auto Backup
 
 on:
+  push:
+    branches: [ "ai_bot_dev", "ai_bot_test", "ai_bot_pro" ]  # Kør på alle vigtige branches
   schedule:
     - cron: "0 3 * * *"   # Kør dagligt kl. 03:00 UTC
   workflow_dispatch:      # Muliggør manuel kørsel fra GitHub Actions

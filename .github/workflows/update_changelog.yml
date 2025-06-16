@@ -2,9 +2,9 @@ name: Auto Update Changelog
 
 on:
   push:
-    branches: [ main ]
+    branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro ]  # Kør på alle relevante branches
   schedule:
-    - cron: "0 3 * * *"  # Kør hver nat kl. 03:00 UTC (tilpas som du vil)
+    - cron: "0 3 * * *"  # Kør hver nat kl. 03:00 UTC
 
 jobs:
   changelog:
@@ -65,8 +65,10 @@ jobs:
         run: |
           git add CHANGELOG.md
           git commit -m "Auto-update CHANGELOG.md"
-          git pull --rebase origin main
-          git push
+          # Find ud af hvilken branch vi er på og pull/push korrekt:
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          git pull --rebase origin $BRANCH
+          git push origin $BRANCH
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -77,18 +79,6 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "✅ CHANGELOG.md er automatisk opdateret og committet! 🚀"
-
-      # (Ekstra: Auto-tagging – aktiver hvis du vil have versionsnummer/tag ved auto-commit)
-      # - name: Create Tag
-      #   uses: EndBug/latest-tag@v1
-      #   with:
-      #     tag: v${{ github.run_number }}
-
-      # (Ekstra: Auto-generer changelog/release-drafter – kan bruges til at lave professionelle releases automatisk)
-      # - name: Draft Release Notes
-      #   uses: release-drafter/release-drafter@v5
-      #   with:
-      #     config-name: release-drafter.yml
 
       # 💡 Ekstra tip: Print succes/summary til loggen for overblik
       - name: Done summary
