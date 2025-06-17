@@ -6,13 +6,12 @@ from dotenv import load_dotenv
 from utils.backup import make_backup
 from utils.botstatus import update_bot_status
 from utils.changelog import append_to_changelog
-from utils.telegram_utils import (
-    send_telegram_message,
-)
+from utils.telegram_utils import send_telegram_message
 from utils.robust_utils import safe_run
 
 # Importér din engine pipeline-funktion (fra engine.py)
 from bot.engine import main as engine_main
+from bot.engine import load_best_ensemble_params  # <-- så main.py altid bruger tunede parametre
 
 # Indlæs miljøvariabler
 load_dotenv()
@@ -26,7 +25,10 @@ def main_trading_cycle():
     Kører hele trading-pipelinen fra engine.py og laver backup, status, logging.
     """
     print("✅ Botten starter trading-cyklus...")
-    engine_main()  # Kør din trading-pipeline!
+
+    # Hent de bedste tuning-parametre (threshold + weights) før hver run!
+    threshold, weights = load_best_ensemble_params()
+    engine_main(threshold=threshold, weights=weights)
 
     backup_path = make_backup(
         keep_days=7,

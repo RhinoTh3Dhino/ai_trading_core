@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import pandas as pd
 import numpy as np
 
@@ -29,14 +30,30 @@ GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]  # ML, RSI, MACD
 
-def load_tuning_results(results_path="tuning/tuning_results_threshold.txt"):
+def load_best_ensemble_params(
+    json_path="tuning/best_ensemble_params.json",
+    txt_path="tuning/tuning_results_threshold.txt"
+):
     """
-    Loader threshold og weights fra tuning_results_threshold.txt, hvis filen findes.
+    Loader threshold og weights – først fra JSON snapshot, ellers fra TXT-resultat.
+    Garanterer at pipeline altid bruger de bedste tilgængelige parametre.
     """
     threshold = DEFAULT_THRESHOLD
     weights = DEFAULT_WEIGHTS
-    if os.path.exists(results_path):
-        with open(results_path, "r") as f:
+    # Prøv JSON snapshot først (det er den nye officielle version)
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r") as f:
+                data = json.load(f)
+            threshold = data.get("threshold", DEFAULT_THRESHOLD)
+            weights = data.get("weights", DEFAULT_WEIGHTS)
+            print(f"[INFO] Indlæst tuning-parametre fra {json_path}: threshold={threshold}, weights={weights}")
+            return threshold, weights
+        except Exception as e:
+            print(f"[ADVARSEL] Kunne ikke indlæse {json_path}: {e}")
+    # Fallback til TXT, hvis JSON fejler eller mangler
+    if os.path.exists(txt_path):
+        with open(txt_path, "r") as f:
             lines = f.readlines()
         for line in lines:
             if "Best threshold" in line:
@@ -44,6 +61,9 @@ def load_tuning_results(results_path="tuning/tuning_results_threshold.txt"):
             if "Best weights" in line:
                 weight_str = line.split(":")[1].strip()
                 weights = eval(weight_str)
+        print(f"[INFO] Indlæst tuning-parametre fra {txt_path}: threshold={threshold}, weights={weights}")
+    else:
+        print(f"[INFO] Bruger default-parametre: threshold={threshold}, weights={weights}")
     return threshold, weights
 
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
@@ -113,6 +133,6 @@ if __name__ == "__main__":
         )
         safe_run(lambda: main(threshold=best_threshold, weights=best_weights))
     else:
-        # Prøv at loade tuning-results hvis de findes
-        threshold, weights = load_tuning_results()
+        # Prøv at loade tuning-snapshot (JSON) eller fallback til TXT
+        threshold, weights = load_best_ensemble_params()
         safe_run(lambda: main(threshold=threshold, weights=weights))

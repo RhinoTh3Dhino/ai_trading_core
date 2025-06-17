@@ -1,11 +1,12 @@
 import sys
 import os
+import json
+from datetime import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import optuna
 import logging
 import pandas as pd
-from datetime import datetime
 from dotenv import load_dotenv  # <-- Behold denne!
 
 from models.model_training import train_model
@@ -27,7 +28,6 @@ def telegram_enabled():
         return False
     return True
 
-# --- Robust Telegram-funktion (fejler aldrig i CI) ---
 def send_telegram_message(message):
     if telegram_enabled():
         try:
@@ -43,11 +43,10 @@ def send_telegram_message(message):
 # === Konstanter til tuning ===
 DATA_PATH = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"
 SYMBOL = "BTC"
-
-# === Filstier (alt havner i tuning/) ===
 TUNER_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(TUNER_DIR, "tuning_log.txt")
 RESULTS_PATH = os.path.join(TUNER_DIR, "tuning_results_threshold.txt")
+SNAPSHOT_PATH = os.path.join(TUNER_DIR, "best_ensemble_params.json")
 
 # --- Sikr at tuning-mappen findes ---
 if not os.path.exists(TUNER_DIR):
@@ -56,7 +55,7 @@ if not os.path.exists(TUNER_DIR):
 print(f"[INFO] Logfil skrives til: {LOG_PATH}")
 print(f"[INFO] Resultatfil skrives til: {RESULTS_PATH}")
 
-# === Robust logger-setup (virker ved både import og direkte kørsel) ===
+# === Logger-setup ===
 def get_tuning_logger():
     logger = logging.getLogger("tuning_logger")
     logger.setLevel(logging.INFO)
@@ -71,7 +70,6 @@ def get_tuning_logger():
 def objective(trial):
     logger = get_tuning_logger()
     threshold = trial.suggest_float("threshold", 0.5, 0.9)
-    # Nu: Tune weights for ML, RSI og MACD
     weight_ml = trial.suggest_float("weight_ml", 0.0, 2.0)
     weight_rsi = trial.suggest_float("weight_rsi", 0.0, 2.0)
     weight_macd = trial.suggest_float("weight_macd", 0.0, 2.0)
@@ -128,6 +126,15 @@ def tune_threshold():
             f"Best weights: {best_weights}\n"
             f"Profit: {best_value:.2f}\n"
         )
+    # --- Gem snapshot som JSON ---
+    snapshot = {
+        "threshold": float(best_threshold),
+        "weights": [float(w) for w in best_weights],
+        "timestamp": datetime.now().isoformat()
+    }
+    with open(SNAPSHOT_PATH, "w") as f:
+        json.dump(snapshot, f, indent=2)
+    print(f"[INFO] Snapshot gemt: {SNAPSHOT_PATH}")
     return best_threshold, best_weights
 
 if __name__ == "__main__":
