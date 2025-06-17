@@ -197,3 +197,7 @@
 
 ## [2025-06-17]
 - Step 5: Automatisk changelog test
+
+
+## [2025-06-17]
+- Step 5: Automatisk changelog test
