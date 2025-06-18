@@ -235,3 +235,7 @@
 ## [2025-06-18]
 - Step 5: Automatisk changelog test
 >>>>>>> f0953d03007dc6ce1b57ff8855b367a0bfd5cb98
+
+
+## [2025-06-18]
+- Step 5: Automatisk changelog test
