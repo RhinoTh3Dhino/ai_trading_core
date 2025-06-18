@@ -1,0 +1,23 @@
+[2025-06-18 21:35:59] Sender besked: ❌ Bot FEJLEDE under kørsel: evaluate_strategies() got an unexpected keyword argument 'ml_signals'
+[2025-06-18 21:35:59] Besked sendt OK.
+[2025-06-18 21:39:34] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.68% | Win-rate: 50.0% | Trades: 13
+
+📊 Strategi-score:
+ML:    {'profit_pct': np.float64(-0.27), 'win_rate': np.float64(0.4615), 'drawdown_pct': np.float64(-0.97), 'num_trades': 28}
+RSI:   {'profit_pct': np.float64(-0.82), 'win_rate': np.float64(0.6364), 'drawdown_pct': np.float64(-0.82), 'num_trades': 22}
+MACD:  {'profit_pct': np.float64(0.38), 'win_rate': np.float64(0.4375), 'drawdown_pct': np.float64(-1.19), 'num_trades': 34}
+Ensemble: {'profit_pct': np.float64(0.68), 'win_rate': np.float64(0.5), 'drawdown_pct': np.float64(-0.9), 'num_trades': 26}
+
+[2025-06-18 21:39:34] Besked sendt OK.
+[2025-06-18 21:39:34] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-18 21:39:34] Billede sendt OK.
+[2025-06-18 21:39:34] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-18 21:39:34] Billede sendt OK.
+[2025-06-18 21:39:34] Sender billede: graphs/strategy_scores_20250618_213932.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-18 21:39:35] Billede sendt OK.
+[2025-06-18 21:39:35] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-18\backup_21-39-35
+[2025-06-18 21:39:35] Besked sendt OK.
