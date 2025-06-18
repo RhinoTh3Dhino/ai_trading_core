@@ -3,13 +3,16 @@ import os
 import json
 import pandas as pd
 import numpy as np
+import datetime  # ← til timestamp til grafik
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
+from backtest.metrics import evaluate_strategies   # ← NYT!
 from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
+from visualization.plot_strategy_score import plot_strategy_scores  # ← NYT!
 from utils.telegram_utils import send_telegram_photo, send_telegram_message
 from utils.robust_utils import safe_run
 from ensemble.majority_vote_ensemble import weighted_vote_ensemble
@@ -26,21 +29,15 @@ DATA_PATH = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"
 SYMBOL = "BTC"
 GRAPH_DIR = "graphs/"
 
-# --- Standard (fallback) parametre ---
 DEFAULT_THRESHOLD = 0.7
-DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]  # ML, RSI, MACD
+DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]
 
 def load_best_ensemble_params(
     json_path="tuning/best_ensemble_params.json",
     txt_path="tuning/tuning_results_threshold.txt"
 ):
-    """
-    Loader threshold og weights – først fra JSON snapshot, ellers fra TXT-resultat.
-    Garanterer at pipeline altid bruger de bedste tilgængelige parametre.
-    """
     threshold = DEFAULT_THRESHOLD
     weights = DEFAULT_WEIGHTS
-    # Prøv JSON snapshot først (det er den nye officielle version)
     if os.path.exists(json_path):
         try:
             with open(json_path, "r") as f:
@@ -51,7 +48,6 @@ def load_best_ensemble_params(
             return threshold, weights
         except Exception as e:
             print(f"[ADVARSEL] Kunne ikke indlæse {json_path}: {e}")
-    # Fallback til TXT, hvis JSON fejler eller mangler
     if os.path.exists(txt_path):
         with open(txt_path, "r") as f:
             lines = f.readlines()
@@ -104,27 +100,52 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     metrics = calc_backtest_metrics(trades_df, balance_df)
     print("Backtest-metrics:", metrics)
 
+    # === NYT: Strategi-score på tværs af signaler ===
+    strat_scores = evaluate_strategies(
+        df=df,
+        ml_signals=ml_signals,
+        rsi_signals=rsi_signals,
+        macd_signals=macd_signals,
+        ensemble_signals=ensemble_signals,
+        trades_df=trades_df,
+        balance_df=balance_df
+    )
+    print("Strategi-score:", strat_scores)
+
+    # === NYT: Visualisering af strategi-score
+    score_plot_path = os.path.join(
+        GRAPH_DIR, f"strategy_scores_{datetime.datetime.now():%Y%m%d_%H%M%S}.png"
+    )
+    plot_strategy_scores(strat_scores, save_path=score_plot_path)
+    print(f"✅ Strategi-score-graf gemt: {score_plot_path}")
+
     # Grafer
     print("🔄 Genererer grafer ...")
     plot_path = plot_backtest(balance_df, symbol=SYMBOL, save_dir=GRAPH_DIR)
     drawdown_path = plot_drawdown(balance_df, symbol=SYMBOL, save_dir=GRAPH_DIR)
 
-    # Telegram (robust: fejler aldrig i CI/test)
+    # Telegram (inkluder strategi-score og graf)
     print("🔄 Sender grafer til Telegram ...")
     send_telegram_message(
         f"✅ Backtest for {SYMBOL} afsluttet!\n"
         f"Mode: Weighted voting\n"
         f"Weights: {weights}\n"
         f"Threshold: {threshold}\n"
-        f"Profit: {metrics['profit_pct']}% | Win-rate: {metrics['win_rate']*100:.1f}% | Trades: {metrics['num_trades']}"
+        f"Profit: {metrics['profit_pct']}% | Win-rate: {metrics['win_rate']*100:.1f}% | Trades: {metrics['num_trades']}\n"
+        f"\n"
+        f"📊 Strategi-score:\n"
+        f"ML:    {strat_scores['ML']}\n"
+        f"RSI:   {strat_scores['RSI']}\n"
+        f"MACD:  {strat_scores['MACD']}\n"
+        f"Ensemble: {strat_scores['ENSEMBLE']}\n"
     )
     send_telegram_photo(plot_path, caption=f"📈 Balanceudvikling for {SYMBOL}")
     send_telegram_photo(drawdown_path, caption=f"📉 Drawdown for {SYMBOL}")
+    send_telegram_photo(score_plot_path, caption="📊 Strategi-score ML/RSI/MACD/Ensemble")
 
     print("🎉 Hele flowet er nu automatisk!")
 
 if __name__ == "__main__":
-    # --- Dynamisk load af threshold og weights fra tuning, hvis valgt eller findes ---
     if "--tune" in sys.argv and tune_threshold:
         send_telegram_message("🔧 Starter automatisk tuning af threshold og weights...")
         best_threshold, best_weights = tune_threshold()
@@ -133,6 +154,5 @@ if __name__ == "__main__":
         )
         safe_run(lambda: main(threshold=best_threshold, weights=best_weights))
     else:
-        # Prøv at loade tuning-snapshot (JSON) eller fallback til TXT
         threshold, weights = load_best_ensemble_params()
         safe_run(lambda: main(threshold=threshold, weights=weights))
