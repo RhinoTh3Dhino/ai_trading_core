@@ -214,6 +214,7 @@
 ## [2025-06-18]
 - Step 5: Automatisk changelog test
 
+<<<<<<< HEAD
 ### 2025-06-18 19:37:27
 ✅ Bot kørte og lavede backup: backups\2025-06-18\backup_19-37-27
 ---
@@ -229,3 +230,8 @@
 ### 2025-06-18 20:05:07
 ✅ Bot kørte og lavede backup: backups\2025-06-18\backup_20-05-06
 ---
+=======
+
+## [2025-06-18]
+- Step 5: Automatisk changelog test
+>>>>>>> f0953d03007dc6ce1b57ff8855b367a0bfd5cb98
