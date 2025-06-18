@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import optuna
 import logging
 import pandas as pd
-from dotenv import load_dotenv  # <-- Behold denne!
+from dotenv import load_dotenv
 
 from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
@@ -135,6 +135,7 @@ def tune_threshold():
     with open(SNAPSHOT_PATH, "w") as f:
         json.dump(snapshot, f, indent=2)
     print(f"[INFO] Snapshot gemt: {SNAPSHOT_PATH}")
+    send_telegram_message(f"💾 Ensemble-snapshot gemt: {SNAPSHOT_PATH} \nThreshold: {best_threshold:.3f}\nWeights: {best_weights}")
     return best_threshold, best_weights
 
 if __name__ == "__main__":

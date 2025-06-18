@@ -28,6 +28,7 @@ def main_trading_cycle():
 
     # Hent de bedste tuning-parametre (threshold + weights) før hver run!
     threshold, weights = load_best_ensemble_params()
+    print(f"[INFO] Bruger threshold={threshold}, weights={weights} til dette run.")
     engine_main(threshold=threshold, weights=weights)
 
     backup_path = make_backup(
