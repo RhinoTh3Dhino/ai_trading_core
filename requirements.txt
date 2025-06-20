@@ -1,5 +1,5 @@
 pandas==2.2.3
-numpy==2.2.6
+numpy==1.26.4
 matplotlib==3.10.3
 scikit-learn==1.6.1
 python-dotenv==1.1.0
@@ -12,3 +12,8 @@ ccxt==4.4.86
 scipy==1.15.3
 optuna==3.6.1
 python-telegram-bot==13.15
+shap==0.45.1           # <-- Tilføjet for explainable AI / feature importance
+
+# (Valgfrit, men ofte relevant)
+joblib==1.4.2          # For model-save/load (bruges af scikit-learn)
+

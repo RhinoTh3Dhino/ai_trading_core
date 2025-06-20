@@ -239,3 +239,90 @@
 
 ## [2025-06-18]
 - Step 5: Automatisk changelog test
+
+### 2025-06-19 00:19:31
+❌ Bot fejlede: Cannot cast array data from dtype('O') to dtype('float64') according to the rule 'safe'
+---
+
+### 2025-06-19 00:32:47
+❌ Bot fejlede: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+---
+
+### 2025-06-20 17:41:08
+❌ Bot fejlede: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+---
+
+### 2025-06-20 21:09:53
+❌ Bot fejlede: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+---
+
+### 2025-06-20 21:17:56
+❌ Bot fejlede: Multi-dimensional indexing (e.g. `obj[:, None]`) is no longer supported. Convert to a numpy array before indexing instead.
+---
+
+### 2025-06-20 21:24:15
+❌ Bot fejlede: Multi-dimensional indexing (e.g. `obj[:, None]`) is no longer supported. Convert to a numpy array before indexing instead.
+---
+
+### 2025-06-20 21:29:15
+❌ Bot fejlede: Multi-dimensional indexing (e.g. `obj[:, None]`) is no longer supported. Convert to a numpy array before indexing instead.
+---
+
+### 2025-06-20 21:35:22
+❌ Bot fejlede: Multi-dimensional indexing (e.g. `obj[:, None]`) is no longer supported. Convert to a numpy array before indexing instead.
+---
+
+### 2025-06-20 21:53:10
+❌ Bot fejlede: unhashable type: 'numpy.ndarray'
+---
+
+### 2025-06-20 22:02:46
+❌ Bot fejlede: unhashable type: 'numpy.ndarray'
+---
+
+### 2025-06-20 22:35:20
+❌ Bot fejlede: only length-1 arrays can be converted to Python scalars
+---
+
+### 2025-06-20 22:43:47
+❌ Bot fejlede: only length-1 arrays can be converted to Python scalars
+---
+
+### 2025-06-20 22:50:54
+❌ Bot fejlede: unhashable type: 'numpy.ndarray'
+---
+
+### 2025-06-20 23:00:14
+❌ Bot fejlede: unhashable type: 'numpy.ndarray'
+---
+
+### 2025-06-20 23:10:19
+❌ Bot fejlede: shape mismatch: objects cannot be broadcast to a single shape.  Mismatch is between arg 2 with shape (15, 3, 3) and arg 3 with shape (15,).
+---
+
+### 2025-06-20 23:18:56
+❌ Bot fejlede: too many indices for array: array is 0-dimensional, but 1 were indexed
+---
+
+### 2025-06-20 23:46:11
+❌ Bot fejlede: ufunc 'absolute' did not contain a loop with signature matching types <class 'numpy.dtypes.StrDType'> -> None
+---
+
+### 2025-06-20 23:55:56
+❌ Bot fejlede: ufunc 'absolute' did not contain a loop with signature matching types <class 'numpy.dtypes.StrDType'> -> None
+---
+
+### 2025-06-21 00:02:14
+❌ Bot fejlede: The feature names should match those that were passed during fit.
+Feature names unseen at fit time:
+- volume_spike
+
+---
+
+### 2025-06-21 00:09:19
+✅ Bot kørte og lavede backup: backups\2025-06-21\backup_00-09-18
+---
+
+### 2025-06-21 00:39:17
+✅ Bot kørte og lavede backup: backups\2025-06-21\backup_00-39-17
+---

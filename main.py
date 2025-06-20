@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from utils.backup import make_backup
 from utils.botstatus import update_bot_status
 from utils.changelog import append_to_changelog
-from utils.telegram_utils import send_telegram_message
+from utils.telegram_utils import send_message  # <-- NY: ENSARTET ALIAS
 from utils.robust_utils import safe_run
 
 # Importér din engine pipeline-funktion (fra engine.py)
@@ -36,13 +36,13 @@ def main_trading_cycle():
         keep_per_day=10
     )
     print(f"✅ Backup gemt: {backup_path}")
-    send_telegram_message(f"✅ Bot kørte OK og lavede backup: {backup_path}")
+    send_message(f"✅ Bot kørte OK og lavede backup: {backup_path}")
 
     return backup_path
 
 def daily_status():
     try:
-        send_telegram_message("📊 Daglig status: Botten kører fortsat! Tilpas evt. med flere metrics her.")
+        send_message("📊 Daglig status: Botten kører fortsat! Tilpas evt. med flere metrics her.")
         append_to_changelog("📊 Daglig status sendt til Telegram.")
         print("✅ Daglig status sendt.")
     except Exception as e:
@@ -50,7 +50,7 @@ def daily_status():
 
 def retrain_models():
     try:
-        send_telegram_message("🔄 Starter automatisk retrain af modeller!")
+        send_message("🔄 Starter automatisk retrain af modeller!")
         # TODO: Kald evt. retrain-funktionalitet her
         append_to_changelog("🔄 Automatisk retrain af modeller startet.")
         print("✅ Retrain-job kørt.")
@@ -59,7 +59,7 @@ def retrain_models():
 
 def heartbeat():
     try:
-        send_telegram_message("💓 Bot heartbeat: Jeg er stadig i live!")
+        send_message("💓 Bot heartbeat: Jeg er stadig i live!")
         print("✅ Heartbeat sendt.")
     except Exception as e:
         print(f"❌ Fejl ved heartbeat: {e}")
@@ -75,7 +75,7 @@ def main():
         error_msg = str(e)
         print(f"❌ Fejl under kørsel: {e}")
         try:
-            send_telegram_message(f"❌ Bot FEJLEDE under kørsel: {e}")
+            send_message(f"❌ Bot FEJLEDE under kørsel: {e}")
         except Exception as tel_e:
             print(f"❌ Telegram FEJL: {tel_e}")
     finally:

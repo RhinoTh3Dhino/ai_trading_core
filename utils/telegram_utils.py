@@ -18,15 +18,16 @@ def log_telegram(msg):
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(f"[{t}] {msg}\n")
 
-def send_telegram_message(msg, parse_mode=None):
+def send_message(msg, chat_id=None, parse_mode=None):
     log_telegram(f"Sender besked: {msg}")
     if not telegram_enabled():
         print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
         return
+    _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     data = {
-        "chat_id": int(TELEGRAM_CHAT_ID),
+        "chat_id": _chat_id,
         "text": msg
     }
     if parse_mode:
@@ -43,15 +44,19 @@ def send_telegram_message(msg, parse_mode=None):
         print(f"❌ Telegram exception: {e}")
         log_telegram(f"EXCEPTION ved sendMessage: {e}")
 
-def send_telegram_photo(photo_path, caption=""):
+# Alias så alt i dit projekt kan bruge send_message
+send_telegram_message = send_message
+
+def send_image(photo_path, caption="", chat_id=None):
     log_telegram(f"Sender billede: {photo_path} (caption: {caption})")
     if not telegram_enabled():
         print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
         log_telegram("[TESTMODE] Billede ikke sendt – Telegram inaktiv")
         return
+    _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     data = {
-        "chat_id": int(TELEGRAM_CHAT_ID),
+        "chat_id": _chat_id,
         "caption": caption
     }
     try:
@@ -68,15 +73,16 @@ def send_telegram_photo(photo_path, caption=""):
         print(f"❌ Telegram exception (billede): {e}")
         log_telegram(f"EXCEPTION ved sendPhoto: {e}")
 
-def send_telegram_document(doc_path, caption=""):
+def send_document(doc_path, caption="", chat_id=None):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
     if not telegram_enabled():
         print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
         log_telegram("[TESTMODE] Dokument ikke sendt – Telegram inaktiv")
         return
+    _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
     data = {
-        "chat_id": int(TELEGRAM_CHAT_ID),
+        "chat_id": _chat_id,
         "caption": caption
     }
     try:
@@ -93,13 +99,13 @@ def send_telegram_document(doc_path, caption=""):
         print(f"❌ Telegram exception (dokument): {e}")
         log_telegram(f"EXCEPTION ved sendDocument: {e}")
 
-def send_telegram_heartbeat():
+def send_telegram_heartbeat(chat_id=None):
     t = datetime.datetime.now().strftime("%H:%M:%S")
     msg = f"💓 Botten kører stadig! ({t})"
-    send_telegram_message(msg)
+    send_message(msg, chat_id=chat_id)
     log_telegram("Heartbeat sendt.")
 
-def send_strategy_metrics(metrics):
+def send_strategy_metrics(metrics, chat_id=None):
     msg = (
         f"Strategi-metrics:\n"
         f"Profit: {metrics.get('profit_pct', 0)}%\n"
@@ -107,19 +113,20 @@ def send_strategy_metrics(metrics):
         f"Drawdown: {metrics.get('drawdown_pct', 0)}%\n"
         f"Antal handler: {metrics.get('num_trades', 0)}"
     )
-    send_telegram_message(msg)
+    send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
-def send_status_advarsel(metrics, threshold=0.3):
+def send_status_advarsel(metrics, threshold=0.3, chat_id=None):
     if metrics.get("win_rate", 1) < threshold:
-        send_telegram_message(
-            f"⚠️ Advarsel: Win-rate er lav ({metrics['win_rate']*100:.1f}%) – check strategi!"
+        send_message(
+            f"⚠️ Advarsel: Win-rate er lav ({metrics['win_rate']*100:.1f}%) – check strategi!",
+            chat_id=chat_id
         )
         log_telegram("Advarsel om lav win-rate sendt.")
 
 # --- Testfunktion ---
 if __name__ == "__main__":
-    send_telegram_message("Testbesked fra din AI trading bot!")
+    send_message("Testbesked fra din AI trading bot!")
     send_telegram_heartbeat()
-    # send_telegram_photo("graphs/btc_balance_20250605.png", caption="Balanceudvikling")
-    # send_telegram_document("data/trades.csv", caption="Trade journal")
+    # send_image("graphs/btc_balance_20250605.png", caption="Balanceudvikling")
+    # send_document("data/trades.csv", caption="Trade journal")
