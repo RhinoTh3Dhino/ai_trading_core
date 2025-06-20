@@ -332,3 +332,7 @@ Feature names unseen at fit time:
 ## [2025-06-18]
 - Step 5: Automatisk changelog test
 
+
+
+## [2025-06-20]
+- Step 5: Automatisk changelog test
