@@ -124,9 +124,46 @@ def send_status_advarsel(metrics, threshold=0.3, chat_id=None):
         )
         log_telegram("Advarsel om lav win-rate sendt.")
 
+# --- Step 3: Regime-analyse Telegram-funktioner ---
+def send_regime_warning(regime_stats, threshold=0.3, chat_id=None):
+    """Send advarsel hvis win-rate er lav i et regime."""
+    if not regime_stats: return
+    for regime, stats in regime_stats.items():
+        if stats.get("win_rate", 1) < threshold:
+            msg = (
+                f"⚠️ ADVARSEL: Win-rate lav i regime '{regime}': {stats['win_rate']*100:.1f}%\n"
+                f"Antal handler: {stats['num_trades']} | Profit: {stats['profit_pct']}%"
+            )
+            send_message(msg, chat_id=chat_id)
+            log_telegram(f"Regime-advarsel sendt for {regime}.")
+
+def send_regime_summary(regime_stats, chat_id=None):
+    """Send regime performance summary til Telegram."""
+    if not regime_stats:
+        send_message("Ingen regime-stats tilgængelig.", chat_id=chat_id)
+        return
+    lines = ["📊 Performance pr. regime:"]
+    for regime, stats in regime_stats.items():
+        lines.append(
+            f"{regime}: Win-rate {stats['win_rate']*100:.1f}%, "
+            f"Profit {stats['profit_pct']}%, "
+            f"Trades {stats['num_trades']}"
+        )
+    send_message("\n".join(lines), chat_id=chat_id)
+    log_telegram("Regime-summary sendt.")
+
 # --- Testfunktion ---
 if __name__ == "__main__":
     send_message("Testbesked fra din AI trading bot!")
     send_telegram_heartbeat()
     # send_image("graphs/btc_balance_20250605.png", caption="Balanceudvikling")
     # send_document("data/trades.csv", caption="Trade journal")
+
+    # Test regime-funktion
+    test_stats = {
+        "bull": {"win_rate": 0.35, "profit_pct": 2.4, "num_trades": 10},
+        "bear": {"win_rate": 0.25, "profit_pct": -1.2, "num_trades": 5},
+        "neutral": {"win_rate": 0.4, "profit_pct": 0.0, "num_trades": 8}
+    }
+    send_regime_summary(test_stats)
+    send_regime_warning(test_stats, threshold=0.3)

@@ -13,14 +13,17 @@ from backtest.metrics import evaluate_strategies
 from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
 from visualization.plot_strategy_score import plot_strategy_scores
-from utils.telegram_utils import send_image, send_message
+from utils.telegram_utils import (
+    send_image, send_message,
+    send_regime_summary, send_regime_warning
+)
 from utils.robust_utils import safe_run
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
 from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 
-# FEATURE IMPORTANCE LOGNING (NYT!)
+# FEATURE IMPORTANCE LOGNING
 from visualization.feature_importance import plot_feature_importance
 from utils.feature_logging import (
     log_top_features_to_md,
@@ -40,6 +43,7 @@ GRAPH_DIR = "graphs/"
 
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]
+ADAPTIVE_WINRATE_THRESHOLD = 0.3  # Win-rate-grænse for aktiv regime
 
 def load_best_ensemble_params(
     json_path="tuning/best_ensemble_params.json",
@@ -77,6 +81,12 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     print(f"✅ Data indlæst ({len(df)} rækker)")
     print("Kolonner:", list(df.columns))
 
+    # --- NYT: Robust regime-mapping ---
+    regime_map = {0: "bull", 1: "bear", 2: "neutral"}
+    if "regime" in df.columns:
+        df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
+    print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
+
     # ML-model træning & prediction
     print("🔄 Træner eller indlæser ML-model ...")
     model, model_path, feature_cols = train_model(df)
@@ -89,21 +99,17 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     else:
         ml_signals = ml_raw
 
-    # === NYT: FEATURE IMPORTANCE, LOG & TELEGRAM ===
+    # FEATURE IMPORTANCE, LOG & TELEGRAM
     try:
         if hasattr(model, "feature_importances_"):
             imp = model.feature_importances_
-            # Sortér og tag top-5 features
             sorted_idx = np.argsort(imp)[::-1]
             top_features = [(feature_cols[i], imp[i]) for i in sorted_idx[:5]]
-            # Plot og gem
             fi_path = os.path.join(GRAPH_DIR, f"feature_importance_ML_{datetime.datetime.now():%Y%m%d_%H%M%S}.png")
             plot_feature_importance(feature_cols, imp, out_path=fi_path, method="Permutation", top_n=15)
             print(f"✅ Feature importance-plot gemt: {fi_path}")
-            # Log til BotStatus.md og historik CSV
             log_top_features_to_md(top_features, md_path="BotStatus.md", model_name="ML")
             log_top_features_csv(top_features, csv_path="data/top_features_history.csv", model_name="ML")
-            # Telegram (besked + evt. billede)
             send_top_features_telegram(top_features, send_message, chat_id=None, model_name="ML")
     except Exception as e:
         print(f"⚠️ Fejl ved feature importance-plot eller log: {e}")
@@ -128,7 +134,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     metrics = calc_backtest_metrics(trades_df, balance_df)
     print("Backtest-metrics:", metrics)
 
-    # Strategi-score på tværs af signaler
+    # Strategi-score på tværs af signaler (inkl. ROBUST regime-analyse via metrics.py)
     strat_scores = evaluate_strategies(
         df=df,
         ml_signals=ml_signals,
@@ -139,6 +145,38 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         balance_df=balance_df
     )
     print("Strategi-score:", strat_scores)
+
+    # -------- ADAPTIV REGIME-FILTER --------
+    regime_stats = strat_scores["ENSEMBLE"].get("regime_stats", {})
+    active_regimes = []
+    if regime_stats:
+        # Find regimer med tilstrækkelig win-rate
+        for regime, stats in regime_stats.items():
+            if stats["win_rate"] >= ADAPTIVE_WINRATE_THRESHOLD:
+                active_regimes.append(regime)
+        print(f"Aktive regimer for handel: {active_regimes}")
+
+        # Lav ny signal-vektor hvor vi kun handler i aktive regimer
+        filtered_signals = []
+        for idx, row in df.iterrows():
+            this_regime = str(row.get("regime", ""))
+            if this_regime in active_regimes:
+                filtered_signals.append(df.at[idx, "signal"])
+            else:
+                filtered_signals.append(0)  # HOLD, ingen handel
+        df["signal"] = filtered_signals
+
+        # Backtest igen med filtrerede signaler
+        trades_df, balance_df = run_backtest(df, signals=df["signal"].values)
+        metrics = calc_backtest_metrics(trades_df, balance_df)
+        print(f"[ADAPTIV] Backtest-metrics efter regime-filter:", metrics)
+        send_message(
+            f"🤖 Adaptiv regime-strategi aktiv!\n"
+            f"Aktive regimer: {active_regimes}\n"
+            f"Profit: {metrics['profit_pct']}% | Win-rate: {metrics['win_rate']*100:.1f}% | Trades: {metrics['num_trades']}\n"
+        )
+    else:
+        print("Ingen regime-stats fundet – adaptiv strategi springes over.")
 
     # Visualisering af strategi-score
     score_plot_path = os.path.join(
