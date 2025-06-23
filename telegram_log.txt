@@ -115,3 +115,191 @@ Ensemble: {'profit_pct': 0.45, 'win_rate': 0.4667, 'drawdown_pct': -1.12, 'num_t
 [2025-06-21 00:39:17] Billede sendt OK.
 [2025-06-21 00:39:17] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-21\backup_00-39-17
 [2025-06-21 00:39:17] Besked sendt OK.
+[2025-06-21 01:28:27] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 01:28:28] Besked sendt OK.
+[2025-06-21 01:28:28] Sender besked: ❌ Bot FEJLEDE under kørsel: 'regime'
+[2025-06-21 01:28:28] Besked sendt OK.
+[2025-06-21 01:33:50] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 01:33:50] Besked sendt OK.
+[2025-06-21 01:33:50] Sender besked: ❌ Bot FEJLEDE under kørsel: 'regime'
+[2025-06-21 01:33:50] Besked sendt OK.
+[2025-06-21 01:37:33] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 01:37:33] Besked sendt OK.
+[2025-06-21 01:37:33] Sender besked: ❌ Bot FEJLEDE under kørsel: 'regime'
+[2025-06-21 01:37:33] Besked sendt OK.
+[2025-06-21 01:44:15] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 01:44:15] Besked sendt OK.
+[2025-06-21 01:44:15] Sender besked: ❌ Bot FEJLEDE under kørsel: 'regime'
+[2025-06-21 01:44:15] Besked sendt OK.
+[2025-06-21 01:49:22] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 01:49:22] Besked sendt OK.
+[2025-06-21 01:49:22] Sender besked: ❌ Bot FEJLEDE under kørsel: 'regime'
+[2025-06-21 01:49:22] Besked sendt OK.
+[2025-06-21 01:53:44] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 01:53:44] Besked sendt OK.
+[2025-06-21 01:53:44] Sender besked: ❌ Bot FEJLEDE under kørsel: 'regime'
+[2025-06-21 01:53:44] Besked sendt OK.
+[2025-06-21 02:02:25] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14_z: 0.0862
+2. return: 0.0853
+3. volume: 0.0853
+4. rsi_14: 0.0838
+5. rsi_28_z: 0.0826
+[2025-06-21 02:02:25] Besked sendt OK.
+[2025-06-21 02:02:27] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.45% | Win-rate: 46.7% | Trades: 16
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.32, 'win_rate': 0.4615, 'drawdown_pct': -1.32, 'num_trades': 28}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.45, 'win_rate': 0.4667, 'drawdown_pct': -1.12, 'num_trades': 32, 'regime_stats': {}}
+
+[2025-06-21 02:02:27] Besked sendt OK.
+[2025-06-21 02:02:27] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-21 02:02:27] Billede sendt OK.
+[2025-06-21 02:02:27] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-21 02:02:27] Billede sendt OK.
+[2025-06-21 02:02:27] Sender billede: graphs/strategy_scores_20250621_020225.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-21 02:02:28] Billede sendt OK.
+[2025-06-21 02:02:28] Sender billede: graphs/feature_importance_ML_20250621_020225.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-21 02:02:28] Billede sendt OK.
+[2025-06-21 02:02:28] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-21\backup_02-02-28
+[2025-06-21 02:02:28] Besked sendt OK.
+[2025-06-21 02:13:12] Sender besked: 📊 Top-5 features (ML):
+1. return_z: 0.1825
+2. ema_200: 0.1709
+3. macd_z: 0.1669
+4. rsi_14_z: 0.1619
+5. macd_signal: 0.1608
+[2025-06-21 02:13:12] Besked sendt OK.
+[2025-06-21 02:13:13] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.38% | Win-rate: 50.0% | Trades: 17
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.39, 'win_rate': 0.5, 'drawdown_pct': -1.39, 'num_trades': 30}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trades': 34, 'regime_stats': {}}
+
+[2025-06-21 02:13:14] Besked sendt OK.
+[2025-06-21 02:13:14] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-21 02:13:14] Billede sendt OK.
+[2025-06-21 02:13:14] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-21 02:13:14] Billede sendt OK.
+[2025-06-21 02:13:14] Sender billede: graphs/strategy_scores_20250621_021312.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-21 02:13:14] Billede sendt OK.
+[2025-06-21 02:13:14] Sender billede: graphs/feature_importance_ML_20250621_021311.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-21 02:13:14] Billede sendt OK.
+[2025-06-21 02:13:15] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-21\backup_02-13-14
+[2025-06-21 02:13:15] Besked sendt OK.
+[2025-06-21 02:17:42] Sender besked: 📊 Top-5 features (ML):
+1. return_z: 0.1825
+2. ema_200: 0.1709
+3. macd_z: 0.1669
+4. rsi_14_z: 0.1619
+5. macd_signal: 0.1608
+[2025-06-21 02:17:42] Besked sendt OK.
+[2025-06-21 02:17:43] Sender besked: 📊 Performance pr. regime:
+bull: Win-rate 0.0%, Profit -1.19%, Trades 14
+bear: Win-rate 80.0%, Profit 0.45%, Trades 20
+[2025-06-21 02:17:43] Besked sendt OK.
+[2025-06-21 02:17:43] Regime-summary sendt.
+[2025-06-21 02:17:43] Sender besked: ⚠️ ADVARSEL: Win-rate lav i regime 'bull': 0.0%
+Antal handler: 14 | Profit: -1.19%
+[2025-06-21 02:17:43] Besked sendt OK.
+[2025-06-21 02:17:43] Regime-advarsel sendt for bull.
+[2025-06-21 02:17:44] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.38% | Win-rate: 50.0% | Trades: 17
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.39, 'win_rate': 0.5, 'drawdown_pct': -1.39, 'num_trades': 30}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trades': 34, 'regime_stats': {'bull': {'num_trades': 14, 'win_rate': 0.0, 'profit_pct': -1.19}, 'bear': {'num_trades': 20, 'win_rate': 0.8, 'profit_pct': 0.45}}}
+
+[2025-06-21 02:17:44] Besked sendt OK.
+[2025-06-21 02:17:44] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-21 02:17:45] Billede sendt OK.
+[2025-06-21 02:17:45] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-21 02:17:45] Billede sendt OK.
+[2025-06-21 02:17:45] Sender billede: graphs/strategy_scores_20250621_021743.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-21 02:17:45] Billede sendt OK.
+[2025-06-21 02:17:45] Sender billede: graphs/feature_importance_ML_20250621_021742.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-21 02:17:45] Billede sendt OK.
+[2025-06-21 02:17:45] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-21\backup_02-17-45
+[2025-06-21 02:17:45] Besked sendt OK.
+[2025-06-21 02:33:50] Sender besked: 📊 Top-5 features (ML):
+1. return_z: 0.1825
+2. ema_200: 0.1709
+3. macd_z: 0.1669
+4. rsi_14_z: 0.1619
+5. macd_signal: 0.1608
+[2025-06-21 02:33:50] Besked sendt OK.
+[2025-06-21 02:33:51] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+[2025-06-21 02:33:51] Besked sendt OK.
+[2025-06-21 02:33:52] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.39, 'win_rate': 0.5, 'drawdown_pct': -1.39, 'num_trades': 30}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trades': 34, 'regime_stats': {'bull': {'num_trades': 14, 'win_rate': 0.0, 'profit_pct': -1.19}, 'bear': {'num_trades': 20, 'win_rate': 0.8, 'profit_pct': 0.45}}}
+
+[2025-06-21 02:33:52] Besked sendt OK.
+[2025-06-21 02:33:52] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-21 02:33:53] Billede sendt OK.
+[2025-06-21 02:33:53] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-21 02:33:53] Billede sendt OK.
+[2025-06-21 02:33:53] Sender billede: graphs/strategy_scores_20250621_023351.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-21 02:33:53] Billede sendt OK.
+[2025-06-21 02:33:53] Sender billede: graphs/feature_importance_ML_20250621_023350.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-21 02:33:53] Billede sendt OK.
+[2025-06-21 02:33:53] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-21\backup_02-33-53
+[2025-06-21 02:33:53] Besked sendt OK.
