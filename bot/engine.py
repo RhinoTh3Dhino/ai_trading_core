@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import numpy as np
 import datetime
+import glob
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -37,13 +38,17 @@ try:
 except ImportError:
     tune_threshold = None
 
-DATA_PATH = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"
 SYMBOL = "BTC"
 GRAPH_DIR = "graphs/"
-
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]
 ADAPTIVE_WINRATE_THRESHOLD = 0.3  # Win-rate-grænse for aktiv regime
+
+def get_latest_csv(folder="outputs/feature_data/", pattern="btc_1h_features_*.csv"):
+    files = glob.glob(os.path.join(folder, pattern))
+    if not files:
+        raise FileNotFoundError("Ingen datafiler fundet i " + folder)
+    return max(files, key=os.path.getctime)  # Seneste fil efter creation time
 
 def load_best_ensemble_params(
     json_path="tuning/best_ensemble_params.json",
@@ -76,12 +81,14 @@ def load_best_ensemble_params(
     return threshold, weights
 
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
+    # Find og brug altid nyeste datasæt
+    DATA_PATH = get_latest_csv()
     print("🔄 Indlæser features:", DATA_PATH)
     df = pd.read_csv(DATA_PATH)
     print(f"✅ Data indlæst ({len(df)} rækker)")
     print("Kolonner:", list(df.columns))
 
-    # --- NYT: Robust regime-mapping ---
+    # Robust regime-mapping
     regime_map = {0: "bull", 1: "bear", 2: "neutral"}
     if "regime" in df.columns:
         df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
@@ -150,23 +157,21 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     regime_stats = strat_scores["ENSEMBLE"].get("regime_stats", {})
     active_regimes = []
     if regime_stats:
-        # Find regimer med tilstrækkelig win-rate
         for regime, stats in regime_stats.items():
             if stats["win_rate"] >= ADAPTIVE_WINRATE_THRESHOLD:
                 active_regimes.append(regime)
         print(f"Aktive regimer for handel: {active_regimes}")
 
-        # Lav ny signal-vektor hvor vi kun handler i aktive regimer
+        # Kun handle i aktive regimer
         filtered_signals = []
         for idx, row in df.iterrows():
             this_regime = str(row.get("regime", ""))
             if this_regime in active_regimes:
                 filtered_signals.append(df.at[idx, "signal"])
             else:
-                filtered_signals.append(0)  # HOLD, ingen handel
+                filtered_signals.append(0)  # HOLD
         df["signal"] = filtered_signals
 
-        # Backtest igen med filtrerede signaler
         trades_df, balance_df = run_backtest(df, signals=df["signal"].values)
         metrics = calc_backtest_metrics(trades_df, balance_df)
         print(f"[ADAPTIV] Backtest-metrics efter regime-filter:", metrics)

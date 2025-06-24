@@ -303,3 +303,237 @@ Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trad
 [2025-06-21 02:33:53] Billede sendt OK.
 [2025-06-21 02:33:53] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-21\backup_02-33-53
 [2025-06-21 02:33:53] Besked sendt OK.
+[2025-06-23 23:07:18] Sender besked: 📊 Top-5 features (ML):
+1. return_z: 0.1825
+2. ema_200: 0.1709
+3. macd_z: 0.1669
+4. rsi_14_z: 0.1619
+5. macd_signal: 0.1608
+[2025-06-23 23:07:19] Besked sendt OK.
+[2025-06-23 23:07:19] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+[2025-06-23 23:07:19] Besked sendt OK.
+[2025-06-23 23:07:21] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.39, 'win_rate': 0.5, 'drawdown_pct': -1.39, 'num_trades': 30}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trades': 34, 'regime_stats': {'bull': {'num_trades': 14, 'win_rate': 0.0, 'profit_pct': -1.19}, 'bear': {'num_trades': 20, 'win_rate': 0.8, 'profit_pct': 0.45}}}
+
+[2025-06-23 23:07:21] Besked sendt OK.
+[2025-06-23 23:07:21] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-23 23:07:21] Billede sendt OK.
+[2025-06-23 23:07:21] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-23 23:07:21] Billede sendt OK.
+[2025-06-23 23:07:21] Sender billede: graphs/strategy_scores_20250623_230719.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-23 23:07:21] Billede sendt OK.
+[2025-06-23 23:07:21] Sender billede: graphs/feature_importance_ML_20250623_230718.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-23 23:07:21] Billede sendt OK.
+[2025-06-23 23:07:22] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-23\backup_23-07-21
+[2025-06-23 23:07:22] Besked sendt OK.
+[2025-06-24 20:11:14] Sender besked: 📊 Top-5 features (ML):
+1. return_z: 0.1825
+2. ema_200: 0.1709
+3. macd_z: 0.1669
+4. rsi_14_z: 0.1619
+5. macd_signal: 0.1608
+[2025-06-24 20:11:14] Besked sendt OK.
+[2025-06-24 20:11:14] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+[2025-06-24 20:11:14] Besked sendt OK.
+[2025-06-24 20:11:16] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.39, 'win_rate': 0.5, 'drawdown_pct': -1.39, 'num_trades': 30}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trades': 34, 'regime_stats': {'bull': {'num_trades': 14, 'win_rate': 0.0, 'profit_pct': -1.19}, 'bear': {'num_trades': 20, 'win_rate': 0.8, 'profit_pct': 0.45}}}
+
+[2025-06-24 20:11:16] Besked sendt OK.
+[2025-06-24 20:11:16] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-24 20:11:16] Billede sendt OK.
+[2025-06-24 20:11:16] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-24 20:11:16] Billede sendt OK.
+[2025-06-24 20:11:16] Sender billede: graphs/strategy_scores_20250624_201114.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-24 20:11:16] Billede sendt OK.
+[2025-06-24 20:11:16] Sender billede: graphs/feature_importance_ML_20250624_201114.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-24 20:11:17] Billede sendt OK.
+[2025-06-24 20:21:31] Sender besked: 📊 Top-5 features (ML):
+1. return_z: 0.1825
+2. ema_200: 0.1709
+3. macd_z: 0.1669
+4. rsi_14_z: 0.1619
+5. macd_signal: 0.1608
+[2025-06-24 20:21:31] Besked sendt OK.
+[2025-06-24 20:21:31] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+[2025-06-24 20:21:31] Besked sendt OK.
+[2025-06-24 20:21:33] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.12% | Win-rate: 54.5% | Trades: 12
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.39, 'win_rate': 0.5, 'drawdown_pct': -1.39, 'num_trades': 30}
+RSI:   {'profit_pct': -0.82, 'win_rate': 0.6364, 'drawdown_pct': -0.82, 'num_trades': 22}
+MACD:  {'profit_pct': 0.38, 'win_rate': 0.4375, 'drawdown_pct': -1.19, 'num_trades': 34}
+Ensemble: {'profit_pct': 0.38, 'win_rate': 0.5, 'drawdown_pct': -1.19, 'num_trades': 34, 'regime_stats': {'bull': {'num_trades': 14, 'win_rate': 0.0, 'profit_pct': -1.19}, 'bear': {'num_trades': 20, 'win_rate': 0.8, 'profit_pct': 0.45}}}
+
+[2025-06-24 20:21:33] Besked sendt OK.
+[2025-06-24 20:21:33] Sender billede: graphs/btc_balance_20250607.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-24 20:21:33] Billede sendt OK.
+[2025-06-24 20:21:33] Sender billede: graphs/btc_drawdown_2025-06-07.png (caption: 📉 Drawdown for BTC)
+[2025-06-24 20:21:33] Billede sendt OK.
+[2025-06-24 20:21:33] Sender billede: graphs/strategy_scores_20250624_202131.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-24 20:21:34] Billede sendt OK.
+[2025-06-24 20:21:34] Sender billede: graphs/feature_importance_ML_20250624_202131.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-24 20:21:34] Billede sendt OK.
+[2025-06-24 20:32:12] Sender besked: ❌ Fejl i <lambda>: 'regime'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'regime'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 231, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 95, in main
+    print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
+                                  ~~^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'regime'
+
+[2025-06-24 20:32:12] Besked sendt OK.
+[2025-06-24 20:49:18] Sender besked: ❌ Fejl i <lambda>: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 231, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 99, in main
+    model, model_path, feature_cols = train_model(df)
+                                      ^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 254, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-24 20:49:18] Besked sendt OK.
+[2025-06-24 20:56:05] Sender besked: ❌ Fejl i <lambda>: Additivity check failed in TreeExplainer! Please ensure the data matrix you passed to the explainer is the same shape that the model was trained on. If your data shape is correct then please report this on GitHub. This check failed because for one of the samples the sum of the SHAP values was 0.310100, while the model output was 0.320000. If this difference is acceptable you can set check_additivity=False to disable this check.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 231, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 99, in main
+    model, model_path, feature_cols = train_model(df)
+                                      ^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 280, in train_model
+    new_model, selected_features, *_ = run_feature_importance_and_selection(
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 199, in run_feature_importance_and_selection
+    shap_names, shap_scores = calculate_shap_importance(model, X_val)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 133, in calculate_shap_importance
+    shap_values = explainer(X_val)
+                  ^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\shap\explainers\_tree.py", line 262, in __call__
+    v = self.shap_values(X, y=y, from_call=True, check_additivity=check_additivity, approximate=self.approximate)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\shap\explainers\_tree.py", line 510, in shap_values
+    self.assert_additivity(out, self.model.predict(X))
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\shap\explainers\_tree.py", line 678, in assert_additivity
+    check_sum(self.expected_value[i] + phi[i].sum(-1), model_output[:,i])
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\shap\explainers\_tree.py", line 674, in check_sum
+    raise ExplainerError(err_msg)
+shap.utils._exceptions.ExplainerError: Additivity check failed in TreeExplainer! Please ensure the data matrix you passed to the explainer is the same shape that the model was trained on. If your data shape is correct then please report this on GitHub. This check failed because for one of the samples the sum of the SHAP values was 0.310100, while the model output was 0.320000. If this difference is acceptable you can set check_additivity=False to disable this check.
+
+[2025-06-24 20:56:05] Besked sendt OK.
+[2025-06-24 21:04:04] Sender besked: 📊 Top-5 features (ML):
+1. low: 0.1967
+2. macd_signal: 0.1769
+3. ema_21: 0.1767
+4. macd: 0.1721
+5. ema_50: 0.1556
+[2025-06-24 21:04:04] Besked sendt OK.
+[2025-06-24 21:04:05] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bull']
+Profit: 0.38% | Win-rate: 33.3% | Trades: 7
+
+[2025-06-24 21:04:05] Besked sendt OK.
+[2025-06-24 21:04:06] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.38% | Win-rate: 33.3% | Trades: 7
+
+📊 Strategi-score:
+ML:    {'profit_pct': -0.07, 'win_rate': 0.3846, 'drawdown_pct': -0.97, 'num_trades': 28}
+RSI:   {'profit_pct': -0.6, 'win_rate': 0.375, 'drawdown_pct': -0.6, 'num_trades': 16}
+MACD:  {'profit_pct': -0.82, 'win_rate': 0.3077, 'drawdown_pct': -0.97, 'num_trades': 28}
+Ensemble: {'profit_pct': -0.82, 'win_rate': 0.3846, 'drawdown_pct': -0.97, 'num_trades': 28, 'regime_stats': {'bear': {'num_trades': 20, 'win_rate': 0.2222, 'profit_pct': -0.82}, 'bull': {'num_trades': 8, 'win_rate': 0.75, 'profit_pct': -0.3}}}
+
+[2025-06-24 21:04:06] Besked sendt OK.
+[2025-06-24 21:04:06] Sender billede: graphs/btc_balance_20250624.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-24 21:04:06] Billede sendt OK.
+[2025-06-24 21:04:06] Sender billede: graphs/btc_drawdown_2025-06-24.png (caption: 📉 Drawdown for BTC)
+[2025-06-24 21:04:07] Billede sendt OK.
+[2025-06-24 21:04:07] Sender billede: graphs/strategy_scores_20250624_210405.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-24 21:04:07] Billede sendt OK.
+[2025-06-24 21:04:07] Sender billede: graphs/feature_importance_ML_20250624_210404.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-24 21:04:07] Billede sendt OK.

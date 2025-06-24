@@ -94,7 +94,6 @@ def load_best_accuracy(meta_path="models/best_model_meta.json"):
     return 0.0
 
 def load_best_model_features(meta_path="models/best_model_meta.json"):
-    # Loader listen af features modellen blev trænet på (hvis den findes)
     if os.path.exists(meta_path):
         with open(meta_path, "r") as f:
             meta = json.load(f)
@@ -107,7 +106,7 @@ def save_best_model(model, accuracy, model_path="models/best_model.pkl", meta_pa
     meta = {
         "accuracy": accuracy,
         "saved_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "features": features  # Her gemmes listen af features modellen blev trænet på!
+        "features": features
     }
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
@@ -125,16 +124,14 @@ def calculate_permutation_importance(model, X_val, y_val):
     return [to_str(x) for x in feature_names[sorted_idx]], [float(x) for x in importance_scores[sorted_idx]]
 
 def calculate_shap_importance(model, X_val):
-    # Sikrer numeriske og float64 features
     X_val = X_val.apply(pd.to_numeric, errors='coerce').select_dtypes(include=[np.number]).fillna(0)
     X_val = X_val.astype("float64")
-    print("DEBUG - X_val dtypes for SHAP:", X_val.dtypes)  # Debug
+    print("DEBUG - X_val dtypes for SHAP:", X_val.dtypes)
     explainer = shap.Explainer(model, X_val)
-    shap_values = explainer(X_val)
+    shap_values = explainer(X_val, check_additivity=False)  # Rettelsen!
     values = np.atleast_2d(shap_values.values)
-    print("DEBUG - SHAP values dtype:", values.dtype)  # Debug
+    print("DEBUG - SHAP values dtype:", values.dtype)
     print("DEBUG - SHAP values sample:", values[:2] if values.shape[0] > 1 else values)
-    # Sikrer ALTID float dtype - prøv at caste
     try:
         values = values.astype(np.float64)
     except Exception as e:
@@ -238,7 +235,6 @@ def run_feature_importance_and_selection(
     print(shap_caption)
     print(f"Udvalgte features til retræning: {list(selected_features)}")
 
-    # Returnér OGSÅ selected_features, så du kan gemme dem sammen med modellen!
     return new_model, selected_features, perm_png, shap_png, log_path
 
 # ---------- HOVEDMODEL-TRÆNING ----------
@@ -253,7 +249,6 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
     X = df[feature_cols]
     y = df[target_col]
 
-    # --- NYT: Sikrer at alle features er numeriske og float64 ---
     X = X.apply(pd.to_numeric, errors='coerce')
     X = X.select_dtypes(include=[np.number])
     X = X.fillna(0)
@@ -276,7 +271,6 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
 
     log_model_metrics("data/model_eval.csv", y_test, preds, "RandomForest", version=version)
 
-    # --------- Feature selection og retræning ---------
     new_model, selected_features, *_ = run_feature_importance_and_selection(
         model, X_train, y_train, X_test, y_test, strategy_name="ML", telegram_chat_id=telegram_chat_id
     )
@@ -285,7 +279,6 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
     model_path = "models/best_model.pkl"
     meta_path = "models/best_model_meta.json"
 
-    # Gem nu modellen MED selected_features
     if acc > best_acc or not os.path.exists(model_path):
         save_best_model(new_model, acc, model_path, meta_path, features=selected_features)
     else:
@@ -295,7 +288,6 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
 
 def main():
     os.makedirs("models", exist_ok=True)
-    # CLI-test
     telegram_chat_id = None
     model, model_path, selected_features = train_model("data/BTCUSDT_1h_features.csv", version="v1.0.1", telegram_chat_id=telegram_chat_id)
     print("Trænede på features:", selected_features)
