@@ -435,3 +435,13 @@ Feature names unseen at fit time:
 
 ## [2025-06-26]
 - Step 5: Automatisk changelog test
+
+### Step 1: Automatisk Datafetch – færdig
+
+- Henter rå OHLCV-data fra Binance via CLI eller pipeline.
+- Data gemmes som CSV i korrekt struktur (timestamp, open, high, low, close, volume).
+- Robust fejlhåndtering med fallback til seneste fil.
+- Logning til både BotStatus.md og Telegram (inkl. emoji/status).
+- Kompatibel med Windows og Linux (UTF-8).
+- Output-mappe oprettes automatisk.
+- Klar til udvidelse med multi-coin/multi-timeframe og videre pipeline-steps.

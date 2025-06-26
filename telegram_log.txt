@@ -1104,3 +1104,9 @@ Ensemble: {'profit_pct': -0.29, 'win_rate': 0.3333, 'drawdown_pct': -1.86, 'num_
 [2025-06-26 21:58:30] Billede sendt OK.
 [2025-06-26 21:58:30] Sender billede: graphs/feature_importance_ML_20250626_215828.png (caption: 🧠 Feature Importance for ML-model)
 [2025-06-26 21:58:31] Billede sendt OK.
+[2025-06-26 22:41:38] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_224137.csv
+[2025-06-26 22:41:39] Besked sendt OK.
+[2025-06-26 22:41:39] Sender besked: ⚠️ Fetch FEJLEDE, bruger fallback: data\BTCUSDT_1h_20250626_224137.csv
+[2025-06-26 22:41:39] Besked sendt OK.
+[2025-06-26 22:46:16] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_224615.csv
+[2025-06-26 22:46:16] Besked sendt OK.
