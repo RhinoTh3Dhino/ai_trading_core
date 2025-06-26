@@ -1,3 +1,10 @@
+# === Virtuel Python-miljø ===
+.venv/
+venv/
+ENV/
+env/
+# (Undgå ALDRIG at committe environments!)
+
 # === Backups, logs og cache ===
 backups/
 backup/
@@ -26,8 +33,8 @@ models/*
 !data/*.py
 !models/*.md
 !models/*.py
-!data/model_eval.csv          # Eval-metrics må gerne trackes
-!data/*.example               # Eventuelle dataeksempler
+!data/model_eval.csv
+!data/*.example
 !data/README.md
 !data/.gitkeep
 
@@ -99,8 +106,6 @@ checkpoints/
 !data/test_data/
 !data/test_data/*.csv
 
-
-
 # === Tuning og Optuna logs/results (IGNORER ALT UNDTAGEN TEMPLATES OG .md) ===
 tuning/*.txt
 !tuning/README.md
@@ -108,3 +113,17 @@ tuning/*.txt
 
 # === Tillad specifikke templates/guides (hvis nødvendigt) ===
 !*.md
+
+# === Mac & Linux systemfiler ===
+.swp
+.swo
+
+# === Windows systemfiler ===
+ehthumbs.db
+desktop.ini
+
+# === Misc. IDE/pyinstaller artefakter ===
+*.spec
+
+# === Pyright type-checking artefakter ===
+typings/
