@@ -1071,3 +1071,36 @@ Ensemble: {'profit_pct': -0.29, 'win_rate': 0.3333, 'drawdown_pct': -1.86, 'num_
 [2025-06-26 21:30:01] Billede sendt OK.
 [2025-06-26 21:30:01] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-26\backup_21-30-01
 [2025-06-26 21:30:01] Besked sendt OK.
+[2025-06-26 21:58:28] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14: 0.2480
+2. macd_signal: 0.2031
+3. ema_21: 0.2024
+4. ema_50: 0.1834
+5. ema_200: 0.1632
+[2025-06-26 21:58:28] Besked sendt OK.
+[2025-06-26 21:58:28] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: 0.31% | Win-rate: 50.0% | Trades: 9
+
+[2025-06-26 21:58:29] Besked sendt OK.
+[2025-06-26 21:58:30] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.31% | Win-rate: 50.0% | Trades: 9
+
+📊 Strategi-score:
+ML:    {'profit_pct': -0.14, 'win_rate': 0.3636, 'drawdown_pct': -1.71, 'num_trades': 24}
+RSI:   {'profit_pct': -1.34, 'win_rate': 0.4444, 'drawdown_pct': -1.34, 'num_trades': 18}
+MACD:  {'profit_pct': -0.29, 'win_rate': 0.3333, 'drawdown_pct': -1.86, 'num_trades': 26}
+Ensemble: {'profit_pct': -0.29, 'win_rate': 0.3333, 'drawdown_pct': -1.86, 'num_trades': 26, 'regime_stats': {'neutral': {'num_trades': 5, 'win_rate': 0.0, 'profit_pct': -0.3}, 'bear': {'num_trades': 13, 'win_rate': 0.5, 'profit_pct': -1.42}, 'bull': {'num_trades': 8, 'win_rate': 0.25, 'profit_pct': 0.46}}}
+
+[2025-06-26 21:58:30] Besked sendt OK.
+[2025-06-26 21:58:30] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-26 21:58:30] Billede sendt OK.
+[2025-06-26 21:58:30] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-26 21:58:30] Billede sendt OK.
+[2025-06-26 21:58:30] Sender billede: graphs/strategy_scores_20250626_215829.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-26 21:58:30] Billede sendt OK.
+[2025-06-26 21:58:30] Sender billede: graphs/feature_importance_ML_20250626_215828.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-26 21:58:31] Billede sendt OK.

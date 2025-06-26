@@ -1,4 +1,9 @@
+import argparse
+import glob
+import os
 import pandas as pd
+from datetime import datetime
+from utils.telegram_utils import send_message
 import datetime
 from binance.client import Client
 import ta  # pip install ta
@@ -52,7 +57,56 @@ def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30, save_
         df.to_csv(save_path, index=False)
     return df
 
+def fetch_data(symbol: str, interval: str, outdir: str = "data") -> pd.DataFrame:
+    """
+    Henter data fra Binance (mockup), gemmer som CSV, logger til Telegram og BotStatus.md.
+    Fallback: Hvis fetch fejler, brug seneste gyldige fil.
+    """
+    # TODO: Erstat dette mockup med rigtig Binance-fetch
+    try:
+        # Simuleret data (erstat med rigtig fetch)
+        now = datetime.now()
+        df = pd.DataFrame({
+            "timestamp": pd.date_range(now, periods=100, freq="H"),
+            "open": 1.0,
+            "high": 1.1,
+            "low": 0.9,
+            "close": 1.0,
+            "volume": 100
+        })
+        filename = f"{symbol}_{interval}_{now.strftime('%Y%m%d_%H%M%S')}.csv"
+        outpath = os.path.join(outdir, filename)
+        os.makedirs(outdir, exist_ok=True)
+        df.to_csv(outpath, index=False)
+        msg = f"✅ Data hentet: {symbol} {interval}, {len(df)} rækker, fil: {filename}"
+        print(msg)
+        send_message(msg)
+        # Log evt. til BotStatus.md her
+        return df
+    except Exception as e:
+        # Fallback: find seneste fil
+        files = sorted(glob.glob(os.path.join(outdir, f"{symbol}_{interval}_*.csv")), key=os.path.getmtime)
+        if files:
+            fallback = files[-1]
+            df = pd.read_csv(fallback)
+            msg = f"⚠️ Fetch FEJLEDE, bruger fallback: {fallback}"
+            print(msg)
+            send_message(msg)
+            return df
+        else:
+            msg = f"❌ Fetch FEJLEDE og ingen fallback-fil fundet: {e}"
+            print(msg)
+            send_message(msg)
+            raise
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--symbol", default="BTCUSDT")
+    parser.add_argument("--interval", default="1h")
+    parser.add_argument("--outdir", default="data")
+    args = parser.parse_args()
+    fetch_data(args.symbol, args.interval, args.outdir)
+
     date_str = datetime.datetime.now().strftime("%Y%m%d")
     save_path = f"outputs/feature_data/btc_1h_features_{date_str}.csv"
     fetch_binance_ohlcv(save_path=save_path)
