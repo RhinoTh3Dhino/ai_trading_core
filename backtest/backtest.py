@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime
 import subprocess
+import argparse
 
 # Dynamisk projektroot
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -20,21 +21,16 @@ from strategies.macd_strategy import macd_cross_signals
 from utils.telegram_utils import send_message
 
 # --- Step 3: Regime-funktioner ---
-def compute_regime(df, ema_col="ema_200", price_col="close"):
+def compute_regime(df: pd.DataFrame, ema_col: str = "ema_200", price_col: str = "close") -> pd.DataFrame:
     """
-    Tilføjer en 'regime'-kolonne til df: 'bull', 'bear', 'neutral'
+    Tilføjer en 'regime'-kolonne til df: 'bull', 'bear', 'neutral'. Vectoriseret for performance.
     """
     if "regime" in df.columns:
         return df
-    regime = []
-    for idx, row in df.iterrows():
-        if row[price_col] > row[ema_col]:
-            regime.append("bull")
-        elif row[price_col] < row[ema_col]:
-            regime.append("bear")
-        else:
-            regime.append("neutral")
-    df["regime"] = regime
+    df["regime"] = np.where(
+        df[price_col] > df[ema_col], "bull",
+        np.where(df[price_col] < df[ema_col], "bear", "neutral")
+    )
     return df
 
 def regime_filter(signals, regime_col, active_regimes=["bull"]):
@@ -68,7 +64,14 @@ def get_git_hash():
     except Exception:
         return "unknown"
 
-def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.02, tp_pct=0.03):
+def run_backtest(
+    df: pd.DataFrame,
+    signals: list = None,
+    initial_balance: float = 1000,
+    fee: float = 0.00075,
+    sl_pct: float = 0.02,
+    tp_pct: float = 0.03
+) -> tuple:
     df = df.copy()
     # Flexibel timestamp-håndtering
     if "timestamp" not in df.columns and "datetime" in df.columns:
@@ -80,6 +83,10 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
         df["signal"] = signals
     elif "signal" not in df.columns:
         raise ValueError("Ingen signaler angivet til backtest!")
+
+    # Validering af inputdata
+    if df[["close", "ema_200"]].isnull().any().any():
+        raise ValueError("❌ DataFrame indeholder NaN i 'close' eller 'ema_200'!")
 
     # --- Step 3: Sørg for at der er regime-kolonne ---
     df = compute_regime(df)
@@ -108,7 +115,11 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
             entry_price, entry_time = price, timestamp
             entry_regime = regime
             position = "long"
+            balance *= (1 - fee)  # Træk fee ved køb
             trades.append({"timestamp": timestamp, "type": "BUY", "price": price, "balance": balance, "regime": regime, "profit": 0, "drawdown": None})
+        elif position is None and signal == -1:
+            # Her kan du implementere short, eller blot ignorere
+            pass
 
         if position == "long" and i == df.index[-1]:
             pct = (price - entry_price) / entry_price
@@ -129,8 +140,8 @@ def run_backtest(df, signals=None, initial_balance=1000, fee=0.00075, sl_pct=0.0
         balance_df["drawdown"] = dd * 100
         if not trades_df.empty:
             trades_df["drawdown"] = np.interp(
-                pd.to_datetime(trades_df["timestamp"]).astype(np.int64),
-                pd.to_datetime(balance_df["timestamp"]).astype(np.int64),
+                pd.to_datetime(trades_df["timestamp"]).astype('int64'),
+                pd.to_datetime(balance_df["timestamp"]).astype('int64'),
                 balance_df["drawdown"].values
             )
     else:
@@ -172,10 +183,17 @@ def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results
         df.to_csv(csv_path, mode='a', header=False, index=False)
     print(f"✅ Backtest-metrics logget til: {csv_path}")
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--feature_path", type=str, default="outputs/feature_data/btc_1h_features_v_test_20250610.csv")
+    parser.add_argument("--results_path", type=str, default="data/backtest_results.csv")
+    parser.add_argument("--balance_path", type=str, default="data/balance.csv")
+    parser.add_argument("--trades_path", type=str, default="data/trades.csv")
+    return parser.parse_args()
+
 def main():
-    # --- Dynamisk indlæsning af featurefil ---
-    feature_path = "outputs/feature_data/btc_1h_features_v_test_20250610.csv"
-    df = pd.read_csv(feature_path)
+    args = parse_args()
+    df = pd.read_csv(args.feature_path)
     if "datetime" in df.columns:
         df.rename(columns={"datetime": "timestamp"}, inplace=True)
     print("Indlæst data med kolonner:", list(df.columns))
@@ -207,10 +225,10 @@ def main():
     # --- Kør backtest ---
     trades_df, balance_df = run_backtest(df, signals=filtered_signals)
     metrics = calc_backtest_metrics(trades_df, balance_df)
-    save_backtest_results(metrics, version="v1.3.0-regime")
+    save_backtest_results(metrics, version="v1.3.0-regime", csv_path=args.results_path)
     print("Backtest-metrics:", metrics)
-    save_with_metadata(balance_df, "data/balance.csv", version="v1.3.0-regime")
-    save_with_metadata(trades_df, "data/trades.csv", version="v1.3.0-regime")
+    save_with_metadata(balance_df, args.balance_path, version="v1.3.0-regime")
+    save_with_metadata(trades_df, args.trades_path, version="v1.3.0-regime")
 
     # --- Step 3: Regime performance summary ---
     reg_stats = regime_performance(trades_df)

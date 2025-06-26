@@ -1,33 +1,59 @@
 # AI Trading Core
+Dette projekt er fundamentet for en avanceret, robust og modulær AI trading bot bygget til professionelle krav. Den anvender ensemble-strategier, avanceret feature engineering, auto-evaluering, CI/CD, versionering, Telegram-integration og er klar til både personlig brug og SaaS/multi-user udrulning.
 
-Dette projekt er fundamentet for en avanceret, robust og modulær **AI trading bot**, der benytter **ensemble-strategier**, avanceret feature engineering, automatisk strategi-score og CI/CD workflows – klar til både personlig og kommerciel brug.
+# 🚀 Funktioner & Arkitektur (Sprint 3+)
+- Automatiseret pipeline: Fra rå data til Telegram – hele flowet styres med scripts og/eller controller.
 
----
+- Avanceret ensemble-voting: Kombinerer ML, RSI, MACD (flere kan tilføjes) med vægtet voting (Optuna-tuning).
 
-## 🚀 Funktioner & Arkitektur (v. Sprint 3)
+- Strategi-score & auto-evaluering: Win-rate, profit, drawdown og trades logges og visualiseres for ML, RSI, MACD, Ensemble.
 
-- **Avanceret Ensemble-voting:** Kombinerer ML-model, RSI, MACD (og snart flere) i ét samlet signal med vægtet voting (weights tunet via Optuna).
-- **Strategi-score & Evaluering:** Automatisk evaluering og sammenligning af hver strategi (ML, RSI, MACD, Ensemble) med win-rate, profit, drawdown og antal handler.
-- **Optuna-tuning af Threshold & Weights:** Automatisk tuning af både ensemble weights og thresholds for optimal performance.
-- **Snapshot & Versionering:** Bedste weights og threshold gemmes som versioneret JSON snapshot – alle runs loader automatisk de nyeste, bedste parametre.
-- **Feature Engineering:** Understøtter flere tekniske indikatorer (ATR, VWAP, Bollinger Bands, EMA/SMA etc.).
-- **CI/CD + Backup:** Fuldt workflow for automatiske tests, backup af data og modeller, og versioneret changelog.
-- **Telegram-integration:** Status, performance, grafer og advarsler sendes løbende til Telegram (og robust fejlhåndtering i CI/test).
-- **Daglig status, heartbeat og retrain:** Botten rapporterer løbende status, og kan udvides til automatisk retrain ved lav performance.
-- **Robust fejlhåndtering og logging:** Alle kritiske funktioner logger fejl og opdaterer BotStatus.md og CHANGELOG.md.
+- Snapshot/versionering: Best weights & thresholds gemmes, alle runs loader de nyeste bedste parametre.
 
----
+- Feature engineering: Støtter mange indikatorer (ATR, EMA/SMA, MACD, RSI, Bollinger Bands m.m.), nemt at tilføje nye.
 
-## 📈 **Seneste opdateringer (Sprint 3 – Delmål 4, Step 1: Strategi-score & Evaluering)**
+- CI/CD + auto-backup: Automatisk test, backup og changelog-versionering på hver commit.
 
-- **Ny strategi-score**: Nu får du automatisk beregnet og visualiseret win-rate, profit, drawdown og antal handler **pr. strategi** (ML, RSI, MACD, Ensemble).
-- **Alt scores og rapporteres** til både konsol, Telegram og log.
-- **Modul metrics.py**: Indeholder alle core-metrics og evaluering på tværs af strategier.
-- **Engine pipeline**: Loader altid de bedste weights/thresholds og evaluerer strategi-performance i samme run.
+- Telegram-integration: Status, performance, grafer og advarsler sendes løbende (robust fejlhåndtering og heartbeat).
+
+- Daglig status, auto-retrain og alerting: Bot rapporterer automatisk status, heartbeat, og retrainer ved behov.
+
+- Robust fejlhåndtering: Alle trin logger fejl, status og kritiske events til både fil og Telegram.
+
+- Multi-coin & SaaS-ready: Bygget til nem udvidelse med flere coins og multi-user/Cloud/SaaS-setup.
+
+# 📈 Seneste opdateringer
+- Automatiseret pipeline: run_all.py styrer data → features → labels → model → eval → Telegram i ét flow.
+
+- Ny strategi-score: Automatisk pr. strategi, inklusive regime-stats.
+
+- Auto-versionering af features, labels og modeller (meta-data og snapshots).
+
+- CI/CD opdateret: .gitignore blokerer alle store/temp/miljøfiler.
+
+- Telegram-rapportering: Grafer og metrics sendes, inklusive fejl og backup-status.
 
 ---
 
 ## 🗂️ **Mappestruktur (uddrag)**
+
+ai_trading_core/
+│
+├── bot/                  # Engine, strategi og telegram scripts
+├── features/             # Feature engineering scripts
+├── fetch_data/           # Data-fetch og hentning fra Binance
+├── models/               # ML-modeller, best_model.pkl, snapshots
+├── tuning/               # Optuna, tuner-cache, tuning logs/results
+├── outputs/              # Feature-CSV, grafer, evals, backup (ikke i git)
+├── data/                 # Eval-filer, eksempelfiler, testdata
+├── logs/                 # Run-logs, fejllogs, Telegram logs
+├── .github/workflows/    # CI/CD og auto-backup scripts
+├── tests/                # Testdata og test-scripts
+├── main.py               # Hoved-controller (starter schedule-loop)
+├── run_all.py            # Automatisk pipeline fra data til eval
+├── requirements.txt      # Alle Python dependencies
+└── .gitignore            # Beskytter alle temp/store/miljøfiler
+
 
 
 
