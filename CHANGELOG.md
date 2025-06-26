@@ -431,3 +431,7 @@ Feature names unseen at fit time:
 ✅ Step 1: Automatisk datafetch implementeret i fetch_binance_data.py (CLI, logging, fallback, Telegram)
 ---
 
+
+
+## [2025-06-26]
+- Step 5: Automatisk changelog test
