@@ -2,6 +2,8 @@ import pandas as pd
 import datetime
 from binance.client import Client
 import ta  # pip install ta
+import sys
+import subprocess
 
 def add_technical_indicators(df):
     df = df.copy()
@@ -55,3 +57,8 @@ if __name__ == "__main__":
     save_path = f"outputs/feature_data/btc_1h_features_{date_str}.csv"
     fetch_binance_ohlcv(save_path=save_path)
     print("✅ Data gemt til:", save_path)
+
+    # BONUS: Kald feature engineering automatisk efter fetch!
+    # Så hele pipeline kan køres direkte fra dette script hvis ønsket.
+    # Kommentér ud hvis du bruger run_all.py til at styre hele flowet!
+    # subprocess.run([sys.executable, "features/feature_engineering.py"])
