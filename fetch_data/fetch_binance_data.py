@@ -12,7 +12,6 @@ from utils.telegram_utils import send_message
 from binance.client import Client
 import ta  # pip install ta
 
-# --- TEKNISKE INDIKATORER ---
 def add_technical_indicators(df):
     df = df.copy()
     for col in ['open', 'high', 'low', 'close', 'volume']:
@@ -32,7 +31,7 @@ def add_technical_indicators(df):
     df.loc[df["ema_50"] < df["ema_200"], "regime"] = 1  # bear
     return df
 
-def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30):
+def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30, rolling_window=None):
     client = Client(api_key=None, api_secret=None)
     end = datetime.now()
     start = end - timedelta(days=lookback_days)
@@ -48,21 +47,23 @@ def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30):
     ])
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']].copy()
+    if rolling_window:
+        df = df.iloc[-rolling_window:]  # Kun de seneste N rækker
+        print(f"ℹ️ Bruger kun de seneste {rolling_window} bars fra Binance-data.")
     return df
 
-def fetch_and_save(symbol: str, interval: str, outdir: str = "data", lookback_days: int = 30) -> pd.DataFrame:
+def fetch_and_save(symbol: str, interval: str, outdir: str = "data", lookback_days: int = 30, rolling_window: int = None) -> pd.DataFrame:
     os.makedirs(outdir, exist_ok=True)
     now = datetime.now()
     filename = f"{symbol}_{interval}_{now.strftime('%Y%m%d_%H%M%S')}.csv"
     outpath = os.path.join(outdir, filename)
     try:
-        df = fetch_binance_ohlcv(symbol, interval, lookback_days)
+        df = fetch_binance_ohlcv(symbol, interval, lookback_days, rolling_window)
         if set(['timestamp', 'open', 'high', 'low', 'close', 'volume']).issubset(df.columns):
             df.to_csv(outpath, index=False)
             msg = f"✅ Data hentet: {symbol} {interval}, {len(df)} rækker, fil: {filename}"
             print(msg)
             send_message(msg)
-            # Log til BotStatus.md med UTF-8
             with open("BotStatus.md", "a", encoding="utf-8") as logf:
                 logf.write(f"[{now}] {msg}\n")
             return df
@@ -93,11 +94,8 @@ if __name__ == "__main__":
     parser.add_argument("--interval", default="1h")
     parser.add_argument("--outdir", default="data")
     parser.add_argument("--lookback", type=int, default=30)
+    parser.add_argument("--rolling_window", type=int, default=None, help="Antal seneste bars at bruge (valgfrit)")
     args = parser.parse_args()
-    df = fetch_and_save(args.symbol, args.interval, args.outdir, args.lookback)
-    # Klar til pipeline: Kan nu kalde feature_engineering.py bagefter hvis ønsket
-    # Eksempel:
-    # os.system(f"python features/feature_engineering.py --input {outdir}/{filename} --output outputs/feature_data/{symbol.lower()}_{interval}_features_{now.strftime('%Y%m%d')}.csv")
-
-    # BONUS: Kald feature engineering automatisk efter fetch!
-    # subprocess.run([sys.executable, "features/feature_engineering.py"])
+    df = fetch_and_save(
+        args.symbol, args.interval, args.outdir, args.lookback, args.rolling_window
+    )

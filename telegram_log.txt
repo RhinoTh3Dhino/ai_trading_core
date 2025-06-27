@@ -1335,3 +1335,77 @@ Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feat
 [2025-06-27 00:07:02] Billede sendt OK.
 [2025-06-27 00:07:02] Sender billede: graphs/feature_importance_ML_20250627_000700.png (caption: 🧠 Feature Importance for ML-model)
 [2025-06-27 00:07:02] Billede sendt OK.
+[2025-06-27 23:13:31] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250627_231330.csv
+[2025-06-27 23:13:31] Besked sendt OK.
+[2025-06-27 23:13:41] Sender besked: 📊 Top-5 features (ML):
+1. volume: 0.2061
+2. macd_signal: 0.2038
+3. close: 0.1988
+4. high: 0.1978
+5. rsi_14: 0.1935
+[2025-06-27 23:13:41] Besked sendt OK.
+[2025-06-27 23:13:41] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-27 23:13:42] Besked sendt OK.
+[2025-06-27 23:13:42] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.38, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-27 23:13:43] Besked sendt OK.
+[2025-06-27 23:13:43] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-27 23:13:43] Billede sendt OK.
+[2025-06-27 23:13:43] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-27 23:13:43] Billede sendt OK.
+[2025-06-27 23:13:43] Sender billede: graphs/strategy_scores_20250627_231342.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-27 23:13:43] Billede sendt OK.
+[2025-06-27 23:13:43] Sender billede: graphs/feature_importance_ML_20250627_231341.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-27 23:13:43] Billede sendt OK.
+[2025-06-27 23:27:29] Sender besked: ✅ Data hentet: BTCUSDT 1h, 1000 rækker, fil: BTCUSDT_1h_20250627_232728.csv
+[2025-06-27 23:27:30] Besked sendt OK.
+[2025-06-27 23:33:28] Sender besked: ✅ Data hentet: BTCUSDT 1h, 1000 rækker, fil: BTCUSDT_1h_20250627_233326.csv
+[2025-06-27 23:33:28] Besked sendt OK.
+[2025-06-27 23:33:32] Sender besked: 📊 Top-5 features (ML):
+1. volume: 0.2061
+2. macd_signal: 0.2038
+3. close: 0.1988
+4. high: 0.1978
+5. rsi_14: 0.1935
+[2025-06-27 23:33:33] Besked sendt OK.
+[2025-06-27 23:33:33] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-27 23:33:33] Besked sendt OK.
+[2025-06-27 23:33:34] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.38, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-27 23:33:34] Besked sendt OK.
+[2025-06-27 23:33:34] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-27 23:33:34] Billede sendt OK.
+[2025-06-27 23:33:34] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-27 23:33:34] Billede sendt OK.
+[2025-06-27 23:33:34] Sender billede: graphs/strategy_scores_20250627_233333.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-27 23:33:35] Billede sendt OK.
+[2025-06-27 23:33:35] Sender billede: graphs/feature_importance_ML_20250627_233332.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-27 23:33:35] Billede sendt OK.

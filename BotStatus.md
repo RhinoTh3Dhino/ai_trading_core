@@ -75,3 +75,34 @@
 3. close: 0.1988
 4. high: 0.1978
 5. rsi_14: 0.1935
+[2025-06-27 23:13:30.525996] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250627_231330.csv
+
+### Top-5 features (ML) – 2025-06-27 23:13:41
+1. rsi_14: 0.0240
+2. close: 0.0221
+3. volume: 0.0125
+4. macd_signal: 0.0096
+5. high: 0.0077
+
+### Top-5 features (ML) – 2025-06-27 23:13:41
+1. volume: 0.2061
+2. macd_signal: 0.2038
+3. close: 0.1988
+4. high: 0.1978
+5. rsi_14: 0.1935
+[2025-06-27 23:27:28.466518] ✅ Data hentet: BTCUSDT 1h, 1000 rækker, fil: BTCUSDT_1h_20250627_232728.csv
+[2025-06-27 23:33:26.709279] ✅ Data hentet: BTCUSDT 1h, 1000 rækker, fil: BTCUSDT_1h_20250627_233326.csv
+
+### Top-5 features (ML) – 2025-06-27 23:33:32
+1. rsi_14: 0.0240
+2. close: 0.0221
+3. volume: 0.0125
+4. macd_signal: 0.0096
+5. high: 0.0077
+
+### Top-5 features (ML) – 2025-06-27 23:33:32
+1. volume: 0.2061
+2. macd_signal: 0.2038
+3. close: 0.1988
+4. high: 0.1978
+5. rsi_14: 0.1935
