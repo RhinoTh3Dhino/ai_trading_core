@@ -119,6 +119,16 @@ def log_engine_meta(meta_path, feature_file, threshold, weights, strat_scores, m
         f.write(f"strategy_scores: {json.dumps(strat_scores)}\n")
     print(f"📝 Engine meta logget til: {meta_path}")
 
+def log_performance_metrics(metrics, filename="outputs/performance_metrics_history.csv"):
+    import csv
+    file_exists = os.path.isfile(filename)
+    with open(filename, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(metrics.keys()))
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(metrics)
+    print(f"✅ Metrics logget til {filename}")
+
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     DATA_PATH = get_latest_csv()
     print("🔄 Indlæser features:", DATA_PATH)
@@ -188,6 +198,14 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     trades_df, balance_df = run_backtest(df, signals=ensemble_signals)
     metrics = calc_backtest_metrics(trades_df, balance_df)
     print("Backtest-metrics:", metrics)
+    # Udtræk og print de vigtigste performance-metrics
+    win_rate = metrics.get("win_rate", 0)
+    profit_pct = metrics.get("profit_pct", 0)
+    drawdown = metrics.get("max_drawdown", 0)
+    print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct}%, Drawdown: {drawdown}%")
+
+    # Log alle metrics til performance-history (step 3A)
+    log_performance_metrics(metrics)
 
     # Strategi-score på tværs af signaler (inkl. ROBUST regime-analyse via metrics.py)
     strat_scores = evaluate_strategies(
@@ -223,10 +241,15 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         trades_df, balance_df = run_backtest(df, signals=df["signal"].values)
         metrics = calc_backtest_metrics(trades_df, balance_df)
         print(f"[ADAPTIV] Backtest-metrics efter regime-filter:", metrics)
+        win_rate = metrics.get("win_rate", 0)
+        profit_pct = metrics.get("profit_pct", 0)
+        drawdown = metrics.get("max_drawdown", 0)
+        print(f"[ADAPTIV] Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct}%, Drawdown: {drawdown}%")
+        log_performance_metrics(metrics)
         send_message(
             f"🤖 Adaptiv regime-strategi aktiv!\n"
             f"Aktive regimer: {active_regimes}\n"
-            f"Profit: {metrics['profit_pct']}% | Win-rate: {metrics['win_rate']*100:.1f}% | Trades: {metrics['num_trades']}\n"
+            f"Profit: {profit_pct}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics['num_trades']}\n"
         )
     else:
         print("Ingen regime-stats fundet – adaptiv strategi springes over.")
@@ -261,7 +284,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         f"Mode: Weighted voting\n"
         f"Weights: {weights}\n"
         f"Threshold: {threshold}\n"
-        f"Profit: {metrics['profit_pct']}% | Win-rate: {metrics['win_rate']*100:.1f}% | Trades: {metrics['num_trades']}\n"
+        f"Profit: {profit_pct}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics['num_trades']}\n"
         f"\n"
         f"📊 Strategi-score:\n"
         f"ML:    {strat_scores['ML']}\n"
