@@ -4,21 +4,24 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_score, recall_score, f1_score
+from sklearn.metrics import (
+    accuracy_score, classification_report, confusion_matrix,
+    precision_score, recall_score, f1_score
+)
 import datetime
 import json
 import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import subprocess
-from utils.robust_utils import safe_run
-
-from visualization.feature_importance import plot_feature_importance, plot_shap_importance
-
-from sklearn.inspection import permutation_importance
+import argparse
+import time
 import numpy as np
 import shap
 
+from sklearn.inspection import permutation_importance
+
+from utils.robust_utils import safe_run
 from utils.telegram_utils import send_image, send_message
 from utils.feature_logging import (
     log_top_features_to_md,
@@ -26,7 +29,23 @@ from utils.feature_logging import (
     send_top_features_telegram,
 )
 
-# ---------- Robust helper ----------
+# ---- NY: Robust features-loader ----
+def read_features_auto(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("🔎 Meta-header fundet – springer første linje over (skiprows=1).")
+        df = pd.read_csv(file_path, skiprows=1)
+    else:
+        df = pd.read_csv(file_path)
+    print("🔎 Kolonner i indlæst features-DF:", list(df.columns))
+    return df
+
+def get_random_seed(cli_seed=None):
+    if cli_seed is not None:
+        return int(cli_seed)
+    return int(time.time()) % 100000
+
 def to_str(x):
     if isinstance(x, np.ndarray):
         if x.size == 1:
@@ -35,14 +54,13 @@ def to_str(x):
             return str(x.tolist())
     return str(x)
 
-# ---------- GIT & METRIC LOGGING ----------
 def get_git_hash():
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
     except:
         return "unknown"
 
-def log_model_metrics(filename, y_true, y_pred, model_name, version="v1"):
+def log_model_metrics(filename, y_true, y_pred, model_name, version="v1", random_seed=None):
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
     recall = recall_score(y_true, y_pred, average="weighted", zero_division=0)
@@ -56,6 +74,7 @@ def log_model_metrics(filename, y_true, y_pred, model_name, version="v1"):
         "version": version,
         "git_hash": git_hash,
         "model": model_name,
+        "random_seed": random_seed,
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
@@ -100,19 +119,32 @@ def load_best_model_features(meta_path="models/best_model_meta.json"):
         return meta.get("features", None)
     return None
 
-def save_best_model(model, accuracy, model_path="models/best_model.pkl", meta_path="models/best_model_meta.json", features=None):
+def save_best_model(model, accuracy, model_path="models/best_model.pkl", meta_path="models/best_model_meta.json", features=None, random_seed=None):
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
     meta = {
         "accuracy": accuracy,
         "saved_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "features": features
+        "features": features,
+        "random_seed": random_seed
     }
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
     print(f"✅ Ny bedste model gemt: {model_path} (accuracy: {accuracy:.4f}) med {len(features) if features else 'ukendt'} features")
 
-# ---------- FEATURE IMPORTANCE & SELECTION ----------
+def plot_feature_importance(feature_names, importance_scores, out_path="outputs/feature_importance.png", method="Permutation", top_n=15):
+    feature_names = np.array(feature_names)
+    importance_scores = np.array(importance_scores)
+    idx = np.argsort(importance_scores)[::-1][:top_n]
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_names[idx], importance_scores[idx])
+    plt.xlabel("Feature importance")
+    plt.title(f"{method} Feature Importance")
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+    plt.savefig(out_path)
+    plt.close()
+
 def calculate_permutation_importance(model, X_val, y_val):
     X_val = X_val.apply(pd.to_numeric, errors='coerce').select_dtypes(include=[np.number]).fillna(0)
     X_val = X_val.astype("float64")
@@ -126,12 +158,9 @@ def calculate_permutation_importance(model, X_val, y_val):
 def calculate_shap_importance(model, X_val):
     X_val = X_val.apply(pd.to_numeric, errors='coerce').select_dtypes(include=[np.number]).fillna(0)
     X_val = X_val.astype("float64")
-    print("DEBUG - X_val dtypes for SHAP:", X_val.dtypes)
     explainer = shap.Explainer(model, X_val)
-    shap_values = explainer(X_val, check_additivity=False)  # Rettelsen!
+    shap_values = explainer(X_val, check_additivity=False)
     values = np.atleast_2d(shap_values.values)
-    print("DEBUG - SHAP values dtype:", values.dtype)
-    print("DEBUG - SHAP values sample:", values[:2] if values.shape[0] > 1 else values)
     try:
         values = values.astype(np.float64)
     except Exception as e:
@@ -150,8 +179,6 @@ def calculate_shap_importance(model, X_val):
 def plot_shap_importance(feature_names, shap_scores, out_path="outputs/shap.png", top_n=15):
     feature_names = np.array(feature_names)
     shap_scores = np.array(shap_scores, dtype=np.float64)
-    print("PLOT: names dtype:", feature_names.dtype, feature_names[:5])
-    print("PLOT: scores dtype:", shap_scores.dtype, shap_scores[:5])
     idx = np.argsort(shap_scores)[::-1][:top_n]
     plt.figure(figsize=(10, 6))
     plt.barh(feature_names[idx], shap_scores[idx])
@@ -185,22 +212,18 @@ def run_feature_importance_and_selection(
     outdir = "outputs/"
     os.makedirs(outdir, exist_ok=True)
 
-    # --- Permutation Importance ---
     perm_png = f"{outdir}feature_importance_perm_{strategy_name}_{timestamp}.png"
     feat_names, imp_scores = calculate_permutation_importance(model, X_val, y_val)
     plot_feature_importance(feat_names, imp_scores, out_path=perm_png, method="Permutation", top_n=15)
     top_perm = list(zip(feat_names[:5], imp_scores[:5]))
 
-    # --- SHAP Importance ---
     shap_png = f"{outdir}feature_importance_shap_{strategy_name}_{timestamp}.png"
     shap_names, shap_scores = calculate_shap_importance(model, X_val)
     plot_shap_importance(shap_names, shap_scores, out_path=shap_png, top_n=15)
     top_shap = list(zip(shap_names[:5], shap_scores[:5]))
 
-    # --- Auto Feature Selection & retræning ---
     new_model, selected_features = auto_feature_selection(model, X_train, y_train, X_val, y_val, threshold=0.01)
 
-    # --- Logging til CSV ---
     log_path = f"{outdir}feature_importance_{strategy_name}_{timestamp}.csv"
     shap_dict = dict(zip(shap_names, shap_scores))
     shap_importance_col = [shap_dict.get(name, np.nan) for name in feat_names]
@@ -237,12 +260,14 @@ def run_feature_importance_and_selection(
 
     return new_model, selected_features, perm_png, shap_png, log_path
 
-# ---------- HOVEDMODEL-TRÆNING ----------
-def train_model(features, target_col='target', version="v1", telegram_chat_id=None):
+def train_model(features, target_col='target', version="v1", telegram_chat_id=None, random_seed=None):
     if isinstance(features, str):
-        df = pd.read_csv(features)
+        df = read_features_auto(features)
     else:
         df = features.copy()
+
+    # --- DEBUG: Print kolonner ---
+    print("🔎 Kolonner i trænings-DF:", list(df.columns))
 
     drop_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col]) and col != target_col]
     feature_cols = [col for col in df.columns if col not in drop_cols + [target_col]]
@@ -260,8 +285,12 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
     if X.isnull().any().any():
         print("⚠️ ADVARSEL: Der er NaN i features!", list(X.columns[X.isnull().any()]))
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    if random_seed is None:
+        random_seed = get_random_seed()
+    print(f"🎲 RANDOM_SEED brugt for split og model: {random_seed}")
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=random_seed)
+    model = RandomForestClassifier(n_estimators=100, random_state=random_seed)
     model.fit(X_train, y_train)
 
     preds = model.predict(X_test)
@@ -269,7 +298,7 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
     print("Accuracy:", acc)
     print(classification_report(y_test, preds))
 
-    log_model_metrics("data/model_eval.csv", y_test, preds, "RandomForest", version=version)
+    log_model_metrics("data/model_eval.csv", y_test, preds, "RandomForest", version=version, random_seed=random_seed)
 
     new_model, selected_features, *_ = run_feature_importance_and_selection(
         model, X_train, y_train, X_test, y_test, strategy_name="ML", telegram_chat_id=telegram_chat_id
@@ -280,17 +309,39 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
     meta_path = "models/best_model_meta.json"
 
     if acc > best_acc or not os.path.exists(model_path):
-        save_best_model(new_model, acc, model_path, meta_path, features=selected_features)
+        save_best_model(new_model, acc, model_path, meta_path, features=selected_features, random_seed=random_seed)
     else:
         print("ℹ️ Model ikke gemt – accuracy er ikke bedre end tidligere.")
 
     return new_model, model_path, selected_features
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=None, help="Random seed til split/model (default=random hver gang)")
+    parser.add_argument("--features", type=str, default=None, help="Path til features-CSV (finder selv nyeste hvis tom)")
+    args = parser.parse_args()
+
+    # ---- Find altid nyeste feature-CSV hvis ikke angivet! ----
+    features_path = args.features
+    if not features_path or not os.path.exists(features_path):
+        print(f"➡️ Finder nyeste features-CSV i outputs/feature_data/")
+        import glob
+        feature_files = sorted(glob.glob("outputs/feature_data/btcusdt_1h_features*.csv"))
+        if not feature_files:
+            raise FileNotFoundError("Ingen features-CSV fundet i outputs/feature_data/")
+        features_path = feature_files[-1]
+        print(f"➡️ Bruger: {features_path}")
+
     os.makedirs("models", exist_ok=True)
     telegram_chat_id = None
-    model, model_path, selected_features = train_model("data/BTCUSDT_1h_features.csv", version="v1.0.1", telegram_chat_id=telegram_chat_id)
+    model, model_path, selected_features = train_model(
+        features_path,
+        version="v1.0.1",
+        telegram_chat_id=telegram_chat_id,
+        random_seed=args.seed
+    )
     print("Trænede på features:", selected_features)
+    print(f"🎲 RANDOM_SEED brugt: {args.seed}")
 
 if __name__ == "__main__":
     safe_run(main)

@@ -1409,3 +1409,161 @@ Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feat
 [2025-06-27 23:33:35] Billede sendt OK.
 [2025-06-27 23:33:35] Sender billede: graphs/feature_importance_ML_20250627_233332.png (caption: 🧠 Feature Importance for ML-model)
 [2025-06-27 23:33:35] Billede sendt OK.
+[2025-06-28 00:41:35] Sender besked: ❌ Fejl i main: [Errno 2] No such file or directory: 'data/BTCUSDT_1h_features.csv'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 323, in main
+    model, model_path, selected_features = train_model(
+                                           ^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 265, in train_model
+    df = pd.read_csv(features)
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\io\parsers\readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+                   ^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\io\common.py", line 873, in get_handle
+    handle = open(
+             ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'data/BTCUSDT_1h_features.csv'
+
+[2025-06-28 00:41:35] Besked sendt OK.
+[2025-06-28 00:56:14] Sender besked: ❌ Fejl i main: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 333, in main
+    model, model_path, selected_features = train_model(
+                                           ^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 270, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-28 00:56:14] Besked sendt OK.
+[2025-06-28 00:58:50] Sender besked: ❌ Fejl i main: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 333, in main
+    model, model_path, selected_features = train_model(
+                                           ^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 270, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-28 00:58:50] Besked sendt OK.
+[2025-06-28 01:02:53] Sender besked: ❌ Fejl i main: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 333, in main
+    model, model_path, selected_features = train_model(
+                                           ^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 270, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-28 01:02:53] Besked sendt OK.
+[2025-06-28 01:03:34] Sender besked: ❌ Fejl i main: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 333, in main
+    model, model_path, selected_features = train_model(
+                                           ^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 270, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-28 01:03:35] Besked sendt OK.

@@ -78,16 +78,20 @@ def main():
             return
 
     df = pd.read_csv(input_path)
+    print("🔎 Kolonner i rå data:", list(df.columns))
     if "close" not in df.columns:
         print(f"❌ Inputfilen '{input_path}' mangler kolonnen 'close'. Tjek din rå data!")
         return
 
     df_feat = add_features(df)
+    print("🔎 Kolonner EFTER feature engineering:", list(df_feat.columns))
     if "regime" not in df_feat.columns:
         print("❌ FEJL: 'regime' blev ikke tilføjet i feature engineering!")
+        print(df_feat.head())
         return
     if "target" not in df_feat.columns:
         print("❌ FEJL: 'target' blev ikke tilføjet i feature engineering!")
+        print(df_feat.head())
         return
 
     hash_val = feature_hash(df_feat)

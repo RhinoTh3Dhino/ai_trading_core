@@ -34,7 +34,7 @@ from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 
 # FEATURE IMPORTANCE LOGNING
-from visualization.feature_importance import plot_feature_importance
+from visualization.viz_feature_importance import plot_feature_importance
 from utils.feature_logging import (
     log_top_features_to_md,
     log_top_features_csv,
