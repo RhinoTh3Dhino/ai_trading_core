@@ -7,6 +7,15 @@ import glob
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# --- Versionsinfo fra versions.py ---
+try:
+    from versions import (
+        PIPELINE_VERSION, PIPELINE_COMMIT,
+        FEATURE_VERSION, ENGINE_VERSION, ENGINE_COMMIT, MODEL_VERSION, LABEL_STRATEGY
+    )
+except ImportError:
+    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
+
 # MODEL & STRATEGI-IMPORTS
 from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
@@ -48,7 +57,7 @@ def get_latest_csv(folder="outputs/feature_data/", pattern="btc_1h_features_*.cs
     files = glob.glob(os.path.join(folder, pattern))
     if not files:
         raise FileNotFoundError("Ingen datafiler fundet i " + folder)
-    return max(files, key=os.path.getctime)  # Seneste fil efter creation time
+    return max(files, key=os.path.getctime)
 
 def load_best_ensemble_params(
     json_path="tuning/best_ensemble_params.json",
@@ -80,18 +89,57 @@ def load_best_ensemble_params(
         print(f"[INFO] Bruger default-parametre: threshold={threshold}, weights={weights}")
     return threshold, weights
 
+def read_features_auto(file_path):
+    """Indlæs features-CSV – spring meta-header over hvis nødvendigt."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("🔎 Meta-header fundet – springer første linje over (skiprows=1).")
+        df = pd.read_csv(file_path, skiprows=1)
+    else:
+        df = pd.read_csv(file_path)
+    return df
+
+def log_engine_meta(meta_path, feature_file, threshold, weights, strat_scores, metrics):
+    """Gem versionsinfo og runparametre for engine/run"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(meta_path, "w", encoding="utf-8") as f:
+        f.write(f"run_time: {timestamp}\n")
+        f.write(f"pipeline_version: {PIPELINE_VERSION}\n")
+        f.write(f"pipeline_commit: {PIPELINE_COMMIT}\n")
+        f.write(f"engine_version: {ENGINE_VERSION}\n")
+        f.write(f"engine_commit: {ENGINE_COMMIT}\n")
+        f.write(f"feature_version: {FEATURE_VERSION}\n")
+        f.write(f"model_version: {MODEL_VERSION}\n")
+        f.write(f"label_strategy: {LABEL_STRATEGY}\n")
+        f.write(f"feature_file: {feature_file}\n")
+        f.write(f"threshold: {threshold}\n")
+        f.write(f"weights: {weights}\n")
+        f.write(f"metrics: {json.dumps(metrics)}\n")
+        f.write(f"strategy_scores: {json.dumps(strat_scores)}\n")
+    print(f"📝 Engine meta logget til: {meta_path}")
+
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
-    # Find og brug altid nyeste datasæt
     DATA_PATH = get_latest_csv()
     print("🔄 Indlæser features:", DATA_PATH)
-    df = pd.read_csv(DATA_PATH)
+    df = read_features_auto(DATA_PATH)
     print(f"✅ Data indlæst ({len(df)} rækker)")
     print("Kolonner:", list(df.columns))
 
+    # Robust check: Er 'regime' til stede?
+    if "regime" not in df.columns:
+        msg = (
+            "❌ FEJL: Features-filen mangler kolonnen 'regime'.\n"
+            f"Kolonner fundet: {list(df.columns)}\n"
+            "Tip: Tjek feature engineering, og at alle steps køres i korrekt rækkefølge."
+        )
+        print(msg)
+        send_message(msg)
+        return
+
     # Robust regime-mapping
     regime_map = {0: "bull", 1: "bear", 2: "neutral"}
-    if "regime" in df.columns:
-        df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
+    df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
     print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
 
     # ML-model træning & prediction
@@ -183,6 +231,17 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     else:
         print("Ingen regime-stats fundet – adaptiv strategi springes over.")
 
+    # --- LOG versionsinfo og runparametre ---
+    meta_path = f"outputs/feature_data/engine_meta_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
+    log_engine_meta(
+        meta_path=meta_path,
+        feature_file=DATA_PATH,
+        threshold=threshold,
+        weights=weights,
+        strat_scores=strat_scores,
+        metrics=metrics
+    )
+
     # Visualisering af strategi-score
     score_plot_path = os.path.join(
         GRAPH_DIR, f"strategy_scores_{datetime.datetime.now():%Y%m%d_%H%M%S}.png"
@@ -209,6 +268,8 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         f"RSI:   {strat_scores['RSI']}\n"
         f"MACD:  {strat_scores['MACD']}\n"
         f"Ensemble: {strat_scores['ENSEMBLE']}\n"
+        f"\n"
+        f"Versionsinfo: pipeline {PIPELINE_VERSION}/{PIPELINE_COMMIT}, engine {ENGINE_VERSION}/{ENGINE_COMMIT}, model {MODEL_VERSION}, feature {FEATURE_VERSION}"
     )
     send_image(plot_path, caption=f"📈 Balanceudvikling for {SYMBOL}")
     send_image(drawdown_path, caption=f"📉 Drawdown for {SYMBOL}")

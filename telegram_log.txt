@@ -1110,3 +1110,228 @@ Ensemble: {'profit_pct': -0.29, 'win_rate': 0.3333, 'drawdown_pct': -1.86, 'num_
 [2025-06-26 22:41:39] Besked sendt OK.
 [2025-06-26 22:46:16] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_224615.csv
 [2025-06-26 22:46:16] Besked sendt OK.
+[2025-06-26 23:07:29] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_230728.csv
+[2025-06-26 23:07:29] Besked sendt OK.
+[2025-06-26 23:09:01] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_230900.csv
+[2025-06-26 23:09:01] Besked sendt OK.
+[2025-06-26 23:09:07] Sender besked: ❌ Fejl i <lambda>: 'regime'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'regime'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 231, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 95, in main
+    print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
+                                  ~~^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'regime'
+
+[2025-06-26 23:09:07] Besked sendt OK.
+[2025-06-26 23:13:17] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231316.csv
+[2025-06-26 23:13:17] Besked sendt OK.
+[2025-06-26 23:13:19] Sender besked: ❌ FEJL: Features-filen mangler kolonnen 'regime'.
+Kolonner fundet: ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'rsi_14', 'ema_9', 'ema_21', 'ema_50', 'ema_200', 'macd', 'macd_signal', 'atr_14']
+Tip: Tjek feature engineering, og at alle steps køres i korrekt rækkefølge.
+[2025-06-26 23:13:19] Besked sendt OK.
+[2025-06-26 23:16:25] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231624.csv
+[2025-06-26 23:16:25] Besked sendt OK.
+[2025-06-26 23:16:27] Sender besked: ❌ FEJL: Features-filen mangler kolonnen 'regime'.
+Kolonner fundet: ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'rsi_14', 'ema_9', 'ema_21', 'ema_50', 'ema_200', 'macd', 'macd_signal', 'atr_14']
+Tip: Tjek feature engineering, og at alle steps køres i korrekt rækkefølge.
+[2025-06-26 23:16:27] Besked sendt OK.
+[2025-06-26 23:16:55] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231654.csv
+[2025-06-26 23:16:55] Besked sendt OK.
+[2025-06-26 23:17:32] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231731.csv
+[2025-06-26 23:17:32] Besked sendt OK.
+[2025-06-26 23:17:34] Sender besked: ❌ Fejl i <lambda>: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 251, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 119, in main
+    model, model_path, feature_cols = train_model(df)
+                                      ^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 250, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-26 23:17:34] Besked sendt OK.
+[2025-06-26 23:25:26] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_232526.csv
+[2025-06-26 23:25:27] Besked sendt OK.
+[2025-06-26 23:25:29] Sender besked: ❌ Fejl i <lambda>: 'target'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'target'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 251, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 119, in main
+    model, model_path, feature_cols = train_model(df)
+                                      ^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\models\model_training.py", line 250, in train_model
+    y = df[target_col]
+        ~~^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'target'
+
+[2025-06-26 23:25:29] Besked sendt OK.
+[2025-06-26 23:25:51] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_232550.csv
+[2025-06-26 23:25:51] Besked sendt OK.
+[2025-06-26 23:26:26] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_232625.csv
+[2025-06-26 23:26:26] Besked sendt OK.
+[2025-06-26 23:26:32] Sender besked: 📊 Top-5 features (ML):
+1. volume: 0.1547
+2. close: 0.1494
+3. rsi_14: 0.1485
+4. atr_14: 0.1417
+5. macd_signal: 0.1362
+[2025-06-26 23:26:32] Besked sendt OK.
+[2025-06-26 23:26:32] Sender besked: ❌ Fejl i <lambda>: ❌ DataFrame indeholder NaN i 'close' eller 'ema_200'!
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 251, in <lambda>
+    safe_run(lambda: main(threshold=threshold, weights=weights))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 160, in main
+    trades_df, balance_df = run_backtest(df, signals=ensemble_signals)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 89, in run_backtest
+    raise ValueError("❌ DataFrame indeholder NaN i 'close' eller 'ema_200'!")
+ValueError: ❌ DataFrame indeholder NaN i 'close' eller 'ema_200'!
+
+[2025-06-26 23:26:32] Besked sendt OK.
+[2025-06-26 23:32:23] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_233222.csv
+[2025-06-26 23:32:23] Besked sendt OK.
+[2025-06-26 23:33:08] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_233307.csv
+[2025-06-26 23:33:08] Besked sendt OK.
+[2025-06-26 23:33:13] Sender besked: 📊 Top-5 features (ML):
+1. volume: 0.2061
+2. macd_signal: 0.2038
+3. close: 0.1988
+4. high: 0.1978
+5. rsi_14: 0.1935
+[2025-06-26 23:33:13] Besked sendt OK.
+[2025-06-26 23:33:13] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-26 23:33:13] Besked sendt OK.
+[2025-06-26 23:33:14] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.38, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+[2025-06-26 23:33:14] Besked sendt OK.
+[2025-06-26 23:33:14] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-26 23:33:14] Billede sendt OK.
+[2025-06-26 23:33:14] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-26 23:33:15] Billede sendt OK.
+[2025-06-26 23:33:15] Sender billede: graphs/strategy_scores_20250626_233313.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-26 23:33:15] Billede sendt OK.
+[2025-06-26 23:33:15] Sender billede: graphs/feature_importance_ML_20250626_233313.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-26 23:33:15] Billede sendt OK.
+[2025-06-27 00:06:55] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250627_000654.csv
+[2025-06-27 00:06:55] Besked sendt OK.
+[2025-06-27 00:07:00] Sender besked: 📊 Top-5 features (ML):
+1. volume: 0.2061
+2. macd_signal: 0.2038
+3. close: 0.1988
+4. high: 0.1978
+5. rsi_14: 0.1935
+[2025-06-27 00:07:00] Besked sendt OK.
+[2025-06-27 00:07:00] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-27 00:07:00] Besked sendt OK.
+[2025-06-27 00:07:01] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.38, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-27 00:07:02] Besked sendt OK.
+[2025-06-27 00:07:02] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-27 00:07:02] Billede sendt OK.
+[2025-06-27 00:07:02] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-27 00:07:02] Billede sendt OK.
+[2025-06-27 00:07:02] Sender billede: graphs/strategy_scores_20250627_000700.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-27 00:07:02] Billede sendt OK.
+[2025-06-27 00:07:02] Sender billede: graphs/feature_importance_ML_20250627_000700.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-27 00:07:02] Billede sendt OK.
