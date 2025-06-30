@@ -1749,3 +1749,405 @@ Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feat
 [2025-06-28 02:04:43] Billede sendt OK.
 [2025-06-28 02:04:43] Sender besked: ⚠️ Maksimalt antal retrains nået (3). Stopper retrain-loop.
 [2025-06-28 02:04:43] Besked sendt OK.
+[2025-06-28 02:28:43] Sender besked: 📊 Top-5 features (ML):
+1. volume: 0.2199
+2. ema_200: 0.2041
+3. close: 0.2007
+4. macd_signal: 0.1906
+5. high: 0.1847
+[2025-06-28 02:28:43] Besked sendt OK.
+[2025-06-28 02:28:43] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.01% | Win-rate: 55.6% | Trades: 10
+
+[2025-06-28 02:28:43] Besked sendt OK.
+[2025-06-28 02:28:44] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 55.6% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.23, 'win_rate': 0.5, 'drawdown_pct': -1.49, 'num_trades': 22}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.31, 'win_rate': 0.4545, 'drawdown_pct': -1.71, 'num_trades': 24, 'regime_stats': {'bear': {'num_trades': 16, 'win_rate': 0.5714, 'profit_pct': -1.64}, 'bull': {'num_trades': 8, 'win_rate': 0.25, 'profit_pct': 0.14}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-28 02:28:44] Besked sendt OK.
+[2025-06-28 02:28:44] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-28 02:28:45] Billede sendt OK.
+[2025-06-28 02:28:45] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-28 02:28:45] Billede sendt OK.
+[2025-06-28 02:28:45] Sender billede: graphs/strategy_scores_20250628_022843.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-28 02:28:45] Billede sendt OK.
+[2025-06-28 02:28:45] Sender billede: graphs/feature_importance_ML_20250628_022843.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-28 02:28:45] Billede sendt OK.
+[2025-06-28 02:28:45] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 55.6%, Profit: -0.01% – Starter retrain (forsøg 1)
+[2025-06-28 02:28:46] Besked sendt OK.
+[2025-06-28 02:28:48] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14: 0.1442
+2. ema_9: 0.1276
+3. macd: 0.1264
+4. volume: 0.1256
+5. close: 0.1218
+[2025-06-28 02:28:48] Besked sendt OK.
+[2025-06-28 02:28:48] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.01% | Win-rate: 55.6% | Trades: 10
+
+[2025-06-28 02:28:49] Besked sendt OK.
+[2025-06-28 02:28:49] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 55.6% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': -0.15, 'win_rate': 0.5, 'drawdown_pct': -1.49, 'num_trades': 22}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.31, 'win_rate': 0.4545, 'drawdown_pct': -1.71, 'num_trades': 24, 'regime_stats': {'bear': {'num_trades': 16, 'win_rate': 0.5714, 'profit_pct': -1.64}, 'bull': {'num_trades': 8, 'win_rate': 0.25, 'profit_pct': 0.14}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-28 02:28:50] Besked sendt OK.
+[2025-06-28 02:28:50] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-28 02:28:50] Billede sendt OK.
+[2025-06-28 02:28:50] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-28 02:28:50] Billede sendt OK.
+[2025-06-28 02:28:50] Sender billede: graphs/strategy_scores_20250628_022849.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-28 02:28:50] Billede sendt OK.
+[2025-06-28 02:28:50] Sender billede: graphs/feature_importance_ML_20250628_022848.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-28 02:28:50] Billede sendt OK.
+[2025-06-28 02:28:50] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 55.6%, Profit: -0.01% – Starter retrain (forsøg 2)
+[2025-06-28 02:28:51] Besked sendt OK.
+[2025-06-28 02:28:53] Sender besked: 📊 Top-5 features (ML):
+1. close: 0.0931
+2. rsi_14: 0.0917
+3. volume: 0.0874
+4. open: 0.0866
+5. high: 0.0845
+[2025-06-28 02:28:53] Besked sendt OK.
+[2025-06-28 02:28:54] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: 0.14% | Win-rate: 50.0% | Trades: 9
+
+[2025-06-28 02:28:54] Besked sendt OK.
+[2025-06-28 02:28:55] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: 0.14% | Win-rate: 50.0% | Trades: 9
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.38, 'win_rate': 0.4444, 'drawdown_pct': -1.34, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.49}, 'bull': {'num_trades': 8, 'win_rate': 0.25, 'profit_pct': 0.29}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-28 02:28:55] Besked sendt OK.
+[2025-06-28 02:28:55] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-28 02:28:55] Billede sendt OK.
+[2025-06-28 02:28:55] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-28 02:28:55] Billede sendt OK.
+[2025-06-28 02:28:55] Sender billede: graphs/strategy_scores_20250628_022854.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-28 02:28:56] Billede sendt OK.
+[2025-06-28 02:28:56] Sender billede: graphs/feature_importance_ML_20250628_022853.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-28 02:28:56] Billede sendt OK.
+[2025-06-28 02:28:56] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-28\backup_02-28-56
+[2025-06-28 02:28:57] Besked sendt OK.
+[2025-06-28 02:30:02] Sender besked: 💓 Bot heartbeat: Jeg er stadig i live!
+[2025-06-28 02:30:02] Besked sendt OK.
+[2025-06-30 17:03:01] Sender besked: 📊 Top-5 features (ML):
+1. open: 0.2067
+2. rsi_14: 0.2056
+3. macd_signal: 0.2039
+4. ema_50: 0.1936
+5. ema_9: 0.1901
+[2025-06-30 17:03:01] Besked sendt OK.
+[2025-06-30 17:03:01] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-30 17:03:02] Besked sendt OK.
+[2025-06-30 17:03:03] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.38, 'win_rate': 0.4444, 'drawdown_pct': -1.34, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 17:03:03] Besked sendt OK.
+[2025-06-30 17:03:03] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 17:03:03] Billede sendt OK.
+[2025-06-30 17:03:03] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 17:03:03] Billede sendt OK.
+[2025-06-30 17:03:03] Sender billede: graphs/strategy_scores_20250630_170302.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 17:03:04] Billede sendt OK.
+[2025-06-30 17:03:04] Sender billede: graphs/feature_importance_ML_20250630_170301.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 17:03:04] Billede sendt OK.
+[2025-06-30 17:03:04] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 44.4%, Profit: -0.01% – Starter retrain (forsøg 1)
+[2025-06-30 17:03:04] Besked sendt OK.
+[2025-06-30 17:03:07] Sender besked: 📊 Top-5 features (ML):
+1. macd_signal: 0.2125
+2. rsi_14: 0.2094
+3. close: 0.1954
+4. high: 0.1944
+5. macd: 0.1884
+[2025-06-30 17:03:07] Besked sendt OK.
+[2025-06-30 17:03:07] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear']
+Profit: -0.01% | Win-rate: 55.6% | Trades: 10
+
+[2025-06-30 17:03:07] Besked sendt OK.
+[2025-06-30 17:03:08] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 55.6% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.69, 'win_rate': 0.5455, 'drawdown_pct': -1.71, 'num_trades': 24}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.31, 'win_rate': 0.4545, 'drawdown_pct': -1.71, 'num_trades': 24, 'regime_stats': {'bear': {'num_trades': 16, 'win_rate': 0.5714, 'profit_pct': -1.64}, 'bull': {'num_trades': 8, 'win_rate': 0.25, 'profit_pct': 0.14}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 17:03:08] Besked sendt OK.
+[2025-06-30 17:03:08] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 17:03:08] Billede sendt OK.
+[2025-06-30 17:03:08] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 17:03:09] Billede sendt OK.
+[2025-06-30 17:03:09] Sender billede: graphs/strategy_scores_20250630_170307.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 17:03:09] Billede sendt OK.
+[2025-06-30 17:03:09] Sender billede: graphs/feature_importance_ML_20250630_170307.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 17:03:09] Billede sendt OK.
+[2025-06-30 17:03:09] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 55.6%, Profit: -0.01% – Starter retrain (forsøg 2)
+[2025-06-30 17:03:09] Besked sendt OK.
+[2025-06-30 17:03:12] Sender besked: 📊 Top-5 features (ML):
+1. ema_21: 0.2098
+2. close: 0.2042
+3. open: 0.2005
+4. macd_signal: 0.1938
+5. ema_200: 0.1917
+[2025-06-30 17:03:12] Besked sendt OK.
+[2025-06-30 17:03:12] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.16% | Win-rate: 50.0% | Trades: 11
+
+[2025-06-30 17:03:12] Besked sendt OK.
+[2025-06-30 17:03:13] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.16% | Win-rate: 50.0% | Trades: 11
+
+📊 Strategi-score:
+ML:    {'profit_pct': -1.69, 'win_rate': 0.5455, 'drawdown_pct': -1.71, 'num_trades': 24}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.16, 'win_rate': 0.5, 'drawdown_pct': -1.56, 'num_trades': 22, 'regime_stats': {'bear': {'num_trades': 16, 'win_rate': 0.5714, 'profit_pct': -1.42}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.29}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 17:03:14] Besked sendt OK.
+[2025-06-30 17:03:14] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 17:03:14] Billede sendt OK.
+[2025-06-30 17:03:14] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 17:03:14] Billede sendt OK.
+[2025-06-30 17:03:14] Sender billede: graphs/strategy_scores_20250630_170312.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 17:03:14] Billede sendt OK.
+[2025-06-30 17:03:14] Sender billede: graphs/feature_importance_ML_20250630_170312.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 17:03:15] Billede sendt OK.
+[2025-06-30 17:03:15] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 50.0%, Profit: -0.16% – Starter retrain (forsøg 3)
+[2025-06-30 17:03:15] Besked sendt OK.
+[2025-06-30 17:03:17] Sender besked: 📊 Top-5 features (ML):
+1. ema_50: 0.2131
+2. macd: 0.1999
+3. ema_200: 0.1980
+4. atr_14: 0.1958
+5. macd_signal: 0.1931
+[2025-06-30 17:03:18] Besked sendt OK.
+[2025-06-30 17:03:18] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-30 17:03:18] Besked sendt OK.
+[2025-06-30 17:03:19] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.67, 'win_rate': 0.4444, 'drawdown_pct': -1.34, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 17:03:19] Besked sendt OK.
+[2025-06-30 17:03:19] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 17:03:19] Billede sendt OK.
+[2025-06-30 17:03:19] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 17:03:19] Billede sendt OK.
+[2025-06-30 17:03:19] Sender billede: graphs/strategy_scores_20250630_170318.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 17:03:20] Billede sendt OK.
+[2025-06-30 17:03:20] Sender billede: graphs/feature_importance_ML_20250630_170317.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 17:03:20] Billede sendt OK.
+[2025-06-30 17:03:20] Sender besked: ⚠️ Maksimalt antal retrains nået (3). Stopper retrain-loop.
+[2025-06-30 17:03:20] Besked sendt OK.
+[2025-06-30 17:03:21] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-06-30\backup_17-03-20
+[2025-06-30 17:03:21] Besked sendt OK.
+[2025-06-30 18:56:37] Sender besked: ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250630_185636.csv
+[2025-06-30 18:56:37] Besked sendt OK.
+[2025-06-30 18:56:42] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14: 0.2068
+2. macd: 0.2042
+3. open: 0.2005
+4. ema_9: 0.1968
+5. ema_50: 0.1917
+[2025-06-30 18:56:42] Besked sendt OK.
+[2025-06-30 18:56:42] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-30 18:56:42] Besked sendt OK.
+[2025-06-30 18:56:43] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.08, 'win_rate': 0.4545, 'drawdown_pct': -1.64, 'num_trades': 24}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 18:56:43] Besked sendt OK.
+[2025-06-30 18:56:43] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 18:56:43] Billede sendt OK.
+[2025-06-30 18:56:43] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 18:56:44] Billede sendt OK.
+[2025-06-30 18:56:44] Sender billede: graphs/strategy_scores_20250630_185642.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 18:56:44] Billede sendt OK.
+[2025-06-30 18:56:44] Sender billede: graphs/feature_importance_ML_20250630_185641.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 18:56:44] Billede sendt OK.
+[2025-06-30 18:56:44] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 44.4%, Profit: -0.01% – Starter retrain (forsøg 1)
+[2025-06-30 18:56:44] Besked sendt OK.
+[2025-06-30 18:56:47] Sender besked: 📊 Top-5 features (ML):
+1. atr_14: 0.1766
+2. low: 0.1738
+3. ema_50: 0.1715
+4. macd: 0.1711
+5. ema_200: 0.1549
+[2025-06-30 18:56:47] Besked sendt OK.
+[2025-06-30 18:56:47] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+[2025-06-30 18:56:47] Besked sendt OK.
+[2025-06-30 18:56:48] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.01% | Win-rate: 44.4% | Trades: 10
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.67, 'win_rate': 0.4444, 'drawdown_pct': -1.34, 'num_trades': 20}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.01, 'win_rate': 0.4444, 'drawdown_pct': -1.42, 'num_trades': 20, 'regime_stats': {'bear': {'num_trades': 14, 'win_rate': 0.5, 'profit_pct': -1.34}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.44}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 18:56:48] Besked sendt OK.
+[2025-06-30 18:56:48] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 18:56:48] Billede sendt OK.
+[2025-06-30 18:56:48] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 18:56:49] Billede sendt OK.
+[2025-06-30 18:56:49] Sender billede: graphs/strategy_scores_20250630_185647.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 18:56:49] Billede sendt OK.
+[2025-06-30 18:56:49] Sender billede: graphs/feature_importance_ML_20250630_185647.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 18:56:49] Billede sendt OK.
+[2025-06-30 18:56:49] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 44.4%, Profit: -0.01% – Starter retrain (forsøg 2)
+[2025-06-30 18:56:49] Besked sendt OK.
+[2025-06-30 18:56:52] Sender besked: 📊 Top-5 features (ML):
+1. rsi_14: 0.2094
+2. atr_14: 0.2070
+3. ema_9: 0.1955
+4. close: 0.1953
+5. macd: 0.1928
+[2025-06-30 18:56:52] Besked sendt OK.
+[2025-06-30 18:56:52] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.16% | Win-rate: 50.0% | Trades: 11
+
+[2025-06-30 18:56:52] Besked sendt OK.
+[2025-06-30 18:56:53] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.16% | Win-rate: 50.0% | Trades: 11
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.12, 'win_rate': 0.5, 'drawdown_pct': -1.78, 'num_trades': 26}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.16, 'win_rate': 0.5, 'drawdown_pct': -1.56, 'num_trades': 22, 'regime_stats': {'bear': {'num_trades': 16, 'win_rate': 0.5714, 'profit_pct': -1.42}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.29}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 18:56:54] Besked sendt OK.
+[2025-06-30 18:56:54] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 18:56:54] Billede sendt OK.
+[2025-06-30 18:56:54] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 18:56:54] Billede sendt OK.
+[2025-06-30 18:56:54] Sender billede: graphs/strategy_scores_20250630_185652.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 18:56:54] Billede sendt OK.
+[2025-06-30 18:56:54] Sender billede: graphs/feature_importance_ML_20250630_185652.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 18:56:55] Billede sendt OK.
+[2025-06-30 18:56:55] Sender besked: 🚨 Retrain trigget automatisk! Win-rate: 50.0%, Profit: -0.16% – Starter retrain (forsøg 3)
+[2025-06-30 18:56:55] Besked sendt OK.
+[2025-06-30 18:56:58] Sender besked: 📊 Top-5 features (ML):
+1. close: 0.2075
+2. high: 0.2067
+3. ema_50: 0.1986
+4. ema_9: 0.1952
+5. macd_signal: 0.1920
+[2025-06-30 18:56:58] Besked sendt OK.
+[2025-06-30 18:56:58] Sender besked: 🤖 Adaptiv regime-strategi aktiv!
+Aktive regimer: ['bear', 'bull']
+Profit: -0.16% | Win-rate: 50.0% | Trades: 11
+
+[2025-06-30 18:56:58] Besked sendt OK.
+[2025-06-30 18:56:59] Sender besked: ✅ Backtest for BTC afsluttet!
+Mode: Weighted voting
+Weights: [1.9637144743512338, 0.3169664184031755, 1.702941580715635]
+Threshold: 0.7261630981110665
+Profit: -0.16% | Win-rate: 50.0% | Trades: 11
+
+📊 Strategi-score:
+ML:    {'profit_pct': 0.42, 'win_rate': 0.5, 'drawdown_pct': -1.49, 'num_trades': 22}
+RSI:   {'profit_pct': -0.9, 'win_rate': 0.5, 'drawdown_pct': -0.9, 'num_trades': 12}
+MACD:  {'profit_pct': -0.16, 'win_rate': 0.4, 'drawdown_pct': -1.56, 'num_trades': 22}
+Ensemble: {'profit_pct': -0.16, 'win_rate': 0.5, 'drawdown_pct': -1.56, 'num_trades': 22, 'regime_stats': {'bear': {'num_trades': 16, 'win_rate': 0.5714, 'profit_pct': -1.42}, 'bull': {'num_trades': 6, 'win_rate': 0.3333, 'profit_pct': 0.29}}}
+
+Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feature v1.0.0
+[2025-06-30 18:56:59] Besked sendt OK.
+[2025-06-30 18:56:59] Sender billede: graphs/btc_balance_20250626.png (caption: 📈 Balanceudvikling for BTC)
+[2025-06-30 18:57:00] Billede sendt OK.
+[2025-06-30 18:57:00] Sender billede: graphs/btc_drawdown_2025-06-26.png (caption: 📉 Drawdown for BTC)
+[2025-06-30 18:57:00] Billede sendt OK.
+[2025-06-30 18:57:00] Sender billede: graphs/strategy_scores_20250630_185658.png (caption: 📊 Strategi-score ML/RSI/MACD/Ensemble)
+[2025-06-30 18:57:00] Billede sendt OK.
+[2025-06-30 18:57:00] Sender billede: graphs/feature_importance_ML_20250630_185658.png (caption: 🧠 Feature Importance for ML-model)
+[2025-06-30 18:57:00] Billede sendt OK.
+[2025-06-30 18:57:00] Sender besked: ⚠️ Maksimalt antal retrains nået (3). Stopper retrain-loop.
+[2025-06-30 18:57:01] Besked sendt OK.

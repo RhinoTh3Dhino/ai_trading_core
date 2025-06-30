@@ -1,194 +1,65 @@
 # BotStatus
 
-**Seneste kørsel:** 2025-06-26 21:30:01  
+**Seneste kørsel:** 2025-06-30 17:03:21  
 **Status:** ✅ Succes  
-**Sidste backup:** backups\2025-06-26\backup_21-30-01  
+**Sidste backup:** backups\2025-06-30\backup_17-03-20  
 **Fejl:** Ingen  
 
 ---
+[2025-06-30 18:56:36.100023] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250630_185636.csv
 
-### Top-5 features (ML) – 2025-06-26 21:58:28
-1. ema_200: 0.0042
-2. ema_21: -0.0014
-3. macd_signal: -0.0035
-4. ema_50: -0.0056
-5. rsi_14: -0.0063
+### Top-5 features (ML) – 2025-06-30 18:56:41
+1. open: 0.0394
+2. ema_50: 0.0135
+3. rsi_14: 0.0115
+4. ema_9: 0.0115
+5. macd: 0.0077
 
-### Top-5 features (ML) – 2025-06-26 21:58:28
-1. rsi_14: 0.2480
-2. macd_signal: 0.2031
-3. ema_21: 0.2024
-4. ema_50: 0.1834
-5. ema_200: 0.1632
-[2025-06-26 22:46:15.140238] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_224615.csv
-[2025-06-26 23:07:28.889219] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_230728.csv
-[2025-06-26 23:09:00.435324] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_230900.csv
-[2025-06-26 23:13:16.833802] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231316.csv
-[2025-06-26 23:16:24.181440] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231624.csv
-[2025-06-26 23:16:54.357592] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231654.csv
-[2025-06-26 23:17:31.750057] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_231731.csv
-[2025-06-26 23:25:26.041470] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_232526.csv
-[2025-06-26 23:25:50.769183] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_232550.csv
-[2025-06-26 23:26:25.366837] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_232625.csv
+### Top-5 features (ML) – 2025-06-30 18:56:42
+1. rsi_14: 0.2068
+2. macd: 0.2042
+3. open: 0.2005
+4. ema_9: 0.1968
+5. ema_50: 0.1917
 
-### Top-5 features (ML) – 2025-06-26 23:26:32
-1. close: 0.0597
-2. ema_9: 0.0340
-3. rsi_14: 0.0250
-4. macd_signal: 0.0201
-5. atr_14: 0.0194
+### Top-5 features (ML) – 2025-06-30 18:56:47
+1. macd_signal: 0.0375
+2. atr_14: 0.0240
+3. ema_50: 0.0231
+4. low: 0.0173
+5. ema_200: 0.0154
 
-### Top-5 features (ML) – 2025-06-26 23:26:32
-1. volume: 0.1547
-2. close: 0.1494
-3. rsi_14: 0.1485
-4. atr_14: 0.1417
-5. macd_signal: 0.1362
-[2025-06-26 23:32:22.933703] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_233222.csv
-[2025-06-26 23:33:07.329904] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250626_233307.csv
+### Top-5 features (ML) – 2025-06-30 18:56:47
+1. atr_14: 0.1766
+2. low: 0.1738
+3. ema_50: 0.1715
+4. macd: 0.1711
+5. ema_200: 0.1549
 
-### Top-5 features (ML) – 2025-06-26 23:33:13
-1. rsi_14: 0.0240
-2. close: 0.0221
-3. volume: 0.0125
-4. macd_signal: 0.0096
-5. high: 0.0077
+### Top-5 features (ML) – 2025-06-30 18:56:52
+1. ema_9: 0.0087
+2. rsi_14: 0.0029
+3. macd: -0.0115
+4. close: -0.0154
+5. atr_14: -0.0163
 
-### Top-5 features (ML) – 2025-06-26 23:33:13
-1. volume: 0.2061
-2. macd_signal: 0.2038
-3. close: 0.1988
-4. high: 0.1978
-5. rsi_14: 0.1935
-[2025-06-27 00:06:54.713037] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250627_000654.csv
+### Top-5 features (ML) – 2025-06-30 18:56:52
+1. rsi_14: 0.2094
+2. atr_14: 0.2070
+3. ema_9: 0.1955
+4. close: 0.1953
+5. macd: 0.1928
 
-### Top-5 features (ML) – 2025-06-27 00:07:00
-1. rsi_14: 0.0240
-2. close: 0.0221
-3. volume: 0.0125
-4. macd_signal: 0.0096
-5. high: 0.0077
+### Top-5 features (ML) – 2025-06-30 18:56:58
+1. close: 0.0144
+2. ema_9: 0.0038
+3. ema_50: 0.0010
+4. macd_signal: 0.0000
+5. high: -0.0048
 
-### Top-5 features (ML) – 2025-06-27 00:07:00
-1. volume: 0.2061
-2. macd_signal: 0.2038
-3. close: 0.1988
-4. high: 0.1978
-5. rsi_14: 0.1935
-[2025-06-27 23:13:30.525996] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250627_231330.csv
-
-### Top-5 features (ML) – 2025-06-27 23:13:41
-1. rsi_14: 0.0240
-2. close: 0.0221
-3. volume: 0.0125
-4. macd_signal: 0.0096
-5. high: 0.0077
-
-### Top-5 features (ML) – 2025-06-27 23:13:41
-1. volume: 0.2061
-2. macd_signal: 0.2038
-3. close: 0.1988
-4. high: 0.1978
-5. rsi_14: 0.1935
-[2025-06-27 23:27:28.466518] ✅ Data hentet: BTCUSDT 1h, 1000 rækker, fil: BTCUSDT_1h_20250627_232728.csv
-[2025-06-27 23:33:26.709279] ✅ Data hentet: BTCUSDT 1h, 1000 rækker, fil: BTCUSDT_1h_20250627_233326.csv
-
-### Top-5 features (ML) – 2025-06-27 23:33:32
-1. rsi_14: 0.0240
-2. close: 0.0221
-3. volume: 0.0125
-4. macd_signal: 0.0096
-5. high: 0.0077
-
-### Top-5 features (ML) – 2025-06-27 23:33:32
-1. volume: 0.2061
-2. macd_signal: 0.2038
-3. close: 0.1988
-4. high: 0.1978
-5. rsi_14: 0.1935
-
-### Top-5 features (ML) – 2025-06-28 01:07:15
-1. ema_21: 0.0168
-2. low: 0.0093
-3. regime: 0.0025
-4. ema_50: 0.0019
-5. macd: -0.0075
-
-### Top-5 features (ML) – 2025-06-28 01:11:39
-1. open: 0.0112
-2. close: 0.0087
-3. ema_50: 0.0056
-4. rsi_14: 0.0000
-5. atr_14: -0.0006
-[2025-06-28 01:46:07.213310] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250628_014607.csv
-
-### Top-5 features (ML) – 2025-06-28 01:46:12
-1. close: 0.0548
-2. macd: 0.0433
-3. rsi_14: 0.0433
-4. ema_9: 0.0327
-5. ema_50: 0.0240
-
-### Top-5 features (ML) – 2025-06-28 01:46:12
-1. close: 0.1591
-2. rsi_14: 0.1488
-3. ema_50: 0.1470
-4. ema_200: 0.1421
-5. macd_signal: 0.1399
-[2025-06-28 02:04:19.865624] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250628_020419.csv
-
-### Top-5 features (ML) – 2025-06-28 02:04:25
-1. low: 0.0500
-2. ema_21: 0.0442
-3. close: 0.0433
-4. high: 0.0423
-5. ema_9: 0.0385
-
-### Top-5 features (ML) – 2025-06-28 02:04:25
-1. rsi_14: 0.1172
-2. volume: 0.1096
-3. ema_200: 0.1071
-4. ema_21: 0.1050
-5. close: 0.1044
-
-### Top-5 features (ML) – 2025-06-28 02:04:30
-1. ema_50: 0.0548
-2. low: 0.0452
-3. ema_200: 0.0413
-4. ema_21: 0.0356
-5. macd_signal: 0.0279
-
-### Top-5 features (ML) – 2025-06-28 02:04:30
-1. volume: 0.1127
-2. rsi_14: 0.1117
-3. close: 0.1040
-4. atr_14: 0.1035
-5. ema_21: 0.1000
-
-### Top-5 features (ML) – 2025-06-28 02:04:36
-1. low: 0.0173
-2. macd_signal: 0.0058
-3. rsi_14: 0.0048
-4. high: 0.0038
-5. ema_21: -0.0019
-
-### Top-5 features (ML) – 2025-06-28 02:04:36
-1. macd_signal: 0.2102
-2. rsi_14: 0.2076
-3. ema_21: 0.2036
-4. high: 0.1911
-5. low: 0.1875
-
-### Top-5 features (ML) – 2025-06-28 02:04:41
-1. ema_9: 0.0548
-2. ema_50: 0.0375
-3. ema_21: 0.0298
-4. atr_14: 0.0298
-5. macd_signal: 0.0202
-
-### Top-5 features (ML) – 2025-06-28 02:04:41
-1. volume: 0.1152
-2. close: 0.1094
-3. atr_14: 0.1084
-4. ema_9: 0.1068
-5. open: 0.1020
+### Top-5 features (ML) – 2025-06-30 18:56:58
+1. close: 0.2075
+2. high: 0.2067
+3. ema_50: 0.1986
+4. ema_9: 0.1952
+5. macd_signal: 0.1920

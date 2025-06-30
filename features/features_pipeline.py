@@ -1,56 +1,103 @@
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import re
 import pandas as pd
 from datetime import datetime
+
+# Importér konfiguration centralt
+from config.config import FEATURES, COINS, TIMEFRAMES
+
 from features.indicators import (
     calculate_rsi, calculate_macd, add_ema, calculate_atr
 )
 from features.preprocessing import normalize_zscore
 
-def generate_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Samlet pipeline til at beregne alle tekniske indikatorer og forberede feature-matrix."""
+def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataFrame:
+    """Samlet pipeline til at beregne tekniske indikatorer ud fra config.py."""
 
-    df = df.copy().sort_values('timestamp').reset_index(drop=True)
+    df = df.copy()
 
-    # RSI (14 og 28)
-    df['rsi_14'] = calculate_rsi(df, period=14)
-    df['rsi_28'] = calculate_rsi(df, period=28)
+    # --- Automatisk kolonne-mapping (datetime/timestamp) ---
+    if 'datetime' in df.columns and 'timestamp' not in df.columns:
+        df = df.rename(columns={'datetime': 'timestamp'})
+    if 'Timestamp' in df.columns and 'timestamp' not in df.columns:
+        df = df.rename(columns={'Timestamp': 'timestamp'})
 
-    # MACD + signal
-    df = calculate_macd(df)
+    # --- Robust tjek af basiskolonner ---
+    required_cols = ['timestamp', 'close', 'volume', 'open', 'high', 'low']
+    missing = [col for col in required_cols if col not in df.columns]
+    if missing:
+        raise ValueError(f"Mangler kolonner: {missing} (fandt: {list(df.columns)})")
 
-    # EMA: 9, 21, 50, 200
-    for span in [9, 21, 50, 200]:
-        df = add_ema(df, span=span, col_name='ema_')
+    # --- Konverter til datetime & sortér korrekt ---
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df = df.sort_values('timestamp').reset_index(drop=True)
 
-    # ATR (volatilitet, SL/TP)
-    df['atr_14'] = calculate_atr(df, period=14)
+    # --- Konverter til numeric (robusthed mod teksttal fra CSV) ---
+    for col in ['open', 'high', 'low', 'close', 'volume']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # VWAP (volume-weighted average price)
-    df['vwap'] = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum()
+    # Brug config eller default
+    features = feature_config if feature_config else FEATURES
 
-    # Bollinger Bands (over/under EMA50 ± std)
-    df['bb_upper'] = df['ema_50'] + df['close'].rolling(window=20).std()
-    df['bb_lower'] = df['ema_50'] - df['close'].rolling(window=20).std()
+    # Trend: EMA, MACD
+    for span in features.get("trend", []):
+        if "ema" in span:  # fx 'ema_21'
+            span_num = int(span.split("_")[1])
+            df = add_ema(df, span=span_num)  # KUN span!
+    if "macd" in features.get("trend", []):
+        df = calculate_macd(df)
 
-    # Return (momentum) og price/volume ratio
+    # Momentum: RSI
+    for rsi_str in features.get("momentum", []):
+        if "rsi" in rsi_str:
+            rsi_num = int(rsi_str.split("_")[1])
+            df[f"rsi_{rsi_num}"] = calculate_rsi(df, period=rsi_num)
+    # Evt. Stochastic, Williams %R osv.
+
+    # Volatility: ATR, Bollinger
+    if "atr_14" in features.get("volatility", []):
+        df["atr_14"] = calculate_atr(df, period=14)
+    if "bb_upper" in features.get("volatility", []) and "ema_50" in df.columns:
+        rolling_std = df["close"].rolling(window=20).std()
+        df["bb_upper"] = df["ema_50"] + rolling_std
+        df["bb_lower"] = df["ema_50"] - rolling_std
+
+    # Volume: VWAP, OBV
+    if "vwap" in features.get("volume", []):
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df = df.set_index('timestamp')
+        df["vwap"] = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum()
+        df = df.reset_index()  # Sæt tilbage til standard-index
+
+    # Tilføj OBV, hvis ønsket (kræver evt. ekstra funktion i indicators.py)
+
+    # Ekstra: Z-score, regime
+    if "zscore_20" in features.get("regime", []):
+        df["zscore_20"] = (df["close"] - df["close"].rolling(20).mean()) / df["close"].rolling(20).std()
+    if "adx_14" in features.get("regime", []):
+        pass  # Implementér evt. ADX
+
+    # Momentum/return
     df['return'] = df['close'].pct_change().fillna(0)
     df['pv_ratio'] = df['close'] / (df['volume'] + 1e-9)
-
-    # Volume spike (anomaly flag)
     df['volume_spike'] = df['volume'] > df['volume'].rolling(20).mean() * 1.5
 
-    # Regime: Bull hvis ema_9 > ema_21, ellers Bear (kan udvides)
-    df['regime'] = (df['ema_9'] > df['ema_21']).astype(int)
+    # Regime-label: Bull hvis ema_9 > ema_21
+    if all(col in df.columns for col in ["ema_9", "ema_21"]):
+        df['regime'] = (df['ema_9'] > df['ema_21']).astype(int)
 
     # Z-score normalisering på centrale features
-    feature_cols = [
-        'rsi_14', 'rsi_28', 'macd', 'macd_signal', 'ema_9', 'ema_21', 'ema_50',
-        'atr_14', 'return', 'pv_ratio'
-    ]
-    df = normalize_zscore(df, feature_cols)
+    feature_cols = []
+    for group in features.values():
+        feature_cols += [f for f in group if f in df.columns]
+    feature_cols = list(set(feature_cols))  # Unique
+    if feature_cols:
+        df = normalize_zscore(df, feature_cols)
 
-    # Drop NaN fra starten (rolling window effekt)
     df.dropna(inplace=True)
     df.reset_index(drop=True, inplace=True)
 
@@ -74,15 +121,42 @@ def load_features(symbol: str, timeframe: str, version_prefix: str = "v1") -> pd
     files = [f for f in os.listdir(folder) if pattern.match(f)]
     if not files:
         raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} ({version_prefix})")
-    # Sortér efter dato i filnavnet YYYYMMDD
     files.sort(key=lambda x: re.findall(r"_(\d{8})\.csv", x)[-1], reverse=True)
     newest_file = os.path.join(folder, files[0])
     print(f"📥 Indlæser features: {newest_file}")
     return pd.read_csv(newest_file)
 
+# --------- AUTO-TEST, BENCHMARK OG DEMO ---------
+def test_pipeline():
+    """Kør automatisk test af feature-pipeline på én testfil."""
+    test_path = "outputs/data/btcusdt_1h_raw.csv"
+    if not os.path.exists(test_path):
+        print(f"❌ Testfil mangler: {test_path}")
+        return
+    df = pd.read_csv(test_path)
+    features = generate_features(df)
+    print("✅ Feature-matrix shape:", features.shape)
+    print("✅ Feature-kolonner:", list(features.columns))
+    print("NaN:", features.isna().sum().sum())
+    assert not features.isna().any().any(), "Der er stadig NaN i datasættet!"
+    assert "ema_21" in features.columns, "EMA21 mangler!"
+    assert "ema_200" in features.columns, "EMA200 mangler!"
+    print("✅ Test bestået – alle hovedfeatures findes og ingen NaN!")
+
 # Eksempel på brug (fx i engine.py eller notebook):
 if __name__ == "__main__":
-    # Tilpas denne path til din rå-data!
-    raw_df = pd.read_csv("outputs/data/btc_1h_raw.csv")
-    features = generate_features(raw_df)
-    save_features(features, symbol="BTC", timeframe="1h", version="v1.3")
+    # Kør automatisk test:
+    test_pipeline()
+
+    # Batch-feature-generering på alle coins/timeframes:
+    from config.config import COINS, TIMEFRAMES
+
+    for symbol in COINS:
+        for tf in TIMEFRAMES:
+            raw_path = f"outputs/data/{symbol.lower()}_{tf}_raw.csv"
+            if not os.path.exists(raw_path):
+                print(f"❌ Data ikke fundet: {raw_path}")
+                continue
+            raw_df = pd.read_csv(raw_path)
+            features = generate_features(raw_df)
+            save_features(features, symbol=symbol, timeframe=tf, version="v1.3")
