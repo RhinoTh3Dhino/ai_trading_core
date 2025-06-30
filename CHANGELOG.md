@@ -26,6 +26,29 @@
 - Klar til cronjobs, batch eller SaaS-deployment
 
 
+## [Sprint A: Strategi-optimering] - 2025-06-30
+
+### Added
+- Binance downloader med 2 års historik og flere timeframes
+- Grid search modul til optimering af SL, TP, EMA-parametre
+- CSV-log af alle gridsearch-resultater og top-strategier
+
+### Changed
+- Opdateret features_pipeline.py (robusthed, alle indikatorer med)
+- Forbedret paper_trader.py til batch og journal pr. run
+- Performance-metrics udvidet (Sharpe, Sortino, win-rate, profit factor mm.)
+
+### Fixed
+- Robust håndtering af edge cases i performance, gridsearch, feature pipeline
+- Alle test scripts og pipeline virker med nye data
+
+### Next
+- Out-of-sample test af top-5 strategier
+- Automatisk strategi-udvælgelse og baseline update
+- Forberedelse til ML/AI-signal sprint
+
+
+
 
 ## [2025-05-23]
 ✅ Step 4 test
