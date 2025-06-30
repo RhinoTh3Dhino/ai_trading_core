@@ -1,4 +1,5 @@
-import sys, os
+import sys
+import os
 import json
 import pandas as pd
 import numpy as np
@@ -7,7 +8,7 @@ import glob
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# --- Versionsinfo fra versions.py ---
+# Versionsinfo fra versions.py
 try:
     from versions import (
         PIPELINE_VERSION, PIPELINE_COMMIT,
@@ -16,32 +17,24 @@ try:
 except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
-# MODEL & STRATEGI-IMPORTS
+# Model & strategi imports
 from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
 from backtest.metrics import evaluate_strategies
 from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
 from visualization.plot_strategy_score import plot_strategy_scores
-from utils.telegram_utils import (
-    send_image, send_message,
-    send_regime_summary, send_regime_warning
-)
+from utils.telegram_utils import send_image, send_message, send_regime_summary, send_regime_warning
 from utils.robust_utils import safe_run
-from ensemble.majority_vote_ensemble import majority_vote_ensemble
 from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 
-# FEATURE IMPORTANCE LOGNING
+# Feature importance logning
 from visualization.viz_feature_importance import plot_feature_importance
-from utils.feature_logging import (
-    log_top_features_to_md,
-    log_top_features_csv,
-    send_top_features_telegram,
-)
+from utils.feature_logging import log_top_features_to_md, log_top_features_csv, send_top_features_telegram
 
-# Optuna-tuning (valgfri)
+# Optuna tuning (valgfri)
 try:
     from tuning.tuning_threshold import tune_threshold
 except ImportError:
@@ -51,17 +44,17 @@ SYMBOL = "BTC"
 GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]
-ADAPTIVE_WINRATE_THRESHOLD = 0.3  # Win-rate-grænse for aktiv regime
+ADAPTIVE_WINRATE_THRESHOLD = 0.3
 
-# ---- AUTO RETRAIN KONFIG ----
+# Auto retrain config
 RETRAIN_WINRATE_THRESHOLD = 0.30
 RETRAIN_PROFIT_THRESHOLD = 0.0
-MAX_RETRAINS = 3  # For at undgå uendelig loop
+MAX_RETRAINS = 3
 
-def get_latest_csv(folder="outputs/feature_data/", pattern="btc_1h_features_*.csv"):
+def get_latest_csv(folder="outputs/feature_data/", pattern="*_features_*.csv"):
     files = glob.glob(os.path.join(folder, pattern))
     if not files:
-        raise FileNotFoundError("Ingen datafiler fundet i " + folder)
+        raise FileNotFoundError(f"Ingen datafiler fundet i {folder}")
     return max(files, key=os.path.getctime)
 
 def load_best_ensemble_params(
@@ -87,15 +80,13 @@ def load_best_ensemble_params(
             if "Best threshold" in line:
                 threshold = float(line.split(":")[1].strip())
             if "Best weights" in line:
-                weight_str = line.split(":")[1].strip()
-                weights = eval(weight_str)
+                weights = eval(line.split(":")[1].strip())
         print(f"[INFO] Indlæst tuning-parametre fra {txt_path}: threshold={threshold}, weights={weights}")
     else:
         print(f"[INFO] Bruger default-parametre: threshold={threshold}, weights={weights}")
     return threshold, weights
 
 def read_features_auto(file_path):
-    """Indlæs features-CSV – spring meta-header over hvis nødvendigt."""
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
     if first_line.startswith("#"):
@@ -106,7 +97,6 @@ def read_features_auto(file_path):
     return df
 
 def log_engine_meta(meta_path, feature_file, threshold, weights, strat_scores, metrics):
-    """Gem versionsinfo og runparametre for engine/run"""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(meta_path, "w", encoding="utf-8") as f:
         f.write(f"run_time: {timestamp}\n")
@@ -135,7 +125,6 @@ def log_performance_metrics(metrics, filename="outputs/performance_metrics_histo
     print(f"✅ Metrics logget til {filename}")
 
 def should_retrain(metrics):
-    """Returnerer True hvis retrain skal trigges."""
     win_rate = metrics.get("win_rate", 0)
     profit_pct = metrics.get("profit_pct", 0)
     retrain = (win_rate < RETRAIN_WINRATE_THRESHOLD) or (profit_pct < RETRAIN_PROFIT_THRESHOLD)
@@ -154,7 +143,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
-        # Robust check: Er 'regime' til stede?
         if "regime" not in df.columns:
             msg = (
                 "❌ FEJL: Features-filen mangler kolonnen 'regime'.\n"
@@ -165,12 +153,10 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             send_message(msg)
             return
 
-        # Robust regime-mapping
         regime_map = {0: "bull", 1: "bear", 2: "neutral"}
         df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
         print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
 
-        # ML-model træning & prediction
         print("🔄 Træner eller indlæser ML-model ...")
         model, model_path, feature_cols = train_model(df, random_seed=seed)
         print(f"✅ ML-model klar: {model_path}")
@@ -182,12 +168,11 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         else:
             ml_signals = ml_raw
 
-        # FEATURE IMPORTANCE, LOG & TELEGRAM
         try:
             if hasattr(model, "feature_importances_"):
                 imp = model.feature_importances_
                 sorted_idx = np.argsort(imp)[::-1]
-                top_features = [(feature_cols[i], imp[i]) for i in sorted_idx[:5]]
+                top_features = [(feature_cols[i], imp[i]) for i in sorted_idx[:15]]
                 fi_path = os.path.join(GRAPH_DIR, f"feature_importance_ML_{datetime.datetime.now():%Y%m%d_%H%M%S}.png")
                 plot_feature_importance(feature_cols, imp, out_path=fi_path, method="Permutation", top_n=15)
                 print(f"✅ Feature importance-plot gemt: {fi_path}")
@@ -197,7 +182,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         except Exception as e:
             print(f"⚠️ Fejl ved feature importance-plot eller log: {e}")
 
-        # Indikator-strategier
         print("🔄 Genererer strategi-signaler ...")
         rsi_signals = rsi_rule_based_signals(df, low=30, high=70)
         macd_signals = macd_cross_signals(df)
@@ -206,12 +190,10 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
               pd.Series(rsi_signals).value_counts().to_dict(),
               pd.Series(macd_signals).value_counts().to_dict())
 
-        # Ensemble voting (vægtet)
         print(f"➡️  Bruger vægtet voting med weights: {weights}")
         ensemble_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, weights=weights)
         df["signal"] = ensemble_signals
 
-        # Backtest
         print("🔄 Kører backtest ...")
         trades_df, balance_df = run_backtest(df, signals=ensemble_signals)
         metrics = calc_backtest_metrics(trades_df, balance_df)
@@ -221,10 +203,8 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         drawdown = metrics.get("max_drawdown", 0)
         print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct}%, Drawdown: {drawdown}%")
 
-        # Log alle metrics til performance-history
         log_performance_metrics(metrics)
 
-        # Strategi-score på tværs af signaler (inkl. ROBUST regime-analyse via metrics.py)
         strat_scores = evaluate_strategies(
             df=df,
             ml_signals=ml_signals,
@@ -236,7 +216,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         )
         print("Strategi-score:", strat_scores)
 
-        # -------- ADAPTIV REGIME-FILTER --------
         regime_stats = strat_scores["ENSEMBLE"].get("regime_stats", {})
         active_regimes = []
         if regime_stats:
@@ -245,14 +224,13 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
                     active_regimes.append(regime)
             print(f"Aktive regimer for handel: {active_regimes}")
 
-            # Kun handle i aktive regimer
             filtered_signals = []
             for idx, row in df.iterrows():
                 this_regime = str(row.get("regime", ""))
                 if this_regime in active_regimes:
                     filtered_signals.append(df.at[idx, "signal"])
                 else:
-                    filtered_signals.append(0)  # HOLD
+                    filtered_signals.append(0)
             df["signal"] = filtered_signals
 
             trades_df, balance_df = run_backtest(df, signals=df["signal"].values)
@@ -271,7 +249,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         else:
             print("Ingen regime-stats fundet – adaptiv strategi springes over.")
 
-        # --- LOG versionsinfo og runparametre ---
         meta_path = f"outputs/feature_data/engine_meta_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
         log_engine_meta(
             meta_path=meta_path,
@@ -282,19 +259,16 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             metrics=metrics
         )
 
-        # Visualisering af strategi-score
         score_plot_path = os.path.join(
             GRAPH_DIR, f"strategy_scores_{datetime.datetime.now():%Y%m%d_%H%M%S}.png"
         )
         plot_strategy_scores(strat_scores, save_path=score_plot_path)
         print(f"✅ Strategi-score-graf gemt: {score_plot_path}")
 
-        # Balance-graf og drawdown-graf
         print("🔄 Genererer grafer ...")
         plot_path = plot_backtest(balance_df, symbol=SYMBOL, save_dir=GRAPH_DIR)
         drawdown_path = plot_drawdown(balance_df, symbol=SYMBOL, save_dir=GRAPH_DIR)
 
-        # Telegram (inkluder strategi-score og graf)
         print("🔄 Sender grafer til Telegram ...")
         send_message(
             f"✅ Backtest for {SYMBOL} afsluttet!\n"
@@ -317,7 +291,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         if 'fi_path' in locals():
             send_image(fi_path, caption="🧠 Feature Importance for ML-model")
 
-        # -------- AUTO RETRAIN-TRIGGER --------
         if should_retrain(metrics):
             retrain_count += 1
             if retrain_count > MAX_RETRAINS:
@@ -328,11 +301,11 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
                 f"🚨 Retrain trigget automatisk! Win-rate: {win_rate*100:.1f}%, Profit: {profit_pct}% – Starter retrain (forsøg {retrain_count})"
             )
             print(f"🚨 Retrain trigget! Starter ny træning (forsøg {retrain_count}) ...")
-            seed = np.random.randint(0, 100_000)  # Ny random seed for retrain
-            continue  # Hop tilbage og start forfra (ny træning)
+            seed = np.random.randint(0, 100_000)
+            continue
         else:
             print("✅ Performance er tilfredsstillende – ingen retrain nødvendig.")
-            break  # Afslut loop hvis performance er ok
+            break
 
     print("🎉 Hele flowet er nu automatisk!")
 

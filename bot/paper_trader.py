@@ -5,6 +5,8 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import glob
+import matplotlib.pyplot as plt
 
 # --- sys.path-trick så du altid kan importere strategies/ og utils/ ---
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -26,6 +28,50 @@ SL = 0.02
 TP = 0.04
 START_BALANCE = 10000
 FEE = 0.0005
+
+def find_latest_feature_file(symbol, tf, version="v1.3"):
+    """Finder seneste feature-fil med mønster."""
+    pattern = f"outputs/feature_data/{symbol.lower()}_{tf}_features_{version}_*.csv"
+    files = glob.glob(pattern)
+    if not files:
+        return None
+    return max(files, key=os.path.getctime)
+
+def plot_trades(df, trades_df, journal_path):
+    """
+    Plot backtest equity, køb/salg, stop loss og take profit på prisgraf.
+    Gemmer graf som PNG i samme mappe som journal_path.
+    """
+    plt.figure(figsize=(14, 7))
+    plt.title("Backtest – Signaler & Exits")
+
+    # Pris graf
+    plt.plot(df['timestamp'], df['close'], label='Pris')
+
+    # Markér køb, salg, SL, TP
+    buys = trades_df[trades_df['type'] == 'BUY']
+    sells = trades_df[trades_df['type'] == 'SELL']
+    sls = trades_df[trades_df['type'] == 'SL']
+    tps = trades_df[trades_df['type'] == 'TP']
+
+    plt.scatter(buys['time'], buys['price'], marker='^', color='green', label='Køb', s=100)
+    plt.scatter(sells['time'], sells['price'], marker='v', color='red', label='Sælg', s=100)
+
+    if not sls.empty:
+        plt.scatter(sls['time'], sls['price'], marker='x', color='red', label='Stop Loss', s=100)
+    if not tps.empty:
+        plt.scatter(tps['time'], tps['price'], marker='*', color='gold', label='Take Profit', s=150)
+
+    plt.xlabel("Tid")
+    plt.ylabel("Pris")
+    plt.legend()
+    plt.tight_layout()
+
+    png_path = journal_path.replace('.csv', '.png')
+    plt.savefig(png_path)
+    print(f"✅ Trade-graf gemt som {png_path}")
+
+    plt.show()
 
 def paper_trade(
     df,
@@ -58,7 +104,6 @@ def paper_trade(
         if position == 1:
             pnl = (row['close'] - entry_price) / entry_price
 
-            # Brug adaptive SL/TP hvis valgt, ellers faste parametre
             this_sl = entry_row.get('sl_pct', sl) if use_adaptive_sl_tp else sl
             this_tp = entry_row.get('tp_pct', tp) if use_adaptive_sl_tp else tp
 
@@ -82,7 +127,6 @@ def paper_trade(
                 entry_row = None
         equity.append(balance)
 
-    # Luk åben position til sidst hvis åben
     if position == 1:
         final_price = df.iloc[-1]['close']
         pnl = (final_price - entry_price) / entry_price
@@ -103,58 +147,38 @@ def paper_trade(
     os.makedirs(os.path.dirname(JOURNAL_PATH), exist_ok=True)
     trades_df.to_csv(JOURNAL_PATH, index=False)
 
-    # Performance metrics
     win_rate = n_wins / n_trades * 100 if n_trades > 0 else 0
     print(f"Slutbalance: {balance:.2f}")
     print(f"Antal handler: {n_trades}")
     print(f"Win-rate: {win_rate:.1f}%")
     print(f"Journal gemt: {JOURNAL_PATH}")
 
-    # Ekstra: Udskriv professionelle performance-metrics
-    print_performance_report(
-        equity_curve=equity,
-        trades_df=trades_df
-    )
+    print_performance_report(equity_curve=equity, trades_df=trades_df)
 
-    # (Valgfrit) Plot equity curve
-    try:
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(12, 5))
-        plt.plot(equity)
-        plt.title("Equity Curve")
-        plt.xlabel("Step")
-        plt.ylabel("Balance")
-        plt.tight_layout()
-        plt.show()
-    except ImportError:
-        pass
+    plot_trades(df, trades_df, JOURNAL_PATH)
 
     return balance, trades_df
 
 if __name__ == "__main__":
-    # Batch-loop over alle coins og timeframes!
     for symbol in COINS:
         for tf in TIMEFRAMES:
-            feature_path = f"outputs/feature_data/{symbol.lower()}_{tf}_features_v1.3_{datetime.now().strftime('%Y%m%d')}.csv"
-            if not os.path.exists(feature_path):
-                print(f"❌ Featurefil mangler: {feature_path}")
+            feature_path = find_latest_feature_file(symbol, tf, version="v1.3")
+            if not feature_path:
+                print(f"❌ Featurefil mangler: {symbol} {tf} version v1.3")
                 continue
             print(f"\n=== Backtester {symbol} {tf} med Voting-Ensemble ===")
             df = pd.read_csv(feature_path)
             if 'timestamp' in df.columns:
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-            # Brug adaptive SL/TP hvis ønsket - uncomment næste linje for at aktivere
+            # Uncomment for adaptive SL/TP
             # df = add_adaptive_sl_tp(df)
 
-            # Vælg strategi (du kan let bytte nedenfor)
+            # Vælg strategi (kan byttes ud let)
             # df = ema_crossover_strategy(df)
             # df = ema_rsi_regime_strategy(df)
             # df = ema_rsi_adx_strategy(df)
-            df = voting_ensemble(df)  # Standard: ensemble/voting
+            df = voting_ensemble(df)
 
-            # Gem versioneret journal pr. batch-run
-            journal_path = (
-                f"outputs/paper_trades_{symbol.lower()}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            )
+            journal_path = f"outputs/paper_trades_{symbol.lower()}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             paper_trade(df, JOURNAL_PATH=journal_path)
