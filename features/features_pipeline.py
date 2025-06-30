@@ -51,12 +51,11 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
     if "macd" in features.get("trend", []):
         df = calculate_macd(df)
 
-    # Momentum: RSI
+    # Momentum: RSI (både rsi_14 og rsi_28 hvis valgt i config)
     for rsi_str in features.get("momentum", []):
         if "rsi" in rsi_str:
             rsi_num = int(rsi_str.split("_")[1])
             df[f"rsi_{rsi_num}"] = calculate_rsi(df, period=rsi_num)
-    # Evt. Stochastic, Williams %R osv.
 
     # Volatility: ATR, Bollinger
     if "atr_14" in features.get("volatility", []):
@@ -141,6 +140,8 @@ def test_pipeline():
     assert not features.isna().any().any(), "Der er stadig NaN i datasættet!"
     assert "ema_21" in features.columns, "EMA21 mangler!"
     assert "ema_200" in features.columns, "EMA200 mangler!"
+    assert "rsi_14" in features.columns, "RSI14 mangler!"
+    assert "rsi_28" in features.columns, "RSI28 mangler!"
     print("✅ Test bestået – alle hovedfeatures findes og ingen NaN!")
 
 # Eksempel på brug (fx i engine.py eller notebook):
