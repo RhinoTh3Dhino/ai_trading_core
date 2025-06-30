@@ -2,9 +2,12 @@ import os
 import requests
 import datetime
 
+from dotenv import load_dotenv
+load_dotenv()  # Hent variabler fra .env hvis ikke allerede sat
+
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-LOG_PATH = "telegram_log.txt"  # Simpel logfil i projektroden
+LOG_PATH = "telegram_log.txt"
 
 def telegram_enabled():
     if not TELEGRAM_TOKEN or TELEGRAM_TOKEN.lower() in ("", "none", "dummy_token"):
@@ -15,21 +18,21 @@ def telegram_enabled():
 
 def log_telegram(msg):
     t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(f"[{t}] {msg}\n")
+    try:
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(f"[{t}] {msg}\n")
+    except Exception:
+        pass  # Logger må aldrig stoppe botten
 
 def send_message(msg, chat_id=None, parse_mode=None):
     log_telegram(f"Sender besked: {msg}")
     if not telegram_enabled():
         print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
-        return
+        return None
     _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    data = {
-        "chat_id": _chat_id,
-        "text": msg
-    }
+    data = {"chat_id": _chat_id, "text": msg}
     if parse_mode:
         data["parse_mode"] = parse_mode
     try:
@@ -40,11 +43,12 @@ def send_message(msg, chat_id=None, parse_mode=None):
         else:
             print(f"❌ Telegram-fejl: {resp.text}")
             log_telegram(f"FEJL ved sendMessage: {resp.text}")
+        return resp
     except Exception as e:
         print(f"❌ Telegram exception: {e}")
         log_telegram(f"EXCEPTION ved sendMessage: {e}")
+        return None
 
-# Alias så alt i dit projekt kan bruge send_message
 send_telegram_message = send_message
 
 def send_image(photo_path, caption="", chat_id=None):
@@ -52,13 +56,10 @@ def send_image(photo_path, caption="", chat_id=None):
     if not telegram_enabled():
         print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
         log_telegram("[TESTMODE] Billede ikke sendt – Telegram inaktiv")
-        return
+        return None
     _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
-    data = {
-        "chat_id": _chat_id,
-        "caption": caption
-    }
+    data = {"chat_id": _chat_id, "caption": caption}
     try:
         with open(photo_path, "rb") as photo:
             files = {"photo": photo}
@@ -69,22 +70,21 @@ def send_image(photo_path, caption="", chat_id=None):
         else:
             print(f"❌ Telegram-fejl (billede): {resp.text}")
             log_telegram(f"FEJL ved sendPhoto: {resp.text}")
+        return resp
     except Exception as e:
         print(f"❌ Telegram exception (billede): {e}")
         log_telegram(f"EXCEPTION ved sendPhoto: {e}")
+        return None
 
 def send_document(doc_path, caption="", chat_id=None):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
     if not telegram_enabled():
         print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
         log_telegram("[TESTMODE] Dokument ikke sendt – Telegram inaktiv")
-        return
+        return None
     _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
-    data = {
-        "chat_id": _chat_id,
-        "caption": caption
-    }
+    data = {"chat_id": _chat_id, "caption": caption}
     try:
         with open(doc_path, "rb") as doc:
             files = {"document": doc}
@@ -95,9 +95,11 @@ def send_document(doc_path, caption="", chat_id=None):
         else:
             print(f"❌ Telegram-fejl (dokument): {resp.text}")
             log_telegram(f"FEJL ved sendDocument: {resp.text}")
+        return resp
     except Exception as e:
         print(f"❌ Telegram exception (dokument): {e}")
         log_telegram(f"EXCEPTION ved sendDocument: {e}")
+        return None
 
 def send_telegram_heartbeat(chat_id=None):
     t = datetime.datetime.now().strftime("%H:%M:%S")
@@ -108,9 +110,10 @@ def send_telegram_heartbeat(chat_id=None):
 def send_strategy_metrics(metrics, chat_id=None):
     msg = (
         f"Strategi-metrics:\n"
-        f"Profit: {metrics.get('profit_pct', 0)}%\n"
+        f"Profit: {metrics.get('profit_pct', 0):.2f}%\n"
         f"Win-rate: {metrics.get('win_rate', 0)*100:.1f}%\n"
-        f"Drawdown: {metrics.get('drawdown_pct', 0)}%\n"
+        f"Drawdown: {metrics.get('drawdown_pct', 0):.2f}%\n"
+        f"Sharpe: {metrics.get('sharpe', 'N/A')}\n"
         f"Antal handler: {metrics.get('num_trades', 0)}"
     )
     send_message(msg, chat_id=chat_id)
@@ -124,9 +127,7 @@ def send_status_advarsel(metrics, threshold=0.3, chat_id=None):
         )
         log_telegram("Advarsel om lav win-rate sendt.")
 
-# --- Step 3: Regime-analyse Telegram-funktioner ---
 def send_regime_warning(regime_stats, threshold=0.3, chat_id=None):
-    """Send advarsel hvis win-rate er lav i et regime."""
     if not regime_stats: return
     for regime, stats in regime_stats.items():
         if stats.get("win_rate", 1) < threshold:
@@ -138,7 +139,6 @@ def send_regime_warning(regime_stats, threshold=0.3, chat_id=None):
             log_telegram(f"Regime-advarsel sendt for {regime}.")
 
 def send_regime_summary(regime_stats, chat_id=None):
-    """Send regime performance summary til Telegram."""
     if not regime_stats:
         send_message("Ingen regime-stats tilgængelig.", chat_id=chat_id)
         return
@@ -152,14 +152,11 @@ def send_regime_summary(regime_stats, chat_id=None):
     send_message("\n".join(lines), chat_id=chat_id)
     log_telegram("Regime-summary sendt.")
 
-# --- Testfunktion ---
+# Testfunktion
 if __name__ == "__main__":
     send_message("Testbesked fra din AI trading bot!")
     send_telegram_heartbeat()
-    # send_image("graphs/btc_balance_20250605.png", caption="Balanceudvikling")
-    # send_document("data/trades.csv", caption="Trade journal")
 
-    # Test regime-funktion
     test_stats = {
         "bull": {"win_rate": 0.35, "profit_pct": 2.4, "num_trades": 10},
         "bear": {"win_rate": 0.25, "profit_pct": -1.2, "num_trades": 5},
