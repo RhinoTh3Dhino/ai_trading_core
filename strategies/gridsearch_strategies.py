@@ -17,7 +17,8 @@ def grid_search_sl_tp_ema(
     regime_col="regime",
     regime_value=1,
     log_path="outputs/gridsearch/gridsearch_results.csv",
-    strategy_func=ema_crossover_strategy,
+    strategy_func=ema_crossover_strategy,   # Kan udskiftes til anden strategi
+    rename_to_ema9_21=True,                 # Hvis True, strategien forventer ema_9/ema_21 navne
     top_n=5
 ):
     results = []
@@ -30,12 +31,23 @@ def grid_search_sl_tp_ema(
                         continue
 
                     test_df = df.copy()
-                    # Skriv EMA-kolonner så strategien altid får ema_9 og ema_21
-                    test_df["ema_9"] = test_df["close"].ewm(span=ema_fast, adjust=False).mean()
-                    test_df["ema_21"] = test_df["close"].ewm(span=ema_slow, adjust=False).mean()
 
-                    # Kør strategi direkte – INGEN kolonne-rename!
-                    strat_df = strategy_func(test_df)
+                    # Generér EMA-kolonner
+                    test_df[f"ema_{ema_fast}"] = test_df["close"].ewm(span=ema_fast, adjust=False).mean()
+                    test_df[f"ema_{ema_slow}"] = test_df["close"].ewm(span=ema_slow, adjust=False).mean()
+
+                    # Hvis strategien forventer ema_9/ema_21, lav rename!
+                    if rename_to_ema9_21:
+                        rename_map = {
+                            f"ema_{ema_fast}": "ema_9",
+                            f"ema_{ema_slow}": "ema_21"
+                        }
+                        strat_df = test_df.rename(columns=rename_map)
+                    else:
+                        strat_df = test_df
+
+                    # Kør strategi (fx ema_crossover_strategy eller custom)
+                    strat_df = strategy_func(strat_df)
 
                     # Regime filter (fx kun bull)
                     if regime_only and regime_col in strat_df.columns:
@@ -110,4 +122,4 @@ def paper_trade_simple(df, sl=0.02, tp=0.04, start_balance=10000, fee=0.0005):
     trades_df = pd.DataFrame(trades)
     return balance, trades_df
 
-# --- Klar til flere gridsearch-funktioner og strategier!
+# --- Nu nemt at tilføje flere gridsearch-funktioner og strategier! ---
