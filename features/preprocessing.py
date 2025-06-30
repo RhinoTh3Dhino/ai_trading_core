@@ -76,3 +76,38 @@ def create_lstm_sequences(df: pd.DataFrame, seq_length: int = 48):
         X.append(data[i:(i + seq_length)])
         y.append(data[i + seq_length])
     return np.array(X), np.array(y)
+
+def prepare_ml_data(df: pd.DataFrame, feature_cols: list, target_col: str = "close", target_shift: int = -1) -> pd.DataFrame:
+    """
+    Forbereder data til ML-træning ved at:
+    - Vælge features
+    - Lave target som f.eks. næste periodes prisændring eller binært signal
+    - Skifte target med target_shift (f.eks. -1 for næste periode)
+    - Droppe NaN der opstår pga. shift
+    
+    Args:
+        df: Input DataFrame med rådata og features.
+        feature_cols: Liste over kolonner der skal bruges som features.
+        target_col: Kolonnenavn for target, typisk "close".
+        target_shift: Hvor mange rækker target skal forskydes (negativ for fremtid).
+    
+    Returnerer:
+        DataFrame med features og 'target' kolonne klar til ML.
+    """
+    df = df.copy()
+    # Check feature cols findes
+    missing_cols = [col for col in feature_cols if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Følgende feature kolonner mangler i DataFrame: {missing_cols}")
+    
+    # Lav target som fremtidig prisændring (pct. ændring)
+    df['target'] = df[target_col].pct_change(periods=-target_shift).shift(-target_shift)
+    
+    # Alternativt kan du lave binært signal, fx: 1 hvis target > 0, ellers 0
+    # df['target'] = (df['target'] > 0).astype(int)
+    
+    # Drop NaN som opstår pga. shift
+    df = df.dropna(subset=feature_cols + ['target'])
+    
+    # Returner kun features + target
+    return df[feature_cols + ['target']].reset_index(drop=True)

@@ -144,7 +144,7 @@ if __name__ == "__main__":
             if 'timestamp' in df.columns:
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-            # Brug adaptive SL/TP hvis ønsket
+            # Brug adaptive SL/TP hvis ønsket - uncomment næste linje for at aktivere
             # df = add_adaptive_sl_tp(df)
 
             # Vælg strategi (du kan let bytte nedenfor)
