@@ -4,7 +4,7 @@
 # Valgte tekniske indikatorer/features (kan let udvides)
 FEATURES = {
     "trend": ["ema_21", "ema_200", "macd"],
-    "momentum": ["rsi_14", "stochastic_14"],
+    "momentum": ["rsi_14", "rsi_28", "stochastic_14"],
     "volatility": ["atr_14", "bb_upper", "bb_lower"],
     "volume": ["obv", "vwap"],
     "regime": ["adx_14", "zscore_20"],
