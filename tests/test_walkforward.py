@@ -3,6 +3,7 @@
 import sys
 import os
 import glob
+import traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pandas as pd
@@ -15,10 +16,9 @@ from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.gridsearch_strategies import paper_trade_simple
 from utils.performance import calculate_performance_metrics
 
-# --- Walkforward-parametre (til mange splits, selv med lidt data) ---
-DEFAULT_WINDOW_SIZE = 200    # SÆNKET!
+DEFAULT_WINDOW_SIZE = 200
 MIN_WINDOW_SIZE = 100
-STEP_SIZE = 50               # SÆNKET!
+STEP_SIZE = 50
 TRAIN_SIZE = 0.7
 
 OUTPUT_DIR = "outputs/walkforward/"
@@ -53,6 +53,8 @@ def plot_walkforward_results(results_df, symbol, tf):
     plt.plot(windows, results_df['test_sharpe'], label='Test Sharpe')
     plt.plot(windows, results_df['test_win_rate'], label='Test Win-rate (%)')
     plt.plot(windows, results_df['test_final_balance'], label='Test Balance')
+    plt.plot(windows, results_df['test_pct_profit'], label='Test Profit %')
+    plt.plot(windows, results_df['test_max_drawdown'], label='Test Max Drawdown')
     plt.title(f"Walkforward Performance for {symbol} {tf}")
     plt.xlabel("Walkforward Window")
     plt.legend()
@@ -66,9 +68,8 @@ if __name__ == "__main__":
     all_results = []
     splits_count = {}
 
-    # Valg af strategi & paper_trade metode
-    STRATEGY = voting_ensemble  # ema_crossover_strategy, ema_rsi_regime_strategy, voting_ensemble
-    PAPER_TRADE_FUNC = paper_trade_advanced  # paper_trade_simple
+    STRATEGY = voting_ensemble
+    PAPER_TRADE_FUNC = paper_trade_advanced
 
     for symbol in COINS:
         for tf in TIMEFRAMES:
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
             print(f"\n=== Walkforward Validation: {symbol} {tf} ===")
             df = pd.read_csv(feature_path)
-            print(f"🔎 {symbol} {tf} har {len(df)} rækker i datasættet.")  # NYT diagnostic print
+            print(f"🔎 {symbol} {tf} har {len(df)} rækker i datasættet.")
 
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -100,8 +101,18 @@ if __name__ == "__main__":
                     train_balance, train_trades = PAPER_TRADE_FUNC(train_df)
                     test_balance, test_trades = PAPER_TRADE_FUNC(test_df)
 
+                    # Robust check: Ingen trades = ingen metrics!
+                    if len(train_trades) == 0 or len(test_trades) == 0:
+                        print(f"⚠️ Split {start}-{end} har ingen handler. Skipper split.")
+                        continue
+
                     train_metrics = calculate_performance_metrics(train_trades["balance"], train_trades)
                     test_metrics = calculate_performance_metrics(test_trades["balance"], test_trades)
+
+                    # Sanity: Hvis ikke dict, skip split (beskytter mod -1/NONE fejl)
+                    if not isinstance(train_metrics, dict) or not isinstance(test_metrics, dict):
+                        print(f"⚠️ Metrics returneret ikke dict. Skipper split {start}-{end}.")
+                        continue
 
                     train_metrics = {f"train_{k}": v for k, v in train_metrics.items()}
                     test_metrics = {f"test_{k}": v for k, v in test_metrics.items()}
@@ -118,13 +129,21 @@ if __name__ == "__main__":
                     result.update(test_metrics)
                     all_results.append(result)
 
+                    # Print alle nøgletal
                     print(f"[{symbol} {tf} Window {start}-{end}] Strategy: {STRATEGY.__name__}")
                     print(f"  Train Sharpe: {train_metrics['train_sharpe']:.2f}, Test Sharpe: {test_metrics['test_sharpe']:.2f}")
                     print(f"  Train Winrate: {train_metrics['train_win_rate']:.1f}%, Test Winrate: {test_metrics['test_win_rate']:.1f}%")
                     print(f"  Train Balance: {train_metrics['train_final_balance']:.2f}, Test Balance: {test_metrics['test_final_balance']:.2f}")
+                    print(f"  Train Profit: {train_metrics['train_abs_profit']:.2f} ({train_metrics['train_pct_profit']:.2f}%), "
+                          f"Test Profit: {test_metrics['test_abs_profit']:.2f} ({test_metrics['test_pct_profit']:.2f}%)")
+                    print(f"  Train MaxDD: {train_metrics['train_max_drawdown']:.2%}, Test MaxDD: {test_metrics['test_max_drawdown']:.2%}")
+                    print(f"  Train Expectancy: {train_metrics['train_expectancy']:.2f}%, Test Expectancy: {test_metrics['test_expectancy']:.2f}%")
+                    print(f"  Train Trades: {train_metrics['train_total_trades']}, Test Trades: {test_metrics['test_total_trades']}")
+                    print("-" * 70)
 
                 except Exception as e:
                     print(f"⚠️ Fejl i window {start}-{end} for {symbol} {tf}: {e}")
+                    traceback.print_exc()
                     continue
 
             splits_count[(symbol, tf)] = splits
@@ -143,7 +162,7 @@ if __name__ == "__main__":
         print(f"\n✅ Gemte walkforward-resultater til {out_csv}")
         print("\n=== Top-10 vinduer efter out-of-sample (test) Sharpe ===")
         print(results_df.sort_values("test_sharpe", ascending=False).head(10)[
-            ["symbol", "timeframe", "window_start", "window_end", "strategy", "test_sharpe", "test_win_rate", "test_final_balance"]
+            ["symbol", "timeframe", "window_start", "window_end", "strategy", "test_sharpe", "test_win_rate", "test_final_balance", "test_pct_profit", "test_max_drawdown", "test_expectancy"]
         ])
     else:
         print("Ingen walkforward-resultater blev genereret. Tjek feature-filer og pipeline.")

@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 
 def calculate_sharpe_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=252):
-    """
-    Sharpe ratio: Risikojusteret afkast (bruges til alt fra daily, 1h, 4h).
-    """
     returns = pd.Series(equity_curve).pct_change().dropna()
     if returns.std() == 0 or len(returns) < 2:
         return 0.0
@@ -14,9 +11,6 @@ def calculate_sharpe_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=25
     return sharpe
 
 def calculate_sortino_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=252):
-    """
-    Sortino Ratio: Risikojusteret afkast kun ift. negative udsving (downside risk).
-    """
     returns = pd.Series(equity_curve).pct_change().dropna()
     neg_returns = returns[returns < 0]
     downside = neg_returns.std()
@@ -26,27 +20,18 @@ def calculate_sortino_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=2
     return excess / (downside + 1e-9) * np.sqrt(periods_per_year)
 
 def calculate_max_drawdown(equity_curve):
-    """
-    Max Drawdown: Største peak-to-trough tab, relativt til højeste værdi.
-    """
     equity = np.array(equity_curve)
     roll_max = np.maximum.accumulate(equity)
     drawdown = (equity - roll_max) / roll_max
     return drawdown.min() if len(drawdown) > 0 else 0.0
 
 def calculate_winrate(trades_df):
-    """
-    Winrate: Hvor mange handler var positive.
-    """
     if 'pnl_%' not in trades_df or len(trades_df) == 0:
         return np.nan
     wins = trades_df['pnl_%'] > 0
     return wins.sum() / len(trades_df) * 100
 
 def calculate_profit_factor(trades_df):
-    """
-    Profit Factor: Samlet profit / samlet tab (ratio > 1 = profitabel strategi).
-    """
     if 'pnl_%' not in trades_df or len(trades_df) == 0:
         return np.nan
     profits = trades_df[trades_df['pnl_%'] > 0]['pnl_%'].sum()
@@ -54,17 +39,27 @@ def calculate_profit_factor(trades_df):
     return profits / losses if losses > 0 else np.nan
 
 def calculate_expectancy(trades_df):
-    """
-    Expectancy: Forventet afkast pr. trade (%).
-    """
     if 'pnl_%' not in trades_df or len(trades_df) == 0:
         return np.nan
     return trades_df['pnl_%'].mean()
 
+def calculate_profit(equity_curve):
+    """Robust udgave – altid brug iloc hvis muligt for Pandas Series, ellers fallback til standard index."""
+    if hasattr(equity_curve, "iloc"):
+        if len(equity_curve) < 2:
+            return 0.0, 0.0
+        start = equity_curve.iloc[0]
+        end = equity_curve.iloc[-1]
+    else:
+        if len(equity_curve) < 2:
+            return 0.0, 0.0
+        start = equity_curve[0]
+        end = equity_curve[-1]
+    abs_profit = end - start
+    pct_profit = (end / start - 1) * 100 if start != 0 else np.nan
+    return abs_profit, pct_profit
+
 def calculate_trade_stats(trades_df):
-    """
-    Udtræk alle nøgletal på trades_df – bruges både til rapport og grid search.
-    """
     stats = {
         "total_trades": len(trades_df),
         "win_rate": calculate_winrate(trades_df),
@@ -80,18 +75,17 @@ def calculate_trade_stats(trades_df):
     return stats
 
 def print_performance_report(equity_curve, trades_df):
-    """
-    Udskriv professionel performance-rapport til konsollen.
-    """
     sharpe = calculate_sharpe_ratio(equity_curve)
     sortino = calculate_sortino_ratio(equity_curve)
     max_dd = calculate_max_drawdown(equity_curve)
+    abs_profit, pct_profit = calculate_profit(equity_curve)
     stats = calculate_trade_stats(trades_df)
 
     print("===== PERFORMANCE REPORT =====")
     print(f"Sharpe ratio   : {sharpe:.2f}")
     print(f"Sortino ratio  : {sortino:.2f}")
     print(f"Max Drawdown   : {max_dd:.2%}")
+    print(f"Profit         : {abs_profit:.2f} ({pct_profit:.2f}%)")
     print(f"Win-rate       : {stats['win_rate']:.1f}%")
     print(f"Profit factor  : {stats['profit_factor']:.2f}")
     print(f"Expectancy     : {stats['expectancy']:.2f}%")
@@ -103,13 +97,10 @@ def print_performance_report(equity_curve, trades_df):
 # --------- GRID SEARCH OG ENSEMBLE/ML READY ---------
 
 def calculate_performance_metrics(equity_curve, trades_df):
-    """
-    Returnér dictionary med ALLE relevante nøgletal (bruges til grid search og analyse).
-    Robust mod equity_curve som både liste, np.array eller pd.Series!
-    """
     sharpe = calculate_sharpe_ratio(equity_curve)
     sortino = calculate_sortino_ratio(equity_curve)
     max_dd = calculate_max_drawdown(equity_curve)
+    abs_profit, pct_profit = calculate_profit(equity_curve)
     stats = calculate_trade_stats(trades_df)
 
     # Robust final_balance (virker både for liste, array, Series)
@@ -125,6 +116,8 @@ def calculate_performance_metrics(equity_curve, trades_df):
         "sortino": sortino,
         "max_drawdown": max_dd,
         "final_balance": final_balance,
+        "abs_profit": abs_profit,
+        "pct_profit": pct_profit,
         "win_rate": stats["win_rate"],
         "profit_factor": stats["profit_factor"],
         "expectancy": stats["expectancy"],
