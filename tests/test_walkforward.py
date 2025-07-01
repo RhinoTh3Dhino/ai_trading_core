@@ -16,6 +16,9 @@ from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.gridsearch_strategies import paper_trade_simple
 from utils.performance import calculate_performance_metrics
 
+# --- Telegram integration ---
+from utils.telegram_utils import send_image, send_document
+
 DEFAULT_WINDOW_SIZE = 200
 MIN_WINDOW_SIZE = 100
 STEP_SIZE = 50
@@ -55,6 +58,13 @@ def plot_walkforward_results(results_df, symbol, tf):
     plt.plot(windows, results_df['test_final_balance'], label='Test Balance')
     plt.plot(windows, results_df['test_pct_profit'], label='Test Profit %')
     plt.plot(windows, results_df['test_max_drawdown'], label='Test Max Drawdown')
+    # Bonus-metrics
+    if 'test_volatility' in results_df:
+        plt.plot(windows, results_df['test_volatility'], label='Test Volatility')
+    if 'test_calmar' in results_df:
+        plt.plot(windows, results_df['test_calmar'], label='Test Calmar')
+    if 'test_buyhold_pct' in results_df:
+        plt.plot(windows, results_df['test_buyhold_pct'], label='Buy & Hold (test)')
     plt.title(f"Walkforward Performance for {symbol} {tf}")
     plt.xlabel("Walkforward Window")
     plt.legend()
@@ -63,6 +73,7 @@ def plot_walkforward_results(results_df, symbol, tf):
     plt.savefig(filename)
     plt.show()
     print(f"✅ Walkforward performance-graf gemt som {filename}")
+    return filename
 
 if __name__ == "__main__":
     all_results = []
@@ -101,7 +112,6 @@ if __name__ == "__main__":
                     train_balance, train_trades = PAPER_TRADE_FUNC(train_df)
                     test_balance, test_trades = PAPER_TRADE_FUNC(test_df)
 
-                    # Robust check: Ingen trades = ingen metrics!
                     if len(train_trades) == 0 or len(test_trades) == 0:
                         print(f"⚠️ Split {start}-{end} har ingen handler. Skipper split.")
                         continue
@@ -109,13 +119,23 @@ if __name__ == "__main__":
                     train_metrics = calculate_performance_metrics(train_trades["balance"], train_trades)
                     test_metrics = calculate_performance_metrics(test_trades["balance"], test_trades)
 
-                    # Sanity: Hvis ikke dict, skip split (beskytter mod -1/NONE fejl)
                     if not isinstance(train_metrics, dict) or not isinstance(test_metrics, dict):
                         print(f"⚠️ Metrics returneret ikke dict. Skipper split {start}-{end}.")
                         continue
 
                     train_metrics = {f"train_{k}": v for k, v in train_metrics.items()}
                     test_metrics = {f"test_{k}": v for k, v in test_metrics.items()}
+
+                    # --- Buy & Hold for både train og test ---
+                    train_buyhold = np.nan
+                    test_buyhold = np.nan
+                    if "close" in train_df.columns and "close" in test_df.columns:
+                        bh_train_start = train_df["close"].iloc[0]
+                        bh_train_end = train_df["close"].iloc[-1]
+                        train_buyhold = (bh_train_end / bh_train_start - 1) * 100 if bh_train_start != 0 else np.nan
+                        bh_test_start = test_df["close"].iloc[0]
+                        bh_test_end = test_df["close"].iloc[-1]
+                        test_buyhold = (bh_test_end / bh_test_start - 1) * 100 if bh_test_start != 0 else np.nan
 
                     result = {
                         "symbol": symbol,
@@ -124,21 +144,25 @@ if __name__ == "__main__":
                         "window_end": end,
                         "strategy": STRATEGY.__name__,
                         "window_size": window_size,
+                        "train_buyhold_pct": train_buyhold,
+                        "test_buyhold_pct": test_buyhold,
                     }
                     result.update(train_metrics)
                     result.update(test_metrics)
                     all_results.append(result)
 
-                    # Print alle nøgletal
                     print(f"[{symbol} {tf} Window {start}-{end}] Strategy: {STRATEGY.__name__}")
-                    print(f"  Train Sharpe: {train_metrics['train_sharpe']:.2f}, Test Sharpe: {test_metrics['test_sharpe']:.2f}")
-                    print(f"  Train Winrate: {train_metrics['train_win_rate']:.1f}%, Test Winrate: {test_metrics['test_win_rate']:.1f}%")
-                    print(f"  Train Balance: {train_metrics['train_final_balance']:.2f}, Test Balance: {test_metrics['test_final_balance']:.2f}")
-                    print(f"  Train Profit: {train_metrics['train_abs_profit']:.2f} ({train_metrics['train_pct_profit']:.2f}%), "
-                          f"Test Profit: {test_metrics['test_abs_profit']:.2f} ({test_metrics['test_pct_profit']:.2f}%)")
-                    print(f"  Train MaxDD: {train_metrics['train_max_drawdown']:.2%}, Test MaxDD: {test_metrics['test_max_drawdown']:.2%}")
-                    print(f"  Train Expectancy: {train_metrics['train_expectancy']:.2f}%, Test Expectancy: {test_metrics['test_expectancy']:.2f}%")
-                    print(f"  Train Trades: {train_metrics['train_total_trades']}, Test Trades: {test_metrics['test_total_trades']}")
+                    print(f"  Train Sharpe: {train_metrics.get('train_sharpe', np.nan):.2f}, Test Sharpe: {test_metrics.get('test_sharpe', np.nan):.2f}")
+                    print(f"  Train Winrate: {train_metrics.get('train_win_rate', np.nan):.1f}%, Test Winrate: {test_metrics.get('test_win_rate', np.nan):.1f}%")
+                    print(f"  Train Balance: {train_metrics.get('train_final_balance', np.nan):.2f}, Test Balance: {test_metrics.get('test_final_balance', np.nan):.2f}")
+                    print(f"  Train Profit: {train_metrics.get('train_abs_profit', np.nan):.2f} ({train_metrics.get('train_pct_profit', np.nan):.2f}%), "
+                          f"Test Profit: {test_metrics.get('test_abs_profit', np.nan):.2f} ({test_metrics.get('test_pct_profit', np.nan):.2f}%)")
+                    print(f"  Train MaxDD: {train_metrics.get('train_max_drawdown', np.nan):.2%}, Test MaxDD: {test_metrics.get('test_max_drawdown', np.nan):.2%}")
+                    print(f"  Train Calmar: {train_metrics.get('train_calmar', np.nan):.2f}, Test Calmar: {test_metrics.get('test_calmar', np.nan):.2f}")
+                    print(f"  Train Volatility: {train_metrics.get('train_volatility', np.nan):.2f}, Test Volatility: {test_metrics.get('test_volatility', np.nan):.2f}")
+                    print(f"  Train Kelly: {train_metrics.get('train_kelly_criterion', np.nan):.2f}, Test Kelly: {test_metrics.get('test_kelly_criterion', np.nan):.2f}")
+                    print(f"  Train Buy & Hold: {train_buyhold:.2f}% | Test Buy & Hold: {test_buyhold:.2f}%")
+                    print(f"  Train Trades: {train_metrics.get('train_total_trades', 0)}, Test Trades: {test_metrics.get('test_total_trades', 0)}")
                     print("-" * 70)
 
                 except Exception as e:
@@ -151,7 +175,13 @@ if __name__ == "__main__":
 
             results_df = pd.DataFrame([r for r in all_results if r['symbol']==symbol and r['timeframe']==tf])
             if not results_df.empty:
-                plot_walkforward_results(results_df, symbol, tf)
+                plot_path = plot_walkforward_results(results_df, symbol, tf)
+                # Send graf til Telegram med Buy & Hold info
+                bh_mean = results_df['test_buyhold_pct'].mean() if 'test_buyhold_pct' in results_df else np.nan
+                send_image(
+                    plot_path,
+                    caption=f"Walkforward-graf for {symbol} {tf}\nBuy & Hold (test): {bh_mean:.2f}%"
+                )
 
     results_df = pd.DataFrame(all_results)
     out_csv = os.path.join(
@@ -160,10 +190,19 @@ if __name__ == "__main__":
     if not results_df.empty:
         results_df.to_csv(out_csv, index=False)
         print(f"\n✅ Gemte walkforward-resultater til {out_csv}")
+        send_document(
+            out_csv,
+            caption="Walkforward-summary (inkl. Buy & Hold)"
+        )
         print("\n=== Top-10 vinduer efter out-of-sample (test) Sharpe ===")
-        print(results_df.sort_values("test_sharpe", ascending=False).head(10)[
-            ["symbol", "timeframe", "window_start", "window_end", "strategy", "test_sharpe", "test_win_rate", "test_final_balance", "test_pct_profit", "test_max_drawdown", "test_expectancy"]
-        ])
+        cols_to_show = [
+            "symbol", "timeframe", "window_start", "window_end", "strategy",
+            "test_sharpe", "test_win_rate", "test_final_balance", "test_pct_profit",
+            "test_max_drawdown", "test_calmar", "test_volatility", "test_kelly_criterion",
+            "test_buyhold_pct", "test_expectancy"
+        ]
+        show_cols = [col for col in cols_to_show if col in results_df.columns]
+        print(results_df.sort_values("test_sharpe", ascending=False).head(10)[show_cols])
     else:
         print("Ingen walkforward-resultater blev genereret. Tjek feature-filer og pipeline.")
 

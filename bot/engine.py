@@ -24,7 +24,9 @@ from backtest.metrics import evaluate_strategies
 from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
 from visualization.plot_strategy_score import plot_strategy_scores
-from utils.telegram_utils import send_image, send_message, send_regime_summary, send_regime_warning
+from utils.telegram_utils import (
+    send_image, send_message, send_regime_summary, send_regime_warning, send_performance_report
+)
 from utils.robust_utils import safe_run
 from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
 from strategies.rsi_strategy import rsi_rule_based_signals
@@ -126,7 +128,7 @@ def log_performance_metrics(metrics, filename="outputs/performance_metrics_histo
 
 def should_retrain(metrics):
     win_rate = metrics.get("win_rate", 0)
-    profit_pct = metrics.get("profit_pct", 0)
+    profit_pct = metrics.get("pct_profit", 0)
     retrain = (win_rate < RETRAIN_WINRATE_THRESHOLD) or (profit_pct < RETRAIN_PROFIT_THRESHOLD)
     if retrain:
         print(f"🚨 Retrain trigget: win_rate={win_rate:.3f}, profit_pct={profit_pct:.3f}")
@@ -199,11 +201,14 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         metrics = calc_backtest_metrics(trades_df, balance_df)
         print("Backtest-metrics:", metrics)
         win_rate = metrics.get("win_rate", 0)
-        profit_pct = metrics.get("profit_pct", 0)
+        profit_pct = metrics.get("pct_profit", 0)
         drawdown = metrics.get("max_drawdown", 0)
-        print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct}%, Drawdown: {drawdown}%")
+        print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2%}")
 
         log_performance_metrics(metrics)
+
+        # Send alt til Telegram som professionel rapport!
+        send_performance_report(metrics, symbol=SYMBOL, timeframe="1h", window=None)
 
         strat_scores = evaluate_strategies(
             df=df,
@@ -237,15 +242,16 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             metrics = calc_backtest_metrics(trades_df, balance_df)
             print(f"[ADAPTIV] Backtest-metrics efter regime-filter:", metrics)
             win_rate = metrics.get("win_rate", 0)
-            profit_pct = metrics.get("profit_pct", 0)
+            profit_pct = metrics.get("pct_profit", 0)
             drawdown = metrics.get("max_drawdown", 0)
-            print(f"[ADAPTIV] Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct}%, Drawdown: {drawdown}%")
+            print(f"[ADAPTIV] Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2%}")
             log_performance_metrics(metrics)
             send_message(
                 f"🤖 Adaptiv regime-strategi aktiv!\n"
                 f"Aktive regimer: {active_regimes}\n"
-                f"Profit: {profit_pct}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics['num_trades']}\n"
+                f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('total_trades', 'N/A')}\n"
             )
+            send_performance_report(metrics, symbol=SYMBOL, timeframe="1h", window="ADAPTIV")
         else:
             print("Ingen regime-stats fundet – adaptiv strategi springes over.")
 
@@ -275,7 +281,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             f"Mode: Weighted voting\n"
             f"Weights: {weights}\n"
             f"Threshold: {threshold}\n"
-            f"Profit: {profit_pct}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics['num_trades']}\n"
+            f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('total_trades', 'N/A')}\n"
             f"\n"
             f"📊 Strategi-score:\n"
             f"ML:    {strat_scores['ML']}\n"
@@ -298,7 +304,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
                 print("⚠️ Maksimalt antal retrains nået. Afslutter loop.")
                 break
             send_message(
-                f"🚨 Retrain trigget automatisk! Win-rate: {win_rate*100:.1f}%, Profit: {profit_pct}% – Starter retrain (forsøg {retrain_count})"
+                f"🚨 Retrain trigget automatisk! Win-rate: {win_rate*100:.1f}%, Profit: {profit_pct:.2f}% – Starter retrain (forsøg {retrain_count})"
             )
             print(f"🚨 Retrain trigget! Starter ny træning (forsøg {retrain_count}) ...")
             seed = np.random.randint(0, 100_000)

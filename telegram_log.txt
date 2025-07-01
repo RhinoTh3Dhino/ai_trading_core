@@ -2889,3 +2889,23 @@ Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feat
 [2025-07-01 01:50:39] Billede sendt OK.
 [2025-07-01 01:50:39] Sender besked: ⚠️ Maksimalt antal retrains nået (3). Stopper retrain-loop.
 [2025-07-01 01:50:39] Besked sendt OK.
+[2025-07-01 03:46:22] Sender billede: outputs/walkforward/walkforward_plot_BTCUSDT_1h_20250701_034621.png (caption: Walkforward-graf for BTCUSDT 1h
+Buy & Hold (test): 11.49%)
+[2025-07-01 03:46:22] Billede sendt OK.
+[2025-07-01 03:46:33] Sender billede: outputs/walkforward/walkforward_plot_BTCUSDT_4h_20250701_034632.png (caption: Walkforward-graf for BTCUSDT 4h
+Buy & Hold (test): 0.58%)
+[2025-07-01 03:46:34] Billede sendt OK.
+[2025-07-01 03:46:44] Sender billede: outputs/walkforward/walkforward_plot_ETHUSDT_1h_20250701_034643.png (caption: Walkforward-graf for ETHUSDT 1h
+Buy & Hold (test): -6.78%)
+[2025-07-01 03:46:44] Billede sendt OK.
+[2025-07-01 03:46:55] Sender billede: outputs/walkforward/walkforward_plot_ETHUSDT_4h_20250701_034654.png (caption: Walkforward-graf for ETHUSDT 4h
+Buy & Hold (test): 1.05%)
+[2025-07-01 03:46:55] Billede sendt OK.
+[2025-07-01 03:47:06] Sender billede: outputs/walkforward/walkforward_plot_DOGEUSDT_1h_20250701_034705.png (caption: Walkforward-graf for DOGEUSDT 1h
+Buy & Hold (test): 4.64%)
+[2025-07-01 03:47:06] Billede sendt OK.
+[2025-07-01 03:47:17] Sender billede: outputs/walkforward/walkforward_plot_DOGEUSDT_4h_20250701_034716.png (caption: Walkforward-graf for DOGEUSDT 4h
+Buy & Hold (test): 6.83%)
+[2025-07-01 03:47:17] Billede sendt OK.
+[2025-07-01 03:47:17] Sender dokument: outputs/walkforward/walkforward_summary_20250701_034717.csv (caption: Walkforward-summary (inkl. Buy & Hold))
+[2025-07-01 03:47:18] Dokument sendt OK.

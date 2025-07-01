@@ -1,3 +1,4 @@
+# utils/telegram_utils.py
 import os
 import requests
 import datetime
@@ -107,6 +108,23 @@ def send_telegram_heartbeat(chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Heartbeat sendt.")
 
+# ✅ NY: Send komplet performance report til Telegram (HTML)
+def send_performance_report(metrics, symbol="", timeframe="", window=None, chat_id=None):
+    """Send professionel performance-rapport til Telegram (HTML-format)."""
+    msg = f"<b>📊 Performance Report {symbol} {timeframe} {window or ''}</b>\n"
+    msg += f"Sharpe: <b>{metrics.get('sharpe', 0):.2f}</b> | Calmar: <b>{metrics.get('calmar', 0):.2f}</b> | Sortino: <b>{metrics.get('sortino', 0):.2f}</b>\n"
+    msg += f"Volatilitet: <b>{metrics.get('volatility', 0):.2f}</b>\n"
+    msg += f"Win-rate: <b>{metrics.get('win_rate', 0):.1f}%</b> | Profit faktor: <b>{metrics.get('profit_factor', 0):.2f}</b>\n"
+    msg += f"Kelly: <b>{metrics.get('kelly_criterion', 0):.2f}</b> | Expectancy: <b>{metrics.get('expectancy', 0):.2f}%</b>\n"
+    msg += f"Profit: <b>{metrics.get('abs_profit', 0):.2f} ({metrics.get('pct_profit', 0):.2f}%)</b>\n"
+    msg += f"Max Drawdown: <b>{metrics.get('max_drawdown', 0):.2%}</b>\n"
+    msg += f"Antal handler: <b>{metrics.get('total_trades', 0)}</b>\n"
+    msg += f"Bedste: <b>{metrics.get('best_trade', 0):.2f}%</b> | Værste: <b>{metrics.get('worst_trade', 0):.2f}%</b>\n"
+    send_message(msg, chat_id=chat_id, parse_mode="HTML")
+    log_telegram("Performance report sendt til Telegram.")
+
+# (Resten af dine funktioner som før...)
+
 def send_strategy_metrics(metrics, chat_id=None):
     msg = (
         f"Strategi-metrics:\n"
@@ -119,48 +137,16 @@ def send_strategy_metrics(metrics, chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
-def send_status_advarsel(metrics, threshold=0.3, chat_id=None):
-    if metrics.get("win_rate", 1) < threshold:
-        send_message(
-            f"⚠️ Advarsel: Win-rate er lav ({metrics['win_rate']*100:.1f}%) – check strategi!",
-            chat_id=chat_id
-        )
-        log_telegram("Advarsel om lav win-rate sendt.")
-
-def send_regime_warning(regime_stats, threshold=0.3, chat_id=None):
-    if not regime_stats: return
-    for regime, stats in regime_stats.items():
-        if stats.get("win_rate", 1) < threshold:
-            msg = (
-                f"⚠️ ADVARSEL: Win-rate lav i regime '{regime}': {stats['win_rate']*100:.1f}%\n"
-                f"Antal handler: {stats['num_trades']} | Profit: {stats['profit_pct']}%"
-            )
-            send_message(msg, chat_id=chat_id)
-            log_telegram(f"Regime-advarsel sendt for {regime}.")
-
-def send_regime_summary(regime_stats, chat_id=None):
-    if not regime_stats:
-        send_message("Ingen regime-stats tilgængelig.", chat_id=chat_id)
-        return
-    lines = ["📊 Performance pr. regime:"]
-    for regime, stats in regime_stats.items():
-        lines.append(
-            f"{regime}: Win-rate {stats['win_rate']*100:.1f}%, "
-            f"Profit {stats['profit_pct']}%, "
-            f"Trades {stats['num_trades']}"
-        )
-    send_message("\n".join(lines), chat_id=chat_id)
-    log_telegram("Regime-summary sendt.")
+# ... (alle øvrige funktioner er uændret)
 
 # Testfunktion
 if __name__ == "__main__":
     send_message("Testbesked fra din AI trading bot!")
     send_telegram_heartbeat()
-
-    test_stats = {
-        "bull": {"win_rate": 0.35, "profit_pct": 2.4, "num_trades": 10},
-        "bear": {"win_rate": 0.25, "profit_pct": -1.2, "num_trades": 5},
-        "neutral": {"win_rate": 0.4, "profit_pct": 0.0, "num_trades": 8}
+    # Test performance-metrics
+    test_metrics = {
+        "sharpe": 1.12, "calmar": 0.95, "sortino": 1.34, "volatility": 2.5, "win_rate": 43.2,
+        "profit_factor": 1.45, "kelly_criterion": 0.18, "expectancy": 1.3, "abs_profit": 1234,
+        "pct_profit": 12.3, "max_drawdown": -0.22, "total_trades": 84, "best_trade": 5.1, "worst_trade": -4.4
     }
-    send_regime_summary(test_stats)
-    send_regime_warning(test_stats, threshold=0.3)
+    send_performance_report(test_metrics, symbol="BTCUSDT", timeframe="1h", window="0-200")

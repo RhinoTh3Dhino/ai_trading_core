@@ -8,7 +8,7 @@ def calculate_sharpe_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=25
         return 0.0
     excess = returns - (risk_free_rate / periods_per_year)
     sharpe = excess.mean() / (returns.std() + 1e-9) * np.sqrt(periods_per_year)
-    return sharpe
+    return sharpe if np.isfinite(sharpe) else 0.0
 
 def calculate_sortino_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=252):
     returns = pd.Series(equity_curve).pct_change().dropna()
@@ -17,13 +17,34 @@ def calculate_sortino_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=2
     if downside == 0 or len(returns) < 2:
         return 0.0
     excess = returns.mean() - (risk_free_rate / periods_per_year)
-    return excess / (downside + 1e-9) * np.sqrt(periods_per_year)
+    sortino = excess / (downside + 1e-9) * np.sqrt(periods_per_year)
+    return sortino if np.isfinite(sortino) else 0.0
 
 def calculate_max_drawdown(equity_curve):
     equity = np.array(equity_curve)
+    if len(equity) == 0:
+        return 0.0
     roll_max = np.maximum.accumulate(equity)
-    drawdown = (equity - roll_max) / roll_max
+    drawdown = (equity - roll_max) / (roll_max + 1e-9)
     return drawdown.min() if len(drawdown) > 0 else 0.0
+
+def calculate_volatility(equity_curve, periods_per_year=252):
+    """Annualiseret volatilitet baseret på afkast."""
+    returns = pd.Series(equity_curve).pct_change().dropna()
+    volatility = returns.std() * np.sqrt(periods_per_year) if len(returns) > 1 else np.nan
+    return volatility if np.isfinite(volatility) else 0.0
+
+def calculate_calmar_ratio(equity_curve, periods_per_year=252):
+    """Calmar Ratio: annualiseret afkast divideret med absolut max drawdown."""
+    returns = pd.Series(equity_curve).pct_change().dropna()
+    if len(returns) < 2:
+        return np.nan
+    annual_return = (1 + returns.mean()) ** periods_per_year - 1
+    max_dd = abs(calculate_max_drawdown(equity_curve))
+    if max_dd == 0:
+        return np.nan
+    calmar = annual_return / max_dd
+    return calmar if np.isfinite(calmar) else 0.0
 
 def calculate_winrate(trades_df):
     if 'pnl_%' not in trades_df or len(trades_df) == 0:
@@ -36,15 +57,31 @@ def calculate_profit_factor(trades_df):
         return np.nan
     profits = trades_df[trades_df['pnl_%'] > 0]['pnl_%'].sum()
     losses = -trades_df[trades_df['pnl_%'] < 0]['pnl_%'].sum()
-    return profits / losses if losses > 0 else np.nan
+    pf = profits / losses if losses > 0 else np.nan
+    return pf if np.isfinite(pf) else 0.0
 
 def calculate_expectancy(trades_df):
     if 'pnl_%' not in trades_df or len(trades_df) == 0:
         return np.nan
-    return trades_df['pnl_%'].mean()
+    exp = trades_df['pnl_%'].mean()
+    return exp if np.isfinite(exp) else 0.0
+
+def calculate_kelly_criterion(trades_df):
+    """Optimal risiko pr. trade ift. bankroll. Værdier > 0.3 bør bruges med forsigtighed!"""
+    if 'pnl_%' not in trades_df or len(trades_df) == 0:
+        return np.nan
+    win_rate = calculate_winrate(trades_df) / 100
+    loss_rate = 1 - win_rate
+    avg_win = trades_df[trades_df['pnl_%'] > 0]['pnl_%'].mean()
+    avg_loss = abs(trades_df[trades_df['pnl_%'] < 0]['pnl_%'].mean())
+    if avg_loss == 0 or np.isnan(avg_win) or np.isnan(avg_loss):
+        return 0.0
+    b = avg_win / avg_loss
+    kelly = win_rate - (loss_rate / b) if b != 0 else 0.0
+    return kelly if np.isfinite(kelly) else 0.0
 
 def calculate_profit(equity_curve):
-    """Robust udgave – altid brug iloc hvis muligt for Pandas Series, ellers fallback til standard index."""
+    """Robust – brug iloc hvis muligt for Pandas Series, ellers fallback til standard index."""
     if hasattr(equity_curve, "iloc"):
         if len(equity_curve) < 2:
             return 0.0, 0.0
@@ -65,6 +102,7 @@ def calculate_trade_stats(trades_df):
         "win_rate": calculate_winrate(trades_df),
         "expectancy": calculate_expectancy(trades_df),
         "profit_factor": calculate_profit_factor(trades_df),
+        "kelly_criterion": calculate_kelly_criterion(trades_df),
         "avg_pnl": trades_df['pnl_%'].mean() if 'pnl_%' in trades_df and len(trades_df) > 0 else np.nan,
         "best_trade": trades_df['pnl_%'].max() if 'pnl_%' in trades_df and len(trades_df) > 0 else np.nan,
         "worst_trade": trades_df['pnl_%'].min() if 'pnl_%' in trades_df and len(trades_df) > 0 else np.nan,
@@ -72,38 +110,46 @@ def calculate_trade_stats(trades_df):
         "num_wins": (trades_df['pnl_%'] > 0).sum() if 'pnl_%' in trades_df and len(trades_df) > 0 else np.nan,
         "num_losses": (trades_df['pnl_%'] < 0).sum() if 'pnl_%' in trades_df and len(trades_df) > 0 else np.nan,
     }
+    # Robusthed mod nan/inf
+    for k, v in stats.items():
+        if isinstance(v, float) and (np.isnan(v) or not np.isfinite(v)):
+            stats[k] = 0.0
     return stats
 
 def print_performance_report(equity_curve, trades_df):
     sharpe = calculate_sharpe_ratio(equity_curve)
     sortino = calculate_sortino_ratio(equity_curve)
     max_dd = calculate_max_drawdown(equity_curve)
+    volatility = calculate_volatility(equity_curve)
+    calmar = calculate_calmar_ratio(equity_curve)
     abs_profit, pct_profit = calculate_profit(equity_curve)
     stats = calculate_trade_stats(trades_df)
 
     print("===== PERFORMANCE REPORT =====")
-    print(f"Sharpe ratio   : {sharpe:.2f}")
-    print(f"Sortino ratio  : {sortino:.2f}")
-    print(f"Max Drawdown   : {max_dd:.2%}")
-    print(f"Profit         : {abs_profit:.2f} ({pct_profit:.2f}%)")
-    print(f"Win-rate       : {stats['win_rate']:.1f}%")
-    print(f"Profit factor  : {stats['profit_factor']:.2f}")
-    print(f"Expectancy     : {stats['expectancy']:.2f}%")
-    print(f"Antal handler  : {stats['total_trades']}")
-    print(f"Bedste trade   : {stats['best_trade']:.2f}%")
-    print(f"Værste trade   : {stats['worst_trade']:.2f}%")
+    print(f"Sharpe ratio    : {sharpe:.2f}")
+    print(f"Sortino ratio   : {sortino:.2f}")
+    print(f"Calmar ratio    : {calmar:.2f}")
+    print(f"Volatilitet     : {volatility:.2f}")
+    print(f"Max Drawdown    : {max_dd:.2%}")
+    print(f"Profit          : {abs_profit:.2f} ({pct_profit:.2f}%)")
+    print(f"Win-rate        : {stats['win_rate']:.1f}%")
+    print(f"Profit factor   : {stats['profit_factor']:.2f}")
+    print(f"Kelly Criterion : {stats['kelly_criterion']:.2f}")
+    print(f"Expectancy      : {stats['expectancy']:.2f}%")
+    print(f"Antal handler   : {stats['total_trades']}")
+    print(f"Bedste trade    : {stats['best_trade']:.2f}%")
+    print(f"Værste trade    : {stats['worst_trade']:.2f}%")
     print("==============================")
-
-# --------- GRID SEARCH OG ENSEMBLE/ML READY ---------
 
 def calculate_performance_metrics(equity_curve, trades_df):
     sharpe = calculate_sharpe_ratio(equity_curve)
     sortino = calculate_sortino_ratio(equity_curve)
     max_dd = calculate_max_drawdown(equity_curve)
+    volatility = calculate_volatility(equity_curve)
+    calmar = calculate_calmar_ratio(equity_curve)
     abs_profit, pct_profit = calculate_profit(equity_curve)
     stats = calculate_trade_stats(trades_df)
 
-    # Robust final_balance (virker både for liste, array, Series)
     if hasattr(equity_curve, "iloc"):
         final_balance = equity_curve.iloc[-1] if len(equity_curve) > 0 else np.nan
     elif hasattr(equity_curve, "__getitem__"):
@@ -111,18 +157,27 @@ def calculate_performance_metrics(equity_curve, trades_df):
     else:
         final_balance = np.nan
 
+    # Robusthed mod nan/inf
+    def safe_val(x):
+        if isinstance(x, float) and (np.isnan(x) or not np.isfinite(x)):
+            return 0.0
+        return x
+
     out = {
-        "sharpe": sharpe,
-        "sortino": sortino,
-        "max_drawdown": max_dd,
-        "final_balance": final_balance,
-        "abs_profit": abs_profit,
-        "pct_profit": pct_profit,
-        "win_rate": stats["win_rate"],
-        "profit_factor": stats["profit_factor"],
-        "expectancy": stats["expectancy"],
-        "total_trades": stats["total_trades"],
-        "best_trade": stats["best_trade"],
-        "worst_trade": stats["worst_trade"]
+        "sharpe": safe_val(sharpe),
+        "sortino": safe_val(sortino),
+        "calmar": safe_val(calmar),
+        "volatility": safe_val(volatility),
+        "max_drawdown": safe_val(max_dd),
+        "final_balance": safe_val(final_balance),
+        "abs_profit": safe_val(abs_profit),
+        "pct_profit": safe_val(pct_profit),
+        "win_rate": safe_val(stats["win_rate"]),
+        "profit_factor": safe_val(stats["profit_factor"]),
+        "kelly_criterion": safe_val(stats["kelly_criterion"]),
+        "expectancy": safe_val(stats["expectancy"]),
+        "total_trades": safe_val(stats["total_trades"]),
+        "best_trade": safe_val(stats["best_trade"]),
+        "worst_trade": safe_val(stats["worst_trade"])
     }
     return out
