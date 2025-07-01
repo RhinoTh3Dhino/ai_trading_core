@@ -15,10 +15,10 @@ from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.gridsearch_strategies import paper_trade_simple
 from utils.performance import calculate_performance_metrics
 
-# --- Walkforward-parametre ---
-DEFAULT_WINDOW_SIZE = 1000
-MIN_WINDOW_SIZE = 200
-STEP_SIZE = 250
+# --- Walkforward-parametre (til mange splits, selv med lidt data) ---
+DEFAULT_WINDOW_SIZE = 200    # SÆNKET!
+MIN_WINDOW_SIZE = 100
+STEP_SIZE = 50               # SÆNKET!
 TRAIN_SIZE = 0.7
 
 OUTPUT_DIR = "outputs/walkforward/"
@@ -79,6 +79,8 @@ if __name__ == "__main__":
 
             print(f"\n=== Walkforward Validation: {symbol} {tf} ===")
             df = pd.read_csv(feature_path)
+            print(f"🔎 {symbol} {tf} har {len(df)} rækker i datasættet.")  # NYT diagnostic print
+
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
 
@@ -126,6 +128,7 @@ if __name__ == "__main__":
                     continue
 
             splits_count[(symbol, tf)] = splits
+            print(f"  ➡️ Antal splits for {symbol} {tf}: {splits}")
 
             results_df = pd.DataFrame([r for r in all_results if r['symbol']==symbol and r['timeframe']==tf])
             if not results_df.empty:
@@ -148,3 +151,4 @@ if __name__ == "__main__":
     print("\n--- Split count (vinduer pr. coin/timeframe): ---")
     for k, v in splits_count.items():
         print(f"{k}: {v} vinduer")
+    print("\nSamlet antal splits:", sum(splits_count.values()))
