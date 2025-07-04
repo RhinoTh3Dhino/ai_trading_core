@@ -26,6 +26,9 @@ optuna==3.6.1
 # Test & udvikling
 pytest==8.4.0
 
+# Excel support til Pandas (PÅKRÆVET for .to_excel/.read_excel)
+openpyxl==3.1.5        # <-- Tilføj denne linje!
+
 # (Ekstra – tilføj efter behov)
 # xgboost==2.0.3
 # lightgbm==4.3.0

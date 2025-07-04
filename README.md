@@ -1,39 +1,64 @@
 # AI Trading Core
+
 Dette projekt er fundamentet for en avanceret, robust og modulær AI trading bot bygget til professionelle krav. Den anvender ensemble-strategier, avanceret feature engineering, auto-evaluering, CI/CD, versionering, Telegram-integration og er klar til både personlig brug og SaaS/multi-user udrulning.
 
-# 🚀 Funktioner & Arkitektur (Sprint 3+)
-- Automatiseret pipeline: Fra rå data til Telegram – hele flowet styres med scripts og/eller controller.
+---
 
-- Avanceret ensemble-voting: Kombinerer ML, RSI, MACD (flere kan tilføjes) med vægtet voting (Optuna-tuning).
+## 🚀 Funktioner & Arkitektur
 
-- Strategi-score & auto-evaluering: Win-rate, profit, drawdown og trades logges og visualiseres for ML, RSI, MACD, Ensemble.
-
-- Snapshot/versionering: Best weights & thresholds gemmes, alle runs loader de nyeste bedste parametre.
-
-- Feature engineering: Støtter mange indikatorer (ATR, EMA/SMA, MACD, RSI, Bollinger Bands m.m.), nemt at tilføje nye.
-
-- CI/CD + auto-backup: Automatisk test, backup og changelog-versionering på hver commit.
-
-- Telegram-integration: Status, performance, grafer og advarsler sendes løbende (robust fejlhåndtering og heartbeat).
-
-- Daglig status, auto-retrain og alerting: Bot rapporterer automatisk status, heartbeat, og retrainer ved behov.
-
-- Robust fejlhåndtering: Alle trin logger fejl, status og kritiske events til både fil og Telegram.
-
-- Multi-coin & SaaS-ready: Bygget til nem udvidelse med flere coins og multi-user/Cloud/SaaS-setup.
-
-# 📈 Seneste opdateringer
-- Automatiseret pipeline: run_all.py styrer data → features → labels → model → eval → Telegram i ét flow.
-
-- Ny strategi-score: Automatisk pr. strategi, inklusive regime-stats.
-
-- Auto-versionering af features, labels og modeller (meta-data og snapshots).
-
-- CI/CD opdateret: .gitignore blokerer alle store/temp/miljøfiler.
-
-- Telegram-rapportering: Grafer og metrics sendes, inklusive fejl og backup-status.
+- **Automatiseret pipeline:** Fra rå data til Telegram – hele flowet styres med scripts og/eller controller.
+- **Avanceret ensemble-voting:** Kombinerer ML, RSI, MACD m.fl. med vægtet voting (Optuna-tuning).
+- **Strategi-score & auto-evaluering:** Win-rate, profit, drawdown, Sharpe, Calmar og trades logges og visualiseres.
+- **Snapshot/versionering:** Best weights & thresholds gemmes, alle runs loader de nyeste bedste parametre.
+- **Feature engineering:** Understøtter mange indikatorer (ATR, EMA/SMA, MACD, RSI, Bollinger Bands m.m.), nemt at tilføje nye.
+- **CI/CD + auto-backup:** Automatisk test, backup og changelog-versionering på hver commit.
+- **Telegram-integration:** Status, performance, grafer og advarsler sendes løbende (robust fejlhåndtering og heartbeat).
+- **Daglig status, auto-retrain og alerting:** Bot rapporterer automatisk status, heartbeat og retrainer ved behov.
+- **Robust fejlhåndtering:** Alle trin logger fejl, status og kritiske events til både fil og Telegram.
+- **Multi-coin & SaaS-ready:** Bygget til nem udvidelse med flere coins og multi-user/Cloud/SaaS-setup.
 
 ---
+
+## 📈 Outputfiler og CSV/Excel-format
+
+**Alle resultater fra walkforward, analyse og top-5/top-10 splits eksporteres automatisk til:**
+- `outputs/walkforward/walkforward_summary_<timestamp>.csv/xlsx/json` – Samtlige splits med ALLE nøgletal
+- `outputs/walkforward/walkforward_summary_<timestamp>_top5_splits.csv/xlsx/json` – Top-5 bedste splits
+- `outputs/walkforward/walkforward_plot_<symbol>_<tf>_<timestamp>.png` – Performance-grafer
+
+**Backup af alle eksportfiler findes i**  
+`outputs/walkforward/backup/`
+
+### Felt- og kolonneoversigt (CSV/Excel/JSON)
+
+| Feltnavn                        | Beskrivelse                                                  |
+|----------------------------------|-------------------------------------------------------------|
+| symbol, timeframe                | Fx BTCUSDT, 1h                                              |
+| window_start, window_end         | Split-indeks (relativ til datasættet)                       |
+| strategy                        | Anvendt strategi (fx voting_ensemble)                       |
+| window_size                      | Antal datapunkter i split                                   |
+| train_buyhold_pct / test_buyhold_pct   | Buy & Hold afkast, pct. for split (træning/test)      |
+| train_sharpe / test_sharpe       | Sharpe-ratio (annualiseret, train/test)                     |
+| train_calmar / test_calmar       | Calmar-ratio (train/test)                                   |
+| train_volatility / test_volatility| Volatilitet (annualiseret, train/test)                     |
+| train_max_drawdown / test_max_drawdown | Max drawdown (train/test)                         |
+| train_win_rate / test_win_rate   | Win-rate i pct. (train/test)                                |
+| train_profit_factor / test_profit_factor | Profit factor (train/test)                       |
+| train_kelly_criterion / test_kelly_criterion | Kelly-metric (train/test)                     |
+| train_expectancy / test_expectancy     | Forventet profit per trade (train/test)             |
+| train_total_trades / test_total_trades | Antal handler (train/test)                        |
+| train_best_trade / test_best_trade     | Største vinder (train/test, pct.)                  |
+| train_worst_trade / test_worst_trade   | Største tab (train/test, pct.)                     |
+| train_rolling_sharpe / test_rolling_sharpe | Rullende Sharpe (seneste vindue, train/test) |
+| train_trade_duration / test_trade_duration | Gns. varighed af trades i timer                |
+| train_regime_drawdown / test_regime_drawdown | Dict/tekst med drawdown pr. regime           |
+| ... og evt. regime_drawdown_bull, bear, neutral, osv. (hvis regimes bruges)        |
+
+---
+
+
+
+
 
 ## 🗂️ **Mappestruktur (uddrag)**
 

@@ -61,8 +61,8 @@ trades/
 .env
 .env.*
 secrets/
-config/*.json
-config/*.yml
+config/*.json       # <-- VIGTIG: Ignorerer alle JSON config, inkl. Google API secrets!
+config/client_secret_*.json  # <-- EKSTRA SIKKERHED: ALDRIG committe dine Google-secrets!
 
 # === VS Code, PyCharm, OS-filer ===
 .vscode/

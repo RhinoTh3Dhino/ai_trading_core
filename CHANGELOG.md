@@ -48,6 +48,26 @@
 - Forberedelse til ML/AI-signal sprint
 
 
+## [vX.X.X] – 2025-07-04
+
+### Added
+- Automatisk eksport af walkforward-resultater til CSV, XLSX og JSON
+- Backup af alle analysefiler, inkl. top-5 og top-10 splits for hurtig videre analyse
+- Kolonner til markering af bedste split og top-5 i CSV-output
+- Robust håndtering af NaN/inf og udvidet test af eksport/backup-funktioner
+- Generering af plots for Sharpe, Winrate/Buy&Hold og Rolling Sharpe på tværs af splits
+- README.md udvidet med konkret analyseguide, filbeskrivelser og brugseksempler
+- analyze_walkforward.py udvidet med pivottabeller og fleksible plots
+- Kvalitetssikring af hele eksport- og analyse-flowet
+
+### Changed
+- Telegram-upload nu med alle relevante eksport-filer (CSV, XLSX, JSON)
+- Refaktorering for mere robust og modulær kode
+
+### Fixed
+- Diverse edge-cases og fejl i eksport/backup/analyse-håndtering
+
+
 
 
 ## [2025-05-23]
