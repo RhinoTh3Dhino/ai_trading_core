@@ -31,7 +31,7 @@ def send_message(msg, chat_id=None, parse_mode=None):
         print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
         return None
-    _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
+    _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     data = {"chat_id": _chat_id, "text": msg}
     if parse_mode:
@@ -58,7 +58,7 @@ def send_image(photo_path, caption="", chat_id=None):
         print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
         log_telegram("[TESTMODE] Billede ikke sendt – Telegram inaktiv")
         return None
-    _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
+    _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     data = {"chat_id": _chat_id, "caption": caption}
     try:
@@ -83,7 +83,7 @@ def send_document(doc_path, caption="", chat_id=None):
         print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
         log_telegram("[TESTMODE] Dokument ikke sendt – Telegram inaktiv")
         return None
-    _chat_id = int(chat_id) if chat_id is not None else int(TELEGRAM_CHAT_ID)
+    _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
     data = {"chat_id": _chat_id, "caption": caption}
     try:
@@ -108,7 +108,6 @@ def send_telegram_heartbeat(chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Heartbeat sendt.")
 
-# ✅ NY: Send komplet performance report til Telegram (HTML)
 def send_performance_report(metrics, symbol="", timeframe="", window=None, chat_id=None):
     """Send professionel performance-rapport til Telegram (HTML-format)."""
     msg = f"<b>📊 Performance Report {symbol} {timeframe} {window or ''}</b>\n"
@@ -123,13 +122,11 @@ def send_performance_report(metrics, symbol="", timeframe="", window=None, chat_
     send_message(msg, chat_id=chat_id, parse_mode="HTML")
     log_telegram("Performance report sendt til Telegram.")
 
-# (Resten af dine funktioner som før...)
-
 def send_strategy_metrics(metrics, chat_id=None):
     msg = (
         f"Strategi-metrics:\n"
         f"Profit: {metrics.get('profit_pct', 0):.2f}%\n"
-        f"Win-rate: {metrics.get('win_rate', 0)*100:.1f}%\n"
+        f"Win-rate: {metrics.get('win_rate', 0):.1f}%\n"
         f"Drawdown: {metrics.get('drawdown_pct', 0):.2f}%\n"
         f"Sharpe: {metrics.get('sharpe', 'N/A')}\n"
         f"Antal handler: {metrics.get('num_trades', 0)}"
@@ -137,7 +134,7 @@ def send_strategy_metrics(metrics, chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
-# ... (alle øvrige funktioner er uændret)
+# Ingen send_regime_summary – alle imports matcher nu
 
 # Testfunktion
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+# bot/engine.py
 import sys
 import os
 import json
@@ -25,7 +26,7 @@ from visualization.plot_backtest import plot_backtest
 from visualization.plot_drawdown import plot_drawdown
 from visualization.plot_strategy_score import plot_strategy_scores
 from utils.telegram_utils import (
-    send_image, send_message, send_regime_summary, send_regime_warning, send_performance_report
+    send_image, send_message, send_performance_report
 )
 from utils.robust_utils import safe_run
 from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
