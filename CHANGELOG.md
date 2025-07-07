@@ -115,6 +115,13 @@
 ### Fixed
 - Ingen kendte fejl – struktur og output valideret på real data.
 
+### 2025-07-07 – step5: Dokumentation & Auto-rapportering færdiggjort
+
+- README.md opdateret: quickstart, CLI, dataflow, tuning, FAQ og eksempler.
+- Telegram-status, graf og filafsendelse virker end-to-end.
+- Auto BotStatus.md, historik, trend-graf og backup på hvert run.
+- Daglig/ugentlig status via schedule/main.py, inkl. heartbeat og retrain.
+- Alle tests og edge-cases dækket – 100% grøn test-suite.
 
 
 
@@ -649,3 +656,15 @@ Feature names unseen at fit time:
 
 ## [2025-07-07]
 - Step 5: Automatisk changelog test
+
+### 2025-07-07 21:17 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-07 23:03 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-07 23:05 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-07 23:13 - vvTEST - TEST001
+- Første changelog-test.

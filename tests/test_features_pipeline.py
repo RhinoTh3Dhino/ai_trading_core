@@ -1,12 +1,18 @@
 import os
 import pandas as pd
 import pytest
+from datetime import datetime
 from features.features_pipeline import generate_features, save_features, load_features
 
 RAW_DATA_PATH = "data/test_data/BTCUSDT_1h_test.csv"
 SYMBOL = "BTC"
 TIMEFRAME = "1h"
 VERSION = "test"
+
+def make_version_with_timestamp(version):
+    """Sørg for at version får timestamp-suffix, så load_features virker."""
+    ts = datetime.now().strftime("%Y%m%d")
+    return f"{version}_{ts}"
 
 def test_generate_features_pipeline():
     # 1. Læs rådata med semikolon-separator
@@ -40,12 +46,13 @@ def test_generate_features_pipeline():
     for col in expected_cols:
         assert col in features_df.columns, f"Feature mangler: {col}"
 
-    # 7. Gem features versioneret
-    path = save_features(features_df, symbol=SYMBOL, timeframe=TIMEFRAME, version=VERSION)
+    # 7. Gem features versioneret med timestamp
+    version_ts = make_version_with_timestamp(VERSION)
+    path = save_features(features_df, symbol=SYMBOL, timeframe=TIMEFRAME, version=version_ts)
     assert os.path.exists(path), f"Featurefil blev ikke gemt: {path}"
 
-    # 8. Genindlæs og tjek igen
-    loaded_df = load_features(SYMBOL, TIMEFRAME, version_prefix=VERSION)
+    # 8. Genindlæs og tjek igen (nu matcher timestamped version_prefix)
+    loaded_df = load_features(SYMBOL, TIMEFRAME, version_prefix=version_ts)
     assert len(loaded_df) > 0, "Indlæst featurefil er tom"
     assert not loaded_df.isnull().values.any(), "Indlæste features indeholder NaN!"
 

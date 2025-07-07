@@ -6,23 +6,27 @@ from dotenv import load_dotenv
 from utils.backup import make_backup
 from utils.botstatus import update_bot_status
 from utils.changelog import append_to_changelog
-from utils.telegram_utils import send_message  # <-- NY: ENSARTET ALIAS
-from utils.robust_utils import safe_run
+from utils.telegram_utils import send_message
+from utils.report_utils import log_performance_to_history   # <-- NYT: historik-logging
+from utils.telegram_utils import generate_trend_graph, send_trend_graph  # <-- NYT: trend-graf
 
-# Importér din engine pipeline-funktion (fra engine.py)
+from utils.robust_utils import safe_run
 from bot.engine import main as engine_main
-from bot.engine import load_best_ensemble_params  # <-- så main.py altid bruger tunede parametre
+from bot.engine import load_best_ensemble_params
 
 # Indlæs miljøvariabler
 load_dotenv()
 
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+
 if os.getenv("DEBUG", "false").lower() == "true":
-    print(f"DEBUG: TELEGRAM_TOKEN = {os.getenv('TELEGRAM_TOKEN')}")
-    print(f"DEBUG: TELEGRAM_CHAT_ID = {os.getenv('TELEGRAM_CHAT_ID')}")
+    print(f"DEBUG: TELEGRAM_TOKEN = {TELEGRAM_TOKEN}")
+    print(f"DEBUG: TELEGRAM_CHAT_ID = {TELEGRAM_CHAT_ID}")
 
 def main_trading_cycle():
     """
-    Kører hele trading-pipelinen fra engine.py og laver backup, status, logging.
+    Kører hele trading-pipelinen fra engine.py og laver backup, status, logging, performance-historik og trend-graf.
     """
     print("✅ Botten starter trading-cyklus...")
 
@@ -30,6 +34,17 @@ def main_trading_cycle():
     threshold, weights = load_best_ensemble_params()
     print(f"[INFO] Bruger threshold={threshold}, weights={weights} til dette run.")
     engine_main(threshold=threshold, weights=weights)
+
+    # NYT: Log performance-historik
+    log_performance_to_history("outputs/portfolio_metrics_latest.csv")
+
+    # NYT: Generér og send trend-graf (kan deaktiveres hvis ønsket)
+    try:
+        img_path = generate_trend_graph()
+        send_trend_graph(TELEGRAM_CHAT_ID, TELEGRAM_TOKEN, img_path)
+        print(f"✅ Trend-graf genereret og sendt: {img_path}")
+    except Exception as e:
+        print(f"❌ Fejl ved trend-graf: {e}")
 
     backup_path = make_backup(
         keep_days=7,

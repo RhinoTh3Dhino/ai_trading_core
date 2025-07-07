@@ -1,10 +1,13 @@
 # utils/telegram_utils.py
+
 import os
 import requests
 import datetime
-
 from dotenv import load_dotenv
-load_dotenv()  # Hent variabler fra .env hvis ikke allerede sat
+
+from utils.plot_utils import generate_trend_graph  # <-- NY: Importér graf-generator
+
+load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -23,12 +26,13 @@ def log_telegram(msg):
         with open(LOG_PATH, "a", encoding="utf-8") as f:
             f.write(f"[{t}] {msg}\n")
     except Exception:
-        pass  # Logger må aldrig stoppe botten
+        pass
 
-def send_message(msg, chat_id=None, parse_mode=None):
+def send_message(msg, chat_id=None, parse_mode=None, silent=False):
     log_telegram(f"Sender besked: {msg}")
     if not telegram_enabled():
-        print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
+        if not silent:
+            print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
         return None
     _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
@@ -50,12 +54,13 @@ def send_message(msg, chat_id=None, parse_mode=None):
         log_telegram(f"EXCEPTION ved sendMessage: {e}")
         return None
 
-send_telegram_message = send_message
+send_telegram_message = send_message  # Alias
 
-def send_image(photo_path, caption="", chat_id=None):
+def send_image(photo_path, caption="", chat_id=None, silent=False):
     log_telegram(f"Sender billede: {photo_path} (caption: {caption})")
     if not telegram_enabled():
-        print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
+        if not silent:
+            print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
         log_telegram("[TESTMODE] Billede ikke sendt – Telegram inaktiv")
         return None
     _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
@@ -77,10 +82,11 @@ def send_image(photo_path, caption="", chat_id=None):
         log_telegram(f"EXCEPTION ved sendPhoto: {e}")
         return None
 
-def send_document(doc_path, caption="", chat_id=None):
+def send_document(doc_path, caption="", chat_id=None, silent=False):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
     if not telegram_enabled():
-        print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
+        if not silent:
+            print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
         log_telegram("[TESTMODE] Dokument ikke sendt – Telegram inaktiv")
         return None
     _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
@@ -109,7 +115,6 @@ def send_telegram_heartbeat(chat_id=None):
     log_telegram("Heartbeat sendt.")
 
 def send_performance_report(metrics, symbol="", timeframe="", window=None, chat_id=None):
-    """Send professionel performance-rapport til Telegram (HTML-format)."""
     msg = f"<b>📊 Performance Report {symbol} {timeframe} {window or ''}</b>\n"
     msg += f"Sharpe: <b>{metrics.get('sharpe', 0):.2f}</b> | Calmar: <b>{metrics.get('calmar', 0):.2f}</b> | Sortino: <b>{metrics.get('sortino', 0):.2f}</b>\n"
     msg += f"Volatilitet: <b>{metrics.get('volatility', 0):.2f}</b>\n"
@@ -134,9 +139,31 @@ def send_strategy_metrics(metrics, chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
-# Ingen send_regime_summary – alle imports matcher nu
+def send_auto_status_summary(summary_text, image_path=None, doc_path=None, chat_id=None):
+    send_message(summary_text, chat_id=chat_id)
+    if image_path and os.path.exists(image_path):
+        send_image(image_path, caption="📈 Equity Curve", chat_id=chat_id)
+    if doc_path and os.path.exists(doc_path):
+        send_document(doc_path, caption="📊 Trade Journal", chat_id=chat_id)
 
-# Testfunktion
+def send_trend_graph(chat_id=None, telegram_token=None, history_path="outputs/performance_history.csv", img_path="outputs/balance_trend.png", caption="📈 Balanceudvikling"):
+    """
+    Generér og send balance-trend-graf til Telegram.
+    """
+    telegram_token = telegram_token or TELEGRAM_TOKEN
+    chat_id = chat_id or TELEGRAM_CHAT_ID
+    try:
+        img_path = generate_trend_graph(history_path=history_path, img_path=img_path)
+        if img_path and os.path.exists(img_path):
+            send_image(img_path, caption=caption, chat_id=chat_id)
+        else:
+            send_message("Kunne ikke generere balance-trend-graf.", chat_id=chat_id)
+    except Exception as e:
+        print(f"❌ Fejl ved trend-graf: {e}")
+        log_telegram(f"EXCEPTION ved send_trend_graph: {e}")
+        send_message(f"❌ Fejl ved generering/sending af trend-graf: {e}", chat_id=chat_id)
+
+# Eksempel/testfunktion
 if __name__ == "__main__":
     send_message("Testbesked fra din AI trading bot!")
     send_telegram_heartbeat()
@@ -147,3 +174,4 @@ if __name__ == "__main__":
         "pct_profit": 12.3, "max_drawdown": -0.22, "total_trades": 84, "best_trade": 5.1, "worst_trade": -4.4
     }
     send_performance_report(test_metrics, symbol="BTCUSDT", timeframe="1h", window="0-200")
+    send_trend_graph()
