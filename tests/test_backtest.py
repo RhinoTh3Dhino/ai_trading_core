@@ -23,8 +23,12 @@ def test_run_backtest_returns_dataframes():
         "regime": np.random.choice(["bull", "bear"], size=10)
     })
 
+    # Sikrer mindst ét entydigt signal (tving fx en BUY på første række)
+    df.loc[0, "signal"] = 1    # BUY-signal
+    df.loc[1, "signal"] = -1   # SELL-signal (evt.)
+
     trades_df, balance_df = run_backtest(df)
     assert isinstance(trades_df, pd.DataFrame), "trades_df er ikke en DataFrame"
     assert isinstance(balance_df, pd.DataFrame), "balance_df er ikke en DataFrame"
-    assert not trades_df.empty, "trades_df er tom"
-    assert not balance_df.empty, "balance_df er tom"
+    assert not trades_df.empty, "trades_df er tom – testdata sikrer mindst én trade!"
+    assert not balance_df.empty, "balance_df er tom – bør altid have balance-tracking!"
