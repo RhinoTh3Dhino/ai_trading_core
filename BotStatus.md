@@ -358,3 +358,10 @@
 3. low: 0.2022
 4. ema_200: 0.1954
 5. macd_signal: 0.1862
+
+## Strategi-score for run 2025-07-07_1531
+- ML: win-rate=42.0%, profit=123, drawdown=-32, trades=53
+- RSI: win-rate=36.0%, profit=98, drawdown=-45, trades=51
+- MACD: win-rate=39.0%, profit=101, drawdown=-41, trades=50
+- Ensemble: win-rate=47.0%, profit=152, drawdown=-28, trades=55
+![Strategi-score](./strategy_scores_2025-07-07_1531.png)

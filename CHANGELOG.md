@@ -67,6 +67,21 @@
 ### Fixed
 - Diverse edge-cases og fejl i eksport/backup/analyse-håndtering
 
+## [vX.Y.Z] – 2025-07-07
+
+### Added
+- Fuldt modulært analyze_strategies.py script med CLI-argumenter.
+- Automatisk logging af strategi-performance (ML, RSI, MACD, Ensemble) i outputs/strategy_scores.csv.
+- Generering af strategi-score bar chart og historisk heatmap for win-rate.
+- Markdown-rapport for hvert run (`outputs/report_<runid>.md`) med metrikker og grafer.
+- Automatisk opdatering af BotStatus.md.
+- Advarsler/alarmer ved lav win-rate eller høj drawdown.
+- Alt output samlet i outputs/-mappen for let backup, CI/CD og analyse.
+- Auto-åbning af output-mappen efter run for nem visuel feedback.
+
+### Changed
+- Forberedt integration med Telegram og egen backtest-funktion.
+
 
 
 
