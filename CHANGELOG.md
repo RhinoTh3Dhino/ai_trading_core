@@ -100,6 +100,22 @@
 - Løst issue med tabulate-dependency for markdown-rapportering.
 
 
+## [vX.Y.Z] – 2025-07-07
+
+### Added
+- Komplet analyze_regimes.py med fuld regime-analyse (bull/bear/neutral) for alle strategier (ML, RSI, MACD, Ensemble).
+- Automatisk generering af regime-metrics: win-rate, profit, drawdown og antal handler pr. regime.
+- Visualisering af regime-performance (PNG-grafer) for hver strategi.
+- Markdown-rapport med samling af grafer og nøgletal for audit og SaaS/Notion.
+- Robust struktur for udvidelse til Telegram/Notion-rapportering og adaptiv strategi.
+
+### Changed
+- Modularisering og automatisering af regime-flow, så det let kan integreres i pipeline eller CI/CD.
+
+### Fixed
+- Ingen kendte fejl – struktur og output valideret på real data.
+
+
 
 
 
