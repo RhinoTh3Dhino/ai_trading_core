@@ -75,19 +75,24 @@ jobs:
     - name: Check struktur og dependencies
       run: echo "✅ Struktur og artifacts OK"
 
-    # BONUS: Linter, coverage og evt. telegram/discord/slack notification
-    # - name: Kør lint (fx black, flake8)
-    #   run: |
-    #     pip install black flake8
-    #     black --check .
-    #     flake8 .
+    # ==== CI NOTIFIKATION: Telegram besked ====
+    - name: Send Telegram notification (CI-status)
+      if: always()
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        GITHUB_WORKFLOW: ${{ github.workflow }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_JOB: ${{ github.job }}
+        GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        CI_STATUS: ${{ job.status }}
+      run: |
+        python utils/ci_notify.py
 
-    # - name: Coverage
-    #   run: |
-    #     pip install coverage
-    #     coverage run -m pytest
-    #     coverage report
-
-    # - name: Telegram notification (optional)
-    #   run: |
-    #     python utils/telegram_utils.py --ci-report
+    # BONUS: Linter, coverage osv. kan aktiveres senere...
