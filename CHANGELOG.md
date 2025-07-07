@@ -669,10 +669,11 @@ Feature names unseen at fit time:
 
 ### 2025-07-07 23:13 - vvTEST - TEST001
 - Første changelog-test.
-=======
+
 
 ## [2025-07-07]
 - Step 5: Automatisk changelog test
+
 
 
 ### 2025-07-08 00:05 - vvTEST - TEST001
@@ -707,3 +708,11 @@ Feature names unseen at fit time:
 
 ### 2025-07-08 01:07 - vvTEST - TEST001
 - Første changelog-test.
+
+### 2025-07-07 21:35 - vvTEST - TEST001
+- Første changelog-test.
+
+
+## [2025-07-07]
+- Step 5: Automatisk changelog test
+
