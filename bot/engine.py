@@ -29,7 +29,10 @@ from utils.telegram_utils import (
     send_image, send_message, send_performance_report
 )
 from utils.robust_utils import safe_run
-from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
+
+# NY: Ensemble (simpel eller vægtet voting) fra bot/ensemble.py
+from bot.ensemble import ensemble_predict, weighted_ensemble_predict
+
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 
@@ -193,8 +196,13 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
               pd.Series(rsi_signals).value_counts().to_dict(),
               pd.Series(macd_signals).value_counts().to_dict())
 
-        print(f"➡️  Bruger vægtet voting med weights: {weights}")
-        ensemble_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, weights=weights)
+        # === ENSEMBLE STRATEGI (vælg simpelt eller vægtet voting) ===
+        print(f"➡️  Bruger ensemble_predict (majoritets-voting) ...")
+        # Simpel voting:
+        # ensemble_signals = [ensemble_predict([ml, rsi, macd]) for ml, rsi, macd in zip(ml_signals, rsi_signals, macd_signals)]
+        # Eller vægtet voting:
+        print(f"➡️  Bruger weighted_ensemble_predict med weights: {weights}")
+        ensemble_signals = [weighted_ensemble_predict([ml, rsi, macd], weights) for ml, rsi, macd in zip(ml_signals, rsi_signals, macd_signals)]
         df["signal"] = ensemble_signals
 
         print("🔄 Kører backtest ...")
@@ -279,7 +287,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         print("🔄 Sender grafer til Telegram ...")
         send_message(
             f"✅ Backtest for {SYMBOL} afsluttet!\n"
-            f"Mode: Weighted voting\n"
+            f"Mode: Ensemble voting\n"
             f"Weights: {weights}\n"
             f"Threshold: {threshold}\n"
             f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('total_trades', 'N/A')}\n"

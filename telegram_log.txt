@@ -3200,3 +3200,18 @@ Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feat
 [2025-07-07 20:04:01] Billede sendt OK.
 [2025-07-07 20:04:01] Sender billede: graphs/feature_importance_ML_20250707_200358.png (caption: 🧠 Feature Importance for ML-model)
 [2025-07-07 20:04:01] Billede sendt OK.
+[2025-07-08 00:47:04] Sender besked: Testbesked
+[2025-07-08 00:47:05] Besked sendt OK.
+[2025-07-08 00:47:05] Sender besked: 💓 Botten kører stadig! (00:47:05)
+[2025-07-08 00:47:05] Besked sendt OK.
+[2025-07-08 00:47:05] Heartbeat sendt.
+[2025-07-08 01:02:52] Sender besked: Testbesked
+[2025-07-08 01:02:52] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-08 01:02:52] Sender besked: 💓 Botten kører stadig! (01:02:52)
+[2025-07-08 01:02:52] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-08 01:02:52] Heartbeat sendt.
+[2025-07-08 01:07:43] Sender besked: Testbesked
+[2025-07-08 01:07:43] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-08 01:07:43] Sender besked: 💓 Botten kører stadig! (01:07:43)
+[2025-07-08 01:07:43] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-08 01:07:43] Heartbeat sendt.

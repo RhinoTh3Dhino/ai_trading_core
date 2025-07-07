@@ -4,19 +4,18 @@ import os
 import requests
 import datetime
 from dotenv import load_dotenv
-
 from utils.plot_utils import generate_trend_graph  # <-- NY: Importér graf-generator
 
 load_dotenv()
-
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 LOG_PATH = "telegram_log.txt"
 
 def telegram_enabled():
-    if not TELEGRAM_TOKEN or TELEGRAM_TOKEN.lower() in ("", "none", "dummy_token"):
+    # Læs altid fra env for at sikre korrekt test/CI-adfærd!
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or token.lower() in ("", "none", "dummy_token"):
         return False
-    if not TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID.lower() in ("", "none", "dummy_id"):
+    if not chat_id or chat_id.lower() in ("", "none", "dummy_id"):
         return False
     return True
 
@@ -30,13 +29,15 @@ def log_telegram(msg):
 
 def send_message(msg, chat_id=None, parse_mode=None, silent=False):
     log_telegram(f"Sender besked: {msg}")
+    # Læs token/chat_id hver gang (test/CI kompatibelt)
+    token = os.getenv("TELEGRAM_TOKEN")
+    _chat_id = chat_id if chat_id is not None else os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_enabled():
         if not silent:
             print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {msg}")
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
         return None
-    _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = {"chat_id": _chat_id, "text": msg}
     if parse_mode:
         data["parse_mode"] = parse_mode
@@ -58,13 +59,14 @@ send_telegram_message = send_message  # Alias
 
 def send_image(photo_path, caption="", chat_id=None, silent=False):
     log_telegram(f"Sender billede: {photo_path} (caption: {caption})")
+    token = os.getenv("TELEGRAM_TOKEN")
+    _chat_id = chat_id if chat_id is not None else os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_enabled():
         if not silent:
             print(f"🔕 [CI/test] Ville have sendt billede: {photo_path} (caption: {caption})")
         log_telegram("[TESTMODE] Billede ikke sendt – Telegram inaktiv")
         return None
-    _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+    url = f"https://api.telegram.org/bot{token}/sendPhoto"
     data = {"chat_id": _chat_id, "caption": caption}
     try:
         with open(photo_path, "rb") as photo:
@@ -84,13 +86,14 @@ def send_image(photo_path, caption="", chat_id=None, silent=False):
 
 def send_document(doc_path, caption="", chat_id=None, silent=False):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
+    token = os.getenv("TELEGRAM_TOKEN")
+    _chat_id = chat_id if chat_id is not None else os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_enabled():
         if not silent:
             print(f"🔕 [CI/test] Ville have sendt dokument: {doc_path} (caption: {caption})")
         log_telegram("[TESTMODE] Dokument ikke sendt – Telegram inaktiv")
         return None
-    _chat_id = chat_id if chat_id is not None else TELEGRAM_CHAT_ID
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
+    url = f"https://api.telegram.org/bot{token}/sendDocument"
     data = {"chat_id": _chat_id, "caption": caption}
     try:
         with open(doc_path, "rb") as doc:
@@ -146,12 +149,9 @@ def send_auto_status_summary(summary_text, image_path=None, doc_path=None, chat_
     if doc_path and os.path.exists(doc_path):
         send_document(doc_path, caption="📊 Trade Journal", chat_id=chat_id)
 
-def send_trend_graph(chat_id=None, telegram_token=None, history_path="outputs/performance_history.csv", img_path="outputs/balance_trend.png", caption="📈 Balanceudvikling"):
-    """
-    Generér og send balance-trend-graf til Telegram.
-    """
-    telegram_token = telegram_token or TELEGRAM_TOKEN
-    chat_id = chat_id or TELEGRAM_CHAT_ID
+def send_trend_graph(chat_id=None, history_path="outputs/performance_history.csv", img_path="outputs/balance_trend.png", caption="📈 Balanceudvikling"):
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID")
     try:
         img_path = generate_trend_graph(history_path=history_path, img_path=img_path)
         if img_path and os.path.exists(img_path):

@@ -674,3 +674,36 @@ Feature names unseen at fit time:
 ## [2025-07-07]
 - Step 5: Automatisk changelog test
 
+
+### 2025-07-08 00:05 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:12 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:14 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:18 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:21 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:34 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:37 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:42 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 00:47 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 01:02 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-07-08 01:07 - vvTEST - TEST001
+- Første changelog-test.

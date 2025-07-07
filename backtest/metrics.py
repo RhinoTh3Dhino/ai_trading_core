@@ -1,7 +1,25 @@
-# metrics.py
+# backtest/metrics.py
+
 import pandas as pd
 import numpy as np
 from backtest.backtest import run_backtest, calc_backtest_metrics
+
+def calculate_sharpe(returns, risk_free_rate=0.0):
+    """Beregner Sharpe ratio ud fra returns."""
+    returns = np.array(returns)
+    if returns.std() == 0:
+        return 0.0
+    sharpe = (returns.mean() - risk_free_rate) / returns.std()
+    return float(sharpe)
+
+def calculate_drawdown(balance):
+    """Beregner maksimal drawdown som procent (negativt tal)."""
+    balance = np.array(balance)
+    if len(balance) == 0:
+        return 0.0
+    peak = np.maximum.accumulate(balance)
+    drawdown = (balance - peak) / peak
+    return float(drawdown.min() if len(drawdown) > 0 else 0.0)
 
 def run_and_score(df, signals):
     """Kør backtest og returner standard-metrics dict."""
