@@ -82,6 +82,24 @@
 ### Changed
 - Forberedt integration med Telegram og egen backtest-funktion.
 
+## [vX.Y.Z] – 2025-07-07
+
+### Added
+- Komplet analyze_features.py med klassisk, permutation og SHAP-feature-importance.
+- CLI/argument-support og auto-output til outputs/-mappen.
+- Automatisk markdown-rapport, PNG og CSV for importance.
+- analyze_feature_pruning.py: Fuld auto-feature-pruning pipeline med test af top-N features, accuracy-plot og markdown-rapport.
+- Understøttelse af suppression af joblib/loky-warnings og robust SHAP-integration.
+- Alle outputs gemmes og versionsstyres for let analyse, CI/CD og audit trail.
+
+### Changed
+- Forbedret pipelines for modularitet, integration og next-level analyse.
+
+### Fixed
+- Rettet SHAP-fejl ved brug med RandomForest/XGBoost via TreeExplainer.
+- Løst issue med tabulate-dependency for markdown-rapportering.
+
+
 
 
 
