@@ -8,9 +8,9 @@ seaborn==0.13.2
 
 # Technical Analysis & ML tools
 ta==0.11.0
-pandas_ta==0.3.14-beta.0      # <-- Tilføjet! Pandas TA library
-shap==0.45.1           # Forklaringskraft, feature importance
-joblib==1.4.2          # Model save/load
+pandas_ta==0.3.14-beta.0      # Pandas TA library
+shap==0.45.1                  # Forklaringskraft, feature importance
+joblib==1.4.2                 # Model save/load
 
 # Trading & API
 python-binance==1.0.29
@@ -23,11 +23,14 @@ schedule==1.2.2
 python-dotenv==1.0.0
 optuna==3.6.1
 
+# Rapportering, markdown, tabel-output
+tabulate==0.9.0               # <-- VIGTIG for .to_markdown()
+
+# Excel support til Pandas (.to_excel/.read_excel)
+openpyxl==3.1.5
+
 # Test & udvikling
 pytest==8.4.0
-
-# Excel support til Pandas (PÅKRÆVET for .to_excel/.read_excel)
-openpyxl==3.1.5        # <-- Tilføj denne linje!
 
 # (Ekstra – tilføj efter behov)
 # xgboost==2.0.3
