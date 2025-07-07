@@ -24,6 +24,17 @@ if os.getenv("DEBUG", "false").lower() == "true":
     print(f"DEBUG: TELEGRAM_TOKEN = {TELEGRAM_TOKEN}")
     print(f"DEBUG: TELEGRAM_CHAT_ID = {TELEGRAM_CHAT_ID}")
 
+def ensure_performance_history_exists():
+    """
+    Sikrer at outputs/performance_history.csv altid eksisterer (også hvis der ikke køres nogen handler).
+    """
+    history_path = "outputs/performance_history.csv"
+    if not os.path.exists(history_path):
+        import pandas as pd
+        os.makedirs("outputs", exist_ok=True)
+        pd.DataFrame([{"timestamp": "", "Navn": "", "Balance": ""}]).to_csv(history_path, index=False)
+        print("🟡 Oprettede tom outputs/performance_history.csv for CI compliance.")
+
 def main_trading_cycle():
     """
     Kører hele trading-pipelinen fra engine.py og laver backup, status, logging, performance-historik og trend-graf.
@@ -52,6 +63,9 @@ def main_trading_cycle():
     )
     print(f"✅ Backup gemt: {backup_path}")
     send_message(f"✅ Bot kørte OK og lavede backup: {backup_path}")
+
+    # NYT: Sikrer at performance_history.csv ALTID eksisterer!
+    ensure_performance_history_exists()
 
     return backup_path
 
