@@ -29,14 +29,22 @@ jobs:
       run: |
         pytest tests/
 
-    # Kør AI trading bot flow (kun én cyklus i CI)
     - name: Kør main.py (kun én cyklus i CI)
       env:
         CI: "true"
       run: |
         python main.py
 
-    # Upload artifacts: outputs, tests, logs og grafer
+    # ==== NYT: Tjek at nøglefiler eksisterer (fail hvis ikke) ====
+    - name: Tjek at alle centrale outputfiler findes
+      run: |
+        test -f outputs/performance_history.csv
+        test -f outputs/balance_trend.png
+        test -f BotStatus.md
+        test -f CHANGELOG.md
+        echo "✅ Alle vigtige outputfiler findes!"
+
+    # ==== Upload artifacts: outputs, tests, logs, grafer ====
     - name: Upload artifacts (outputs, tests, logs, grafer)
       if: always()  # Kør selv ved fejl!
       uses: actions/upload-artifact@v4
@@ -50,11 +58,11 @@ jobs:
           !**/*.pyc
           !**/__pycache__/
 
-    # Tjek struktur og dependencies
+    # ==== Struktur og dependencies tjek ====
     - name: Check struktur og dependencies
       run: echo "✅ Struktur og artifacts OK"
 
-    # Bonus: Tilføj linters, coverage og Telegram-notifikation senere
+    # BONUS: Linter, coverage og evt. telegram/discord/slack notification
     # - name: Kør lint (fx black, flake8)
     #   run: |
     #     pip install black flake8
