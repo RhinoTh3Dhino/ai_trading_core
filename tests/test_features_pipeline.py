@@ -14,7 +14,14 @@ def make_version_with_timestamp(version):
     ts = datetime.now().strftime("%Y%m%d")
     return f"{version}_{ts}"
 
+def ensure_dir_exists(path):
+    """Sikrer at den relevante output-mappe altid findes."""
+    os.makedirs(path, exist_ok=True)
+
 def test_generate_features_pipeline():
+    # 0. Sikrer output-mappe
+    ensure_dir_exists("outputs/feature_data")
+
     # 1. Læs rådata med semikolon-separator
     assert os.path.exists(RAW_DATA_PATH), f"Rådatafil mangler: {RAW_DATA_PATH}"
     raw_df = pd.read_csv(RAW_DATA_PATH, sep=";")
@@ -43,15 +50,24 @@ def test_generate_features_pipeline():
         "atr_14", "vwap", "bb_upper", "bb_lower", "return", "pv_ratio",
         "volume_spike", "regime"
     ]
+    missing_features = [col for col in expected_cols if col not in features_df.columns]
+    if missing_features:
+        print(f"[ADVARSEL] Mangler følgende features: {missing_features}")
     for col in expected_cols:
         assert col in features_df.columns, f"Feature mangler: {col}"
 
-    # 7. Gem features versioneret med timestamp
+    # 7. Tjek target-kolonne hvis du bruger supervised ML
+    if "target" in features_df.columns:
+        assert not features_df["target"].isnull().any(), "Target indeholder NaN!"
+    else:
+        print("[INFO] Ingen target-kolonne fundet (ikke nødvendigt for test hvis pipeline kun genererer features)")
+
+    # 8. Gem features versioneret med timestamp
     version_ts = make_version_with_timestamp(VERSION)
     path = save_features(features_df, symbol=SYMBOL, timeframe=TIMEFRAME, version=version_ts)
     assert os.path.exists(path), f"Featurefil blev ikke gemt: {path}"
 
-    # 8. Genindlæs og tjek igen (nu matcher timestamped version_prefix)
+    # 9. Genindlæs og tjek igen (nu matcher timestamped version_prefix)
     loaded_df = load_features(SYMBOL, TIMEFRAME, version_prefix=version_ts)
     assert len(loaded_df) > 0, "Indlæst featurefil er tom"
     assert not loaded_df.isnull().values.any(), "Indlæste features indeholder NaN!"

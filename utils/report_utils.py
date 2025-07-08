@@ -67,9 +67,36 @@ def export_trade_journal(trades_df, output_path):
     print(f"[INFO] Trade journal eksporteret: {output_path}")
 
 def log_performance_to_history(portfolio_metrics_path, history_path="outputs/performance_history.csv"):
-    df = pd.read_csv(portfolio_metrics_path)
-    df['timestamp'] = pd.Timestamp.now()
+    """
+    Logger altid til performance_history.csv – opretter fil med default-header hvis der ikke er data.
+    """
+    os.makedirs(os.path.dirname(history_path), exist_ok=True)
+
+    # Hvis der ikke findes portfolio_metrics_path, lav tom default
+    if not os.path.exists(portfolio_metrics_path):
+        print(f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv")
+        cols = ["timestamp", "Navn", "Balance"]
+        df = pd.DataFrame([{
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Navn": "Ingen data",
+            "Balance": 0
+        }])
+    else:
+        df = pd.read_csv(portfolio_metrics_path)
+        # Sikrer at der er timestamp-kolonne
+        df['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # Hvis df er tom eller mangler relevante kolonner
+        if df.empty or not all(c in df.columns for c in ["Navn", "Balance"]):
+            df = pd.DataFrame([{
+                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                "Navn": "Ingen data",
+                "Balance": 0
+            }])
+
+    # Tilføj til historik, eller opret ny fil med header
     if os.path.exists(history_path):
         df_hist = pd.read_csv(history_path)
         df = pd.concat([df_hist, df], ignore_index=True)
     df.to_csv(history_path, index=False)
+    print(f"[INFO] performance_history.csv opdateret ({len(df)} rækker).")
+

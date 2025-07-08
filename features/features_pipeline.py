@@ -1,11 +1,11 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import re
 import pandas as pd
 from datetime import datetime
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Importér konfiguration centralt
 from config.config import FEATURES, COINS, TIMEFRAMES
@@ -47,11 +47,11 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
     for span in features.get("trend", []):
         if "ema" in span:  # fx 'ema_21'
             span_num = int(span.split("_")[1])
-            df = add_ema(df, span=span_num)  # KUN span!
+            df = add_ema(df, span=span_num)
     if "macd" in features.get("trend", []):
         df = calculate_macd(df)
 
-    # Momentum: RSI (både rsi_14 og rsi_28 hvis valgt i config)
+    # Momentum: RSI
     for rsi_str in features.get("momentum", []):
         if "rsi" in rsi_str:
             rsi_num = int(rsi_str.split("_")[1])
@@ -65,14 +65,12 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
         df["bb_upper"] = df["ema_50"] + rolling_std
         df["bb_lower"] = df["ema_50"] - rolling_std
 
-    # Volume: VWAP, OBV
+    # Volume: VWAP
     if "vwap" in features.get("volume", []):
         if not isinstance(df.index, pd.DatetimeIndex):
             df = df.set_index('timestamp')
         df["vwap"] = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum()
-        df = df.reset_index()  # Sæt tilbage til standard-index
-
-    # Tilføj OBV, hvis ønsket (kræver evt. ekstra funktion i indicators.py)
+        df = df.reset_index()
 
     # Ekstra: Z-score, regime
     if "zscore_20" in features.get("regime", []):
@@ -97,13 +95,19 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
     if feature_cols:
         df = normalize_zscore(df, feature_cols)
 
+    # --- NYT: Tilføj target-kolonne ---
+    # Du kan justere logikken hvis du har flere klasser
+    df["target"] = (df["close"].shift(-1) > df["close"]).astype(int)
+    # Eller hvis du bruger 3-klasser:
+    # df["target"] = df["close"].shift(-1) - df["close"]
+    # df["target"] = df["target"].apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
+
     df.dropna(inplace=True)
     df.reset_index(drop=True, inplace=True)
 
     return df
 
 def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1") -> str:
-    """Gemmer feature-matrix med intelligent navn i outputs/feature_data/."""
     today = datetime.now().strftime('%Y%m%d')
     filename = f"{symbol.lower()}_{timeframe}_features_{version}_{today}.csv"
     output_dir = "outputs/feature_data/"
@@ -114,7 +118,6 @@ def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = 
     return full_path
 
 def load_features(symbol: str, timeframe: str, version_prefix: str = "v1") -> pd.DataFrame:
-    """Indlæser nyeste version af feature-matrix for en given coin og timeframe."""
     folder = "outputs/feature_data/"
     pattern = re.compile(rf"{symbol.lower()}_{timeframe}_features_{version_prefix}.*\.csv")
     files = [f for f in os.listdir(folder) if pattern.match(f)]
@@ -125,7 +128,6 @@ def load_features(symbol: str, timeframe: str, version_prefix: str = "v1") -> pd
     print(f"📥 Indlæser features: {newest_file}")
     return pd.read_csv(newest_file)
 
-# --------- AUTO-TEST, BENCHMARK OG DEMO ---------
 def test_pipeline():
     """Kør automatisk test af feature-pipeline på én testfil."""
     test_path = "outputs/data/btcusdt_1h_raw.csv"
@@ -142,16 +144,12 @@ def test_pipeline():
     assert "ema_200" in features.columns, "EMA200 mangler!"
     assert "rsi_14" in features.columns, "RSI14 mangler!"
     assert "rsi_28" in features.columns, "RSI28 mangler!"
+    assert "target" in features.columns, "Target mangler!"
     print("✅ Test bestået – alle hovedfeatures findes og ingen NaN!")
 
-# Eksempel på brug (fx i engine.py eller notebook):
 if __name__ == "__main__":
-    # Kør automatisk test:
     test_pipeline()
-
-    # Batch-feature-generering på alle coins/timeframes:
     from config.config import COINS, TIMEFRAMES
-
     for symbol in COINS:
         for tf in TIMEFRAMES:
             raw_path = f"outputs/data/{symbol.lower()}_{tf}_raw.csv"

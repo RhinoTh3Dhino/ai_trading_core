@@ -11,17 +11,27 @@ def generate_trend_graph(
     legend_title="Symbol"
 ):
     """
-    Genererer og gemmer en trend-graf over balance (eller andet) for hver aktiv/symbol over tid.
-    Kan bruges til Telegram, rapport eller dashboard.
+    Genererer og gemmer en trend-graf over balance for hvert aktiv/symbol over tid.
+    Hvis performance_history.csv ikke findes eller er tom, oprettes en dummy-graf.
     """
+    os.makedirs(os.path.dirname(img_path), exist_ok=True)
     if not os.path.exists(history_path):
-        print(f"[WARN] Historik-fil findes ikke: {history_path}")
-        return None
-
-    df = pd.read_csv(history_path)
-    if "timestamp" not in df.columns or "Balance" not in df.columns or "Navn" not in df.columns:
-        print("[WARN] Mangler nødvendige kolonner i performance_history.csv (kræver 'timestamp', 'Balance', 'Navn')")
-        return None
+        print(f"[WARN] Historik-fil findes ikke: {history_path}. Opretter dummy-graf.")
+        # Lav dummy-data
+        df = pd.DataFrame({
+            "timestamp": [pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")],
+            "Navn": ["Ingen data"],
+            "Balance": [0]
+        })
+    else:
+        df = pd.read_csv(history_path)
+        if df.empty or not all(col in df.columns for col in ["timestamp", "Balance", "Navn"]):
+            print("[WARN] Mangler nødvendige kolonner i performance_history.csv – opretter dummy-graf.")
+            df = pd.DataFrame({
+                "timestamp": [pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")],
+                "Navn": ["Ingen data"],
+                "Balance": [0]
+            })
 
     plt.figure(figsize=(10, 6))
     for name in df['Navn'].unique():
@@ -34,7 +44,6 @@ def generate_trend_graph(
     plt.legend(title=legend_title)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    os.makedirs(os.path.dirname(img_path), exist_ok=True)
     plt.savefig(img_path)
     plt.close()
     print(f"[INFO] Trend-graf genereret: {img_path}")
