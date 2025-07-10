@@ -1,4 +1,3 @@
-# bot/engine.py
 import sys
 import os
 import json
@@ -7,9 +6,8 @@ import numpy as np
 import datetime
 import glob
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Versionsinfo fra versions.py
 try:
     from versions import (
         PIPELINE_VERSION, PIPELINE_COMMIT,
@@ -18,7 +16,6 @@ try:
 except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
-# Model & strategi imports
 from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
 from backtest.metrics import evaluate_strategies
@@ -30,17 +27,32 @@ from utils.telegram_utils import (
 )
 from utils.robust_utils import safe_run
 
-# NY: Ensemble (simpel eller vægtet voting) fra bot/ensemble.py
-from bot.ensemble import ensemble_predict, weighted_ensemble_predict
+# Ensemble/voting
+from ensemble.majority_vote_ensemble import majority_vote_ensemble
+from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
 
+# Klassiske strategier
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
+from strategies.ema_cross_strategy import ema_cross_signals
 
-# Feature importance logning
+# Avancerede strategier
+from strategies.advanced_strategies import (
+    ema_crossover_strategy,
+    ema_rsi_regime_strategy,
+    ema_rsi_adx_strategy,
+    rsi_mean_reversion,
+    regime_ensemble,
+    voting_ensemble,
+    add_adaptive_sl_tp,
+)
+
+# Gridsearch
+from strategies.gridsearch_strategies import grid_search_sl_tp_ema
+
 from visualization.viz_feature_importance import plot_feature_importance
 from utils.feature_logging import log_top_features_to_md, log_top_features_csv, send_top_features_telegram
 
-# Optuna tuning (valgfri)
 try:
     from tuning.tuning_threshold import tune_threshold
 except ImportError:
@@ -49,13 +61,14 @@ except ImportError:
 SYMBOL = "BTC"
 GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
-DEFAULT_WEIGHTS = [1.0, 0.7, 0.4]
-ADAPTIVE_WINRATE_THRESHOLD = 0.3
-
-# Auto retrain config
+DEFAULT_WEIGHTS = [1.0, 0.7, 0.4, 1.0]  # Nu plads til 4 strategier
 RETRAIN_WINRATE_THRESHOLD = 0.30
 RETRAIN_PROFIT_THRESHOLD = 0.0
 MAX_RETRAINS = 3
+
+# === DEBUG/PROD: slå regime-filter til/fra ===
+USE_REGIME_FILTER = False   # True = produktion, False = debug/test (ALTID test uden først!)
+ADAPTIVE_WINRATE_THRESHOLD = 0.0  # Sæt lavt for at sikre altid aktivering for debug/test
 
 def get_latest_csv(folder="outputs/feature_data/", pattern="*_features_*.csv"):
     files = glob.glob(os.path.join(folder, pattern))
@@ -132,13 +145,13 @@ def log_performance_metrics(metrics, filename="outputs/performance_metrics_histo
 
 def should_retrain(metrics):
     win_rate = metrics.get("win_rate", 0)
-    profit_pct = metrics.get("pct_profit", 0)
+    profit_pct = metrics.get("profit_pct", 0)
     retrain = (win_rate < RETRAIN_WINRATE_THRESHOLD) or (profit_pct < RETRAIN_PROFIT_THRESHOLD)
     if retrain:
         print(f"🚨 Retrain trigget: win_rate={win_rate:.3f}, profit_pct={profit_pct:.3f}")
     return retrain
 
-def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
+def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False):
     DATA_PATH = get_latest_csv()
     retrain_count = 0
     seed = None
@@ -149,6 +162,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
+        # --- Check regime --- 
         if "regime" not in df.columns:
             msg = (
                 "❌ FEJL: Features-filen mangler kolonnen 'regime'.\n"
@@ -159,7 +173,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             send_message(msg)
             return
 
-        regime_map = {0: "bull", 1: "bear", 2: "neutral"}
+        regime_map = {"bull": "bull", "bear": "bear", "neutral": "neutral", 0: "bull", 1: "bear", 2: "neutral"}
         df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
         print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
 
@@ -173,6 +187,20 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             ml_signals = (probas > threshold).astype(int)
         else:
             ml_signals = ml_raw
+
+        fi_path = None
+        # === DEBUG/TESTMODE: FORCE TRADES ===
+        if FORCE_DEBUG:
+            print("‼️ DEBUG: Forcerer SKIFTEVIS BUY/SELL for test!")
+            pattern = np.array([1, -1])
+            ml_signals = np.tile(pattern, int(np.ceil(len(df)/2)))[:len(df)]
+            rsi_signals = np.tile(pattern, int(np.ceil(len(df)/2)))[:len(df)]
+            macd_signals = np.tile(pattern, int(np.ceil(len(df)/2)))[:len(df)]
+            ema_signals = np.tile(pattern, int(np.ceil(len(df)/2)))[:len(df)]
+        else:
+            rsi_signals = rsi_rule_based_signals(df, low=45, high=55)
+            macd_signals = macd_cross_signals(df)
+            ema_signals = ema_cross_signals(df)
 
         try:
             if hasattr(model, "feature_importances_"):
@@ -188,53 +216,65 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         except Exception as e:
             print(f"⚠️ Fejl ved feature importance-plot eller log: {e}")
 
-        print("🔄 Genererer strategi-signaler ...")
-        rsi_signals = rsi_rule_based_signals(df, low=30, high=70)
-        macd_signals = macd_cross_signals(df)
-        print(f"Signal distribution ML/RSI/MACD:",
+        print(f"Signal distribution ML/RSI/MACD/EMA:",
               pd.Series(ml_signals).value_counts().to_dict(),
               pd.Series(rsi_signals).value_counts().to_dict(),
-              pd.Series(macd_signals).value_counts().to_dict())
+              pd.Series(macd_signals).value_counts().to_dict(),
+              pd.Series(ema_signals).value_counts().to_dict())
 
-        # === ENSEMBLE STRATEGI (vælg simpelt eller vægtet voting) ===
-        print(f"➡️  Bruger ensemble_predict (majoritets-voting) ...")
-        # Simpel voting:
-        # ensemble_signals = [ensemble_predict([ml, rsi, macd]) for ml, rsi, macd in zip(ml_signals, rsi_signals, macd_signals)]
-        # Eller vægtet voting:
-        print(f"➡️  Bruger weighted_ensemble_predict med weights: {weights}")
-        ensemble_signals = [weighted_ensemble_predict([ml, rsi, macd], weights) for ml, rsi, macd in zip(ml_signals, rsi_signals, macd_signals)]
-        df["signal"] = ensemble_signals
+        print("Ensemble-weighted signal-fordeling:", pd.Series(weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, ema_signals, weights=weights)).value_counts().to_dict())
+
+        # ENSEMBLE STRATEGI – du kan let tilføje flere strategier her!
+        print(f"➡️  Bruger majority_vote_ensemble ...")
+        majority_signals = majority_vote_ensemble(ml_signals, rsi_signals, macd_signals, ema_signals)
+        print(f"➡️  Bruger weighted_vote_ensemble med weights: {weights}")
+        weighted_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, ema_signals, weights=weights)
+        df["signal"] = weighted_signals
+
+        # --- GEM DEBUG-SIGNALER ---
+        df_debug = df.copy()
+        df_debug["ml_signal"] = ml_signals
+        df_debug["rsi_signal"] = rsi_signals
+        df_debug["macd_signal"] = macd_signals
+        df_debug["ema_signal"] = ema_signals
+        df_debug["ensemble_majority"] = majority_signals
+        df_debug["ensemble_weighted"] = weighted_signals
+        debug_cols = ["timestamp", "close", "ml_signal", "rsi_signal", "macd_signal", "ema_signal", "ensemble_majority", "ensemble_weighted"]
+        df_debug[debug_cols].to_csv("outputs/signals_debug.csv", index=False)
+        print("✅ Debug: signal-distribution gemt til outputs/signals_debug.csv")
 
         print("🔄 Kører backtest ...")
-        trades_df, balance_df = run_backtest(df, signals=ensemble_signals)
+        trades_df, balance_df = run_backtest(df, signals=weighted_signals)
         metrics = calc_backtest_metrics(trades_df, balance_df)
         print("Backtest-metrics:", metrics)
         win_rate = metrics.get("win_rate", 0)
-        profit_pct = metrics.get("pct_profit", 0)
-        drawdown = metrics.get("max_drawdown", 0)
-        print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2%}")
+        profit_pct = metrics.get("profit_pct", 0)
+        drawdown = metrics.get("drawdown_pct", 0)
+        print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2f}%")
 
         log_performance_metrics(metrics)
-
-        # Send alt til Telegram som professionel rapport!
         send_performance_report(metrics, symbol=SYMBOL, timeframe="1h", window=None)
 
+        # --- AVANCERET STRATEGI-EVALUERING ---
         strat_scores = evaluate_strategies(
             df=df,
             ml_signals=ml_signals,
             rsi_signals=rsi_signals,
             macd_signals=macd_signals,
-            ensemble_signals=ensemble_signals,
+            ensemble_signals=weighted_signals,
             trades_df=trades_df,
             balance_df=balance_df
         )
         print("Strategi-score:", strat_scores)
 
         regime_stats = strat_scores["ENSEMBLE"].get("regime_stats", {})
+        print("DEBUG regime_stats:", json.dumps(regime_stats, indent=2))
         active_regimes = []
-        if regime_stats:
+
+        if USE_REGIME_FILTER and regime_stats:
             for regime, stats in regime_stats.items():
-                if stats["win_rate"] >= ADAPTIVE_WINRATE_THRESHOLD:
+                print(f"  Regime: {regime}, win_rate: {stats.get('win_rate')}, trades: {stats.get('num_trades')}")
+                if stats.get("win_rate", 0) >= ADAPTIVE_WINRATE_THRESHOLD:
                     active_regimes.append(regime)
             print(f"Aktive regimer for handel: {active_regimes}")
 
@@ -251,18 +291,18 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             metrics = calc_backtest_metrics(trades_df, balance_df)
             print(f"[ADAPTIV] Backtest-metrics efter regime-filter:", metrics)
             win_rate = metrics.get("win_rate", 0)
-            profit_pct = metrics.get("pct_profit", 0)
-            drawdown = metrics.get("max_drawdown", 0)
-            print(f"[ADAPTIV] Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2%}")
+            profit_pct = metrics.get("profit_pct", 0)
+            drawdown = metrics.get("drawdown_pct", 0)
+            print(f"[ADAPTIV] Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2f}%")
             log_performance_metrics(metrics)
             send_message(
                 f"🤖 Adaptiv regime-strategi aktiv!\n"
                 f"Aktive regimer: {active_regimes}\n"
-                f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('total_trades', 'N/A')}\n"
+                f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('num_trades', 'N/A')}\n"
             )
             send_performance_report(metrics, symbol=SYMBOL, timeframe="1h", window="ADAPTIV")
         else:
-            print("Ingen regime-stats fundet – adaptiv strategi springes over.")
+            print("🚧 Regime-filter slået FRA – alle signaler bruges!")
 
         meta_path = f"outputs/feature_data/engine_meta_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
         log_engine_meta(
@@ -290,7 +330,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
             f"Mode: Ensemble voting\n"
             f"Weights: {weights}\n"
             f"Threshold: {threshold}\n"
-            f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('total_trades', 'N/A')}\n"
+            f"Profit: {profit_pct:.2f}% | Win-rate: {win_rate*100:.1f}% | Trades: {metrics.get('num_trades', 'N/A')}\n"
             f"\n"
             f"📊 Strategi-score:\n"
             f"ML:    {strat_scores['ML']}\n"
@@ -302,8 +342,8 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
         )
         send_image(plot_path, caption=f"📈 Balanceudvikling for {SYMBOL}")
         send_image(drawdown_path, caption=f"📉 Drawdown for {SYMBOL}")
-        send_image(score_plot_path, caption="📊 Strategi-score ML/RSI/MACD/Ensemble")
-        if 'fi_path' in locals():
+        send_image(score_plot_path, caption="📊 Strategi-score ML/RSI/MACD/EMA/Ensemble")
+        if fi_path is not None:
             send_image(fi_path, caption="🧠 Feature Importance for ML-model")
 
         if should_retrain(metrics):
@@ -325,13 +365,5 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS):
     print("🎉 Hele flowet er nu automatisk!")
 
 if __name__ == "__main__":
-    if "--tune" in sys.argv and tune_threshold:
-        send_message("🔧 Starter automatisk tuning af threshold og weights...")
-        best_threshold, best_weights = tune_threshold()
-        send_message(
-            f"🏆 Bedste fundne threshold: {best_threshold:.3f}, weights: {best_weights} – genstarter backtest med nye værdier."
-        )
-        safe_run(lambda: main(threshold=best_threshold, weights=best_weights))
-    else:
-        threshold, weights = load_best_ensemble_params()
-        safe_run(lambda: main(threshold=threshold, weights=weights))
+    threshold, weights = load_best_ensemble_params()
+    safe_run(lambda: main(threshold=threshold, weights=weights, FORCE_DEBUG=False))

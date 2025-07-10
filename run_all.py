@@ -4,8 +4,15 @@ import glob
 import os
 import argparse
 
+# === Tilføj projektroden til sys.path for robuste imports (fungerer både CLI og VS Code) ===
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 PYTHON = sys.executable
 
+# === Argumenter til CLI ===
 parser = argparse.ArgumentParser(description="Kør hele AI Trading Bot pipeline")
 parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Trading symbol (fx BTCUSDT)")
 parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)")
@@ -27,6 +34,7 @@ def run_command(cmd_list, step_name):
         print(f"✅ {step_name} færdig!")
     except subprocess.CalledProcessError as e:
         print(f"❌ {step_name} fejlede: {e}")
+        print(f"❌ Kommando: {' '.join(cmd_list)}")
         sys.exit(1)
 
 def main():
@@ -52,7 +60,9 @@ def main():
     print(f"✅ Nyeste datafil: {input_file}")
 
     # Step 2: Feature engineering
-    feature_output = f"outputs/feature_data/{SYMBOL.lower()}_{INTERVAL}_features_{FEATURE_VERSION}.csv"
+    feature_dir = "outputs/feature_data"
+    os.makedirs(feature_dir, exist_ok=True)
+    feature_output = f"{feature_dir}/{SYMBOL.lower()}_{INTERVAL}_features_{FEATURE_VERSION}.csv"
     feature_cmd = [
         PYTHON, "features/feature_engineering.py",
         "--input", input_file,
@@ -62,9 +72,12 @@ def main():
     run_command(feature_cmd, "Feature engineering")
 
     # Step 3: Kør engine (strategi, backtest, ML-signaler)
-    engine_cmd = [PYTHON, "bot/engine.py", "--features", feature_output, "--symbol", SYMBOL, "--interval", INTERVAL]
-    # Tilføj evt. flere parametre til engine.py via CLI, fx adaptive SL/TP eller ML flag
-
+    engine_cmd = [
+        PYTHON, "bot/engine.py",
+        "--features", feature_output,
+        "--symbol", SYMBOL,
+        "--interval", INTERVAL
+    ]
     run_command(engine_cmd, "Kør engine")
 
     print("\n🎉 Pipeline kørt færdig uden fejl!")

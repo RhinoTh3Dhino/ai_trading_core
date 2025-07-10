@@ -15,14 +15,13 @@ def grid_search_sl_tp_ema(
     ema_slow_grid=[21, 34, 55],
     regime_only=True,
     regime_col="regime",
-    regime_value=1,
+    regime_value="bull",
     log_path="outputs/gridsearch/gridsearch_results.csv",
-    strategy_func=ema_crossover_strategy,   # Kan udskiftes til anden strategi
-    rename_to_ema9_21=True,                 # Hvis True, strategien forventer ema_9/ema_21 navne
+    strategy_func=ema_crossover_strategy,
+    rename_to_ema9_21=True,
     top_n=5
 ):
     results = []
-
     for sl in sl_grid:
         for tp in tp_grid:
             for ema_fast in ema_fast_grid:
@@ -31,12 +30,13 @@ def grid_search_sl_tp_ema(
                         continue
 
                     test_df = df.copy()
+                    # Tilføj EMA-kolonner (kun hvis de ikke findes)
+                    for ema_len in [ema_fast, ema_slow]:
+                        ema_col = f"ema_{ema_len}"
+                        if ema_col not in test_df.columns:
+                            test_df[ema_col] = test_df["close"].ewm(span=ema_len, adjust=False).mean()
 
-                    # Generér EMA-kolonner
-                    test_df[f"ema_{ema_fast}"] = test_df["close"].ewm(span=ema_fast, adjust=False).mean()
-                    test_df[f"ema_{ema_slow}"] = test_df["close"].ewm(span=ema_slow, adjust=False).mean()
-
-                    # Hvis strategien forventer ema_9/ema_21, lav rename!
+                    # Evt. omdøb til ema_9/ema_21
                     if rename_to_ema9_21:
                         rename_map = {
                             f"ema_{ema_fast}": "ema_9",
@@ -46,10 +46,10 @@ def grid_search_sl_tp_ema(
                     else:
                         strat_df = test_df
 
-                    # Kør strategi (fx ema_crossover_strategy eller custom)
-                    strat_df = strategy_func(strat_df)
+                    # Kør strategi (returnerer df med 'signal'-kolonne)
+                    strat_df = strategy_func(strat_df, fast=ema_fast, slow=ema_slow)
 
-                    # Regime filter (fx kun bull)
+                    # Regime-filter (fx kun bull)
                     if regime_only and regime_col in strat_df.columns:
                         strat_df = strat_df[strat_df[regime_col] == regime_value].copy()
 
@@ -68,11 +68,12 @@ def grid_search_sl_tp_ema(
     results_df = pd.DataFrame(results)
     if not results_df.empty:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        results_df.sort_values("sharpe", ascending=False).to_csv(log_path, index=False)
+        results_df = results_df.sort_values("sharpe", ascending=False)
+        results_df.to_csv(log_path, index=False)
         print(f"✅ Gemte gridsearch-resultater til {log_path}")
-        print(results_df.sort_values('sharpe', ascending=False).head(top_n))
+        print(results_df.head(top_n))
     else:
-        print("❌ Ingen resultater fra gridsearch (tjek data).")
+        print("❌ Ingen resultater fra gridsearch (tjek data og strategi).")
     return results_df
 
 def paper_trade_simple(df, sl=0.02, tp=0.04, start_balance=10000, fee=0.0005):
@@ -82,25 +83,26 @@ def paper_trade_simple(df, sl=0.02, tp=0.04, start_balance=10000, fee=0.0005):
     entry_price = 0
     trades = []
     for i, row in df.iterrows():
-        if row.get('signal', 0) == 1 and position == 0:
+        signal = row['signal'] if 'signal' in row else 0
+        price = row['close']
+        ts = row['timestamp'] if 'timestamp' in row else i
+
+        if signal == 1 and position == 0:
             position = 1
-            entry_price = row['close']
-            entry_time = row['timestamp'] if 'timestamp' in row else i
+            entry_price = price
             trades.append({
-                "time": entry_time, "type": "BUY", "price": entry_price, "balance": balance
+                "time": ts, "type": "BUY", "price": entry_price, "balance": balance
             })
         if position == 1:
-            pnl = (row['close'] - entry_price) / entry_price
-            if row.get('signal', 0) == -1 or pnl <= -sl or pnl >= tp:
+            pnl = (price - entry_price) / entry_price
+            if signal == -1 or pnl <= -sl or pnl >= tp:
                 fee_total = balance * fee * 2
                 balance = balance * (1 + pnl) - fee_total
-                equity.append(balance)
-                exit_time = row['timestamp'] if 'timestamp' in row else i
                 trades.append({
-                    "time": exit_time,
+                    "time": ts,
                     "type": "SELL",
-                    "price": row['close'],
-                    "pnl_%": round(pnl*100, 2),
+                    "price": price,
+                    "pnl_%": round(pnl * 100, 2),
                     "balance": balance
                 })
                 position = 0
@@ -108,18 +110,22 @@ def paper_trade_simple(df, sl=0.02, tp=0.04, start_balance=10000, fee=0.0005):
         equity.append(balance)
     # Luk åben til sidst
     if position == 1:
-        pnl = (df.iloc[-1]['close'] - entry_price) / entry_price
+        last_price = df.iloc[-1]['close']
+        ts = df.iloc[-1]['timestamp'] if 'timestamp' in df.columns else len(df)-1
+        pnl = (last_price - entry_price) / entry_price
         fee_total = balance * fee * 2
         balance = balance * (1 + pnl) - fee_total
-        equity.append(balance)
         trades.append({
-            "time": df.iloc[-1].get('timestamp', len(df)-1),
+            "time": ts,
             "type": "FORCE_EXIT",
-            "price": df.iloc[-1]['close'],
+            "price": last_price,
             "pnl_%": round(pnl*100, 2),
             "balance": balance
         })
     trades_df = pd.DataFrame(trades)
+    # For metrics (fungerer med calculate_performance_metrics)
+    if not trades_df.empty:
+        trades_df["balance"] = trades_df["balance"].ffill()
     return balance, trades_df
 
-# --- Nu nemt at tilføje flere gridsearch-funktioner og strategier! ---
+# --- Udvid nemt med flere gridsearch-funktioner og strategier! ---
