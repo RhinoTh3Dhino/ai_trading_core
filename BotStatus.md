@@ -509,3 +509,18 @@
 [2025-07-10 20:26:06.257095] ✅ Feature-data gemt: BTCUSDT 1h, 43579 rækker, fil: btcusdt_1h_features_1825d.csv
 [2025-07-10 21:58:21.929931] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
 [2025-07-10 23:19:50.242772] ✅ Feature-data gemt: BTCUSDT 1h, 43579 rækker, fil: btcusdt_1h_features_1825d.csv
+2025-07-11 00:46:00 | PyTorch device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | RAM: 0 MB
+[2025-07-11 00:46:01.541448] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+
+PyTorch device: GPU (cuda) | GPU: NVIDIA GeForce RTX 4070 Ti SUPER | RAM: 0 MB
+2025-07-11 00:50:50 | PyTorch device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | RAM: 0 MB
+[2025-07-11 00:50:51.957497] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+
+PyTorch device: GPU (cuda) | GPU: NVIDIA GeForce RTX 4070 Ti SUPER | RAM: 0 MB
+2025-07-11 00:54:04 | PyTorch device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | RAM: 0 MB
+[2025-07-11 00:54:06.125810] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+
+PyTorch device: GPU (cuda) | GPU: NVIDIA GeForce RTX 4070 Ti SUPER | RAM: 0 MB
+2025-07-11 01:12:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Strategy: ensemble | Feature file: outputs/feature_data/btc_1h_features_test.csv
+2025-07-11 01:17:06 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Strategy: ensemble | Feature file: outputs/feature_data/btc_1h_features_test.csv
+2025-07-11 01:31:51 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123

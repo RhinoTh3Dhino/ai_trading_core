@@ -18,15 +18,45 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
 from datetime import datetime
+import platform
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils.telegram_utils import send_message
 
 # === Konfiguration ===
 MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
 LOG_PATH = os.path.join(MODEL_DIR, "train_log_pytorch.txt")
 
-# === PyTorch device ===
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"[INFO] Træning på device: {DEVICE}")
+def log_to_file(line, prefix="[INFO] "):
+    os.makedirs("logs", exist_ok=True)
+    with open("logs/bot.log", "a", encoding="utf-8") as logf:
+        logf.write(prefix + line)
+
+def log_device_status(data_path, batch_size, epochs, lr):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    torch_version = torch.__version__
+    python_version = platform.python_version()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_status = "GPU" if torch.cuda.is_available() else "CPU"
+    if torch.cuda.is_available():
+        device_name = torch.cuda.get_device_name(0)
+        cuda_mem_alloc = torch.cuda.memory_allocated() // (1024**2)
+        cuda_mem_total = torch.cuda.get_device_properties(0).total_memory // (1024**2)
+        status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
+                       f"Device: GPU ({device_name}) | CUDA alloc: {cuda_mem_alloc} MB / {cuda_mem_total} MB | "
+                       f"Data: {data_path} | Batch: {batch_size} | Epochs: {epochs} | LR: {lr}\n")
+    else:
+        status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
+                       f"Device: CPU | Data: {data_path} | Batch: {batch_size} | Epochs: {epochs} | LR: {lr}\n")
+    print(f"[BotStatus.md] {status_line.strip()}")
+    with open("BotStatus.md", "a", encoding="utf-8") as f:
+        f.write(status_line)
+    log_to_file(status_line)
+    try:
+        send_message("🤖 " + status_line.strip())
+    except Exception as e:
+        print(f"[ADVARSEL] Kunne ikke sende til Telegram: {e}")
 
 # === Automatisk CSV-loader (springer meta-header over) ===
 def load_csv_auto(file_path):
@@ -75,6 +105,9 @@ def train_pytorch_model(
     test_size=0.2,
     random_state=42
 ):
+    # === Device-logning (pro) ===
+    log_device_status(data_path, batch_size, epochs, learning_rate)
+
     # === Data ===
     print(f"[INFO] Indlæser data fra: {data_path}")
     df = load_csv_auto(data_path)
@@ -99,6 +132,7 @@ def train_pytorch_model(
     # --- Class weights for imbalanced data ---
     unique_classes = np.unique(y)
     weights = compute_class_weight(class_weight='balanced', classes=unique_classes, y=y)
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     weights = torch.tensor(weights, dtype=torch.float32).to(DEVICE)
     print(f"[INFO] Class weights (imbalance compensation): {weights}")
 

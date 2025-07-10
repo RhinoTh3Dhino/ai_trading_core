@@ -9,6 +9,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
 from utils.telegram_utils import send_message
+from utils.log_utils import log_device_status  # <-- BRUG DENNE!
+
+# === Universal auto-loader til feature-CSV ===
+def load_csv_auto(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
+        return pd.read_csv(file_path, skiprows=1)
+    else:
+        return pd.read_csv(file_path)
 
 # Ensemble/voting
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
@@ -247,7 +258,14 @@ def parse_args():
 
 def main():
     args = parse_args()
-    df = pd.read_csv(args.feature_path)
+    # === LOG device- og pipeline-status (pro-style, via log_utils) ===
+    log_device_status(
+        context="backtest",
+        extra={"strategy": args.strategy, "feature_file": args.feature_path},
+        telegram_func=send_message
+    )
+
+    df = load_csv_auto(args.feature_path)
     if "datetime" in df.columns:
         df.rename(columns={"datetime": "timestamp"}, inplace=True)
     print("Indlæst data med kolonner:", list(df.columns))
