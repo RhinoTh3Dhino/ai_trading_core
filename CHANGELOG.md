@@ -801,3 +801,10 @@ Feature names unseen at fit time:
 
 ## [2025-07-10]
 - Step 5: Automatisk changelog test
+
+### 2025-07-10 13:18 - vvTEST - TEST001
+- Første changelog-test.
+
+
+## [2025-07-10]
+- Step 5: Automatisk changelog test
