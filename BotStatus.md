@@ -508,3 +508,4 @@
 [2025-07-10 20:05:44.694607] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_200544.csv
 [2025-07-10 20:26:06.257095] ✅ Feature-data gemt: BTCUSDT 1h, 43579 rækker, fil: btcusdt_1h_features_1825d.csv
 [2025-07-10 21:58:21.929931] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+[2025-07-10 23:19:50.242772] ✅ Feature-data gemt: BTCUSDT 1h, 43579 rækker, fil: btcusdt_1h_features_1825d.csv

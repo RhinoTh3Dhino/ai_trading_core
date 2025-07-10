@@ -286,6 +286,13 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
             drawdown = metrics.get("drawdown_pct", 0)
             print(f"🔎 Win-rate: {win_rate*100:.2f}%, Profit: {profit_pct:.2f}%, Drawdown: {drawdown:.2f}%")
 
+            # --- NYT: GEM balance-fil til equity/drawdown-analyse ---
+            balance_dir = "outputs/balance"
+            os.makedirs(balance_dir, exist_ok=True)
+            balance_out = os.path.join(balance_dir, "btc_balance.csv")
+            balance_df.to_csv(balance_out, index=False)
+            print(f"✅ Balance gemt til {balance_out} (til equity/drawdown-analyse)")
+
             log_performance_metrics(metrics)
             send_performance_report(metrics, symbol=SYMBOL, timeframe="1h", window=None)
 

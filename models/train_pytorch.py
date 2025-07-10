@@ -15,7 +15,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
 from datetime import datetime
@@ -103,16 +102,24 @@ def train_pytorch_model(
     weights = torch.tensor(weights, dtype=torch.float32).to(DEVICE)
     print(f"[INFO] Class weights (imbalance compensation): {weights}")
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=test_size, random_state=random_state, stratify=y
-    )
+    # === Time-based split for tidsseriedata ===
+    df = df.reset_index(drop=True)
+    split_idx = int(len(df) * (1 - test_size))
+    X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
+    y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
+
+    print("[INFO] Train slutter:", df.iloc[split_idx-1]["timestamp"] if "timestamp" in df.columns else split_idx-1)
+    print("[INFO] Val starter:", df.iloc[split_idx]["timestamp"] if "timestamp" in df.columns else split_idx)
+    print(f"[INFO] Train: {len(X_train)}, Val: {len(X_val)}")
+
+    # --- Fordeling for debugging ---
+    print("Target-fordeling (train):\n", y_train.value_counts(normalize=True))
+    print("Target-fordeling (val):\n", y_val.value_counts(normalize=True))
 
     train_ds = TradingDataset(X_train, y_train)
     val_ds = TradingDataset(X_val, y_val)
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
-
-    print(f"[INFO] Train: {len(train_ds)}, Val: {len(val_ds)}")
 
     # === Model + optimering ===
     model = TradingNet(input_dim=X.shape[1], output_dim=len(unique_classes)).to(DEVICE)
