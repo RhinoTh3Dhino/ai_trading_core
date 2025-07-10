@@ -314,3 +314,197 @@
 3. rsi_14: 0.2151
 4. rsi_28: 0.1049
 5. rsi_28_z: 0.0949
+[2025-07-10 15:17:14.411730] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_151714.csv
+
+### Top-5 features (ML) – 2025-07-10 15:18:37
+1. ema_21_z: 0.1333
+2. ema_50_z: 0.0167
+3. rsi_28_z: 0.0000
+4. ema_50: 0.0000
+5. rsi_28: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 15:18:37
+1. ema_50: 0.3340
+2. ema_50_z: 0.2865
+3. ema_21_z: 0.2294
+4. rsi_28: 0.0980
+5. rsi_28_z: 0.0522
+
+### Top-5 features (ML) – 2025-07-10 15:18:42
+1. volume: 0.1333
+2. bb_lower_z: 0.1000
+3. macd_signal: 0.1000
+4. atr_14: 0.0333
+5. macd_hist: 0.0333
+
+### Top-5 features (ML) – 2025-07-10 15:18:42
+1. macd_signal: 0.2140
+2. bb_lower_z: 0.1911
+3. macd_hist: 0.1764
+4. volume: 0.1567
+5. pv_ratio: 0.1511
+6. atr_14: 0.1106
+
+### Top-5 features (ML) – 2025-07-10 15:18:47
+1. rsi_28_z: 0.0000
+2. zscore_20: 0.0000
+3. high: 0.0000
+4. low: 0.0000
+5. close: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 15:18:48
+1. zscore_20: 0.2724
+2. rsi_28_z: 0.2003
+3. high: 0.1883
+4. close: 0.1835
+5. low: 0.1556
+
+### Top-5 features (ML) – 2025-07-10 15:18:53
+1. macd_hist: 0.0167
+2. rsi_28_z: 0.0000
+3. ema_200: 0.0000
+4. atr_14: 0.0000
+5. rsi_28: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 15:18:53
+1. ema_200: 0.2598
+2. macd_hist: 0.2388
+3. atr_14: 0.2133
+4. rsi_28_z: 0.1551
+5. rsi_28: 0.1330
+[2025-07-10 19:32:14.432479] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_193214.csv
+[2025-07-10 19:35:23.975929] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_193523.csv
+
+### Top-5 features (ML) – 2025-07-10 19:35:32
+1. bb_lower: 0.0333
+2. bb_lower_z: 0.0333
+3. macd_signal: 0.0333
+4. ema_50: 0.0000
+5. rsi_28: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 19:35:32
+1. ema_50: 0.2812
+2. bb_lower_z: 0.2333
+3. macd_signal: 0.1992
+4. bb_lower: 0.1958
+5. rsi_28: 0.0905
+
+### Top-5 features (ML) – 2025-07-10 19:35:36
+1. rsi_28_z: 0.0000
+2. ema_200: 0.0000
+3. atr_14: 0.0000
+4. rsi_28: 0.0000
+5. rsi_14: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 19:35:36
+1. ema_200: 0.3275
+2. rsi_14: 0.2440
+3. atr_14: 0.2240
+4. rsi_28: 0.1141
+5. rsi_28_z: 0.0904
+
+### Top-5 features (ML) – 2025-07-10 19:35:41
+1. rsi_28_z: 0.0000
+2. ema_200: 0.0000
+3. atr_14: 0.0000
+4. rsi_28: 0.0000
+5. rsi_14: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 19:35:41
+1. ema_200: 0.3810
+2. atr_14: 0.2764
+3. rsi_14: 0.1301
+4. rsi_28: 0.1179
+5. rsi_28_z: 0.0946
+
+### Top-5 features (ML) – 2025-07-10 19:35:46
+1. rsi_28_z: 0.0000
+2. ema_200: 0.0000
+3. atr_14: 0.0000
+4. rsi_28: 0.0000
+5. rsi_14: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 19:35:46
+1. ema_200: 0.3749
+2. atr_14: 0.2553
+3. rsi_14: 0.1582
+4. rsi_28_z: 0.1133
+5. rsi_28: 0.0983
+[2025-07-10 19:37:42.990514] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_193742.csv
+
+### Top-5 features (ML) – 2025-07-10 19:37:48
+1. close: 0.1167
+2. rsi_28_z: 0.0833
+3. ema_21: 0.0833
+4. macd_signal: 0.0833
+5. rsi_14_z: 0.0833
+
+### Top-5 features (ML) – 2025-07-10 19:37:49
+1. bb_lower_z: 0.0915
+2. ema_200_z: 0.0744
+3. open: 0.0685
+4. pv_ratio: 0.0674
+5. bb_upper: 0.0659
+6. ema_200: 0.0611
+7. vwap_z: 0.0592
+8. vwap: 0.0542
+9. bb_upper_z: 0.0526
+10. rsi_14_z: 0.0469
+11. ema_50_z: 0.0445
+12. ema_50: 0.0421
+13. volume: 0.0421
+14. zscore_20_z: 0.0360
+15. ema_21: 0.0294
+
+### Top-5 features (ML) – 2025-07-10 19:37:53
+1. ema_9_z: 0.1167
+2. macd: 0.1167
+3. macd_z: 0.1167
+4. bb_lower: 0.1000
+5. bb_lower_z: 0.1000
+
+### Top-5 features (ML) – 2025-07-10 19:37:54
+1. ema_50_z: 0.1320
+2. bb_lower_z: 0.1245
+3. ema_50: 0.1185
+4. macd_signal: 0.1140
+5. bb_lower: 0.1012
+6. ema_21: 0.0866
+7. macd: 0.0649
+8. ema_9_z: 0.0642
+9. ema_21_z: 0.0629
+10. macd_z: 0.0462
+11. close: 0.0457
+12. ema_9: 0.0393
+
+### Top-5 features (ML) – 2025-07-10 19:37:58
+1. rsi_28_z: 0.0000
+2. ema_200: 0.0000
+3. atr_14: 0.0000
+4. rsi_28: 0.0000
+5. rsi_14: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 19:37:58
+1. ema_200: 0.3549
+2. atr_14: 0.2407
+3. rsi_14: 0.2055
+4. rsi_28: 0.1059
+5. rsi_28_z: 0.0930
+
+### Top-5 features (ML) – 2025-07-10 19:38:03
+1. rsi_28_z: 0.0000
+2. zscore_20: 0.0000
+3. close: 0.0000
+4. ema_9: 0.0000
+5. ema_21: 0.0000
+
+### Top-5 features (ML) – 2025-07-10 19:38:03
+1. zscore_20: 0.2902
+2. ema_21: 0.2265
+3. ema_9: 0.1759
+4. close: 0.1662
+5. rsi_28_z: 0.1412
+[2025-07-10 19:59:00.078615] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_195900.csv
+[2025-07-10 20:05:44.694607] ✅ Data hentet: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_20250710_200544.csv
+[2025-07-10 20:26:06.257095] ✅ Feature-data gemt: BTCUSDT 1h, 43579 rækker, fil: btcusdt_1h_features_1825d.csv
+[2025-07-10 21:58:21.929931] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv

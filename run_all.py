@@ -29,8 +29,11 @@ FEATURE_VERSION = args.feature_version
 
 def run_command(cmd_list, step_name):
     print(f"\n🔹 {step_name} ...")
+    # Sæt PYTHONPATH for child-process (arver også evt. andre env vars)
+    env = os.environ.copy()
+    env["PYTHONPATH"] = PROJECT_ROOT
     try:
-        subprocess.run(cmd_list, check=True)
+        subprocess.run(cmd_list, check=True, env=env)
         print(f"✅ {step_name} færdig!")
     except subprocess.CalledProcessError as e:
         print(f"❌ {step_name} fejlede: {e}")

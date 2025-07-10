@@ -123,6 +123,18 @@
 - Daglig/ugentlig status via schedule/main.py, inkl. heartbeat og retrain.
 - Alle tests og edge-cases dækket – 100% grøn test-suite.
 
+## [v1.0.0] - 2025-07-10
+### Added
+- Fuldt Deep Learning-modul med `train_pytorch.py`:
+    - CLI-træning og integration til engine/pipeline
+    - Automatisk håndtering af feature-selection, meta-header og numeriske kolonner
+    - Class weights for robusthed ved ubalanceret target
+    - Logging af træningsforløb, validation accuracy, confusion matrix og classification report
+    - Automatisk retrain-loop og Telegram-beskeder
+    - Stabil og fejltolerant PyTorch-træning på både GPU/CPU
+
+### Fixed
+- Sikret, at pipeline og engine kan bruge/loade nye modeller uden manuelle ændringer
 
 
 

@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import datetime
 import glob
+import torch
 
 # === NYT: Importér ResourceMonitor til ressourceovervågning ===
 from bot.monitor import ResourceMonitor
@@ -19,7 +20,6 @@ try:
 except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
-from models.model_training import train_model
 from backtest.backtest import run_backtest, calc_backtest_metrics
 from backtest.metrics import evaluate_strategies
 from visualization.plot_backtest import plot_backtest
@@ -39,39 +39,63 @@ from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 from strategies.ema_cross_strategy import ema_cross_signals
 
-# Avancerede strategier
-from strategies.advanced_strategies import (
-    ema_crossover_strategy,
-    ema_rsi_regime_strategy,
-    ema_rsi_adx_strategy,
-    rsi_mean_reversion,
-    regime_ensemble,
-    voting_ensemble,
-    add_adaptive_sl_tp,
-)
-
-# Gridsearch
-from strategies.gridsearch_strategies import grid_search_sl_tp_ema
-
 from visualization.viz_feature_importance import plot_feature_importance
 from utils.feature_logging import log_top_features_to_md, log_top_features_csv, send_top_features_telegram
 
-try:
-    from tuning.tuning_threshold import tune_threshold
-except ImportError:
-    tune_threshold = None
+# === NYT: PyTorch-model og inferencemodul ===
+MODEL_DIR = "models"
+PYTORCH_MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
+PYTORCH_SCRIPT_PATH = os.path.join(MODEL_DIR, "train_pytorch.py")  # Hvis du skal importere klassen direkte
+
+# === Device (GPU/CPU) auto-detection ===
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# === Pytorch netværk skal kunne loades direkte ===
+class TradingNet(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dim=64, output_dim=2):
+        super().__init__()
+        self.net = torch.nn.Sequential(
+            torch.nn.Linear(input_dim, hidden_dim),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_dim, hidden_dim),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_dim, output_dim),
+        )
+    def forward(self, x):
+        return self.net(x)
+
+# === Loader til PyTorch-model (inference) ===
+def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH):
+    if not os.path.exists(model_path):
+        print(f"❌ PyTorch-model ikke fundet: {model_path}")
+        return None
+    model = TradingNet(input_dim=feature_dim, output_dim=2)
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+    model.eval()
+    model.to(DEVICE)
+    print(f"✅ PyTorch-model indlæst fra {model_path} på {DEVICE}")
+    return model
+
+def pytorch_predict(model, X):
+    with torch.no_grad():
+        X_tensor = torch.tensor(X.values, dtype=torch.float32).to(DEVICE)
+        logits = model(X_tensor)
+        probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()
+        preds = np.argmax(probs, axis=1)
+    return preds, probs
+
+# === Hjælpefunktioner (resten er som før) ===
 
 SYMBOL = "BTC"
 GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
-DEFAULT_WEIGHTS = [1.0, 0.7, 0.4, 1.0]  # Nu plads til 4 strategier
+DEFAULT_WEIGHTS = [1.0, 0.7, 0.4, 1.0]
 RETRAIN_WINRATE_THRESHOLD = 0.30
 RETRAIN_PROFIT_THRESHOLD = 0.0
 MAX_RETRAINS = 3
 
-# === DEBUG/PROD: slå regime-filter til/fra ===
-USE_REGIME_FILTER = False   # True = produktion, False = debug/test (ALTID test uden først!)
-ADAPTIVE_WINRATE_THRESHOLD = 0.0  # Sæt lavt for at sikre altid aktivering for debug/test
+USE_REGIME_FILTER = False   # True = produktion, False = debug/test
+ADAPTIVE_WINRATE_THRESHOLD = 0.0
 
 def get_latest_csv(folder="outputs/feature_data/", pattern="*_features_*.csv"):
     files = glob.glob(os.path.join(folder, pattern))
@@ -192,19 +216,25 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
             df["regime"] = df["regime"].map(regime_map).fillna(df["regime"])
             print("Regime-værdier i df:", df["regime"].value_counts(dropna=False).to_dict())
 
-            print("🔄 Træner eller indlæser ML-model ...")
-            model, model_path, feature_cols = train_model(df, random_seed=seed)
-            print(f"✅ ML-model klar: {model_path}")
-            X_pred = df[feature_cols]
-            ml_raw = model.predict(X_pred)
-            if hasattr(model, "predict_proba"):
-                probas = model.predict_proba(X_pred)[:, 1]
-                ml_signals = (probas > threshold).astype(int)
-            else:
-                ml_signals = ml_raw
+            print("🔄 Loader PyTorch ML-model til inference ...")
+            feature_cols = [col for col in df.columns if col not in ("timestamp", "target", "regime", "signal")]
+            model = load_pytorch_model(feature_dim=len(feature_cols), model_path=PYTORCH_MODEL_PATH)
 
-            fi_path = None
-            # === DEBUG/TESTMODE: FORCE TRADES ===
+            if model is not None:
+                # === INFERENCE: forudsig med PyTorch ===
+                ml_signals, probas = pytorch_predict(model, df[feature_cols])
+                # Threshold kan bruges hvis du vil lave proba-baserede signaler
+                if probas.shape[1] == 2:
+                    signal_proba = probas[:, 1]    # probability for class 1 (BUY)
+                    ml_signals = (signal_proba > threshold).astype(int)
+                else:
+                    ml_signals = ml_signals
+                print("✅ PyTorch inference klar!")
+            else:
+                print("❌ Ingen PyTorch-model fundet, fallback til RANDOM BUY/SELL for test!")
+                ml_signals = np.random.choice([0, 1], size=len(df))
+
+            # === Klassiske signaler ===
             if FORCE_DEBUG:
                 print("‼️ DEBUG: Forcerer SKIFTEVIS BUY/SELL for test!")
                 pattern = np.array([1, -1])
@@ -217,19 +247,8 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
                 macd_signals = macd_cross_signals(df)
                 ema_signals = ema_cross_signals(df)
 
-            try:
-                if hasattr(model, "feature_importances_"):
-                    imp = model.feature_importances_
-                    sorted_idx = np.argsort(imp)[::-1]
-                    top_features = [(feature_cols[i], imp[i]) for i in sorted_idx[:15]]
-                    fi_path = os.path.join(GRAPH_DIR, f"feature_importance_ML_{datetime.datetime.now():%Y%m%d_%H%M%S}.png")
-                    plot_feature_importance(feature_cols, imp, out_path=fi_path, method="Permutation", top_n=15)
-                    print(f"✅ Feature importance-plot gemt: {fi_path}")
-                    log_top_features_to_md(top_features, md_path="BotStatus.md", model_name="ML")
-                    log_top_features_csv(top_features, csv_path="data/top_features_history.csv", model_name="ML")
-                    send_top_features_telegram(top_features, send_message, chat_id=None, model_name="ML")
-            except Exception as e:
-                print(f"⚠️ Fejl ved feature importance-plot eller log: {e}")
+            # === Resten af din pipeline som før... ===
+            # (ensemble voting, logging, backtest, Telegram, plot m.m.)
 
             print(f"Signal distribution ML/RSI/MACD/EMA:",
                   pd.Series(ml_signals).value_counts().to_dict(),
@@ -246,7 +265,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
             weighted_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, ema_signals, weights=weights)
             df["signal"] = weighted_signals
 
-            # --- GEM DEBUG-SIGNALER ---
+            # GEM debug-signaldistribution (som før)
             df_debug = df.copy()
             df_debug["ml_signal"] = ml_signals
             df_debug["rsi_signal"] = rsi_signals
@@ -270,7 +289,7 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
             log_performance_metrics(metrics)
             send_performance_report(metrics, symbol=SYMBOL, timeframe="1h", window=None)
 
-            # --- AVANCERET STRATEGI-EVALUERING ---
+            # --- AVANCERET STRATEGI-EVALUERING (som før) ---
             strat_scores = evaluate_strategies(
                 df=df,
                 ml_signals=ml_signals,
@@ -358,8 +377,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
             send_image(plot_path, caption=f"📈 Balanceudvikling for {SYMBOL}")
             send_image(drawdown_path, caption=f"📉 Drawdown for {SYMBOL}")
             send_image(score_plot_path, caption="📊 Strategi-score ML/RSI/MACD/EMA/Ensemble")
-            if fi_path is not None:
-                send_image(fi_path, caption="🧠 Feature Importance for ML-model")
 
             if should_retrain(metrics):
                 retrain_count += 1
