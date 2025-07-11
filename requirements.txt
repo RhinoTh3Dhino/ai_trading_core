@@ -36,9 +36,9 @@ pytest==8.4.0
 psutil>=5.9.0
 GPUtil>=1.4.0
 
-# Deep Learning (vælg én eller begge)
-tensorflow>=2.16.1       # GPU-version anbefales (pip install tensorflow)
-# torch>=2.3.0           # Fjern # hvis du ønsker PyTorch support
+# Deep Learning (installér begge for max fleksibilitet)
+tensorflow>=2.16.1
+torch>=2.3.0     # CPU-version installeres automatisk på GitHub Actions via pip --index-url
 
 # (Ekstra – tilføj efter behov, kræver ofte ekstra systemlibs på Windows)
 # xgboost==2.0.3
