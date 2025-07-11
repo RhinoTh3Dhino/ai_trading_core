@@ -524,3 +524,14 @@ PyTorch device: GPU (cuda) | GPU: NVIDIA GeForce RTX 4070 Ti SUPER | RAM: 0 MB
 2025-07-11 01:12:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Strategy: ensemble | Feature file: outputs/feature_data/btc_1h_features_test.csv
 2025-07-11 01:17:06 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Strategy: ensemble | Feature file: outputs/feature_data/btc_1h_features_test.csv
 2025-07-11 01:31:51 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+2025-07-11 01:53:57 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: ml
+[2025-07-11 01:53:59.069809] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+2025-07-11 01:59:45 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: ml
+[2025-07-11 01:59:46.871012] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+2025-07-11 01:59:50 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: ml
+2025-07-11 02:00:18 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: dl
+[2025-07-11 02:00:19.548250] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+2025-07-11 02:00:22 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: dl
+2025-07-11 02:00:36 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: ensemble
+[2025-07-11 02:00:37.341333] ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+2025-07-11 02:00:40 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: ensemble

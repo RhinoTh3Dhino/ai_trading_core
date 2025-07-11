@@ -4,12 +4,9 @@ import argparse
 import json
 import pandas as pd
 import numpy as np
-import datetime
-import glob
-import torch
-import platform
 
-# === Telegram-integration ===
+# === Central logging ===
+from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message
 
 # === CLI-argumenter: gør engine.py CLI-klar ===
@@ -24,44 +21,19 @@ args = parser.parse_args()
 SYMBOL = args.symbol
 INTERVAL = args.interval
 
-def log_to_file(line, prefix="[INFO] "):
-    os.makedirs("logs", exist_ok=True)
-    with open("logs/bot.log", "a", encoding="utf-8") as logf:
-        logf.write(prefix + line)
-
-def log_device_status():
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    torch_version = torch.__version__
-    python_version = platform.python_version()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if args.device is None else torch.device(args.device)
-    gpu_status = "GPU" if device.type == "cuda" and torch.cuda.is_available() else "CPU"
-
-    if device.type == "cuda" and torch.cuda.is_available():
-        device_name = torch.cuda.get_device_name(0)
-        cuda_mem_alloc = torch.cuda.memory_allocated() // (1024**2)
-        cuda_mem_total = torch.cuda.get_device_properties(0).total_memory // (1024**2)
-        status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
-                       f"Device: GPU ({device_name}) | CUDA alloc: {cuda_mem_alloc} MB / {cuda_mem_total} MB | "
-                       f"Symbol: {SYMBOL} | Interval: {INTERVAL}\n")
-    else:
-        status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
-                       f"Device: CPU | Symbol: {SYMBOL} | Interval: {INTERVAL}\n")
-
-    print(f"[BotStatus.md] {status_line.strip()}")
-    # Log til BotStatus.md
-    with open("BotStatus.md", "a", encoding="utf-8") as f:
-        f.write(status_line)
-    # Log til log-fil
-    log_to_file(status_line)
-    # Send til Telegram (valgfrit/pro)
-    try:
-        send_message("🤖 " + status_line.strip())
-    except Exception as e:
-        print(f"[ADVARSEL] Kunne ikke sende til Telegram: {e}")
-    return device
-
-# === Device-håndtering (fra CLI eller auto) + logging ===
-DEVICE = log_device_status()
+# === Device-detection og logging (centralt) ===
+device_info = log_device_status(
+    context="engine",
+    extra={
+        "symbol": SYMBOL,
+        "interval": INTERVAL,
+        "model_type": args.model_type
+    },
+    telegram_func=send_message,
+    print_console=True
+)
+# Typisk får du "device_str": "cuda" eller "cpu" retur
+DEVICE_STR = device_info.get("device_str", "cpu")
 
 # === Importér alt fra din tidligere engine (ingen ændring på forretningslogik) ===
 from bot.monitor import ResourceMonitor
@@ -96,6 +68,8 @@ from strategies.ema_cross_strategy import ema_cross_signals
 from visualization.viz_feature_importance import plot_feature_importance
 from utils.feature_logging import log_top_features_to_md, log_top_features_csv, send_top_features_telegram
 
+import torch
+
 # === PyTorch-model & paths ===
 MODEL_DIR = "models"
 PYTORCH_MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
@@ -118,15 +92,15 @@ def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH):
         print(f"❌ PyTorch-model ikke fundet: {model_path}")
         return None
     model = TradingNet(input_dim=feature_dim, output_dim=2)
-    model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE_STR))
     model.eval()
-    model.to(DEVICE)
-    print(f"✅ PyTorch-model indlæst fra {model_path} på {DEVICE}")
+    model.to(DEVICE_STR)
+    print(f"✅ PyTorch-model indlæst fra {model_path} på {DEVICE_STR}")
     return model
 
 def pytorch_predict(model, X):
     with torch.no_grad():
-        X_tensor = torch.tensor(X.values, dtype=torch.float32).to(DEVICE)
+        X_tensor = torch.tensor(X.values, dtype=torch.float32).to(DEVICE_STR)
         logits = model(X_tensor)
         probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()
         preds = np.argmax(probs, axis=1)

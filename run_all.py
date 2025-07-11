@@ -3,11 +3,9 @@ import sys
 import glob
 import os
 import argparse
-import torch
-import datetime
-import platform
 
-# === Telegram-integration ===
+# === Central log-utils import ===
+from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message
 
 # === Tilføj projektroden til sys.path for robuste imports (CLI & VS Code) ===
@@ -40,38 +38,8 @@ def log_to_file(line, prefix="[INFO] "):
     with open("logs/bot.log", "a", encoding="utf-8") as logf:
         logf.write(prefix + line)
 
-def detect_device_and_log():
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    torch_version = torch.__version__
-    python_version = platform.python_version()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    gpu_status = "GPU" if torch.cuda.is_available() else "CPU"
-
-    if torch.cuda.is_available():
-        device_name = torch.cuda.get_device_name(0)
-        cuda_mem_alloc = torch.cuda.memory_allocated() // (1024**2)
-        cuda_mem_total = torch.cuda.get_device_properties(0).total_memory // (1024**2)
-        status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
-                       f"Device: GPU ({device_name}) | CUDA alloc: {cuda_mem_alloc} MB / {cuda_mem_total} MB | "
-                       f"Symbol: {SYMBOL} | Interval: {INTERVAL}\n")
-    else:
-        status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
-                       f"Device: CPU | Symbol: {SYMBOL} | Interval: {INTERVAL}\n")
-
-    print(f"[BotStatus.md] {status_line.strip()}")
-    # Log til BotStatus.md
-    with open("BotStatus.md", "a", encoding="utf-8") as f:
-        f.write(status_line)
-    # Log til log-fil
-    log_to_file(status_line)
-    # Send til Telegram
-    try:
-        send_message("🤖 " + status_line.strip())
-    except Exception as e:
-        print(f"[ADVARSEL] Kunne ikke sende til Telegram: {e}")
-    return device, gpu_status
-
 def run_command(cmd_list, step_name):
+    import datetime
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     step_start = f"[{timestamp}] [STEP] {step_name}\n"
     log_to_file(step_start, prefix="")
@@ -94,8 +62,13 @@ def run_command(cmd_list, step_name):
         sys.exit(1)
 
 def main():
-    # Step 0: Device-detektion, udvidet logning og Telegram
-    device, gpu_status = detect_device_and_log()
+    # Step 0: Device-detektion, central logning og Telegram (Pro)
+    device_info = log_device_status(
+        context="run_all",
+        extra={"symbol": SYMBOL, "interval": INTERVAL, "model_type": MODEL_TYPE},
+        telegram_func=send_message,   # Logger og sender status til TG
+        print_console=True
+    )
 
     # Step 1: Hent rådata
     fetch_cmd = [
@@ -141,7 +114,7 @@ def main():
         "--symbol", SYMBOL,
         "--interval", INTERVAL,
         "--model_type", MODEL_TYPE,
-        "--device", str(device)
+        "--device", str(device_info.get("device_str", "cpu"))  # eller "cuda"/"cpu" hvis du vil være sikker
     ]
     run_command(engine_cmd, "Kør engine")
 
