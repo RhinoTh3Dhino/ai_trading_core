@@ -32,12 +32,10 @@ device_info = log_device_status(
     telegram_func=send_message,
     print_console=True
 )
-# Typisk får du "device_str": "cuda" eller "cpu" retur
 DEVICE_STR = device_info.get("device_str", "cpu")
 
-# === Importér alt fra din tidligere engine (ingen ændring på forretningslogik) ===
+# === Importér resten af pipelinen ===
 from bot.monitor import ResourceMonitor
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
@@ -49,24 +47,14 @@ except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
 from backtest.backtest import run_backtest, calc_backtest_metrics
-from backtest.metrics import evaluate_strategies
-from visualization.plot_backtest import plot_backtest
-from visualization.plot_drawdown import plot_drawdown
-from visualization.plot_strategy_score import plot_strategy_scores
-from utils.telegram_utils import (
-    send_image, send_message, send_performance_report
-)
 from utils.robust_utils import safe_run
 
-from ensemble.majority_vote_ensemble import majority_vote_ensemble
-from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
+# Ensemble (Nyt)
+from ensemble.ensemble_predict import ensemble_predict
 
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 from strategies.ema_cross_strategy import ema_cross_signals
-
-from visualization.viz_feature_importance import plot_feature_importance
-from utils.feature_logging import log_top_features_to_md, log_top_features_csv, send_top_features_telegram
 
 import torch
 
@@ -106,18 +94,6 @@ def pytorch_predict(model, X):
         preds = np.argmax(probs, axis=1)
     return preds, probs
 
-# === Hjælpefunktioner (som tidligere) ===
-
-GRAPH_DIR = "graphs/"
-DEFAULT_THRESHOLD = 0.7
-DEFAULT_WEIGHTS = [1.0, 0.7, 0.4, 1.0]
-RETRAIN_WINRATE_THRESHOLD = 0.30
-RETRAIN_PROFIT_THRESHOLD = 0.0
-MAX_RETRAINS = 3
-
-USE_REGIME_FILTER = False   # True = produktion, False = debug/test
-ADAPTIVE_WINRATE_THRESHOLD = 0.0
-
 def read_features_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
@@ -128,7 +104,12 @@ def read_features_auto(file_path):
         df = pd.read_csv(file_path)
     return df
 
-# ... (resten af hjælpefunktionerne er som tidligere - behold dem fra din kode!)
+GRAPH_DIR = "graphs/"
+DEFAULT_THRESHOLD = 0.7
+DEFAULT_WEIGHTS = [1.0, 0.7, 0.4, 1.0]
+RETRAIN_WINRATE_THRESHOLD = 0.30
+RETRAIN_PROFIT_THRESHOLD = 0.0
+MAX_RETRAINS = 3
 
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False):
     monitor = ResourceMonitor(
@@ -136,8 +117,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
         action="pause", log_file="outputs/debug/resource_log.csv"
     )
     monitor.start()
-    retrain_count = 0
-    seed = None
 
     try:
         DATA_PATH = args.features
@@ -146,51 +125,66 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
-        # === ML, DL, ensemble flow baseret på model_type ===
         feature_cols = [col for col in df.columns if col not in ("timestamp", "target", "regime", "signal")]
 
-        ml_signals = None
-        probas = None
-
+        # ML og DL forudsigelser
         if args.model_type == "dl":
             print("🔄 Loader PyTorch DL-model ...")
             model = load_pytorch_model(feature_dim=len(feature_cols))
             if model is not None:
-                ml_signals, probas = pytorch_predict(model, df[feature_cols])
-                if probas.shape[1] == 2:
-                    signal_proba = probas[:, 1]    # probability for class 1 (BUY)
-                    ml_signals = (signal_proba > DEFAULT_THRESHOLD).astype(int)
+                dl_preds, dl_probas = pytorch_predict(model, df[feature_cols])
+                if dl_probas.shape[1] == 2:
+                    signal_proba = dl_probas[:, 1]
+                    signals = (signal_proba > threshold).astype(int)
+                else:
+                    signals = dl_preds
                 print("✅ PyTorch DL-inference klar!")
             else:
                 print("❌ Ingen DL-model fundet – fallback til random signaler")
-                ml_signals = np.random.choice([0, 1], size=len(df))
+                signals = np.random.choice([0, 1], size=len(df))
+
         elif args.model_type == "ml":
             print("🛠️ ML-inference ikke implementeret i dette eksempel – fallback til random")
-            ml_signals = np.random.choice([0, 1], size=len(df))
+            signals = np.random.choice([0, 1], size=len(df))
+
         elif args.model_type == "ensemble":
             print("🔄 Loader PyTorch DL-model (til ensemble)...")
             model = load_pytorch_model(feature_dim=len(feature_cols))
             if model is not None:
-                dl_signals, probas = pytorch_predict(model, df[feature_cols])
-                dl_signals = (probas[:, 1] > DEFAULT_THRESHOLD).astype(int)
+                dl_preds, dl_probas = pytorch_predict(model, df[feature_cols])
+                dl_signals = (dl_probas[:, 1] > threshold).astype(int)
             else:
                 dl_signals = np.random.choice([0, 1], size=len(df))
+
+            # ML placeholder (fx LightGBM, XGBoost – tilføj her senere)
             ml_signals = np.random.choice([0, 1], size=len(df))
+
+            # Rule-based
             rsi_signals = rsi_rule_based_signals(df, low=45, high=55)
-            macd_signals = macd_cross_signals(df)
-            ema_signals = ema_cross_signals(df)
-            ensemble_signals = majority_vote_ensemble(dl_signals, ml_signals, rsi_signals, macd_signals, ema_signals)
-            df["signal"] = ensemble_signals
+            # Ensemble voting!
+            signals = ensemble_predict(
+                ml_preds=ml_signals,
+                dl_preds=dl_signals,
+                rule_preds=rsi_signals,
+                weights=[1, 1, 0.7],  # Juster efter tuning!
+                voting="majority",
+                debug=True    # Aktiver stemme-logning/visualisering
+            )
+            df["signal"] = signals
+            print("✅ Ensemble voting klar!")
+
         else:
             print("Ukendt model_type – stopper.")
             return
 
-        # === Resten af pipeline: signaler, backtest, metrics, plots, telegram osv. ===
-        # (Kopier blot din eksisterende kode ind her fra main())
-        # Bemærk: Hvis du bruger ensemble, skal df["signal"] sættes korrekt
+        # Sæt signals for backtest hvis ikke ensemble
+        if args.model_type != "ensemble":
+            df["signal"] = signals
 
-        # ... Din eksisterende pipeline ... (backtest, plot, telegram, retrain osv.)
-
+        # === Backtest ===
+        trades_df, balance_df = run_backtest(df, signals=df["signal"])
+        metrics = calc_backtest_metrics(trades_df, balance_df)
+        print("Backtest-metrics:", metrics)
         print("🎉 Pipeline afsluttet uden fejl!")
 
     finally:

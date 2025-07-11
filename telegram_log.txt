@@ -6610,3 +6610,21 @@ KeyError: 'close'
 [2025-07-11 23:32:30] Sender besked: 💓 Botten kører stadig! (23:32:30)
 [2025-07-11 23:32:30] [TESTMODE] Besked ikke sendt – Telegram inaktiv
 [2025-07-11 23:32:30] Heartbeat sendt.
+[2025-07-12 01:36:49] Sender besked: 🤖 2025-07-12 01:36:49 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: ml
+[2025-07-12 01:36:49] Besked sendt OK.
+[2025-07-12 01:36:51] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+[2025-07-12 01:36:51] Besked sendt OK.
+[2025-07-12 01:36:54] Sender besked: 🤖 2025-07-12 01:36:54 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: ml
+[2025-07-12 01:36:54] Besked sendt OK.
+[2025-07-12 01:37:12] Sender besked: 🤖 2025-07-12 01:37:12 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: dl
+[2025-07-12 01:37:12] Besked sendt OK.
+[2025-07-12 01:37:14] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+[2025-07-12 01:37:14] Besked sendt OK.
+[2025-07-12 01:37:16] Sender besked: 🤖 2025-07-12 01:37:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: dl
+[2025-07-12 01:37:17] Besked sendt OK.
+[2025-07-12 01:37:32] Sender besked: 🤖 2025-07-12 01:37:32 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: ensemble
+[2025-07-12 01:37:32] Besked sendt OK.
+[2025-07-12 01:37:34] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+[2025-07-12 01:37:34] Besked sendt OK.
+[2025-07-12 01:37:37] Sender besked: 🤖 2025-07-12 01:37:37 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: ensemble
+[2025-07-12 01:37:37] Besked sendt OK.
