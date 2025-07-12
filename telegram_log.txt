@@ -6628,3 +6628,53 @@ KeyError: 'close'
 [2025-07-12 01:37:34] Besked sendt OK.
 [2025-07-12 01:37:37] Sender besked: 🤖 2025-07-12 01:37:37 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: ensemble
 [2025-07-12 01:37:37] Besked sendt OK.
+[2025-07-12 02:36:09] Sender besked: 🔍 Optuna tuning starter: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv (20 trials)
+[2025-07-12 02:36:09] Besked sendt OK.
+[2025-07-12 02:36:09] Sender besked: 🤖 2025-07-12 02:36:09 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 15 | LR: 0.00850168404999719
+[2025-07-12 02:36:09] Besked sendt OK.
+[2025-07-12 02:36:11] Sender besked: 🤖 2025-07-12 02:36:11 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 18 | LR: 0.0009493368708589189
+[2025-07-12 02:36:11] Besked sendt OK.
+[2025-07-12 02:36:11] Sender besked: 🤖 2025-07-12 02:36:11 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 29 | LR: 0.003063510690071971
+[2025-07-12 02:36:13] Besked sendt OK.
+[2025-07-12 02:36:13] Sender besked: 🤖 2025-07-12 02:36:13 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 40 | LR: 0.0013503371931675428
+[2025-07-12 02:36:14] Besked sendt OK.
+[2025-07-12 02:36:14] Sender besked: 🤖 2025-07-12 02:36:14 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 20 | LR: 0.00031655328905809513
+[2025-07-12 02:36:15] Besked sendt OK.
+[2025-07-12 02:36:15] Sender besked: 🤖 2025-07-12 02:36:15 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 15 | LR: 0.0030394043769158803
+[2025-07-12 02:36:15] Besked sendt OK.
+[2025-07-12 02:36:15] Sender besked: 🤖 2025-07-12 02:36:15 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 64 | Epochs: 23 | LR: 0.005741603613457062
+[2025-07-12 02:36:16] Besked sendt OK.
+[2025-07-12 02:36:16] Sender besked: 🤖 2025-07-12 02:36:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 25 | LR: 0.004035850388759751
+[2025-07-12 02:36:16] Besked sendt OK.
+[2025-07-12 02:36:16] Sender besked: 🤖 2025-07-12 02:36:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 64 | Epochs: 31 | LR: 0.0012397021915673807
+[2025-07-12 02:36:16] Besked sendt OK.
+[2025-07-12 02:36:17] Sender besked: 🤖 2025-07-12 02:36:17 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 64 | Epochs: 34 | LR: 0.0003043514551456672
+[2025-07-12 02:36:17] Besked sendt OK.
+[2025-07-12 02:36:17] Sender besked: 🤖 2025-07-12 02:36:17 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.009807642615743234
+[2025-07-12 02:36:17] Besked sendt OK.
+[2025-07-12 02:36:17] Sender besked: 🤖 2025-07-12 02:36:17 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 17 | LR: 0.00010248943602279286
+[2025-07-12 02:36:18] Besked sendt OK.
+[2025-07-12 02:36:18] Sender besked: 🤖 2025-07-12 02:36:18 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 11 | LR: 0.000533212036866632
+[2025-07-12 02:36:18] Besked sendt OK.
+[2025-07-12 02:36:18] Sender besked: 🤖 2025-07-12 02:36:18 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 15 | LR: 0.0007320775179229319
+[2025-07-12 02:36:18] Besked sendt OK.
+[2025-07-12 02:36:19] Sender besked: 🤖 2025-07-12 02:36:19 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 20 | LR: 0.0015345159071655087
+[2025-07-12 02:36:19] Besked sendt OK.
+[2025-07-12 02:36:19] Sender besked: 🤖 2025-07-12 02:36:19 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 19 | LR: 0.0018817813255350175
+[2025-07-12 02:36:19] Besked sendt OK.
+[2025-07-12 02:36:20] Sender besked: 🤖 2025-07-12 02:36:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 13 | LR: 0.00846340180559387
+[2025-07-12 02:36:20] Besked sendt OK.
+[2025-07-12 02:36:20] Sender besked: 🤖 2025-07-12 02:36:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 21 | LR: 0.00042897947273857334
+[2025-07-12 02:36:20] Besked sendt OK.
+[2025-07-12 02:36:21] Sender besked: 🤖 2025-07-12 02:36:21 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 16 | Epochs: 26 | LR: 0.000214317475610064
+[2025-07-12 02:36:21] Besked sendt OK.
+[2025-07-12 02:36:21] Sender besked: 🤖 2025-07-12 02:36:21 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 64 | Epochs: 16 | LR: 0.0007957966417755617
+[2025-07-12 02:36:21] Besked sendt OK.
+[2025-07-12 02:36:22] Sender besked: 🏆 Optuna tuning færdig! Bedste acc: 0.0000
+Params: {'batch_size': 32, 'lr': 0.00850168404999719, 'hidden_dim': 193, 'n_layers': 1, 'dropout': 0.2984392141643512, 'epochs': 15}
+[2025-07-12 02:36:22] Besked sendt OK.
+[2025-07-12 02:36:22] Sender besked: 🤖 2025-07-12 02:36:22 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 16 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 15 | LR: 0.00850168404999719
+[2025-07-12 02:36:22] Besked sendt OK.
+[2025-07-12 02:36:22] Sender besked: ✅ Bedste model trænet og gemt til models\best_pytorch_model.pt
+Val_acc=0.5781
+[2025-07-12 02:36:22] Besked sendt OK.

@@ -37,10 +37,26 @@ psutil>=5.9.0
 GPUtil>=1.4.0
 
 # Deep Learning (installér begge for max fleksibilitet)
-tensorflow>=2.16.1
-torch>=2.3.0     # CPU-version installeres automatisk på GitHub Actions via pip --index-url
+tensorflow>=2.16.1        # Anbefalet: pip install tensorflow (CPU/GPU-version autodetect)
+torch>=2.3.0              # pip install torch (CPU) eller pip install torch --index-url https://download.pytorch.org/whl/cu121 (for CUDA GPU)
+
+# Visualisering (Pro: Plotly og/eller graf-support)
+plotly==5.22.0
+
+# Jupyter + notebook support (valgfrit, men ofte brugt til ML/DL debugging)
+notebook
+jupyterlab
+
+# Logging og avanceret monitoring (Pro)
+loguru==0.7.2
 
 # (Ekstra – tilføj efter behov, kræver ofte ekstra systemlibs på Windows)
 # xgboost==2.0.3
 # lightgbm==4.3.0
 # catboost==1.2.5
+# tqdm==4.66.4           # Progress-bars til loops
+# rich==13.7.1           # Farverig CLI-logging
+# pytest-cov==5.0.0      # Coverage-test
+
+# CLI & utils (hvis du vil lave CLI-scripts mm.)
+typer==0.12.3

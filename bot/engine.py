@@ -106,7 +106,7 @@ def read_features_auto(file_path):
 
 GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
-DEFAULT_WEIGHTS = [1.0, 0.7, 0.4, 1.0]
+DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]  # [ML, DL, Rule]
 RETRAIN_WINRATE_THRESHOLD = 0.30
 RETRAIN_PROFIT_THRESHOLD = 0.0
 MAX_RETRAINS = 3
@@ -159,18 +159,26 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
             # ML placeholder (fx LightGBM, XGBoost – tilføj her senere)
             ml_signals = np.random.choice([0, 1], size=len(df))
 
-            # Rule-based
+            # Rule-based (eksempel: RSI)
             rsi_signals = rsi_rule_based_signals(df, low=45, high=55)
+
             # Ensemble voting!
             signals = ensemble_predict(
                 ml_preds=ml_signals,
                 dl_preds=dl_signals,
                 rule_preds=rsi_signals,
-                weights=[1, 1, 0.7],  # Juster efter tuning!
+                weights=weights,
                 voting="majority",
                 debug=True    # Aktiver stemme-logning/visualisering
             )
             df["signal"] = signals
+
+            # Log stemme-fordeling for alle metoder og ensemble
+            print("Signal distribution:")
+            print("ML:", pd.Series(ml_signals).value_counts().to_dict())
+            print("DL:", pd.Series(dl_signals).value_counts().to_dict())
+            print("RSI:", pd.Series(rsi_signals).value_counts().to_dict())
+            print("Ensemble:", pd.Series(signals).value_counts().to_dict())
             print("✅ Ensemble voting klar!")
 
         else:
@@ -183,6 +191,8 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
 
         # === Backtest ===
         trades_df, balance_df = run_backtest(df, signals=df["signal"])
+        print("TRADES DF:\n", trades_df)
+        print("BALANCE DF:\n", balance_df)
         metrics = calc_backtest_metrics(trades_df, balance_df)
         print("Backtest-metrics:", metrics)
         print("🎉 Pipeline afsluttet uden fejl!")
