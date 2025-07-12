@@ -15,15 +15,21 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
 
-# === NYT: MLflow ===
+# === MLflow ===
 try:
     import mlflow
     import mlflow.lightgbm
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
+
+# --- MLflow-utils hvis muligt ---
+try:
+    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    MLUTILS_AVAILABLE = True
+except ImportError:
+    MLUTILS_AVAILABLE = False
 
 try:
     import lightgbm as lgb
@@ -33,16 +39,29 @@ except ImportError:
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.telegram_utils import send_message
 
-# === Konfiguration ===
 MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, "best_lightgbm_model.txt")
 FEATURES_PATH = os.path.join(MODEL_DIR, "best_lightgbm_features.json")
 LOG_PATH = os.path.join(MODEL_DIR, "train_log_lightgbm.txt")
 
+def ensure_mlflow_run_closed():
+    if MLFLOW_AVAILABLE and mlflow.active_run() is not None:
+        print("[MLflow] Aktivt run fundet, lukker...")
+        mlflow.end_run()
+
 def log_to_file(line, prefix="[INFO] "):
     os.makedirs("logs", exist_ok=True)
     with open("logs/bot.log", "a", encoding="utf-8") as logf:
         logf.write(prefix + line)
+
+def load_csv_auto(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
+        return pd.read_csv(file_path, skiprows=1)
+    else:
+        return pd.read_csv(file_path)
 
 def train_lightgbm_model(
     data_path,
@@ -57,12 +76,13 @@ def train_lightgbm_model(
     verbose=True,
     save_model=True,
     use_mlflow=False,
+    mlflow_exp="trading_ai"
 ):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[INFO] Træning af LightGBM-model ({now})")
     print(f"[INFO] Læser data fra: {data_path}")
 
-    df = pd.read_csv(data_path)
+    df = load_csv_auto(data_path)
     assert target_col in df.columns, f"target_col '{target_col}' ikke fundet!"
 
     drop_cols = [target_col, "timestamp"] if "timestamp" in df.columns else [target_col]
@@ -84,14 +104,20 @@ def train_lightgbm_model(
         if use_mlflow and MLFLOW_AVAILABLE:
             mlflow.log_artifact(FEATURES_PATH)
 
-    # Split (tidsserievenligt: ikke random shuffle!)
+    # Split uden shuffle (tidsserie)
     split_idx = int(len(df) * (1 - test_size))
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
 
     # MLflow experiment tracking
     if use_mlflow and MLFLOW_AVAILABLE:
-        mlflow.start_run(run_name=f"lgbm_{now.replace(':','_')}")
+        ensure_mlflow_run_closed()
+        if MLUTILS_AVAILABLE:
+            setup_mlflow(experiment_name=mlflow_exp)
+            start_mlflow_run(run_name=f"lgbm_{now.replace(':','_')}")
+        else:
+            mlflow.set_experiment(mlflow_exp)
+            mlflow.start_run(run_name=f"lgbm_{now.replace(':','_')}")
         mlflow.log_params({
             "num_leaves": num_leaves,
             "n_estimators": n_estimators,
@@ -102,7 +128,7 @@ def train_lightgbm_model(
             "random_state": random_state,
         })
 
-    # Model
+    # Model (NB: verbose SKAL IKKE gives til fit i nyeste lightgbm)
     model = lgb.LGBMClassifier(
         num_leaves=num_leaves,
         n_estimators=n_estimators,
@@ -112,9 +138,9 @@ def train_lightgbm_model(
         random_state=random_state,
         class_weight="balanced",
         n_jobs=-1,
-        verbose=-1,
+        verbose=-1,  # NB: verbose her, ikke i fit!
     )
-    model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=verbose)
+    model.fit(X_train, y_train, eval_set=[(X_val, y_val)])
 
     # Evaluer
     y_pred = model.predict(X_val)
@@ -132,12 +158,13 @@ def train_lightgbm_model(
         mlflow.log_metric("val_acc", acc)
         mlflow.log_metrics({f"f1_{k}": v["f1-score"] for k, v in report.items() if isinstance(v, dict) and "f1-score" in v})
 
-    # Gem model
+    # Gem model (checkpoint)
     if save_model:
         model.booster_.save_model(MODEL_PATH)
         print(f"✅ Model gemt til: {MODEL_PATH}")
         if use_mlflow and MLFLOW_AVAILABLE:
             mlflow.lightgbm.log_model(model, "model")
+
     # Log til fil
     log_str = f"\n== LightGBM-træningslog {now} ==\n" \
               f"Model: {MODEL_PATH}\nVal_acc: {acc:.3f}\n" \
@@ -149,7 +176,10 @@ def train_lightgbm_model(
 
     if use_mlflow and MLFLOW_AVAILABLE:
         mlflow.log_artifact(LOG_PATH)
-        mlflow.end_run()
+        if MLUTILS_AVAILABLE:
+            end_mlflow_run()
+        else:
+            mlflow.end_run()
 
     try:
         send_message(f"✅ LightGBM træning færdig – Val acc: {acc:.3f}")
@@ -170,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--colsample_bytree", type=float, default=1.0, help="Colsample bytree")
     parser.add_argument("--no_save", action="store_true", help="Gem ikke model")
     parser.add_argument("--mlflow", action="store_true", help="Log til MLflow (experiment tracking)")
+    parser.add_argument("--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name")
     args = parser.parse_args()
 
     train_lightgbm_model(
@@ -184,4 +215,5 @@ if __name__ == "__main__":
         verbose=True,
         save_model=not args.no_save,
         use_mlflow=args.mlflow,
+        mlflow_exp=args.mlflow_exp,
     )

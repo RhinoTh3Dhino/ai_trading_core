@@ -3,6 +3,16 @@
 import mlflow
 import os
 
+def ensure_no_active_run(print_status=True):
+    """
+    Lukker eventuelle aktive MLflow-runs, så vi undgår run-fejl.
+    """
+    if mlflow.active_run() is not None:
+        run_id = mlflow.active_run().info.run_id
+        mlflow.end_run()
+        if print_status:
+            print(f"[MLflow] Afsluttede tidligere aktivt run: {run_id}")
+
 def setup_mlflow(
     experiment_name="default",
     tracking_uri=None,
@@ -37,10 +47,12 @@ def setup_mlflow(
         mlflow.set_experiment(experiment_name)
     return mlflow.get_experiment_by_name(experiment_name)
 
-def start_mlflow_run(run_name=None, tags=None, print_status=True):
+def start_mlflow_run(run_name=None, tags=None, print_status=True, ensure_clean=True):
     """
-    Starter et nyt MLflow-run (brug context-manager, eller luk manuelt).
+    Starter et nyt MLflow-run (lukker evt. åbent run først, hvis ensure_clean=True).
     """
+    if ensure_clean:
+        ensure_no_active_run(print_status=print_status)
     run = mlflow.start_run(run_name=run_name, tags=tags)
     if print_status:
         print(f"[MLflow] Startet run: {run.info.run_id} | Navn: {run_name}")
@@ -92,9 +104,13 @@ def end_mlflow_run(print_status=True):
     """
     Afslutter det aktive MLflow-run.
     """
-    mlflow.end_run()
-    if print_status:
-        print(f"[MLflow] Run afsluttet.")
+    if mlflow.active_run() is not None:
+        mlflow.end_run()
+        if print_status:
+            print(f"[MLflow] Run afsluttet.")
+    else:
+        if print_status:
+            print(f"[MLflow] Ingen aktivt run at afslutte.")
 
 def get_current_run_id():
     """

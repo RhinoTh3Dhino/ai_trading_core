@@ -1,4 +1,4 @@
-# Core data science & ML
+# === Core data science & ML ===
 pandas==2.2.3
 numpy==1.26.4
 scikit-learn==1.6.1
@@ -6,60 +6,66 @@ scipy==1.15.3
 matplotlib==3.10.3
 seaborn==0.13.2
 
-# Technical Analysis & ML tools
+# === Technical Analysis & ML tools ===
 ta==0.11.0
 pandas_ta==0.3.14-beta.0
 shap==0.45.1
 joblib==1.4.2
 
-# Trading & API
+# === Trading & API ===
 python-binance==1.0.29
 ccxt==4.4.86
-python-telegram-bot==20.7       # Opdateret! (kræver evt. tilpasning af telegram-kode)
+python-telegram-bot==20.7      # Kræver async/await-tilpasning af telegram-kode!
 requests==2.32.3
 
-# Scheduling, env, optimering
+# === Scheduling, env, optimering ===
 schedule==1.2.2
 python-dotenv==1.0.0
 optuna==3.6.1
 
-# Rapportering, markdown, tabel-output
+# === Rapportering, markdown, tabel-output ===
 tabulate==0.9.0
 
-# Excel support til Pandas
+# === Excel support til Pandas ===
 openpyxl==3.1.5
 
-# Test & udvikling
+# === Test & udvikling ===
 pytest==8.4.0
 
-# Systemressource-monitorering
+# === Systemressource-monitorering ===
 psutil>=5.9.0
 GPUtil>=1.4.0
 
-# Deep Learning
-tensorflow>=2.16.1
-torch>=2.3.0
+# === Deep Learning (FAST GPU-support, CUDA 12.1 – til RTX 40xx!) ===
+# Installér disse LINJER manuelt først hvis du bruger GPU:
+# pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+torchaudio==2.5.1+cu121
+tensorflow==2.16.1
 
-# Visualisering (Pro: Plotly og/eller graf-support)
+# === Visualisering (Plotly og graf-support) ===
 plotly==5.22.0
 
-# Jupyter + notebook support (valgfrit, men ofte brugt til ML/DL debugging)
+# === Jupyter + notebook support ===
 notebook
 jupyterlab
 
-# Logging og avanceret monitoring (Pro)
+# === Logging og avanceret monitoring ===
 loguru==0.7.2
 
-# Experiment tracking & MLOps
+# === Experiment tracking & MLOps ===
 mlflow==2.13.0
 tensorboard==2.16.2
 
-# CLI & utils
+# === Ensemble, booster & ekstra ML-modeller ===
+xgboost==2.0.3          # Husk at matche denne version med din kode!
+lightgbm==4.3.0         # Husk at installere visual studio build tools hvis du får fejl på Windows
+
+# === CLI & utils ===
 typer==0.12.3
 
-# (Ekstra – tilføj efter behov, kræver ofte ekstra systemlibs på Windows)
-# xgboost==2.0.3
-# lightgbm==4.3.0
+# === (Ekstra – tilføj efter behov) ===
 # catboost==1.2.5
 # tqdm==4.66.4
 # rich==13.7.1

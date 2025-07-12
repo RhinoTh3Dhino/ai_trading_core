@@ -6802,3 +6802,13 @@ TypeError: plot_performance() got an unexpected keyword argument 'model_type'
 [2025-07-12 19:35:15] Besked sendt OK.
 [2025-07-12 19:43:14] Sender besked: 🤖 2025-07-12 19:43:14 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
 [2025-07-12 19:43:15] Besked sendt OK.
+[2025-07-12 20:41:55] Sender besked: 🤖 2025-07-12 20:41:55 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 20:41:55] Besked sendt OK.
+[2025-07-12 21:03:54] Sender besked: 🤖 2025-07-12 21:03:54 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
+[2025-07-12 21:03:54] Besked sendt OK.
+[2025-07-12 21:11:52] Sender besked: 🤖 2025-07-12 21:11:52 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
+[2025-07-12 21:11:53] Besked sendt OK.
+[2025-07-12 21:12:24] Sender besked: ✅ XGBoost træning færdig – Val acc: 0.531
+[2025-07-12 21:12:24] Besked sendt OK.
+[2025-07-12 21:12:42] Sender besked: ✅ LightGBM træning færdig – Val acc: 0.625
+[2025-07-12 21:12:42] Besked sendt OK.

@@ -6,6 +6,7 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 - Gemmer og loader model (.pt), log og metrics.
 - Automatisk brug af GPU hvis muligt.
 - INKLUDERER TensorBoard- OG MLflow-integration!
+- Early stopping og checkpointing!
 """
 
 import os
@@ -22,16 +23,22 @@ from sklearn.utils.class_weight import compute_class_weight
 from datetime import datetime
 import platform
 
-# === NYT: TensorBoard ===
 from torch.utils.tensorboard import SummaryWriter
 
-# === NYT: MLflow ===
+# === MLflow: robust import og utils ===
 try:
     import mlflow
     import mlflow.pytorch
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
+
+# --- Importer MLflow-utilities ---
+try:
+    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    MLUTILS_AVAILABLE = True
+except ImportError:
+    MLUTILS_AVAILABLE = False
 
 try:
     import optuna
@@ -42,7 +49,6 @@ except ImportError:
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.telegram_utils import send_message
 
-# === Konfiguration ===
 MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
 FEATURES_PATH = os.path.join(MODEL_DIR, "best_pytorch_features.json")
@@ -59,7 +65,6 @@ def log_device_status(data_path, batch_size, epochs, lr):
     torch_version = torch.__version__
     python_version = platform.python_version()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    gpu_status = "GPU" if torch.cuda.is_available() else "CPU"
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name(0)
         cuda_mem_alloc = torch.cuda.memory_allocated() // (1024**2)
@@ -79,7 +84,6 @@ def log_device_status(data_path, batch_size, epochs, lr):
     except Exception as e:
         print(f"[ADVARSEL] Kunne ikke sende til Telegram: {e}")
 
-# === Automatisk CSV-loader (springer meta-header over) ===
 def load_csv_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
@@ -89,19 +93,15 @@ def load_csv_auto(file_path):
     else:
         return pd.read_csv(file_path)
 
-# === PyTorch dataset ===
 class TradingDataset(Dataset):
     def __init__(self, X, y):
         self.X = torch.tensor(X.values, dtype=torch.float32)
-        self.y = torch.tensor(y.values, dtype=torch.long)  # long for classification
-
+        self.y = torch.tensor(y.values, dtype=torch.long)
     def __len__(self):
         return len(self.y)
-
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
 
-# === Simpel MLP-model ===
 class TradingNet(nn.Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=2, n_layers=2, dropout=0.0):
         super().__init__()
@@ -113,11 +113,15 @@ class TradingNet(nn.Module):
                 layers.append(nn.Dropout(dropout))
         layers.append(nn.Linear(hidden_dim, output_dim))
         self.net = nn.Sequential(*layers)
-
     def forward(self, x):
         return self.net(x)
 
-# === Træningsfunktion (klassisk) ===
+def ensure_mlflow_run_closed():
+    # MLflow sikkerhed: Luk altid tidligere run, hvis der findes et!
+    if MLFLOW_AVAILABLE and mlflow.active_run() is not None:
+        print("[MLflow] Aktivt run fundet, lukker ...")
+        mlflow.end_run()
+
 def train_pytorch_model(
     data_path,
     target_col="target",
@@ -132,18 +136,30 @@ def train_pytorch_model(
     verbose=True,
     save_model=True,
     use_mlflow=False,
+    early_stopping=True,
+    patience=5,
+    monitor="val_loss",
+    min_delta=1e-4,
+    mlflow_exp="trading_ai"
 ):
     log_device_status(data_path, batch_size, epochs, learning_rate)
-
     tb_run_name = f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
 
+    # === MLflow-setup: altid luk forrige run først og brug mlflow_utils hvis muligt ===
     if use_mlflow and not MLFLOW_AVAILABLE:
         print("❌ MLflow ikke installeret! (pip install mlflow)")
         use_mlflow = False
 
     if use_mlflow:
-        mlflow.start_run(run_name=tb_run_name)
+        ensure_mlflow_run_closed()
+        if MLUTILS_AVAILABLE:
+            setup_mlflow(experiment_name=mlflow_exp)
+            start_mlflow_run(run_name=tb_run_name)
+        else:
+            mlflow.set_experiment(mlflow_exp)
+            mlflow.start_run(run_name=tb_run_name)
+
         mlflow.log_params({
             "data_path": data_path,
             "target_col": target_col,
@@ -155,6 +171,9 @@ def train_pytorch_model(
             "dropout": dropout,
             "test_size": test_size,
             "random_state": random_state,
+            "early_stopping": early_stopping,
+            "patience": patience,
+            "monitor": monitor,
         })
 
     print(f"[INFO] Indlæser data fra: {data_path}")
@@ -165,7 +184,6 @@ def train_pytorch_model(
     feature_cols = [col for col in df.columns if col not in drop_cols]
     X = df[feature_cols]
     y = df[target_col]
-
     X_numeric = X.select_dtypes(include=[np.number])
     if X_numeric.shape[1] < X.shape[1]:
         ignored = set(X.columns) - set(X_numeric.columns)
@@ -210,7 +228,11 @@ def train_pytorch_model(
     criterion = nn.CrossEntropyLoss(weight=weights)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+    best_val_metric = np.inf if monitor == "val_loss" else -np.inf
+    best_epoch = 0
     best_acc = 0
+    epochs_no_improve = 0
+
     for epoch in range(1, epochs + 1):
         model.train()
         train_loss = 0
@@ -263,12 +285,33 @@ def train_pytorch_model(
         if verbose:
             print(f"[{epoch:02d}/{epochs}] Train loss: {train_loss:.4f} | Val loss: {val_loss:.4f} | Train acc: {train_acc:.3f} | Val acc: {val_acc:.3f}")
 
-        if save_model and val_acc > best_acc:
-            best_acc = val_acc
-            torch.save(model.state_dict(), MODEL_PATH)
-            print(f"✅ Ny bedste model gemt: {MODEL_PATH} (val_acc={val_acc:.3f})")
+        if monitor == "val_loss":
+            current_metric = val_loss
+            is_better = current_metric < best_val_metric - min_delta
+        else:
+            current_metric = val_acc
+            is_better = current_metric > best_val_metric + min_delta
+
+        if is_better:
+            best_val_metric = current_metric
+            best_epoch = epoch
+            epochs_no_improve = 0
+            if save_model:
+                torch.save(model.state_dict(), MODEL_PATH)
+                print(f"✅ Ny bedste model gemt (checkpoint): {MODEL_PATH} ({monitor}={current_metric:.4f}, epoch={epoch})")
+                if use_mlflow:
+                    mlflow.pytorch.log_model(model, "model")
+            if monitor == "val_acc":
+                best_acc = val_acc
+        else:
+            epochs_no_improve += 1
+
+        if early_stopping and epoch > 1 and epochs_no_improve >= patience:
+            print(f"🛑 Early stopping aktiveret! Epoch: {epoch}, ingen forbedring på {patience} epoker ({monitor}).")
             if use_mlflow:
-                mlflow.pytorch.log_model(model, "model")
+                mlflow.log_param("early_stopped_epoch", epoch)
+                mlflow.log_param("best_epoch", best_epoch)
+            break
 
     writer.close()
 
@@ -277,7 +320,7 @@ def train_pytorch_model(
     conf = confusion_matrix(y_true, y_pred)
     print("Confusion matrix:\n", conf)
     log_str = f"\n== Træningslog {datetime.now()} ==\n" \
-              f"Model: {MODEL_PATH}\nVal_acc: {best_acc:.3f}\n" \
+              f"Model: {MODEL_PATH}\nBest epoch: {best_epoch}\nVal_{monitor}: {best_val_metric:.3f}\n" \
               f"Features: {list(X.columns)}\n\n" \
               f"Report:\n{classification_report(y_true, y_pred, zero_division=0)}\nConfusion:\n{conf}\n"
     with open(LOG_PATH, "a", encoding="utf-8") as f:
@@ -291,9 +334,12 @@ def train_pytorch_model(
             for fn in os.listdir(graphs_dir):
                 if fn.endswith(".png"):
                     mlflow.log_artifact(os.path.join(graphs_dir, fn))
-        mlflow.end_run()
+        if MLUTILS_AVAILABLE:
+            end_mlflow_run()
+        else:
+            mlflow.end_run()
 
-    return best_acc
+    return best_val_metric
 
 def optuna_objective(trial):
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
@@ -304,7 +350,7 @@ def optuna_objective(trial):
     epochs = trial.suggest_int("epochs", 10, 40)
 
     global optuna_args
-    acc = train_pytorch_model(
+    metric = train_pytorch_model(
         data_path=optuna_args["data"],
         target_col=optuna_args.get("target", "target"),
         batch_size=batch_size,
@@ -318,9 +364,9 @@ def optuna_objective(trial):
         save_model=False,
     )
     with open(OPTUNA_LOG_PATH, "a", encoding="utf-8") as f:
-        line = f"{datetime.now()},{batch_size},{learning_rate:.5f},{hidden_dim},{n_layers},{dropout:.2f},{epochs},{acc:.4f}\n"
+        line = f"{datetime.now()},{batch_size},{learning_rate:.5f},{hidden_dim},{n_layers},{dropout:.2f},{epochs},{metric:.4f}\n"
         f.write(line)
-    return acc
+    return metric
 
 def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
     if not OPTUNA_AVAILABLE:
@@ -331,12 +377,12 @@ def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
     optuna_args = dict(data=data_path, target=target, test_size=test_size)
     if not os.path.exists(OPTUNA_LOG_PATH):
         with open(OPTUNA_LOG_PATH, "w", encoding="utf-8") as f:
-            f.write("datetime,batch_size,learning_rate,hidden_dim,n_layers,dropout,epochs,val_acc\n")
-    study = optuna.create_study(direction="maximize")
+            f.write("datetime,batch_size,learning_rate,hidden_dim,n_layers,dropout,epochs,val_metric\n")
+    study = optuna.create_study(direction="minimize")
     study.optimize(optuna_objective, n_trials=n_trials)
     print("=== Optuna tuning færdig! ===")
     print("Bedste trial:", study.best_trial.params)
-    print("Bedste accuracy:", study.best_trial.value)
+    print("Bedste metric:", study.best_trial.value)
     best = study.best_trial.params
     train_pytorch_model(
         data_path=data_path,
@@ -354,7 +400,7 @@ def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
     print(f"✅ Bedste model trænet og gemt til: {MODEL_PATH}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning + MLflow logging")
+    parser = argparse.ArgumentParser(description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning + MLflow logging + Early stopping")
     parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
     parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
@@ -367,6 +413,11 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, default="train", choices=["train", "optuna"], help="Kørselstype: 'train' eller 'optuna'")
     parser.add_argument("--trials", type=int, default=20, help="Antal trials til Optuna (hvis valgt)")
     parser.add_argument("--mlflow", action="store_true", help="Log til MLflow (experiment tracking)")
+    parser.add_argument("--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name")
+    parser.add_argument("--early_stopping", action="store_true", help="Aktiver early stopping")
+    parser.add_argument("--patience", type=int, default=5, help="Early stopping patience (antal epoker uden forbedring)")
+    parser.add_argument("--monitor", type=str, default="val_loss", choices=["val_loss", "val_acc"], help="Monitor for early stopping")
+    parser.add_argument("--min_delta", type=float, default=1e-4, help="Minimum forbedring (delta) før early stopping resetter")
     args = parser.parse_args()
 
     if args.mode == "optuna":
@@ -390,4 +441,9 @@ if __name__ == "__main__":
             verbose=True,
             save_model=True,
             use_mlflow=args.mlflow,
+            early_stopping=args.early_stopping,
+            patience=args.patience,
+            monitor=args.monitor,
+            min_delta=args.min_delta,
+            mlflow_exp=args.mlflow_exp,
         )

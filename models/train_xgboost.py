@@ -4,7 +4,7 @@ models/train_xgboost.py
 Træner en XGBoost-model til trading-signaler (klassifikation)
 - Understøtter klassisk træning og MLflow experiment tracking
 - Gemmer og loader model (.json), log og metrics
-- Automatisk feature selection og artefakt-logging
+- Automatisk feature selection, early stopping og artefakt-logging
 """
 
 import os
@@ -15,15 +15,21 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
 
-# === NYT: MLflow ===
+# === MLflow ===
 try:
     import mlflow
     import mlflow.xgboost
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
+
+# --- Importer MLflow-utilities hvis muligt ---
+try:
+    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    MLUTILS_AVAILABLE = True
+except ImportError:
+    MLUTILS_AVAILABLE = False
 
 try:
     import xgboost as xgb
@@ -33,16 +39,30 @@ except ImportError:
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.telegram_utils import send_message
 
-# === Konfiguration ===
 MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, "best_xgboost_model.json")
 FEATURES_PATH = os.path.join(MODEL_DIR, "best_xgboost_features.json")
 LOG_PATH = os.path.join(MODEL_DIR, "train_log_xgboost.txt")
+EARLYSTOP_ROUNDS = 10
+
+def ensure_mlflow_run_closed():
+    if MLFLOW_AVAILABLE and mlflow.active_run() is not None:
+        print("[MLflow] Aktivt run fundet, lukker...")
+        mlflow.end_run()
 
 def log_to_file(line, prefix="[INFO] "):
     os.makedirs("logs", exist_ok=True)
     with open("logs/bot.log", "a", encoding="utf-8") as logf:
         logf.write(prefix + line)
+
+def load_csv_auto(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
+        return pd.read_csv(file_path, skiprows=1)
+    else:
+        return pd.read_csv(file_path)
 
 def train_xgboost_model(
     data_path,
@@ -54,15 +74,17 @@ def train_xgboost_model(
     learning_rate=0.1,
     subsample=1.0,
     colsample_bytree=1.0,
+    early_stopping_rounds=EARLYSTOP_ROUNDS,
     verbose=True,
     save_model=True,
     use_mlflow=False,
+    mlflow_exp="trading_ai"
 ):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[INFO] Træning af XGBoost-model ({now})")
     print(f"[INFO] Læser data fra: {data_path}")
 
-    df = pd.read_csv(data_path)
+    df = load_csv_auto(data_path)
     assert target_col in df.columns, f"target_col '{target_col}' ikke fundet!"
 
     drop_cols = [target_col, "timestamp"] if "timestamp" in df.columns else [target_col]
@@ -76,6 +98,7 @@ def train_xgboost_model(
         print(f"[ADVARSEL] Ignorerer ikke-numeriske features: {ignored}")
     X = X_numeric
 
+    # Gem brugte features
     if save_model:
         os.makedirs(MODEL_DIR, exist_ok=True)
         with open(FEATURES_PATH, "w") as f:
@@ -84,14 +107,20 @@ def train_xgboost_model(
         if use_mlflow and MLFLOW_AVAILABLE:
             mlflow.log_artifact(FEATURES_PATH)
 
-    # Split (tidsserievenligt: ikke random shuffle!)
+    # Split uden shuffle (tidsserie)
     split_idx = int(len(df) * (1 - test_size))
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
 
     # MLflow experiment tracking
     if use_mlflow and MLFLOW_AVAILABLE:
-        mlflow.start_run(run_name=f"xgb_{now.replace(':','_')}")
+        ensure_mlflow_run_closed()
+        if MLUTILS_AVAILABLE:
+            setup_mlflow(experiment_name=mlflow_exp)
+            start_mlflow_run(run_name=f"xgb_{now.replace(':','_')}")
+        else:
+            mlflow.set_experiment(mlflow_exp)
+            mlflow.start_run(run_name=f"xgb_{now.replace(':','_')}")
         mlflow.log_params({
             "max_depth": max_depth,
             "n_estimators": n_estimators,
@@ -100,9 +129,10 @@ def train_xgboost_model(
             "colsample_bytree": colsample_bytree,
             "test_size": test_size,
             "random_state": random_state,
+            "early_stopping_rounds": early_stopping_rounds,
         })
 
-    # Model
+    # Model (eval_metric KUN i constructor!)
     model = xgb.XGBClassifier(
         max_depth=max_depth,
         n_estimators=n_estimators,
@@ -112,11 +142,15 @@ def train_xgboost_model(
         random_state=random_state,
         verbosity=0,
         use_label_encoder=False,
-        eval_metric="logloss"
+        eval_metric="logloss"  # KUN HER!
     )
-    model.fit(X_train, y_train,
-              eval_set=[(X_val, y_val)],
-              verbose=verbose)
+    eval_set = [(X_train, y_train), (X_val, y_val)]
+    model.fit(
+        X_train, y_train,
+        eval_set=eval_set,
+        early_stopping_rounds=early_stopping_rounds,
+        verbose=verbose
+    )
 
     # Evaluer
     y_pred = model.predict(X_val)
@@ -133,16 +167,18 @@ def train_xgboost_model(
     if use_mlflow and MLFLOW_AVAILABLE:
         mlflow.log_metric("val_acc", acc)
         mlflow.log_metrics({f"f1_{k}": v["f1-score"] for k, v in report.items() if isinstance(v, dict) and "f1-score" in v})
+        mlflow.log_param("best_iteration", getattr(model, "best_iteration", None))
 
-    # Gem model
+    # Gem model (checkpoint)
     if save_model:
         model.save_model(MODEL_PATH)
         print(f"✅ Model gemt til: {MODEL_PATH}")
         if use_mlflow and MLFLOW_AVAILABLE:
             mlflow.xgboost.log_model(model, "model")
+
     # Log til fil
     log_str = f"\n== XGBoost-træningslog {now} ==\n" \
-              f"Model: {MODEL_PATH}\nVal_acc: {acc:.3f}\n" \
+              f"Model: {MODEL_PATH}\nVal_acc: {acc:.3f}\nBest_iteration: {getattr(model, 'best_iteration', None)}\n" \
               f"Features: {list(X.columns)}\n\n" \
               f"Report:\n{classification_report(y_val, y_pred, zero_division=0)}\nConfusion:\n{conf}\n"
     with open(LOG_PATH, "a", encoding="utf-8") as f:
@@ -151,7 +187,10 @@ def train_xgboost_model(
 
     if use_mlflow and MLFLOW_AVAILABLE:
         mlflow.log_artifact(LOG_PATH)
-        mlflow.end_run()
+        if MLUTILS_AVAILABLE:
+            end_mlflow_run()
+        else:
+            mlflow.end_run()
 
     try:
         send_message(f"✅ XGBoost træning færdig – Val acc: {acc:.3f}")
@@ -161,7 +200,7 @@ def train_xgboost_model(
     return acc
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Træn XGBoost-model til trading + MLflow logging")
+    parser = argparse.ArgumentParser(description="Træn XGBoost-model til trading + MLflow logging + Early stopping")
     parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
     parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--test_size", type=float, default=0.2, help="Test split")
@@ -170,8 +209,10 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=0.1, help="Learning rate")
     parser.add_argument("--subsample", type=float, default=1.0, help="Subsample ratio")
     parser.add_argument("--colsample_bytree", type=float, default=1.0, help="Colsample bytree")
+    parser.add_argument("--early_stopping_rounds", type=int, default=EARLYSTOP_ROUNDS, help="Early stopping rounds")
     parser.add_argument("--no_save", action="store_true", help="Gem ikke model")
     parser.add_argument("--mlflow", action="store_true", help="Log til MLflow (experiment tracking)")
+    parser.add_argument("--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name")
     args = parser.parse_args()
 
     train_xgboost_model(
@@ -183,7 +224,9 @@ if __name__ == "__main__":
         learning_rate=args.learning_rate,
         subsample=args.subsample,
         colsample_bytree=args.colsample_bytree,
+        early_stopping_rounds=args.early_stopping_rounds,
         verbose=True,
         save_model=not args.no_save,
         use_mlflow=args.mlflow,
+        mlflow_exp=args.mlflow_exp,
     )
