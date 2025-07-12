@@ -56,6 +56,24 @@ Dette projekt er fundamentet for en avanceret, robust og modulær AI trading bot
 
 ---
 
+## 📊 Visualisering og Performanceanalyse
+
+- ML, DL og Ensemble performance analyseres og visualiseres automatisk efter hvert run.
+
+- Grafer og sammenligninger gemmes i graphs/ og sendes til Telegram.
+
+- Outputfiler og historik:
+
+   - graphs/performance_ml.png, graphs/performance_dl.png, graphs/performance_ensemble.png
+
+   - graphs/model_comparison.png
+
+   - outputs/performance_history.csv, outputs/balance_trend.png
+
+   - backups/ – daglig backup af kritiske filer
+
+
+---
 
 ## 🖥️ CLI-guide & workflows
 
