@@ -1,4 +1,4 @@
-# === Virtuel Python-miljø ===
+# === Virtuelt Python-miljø ===
 .venv/
 venv/
 ENV/
@@ -46,6 +46,7 @@ models/*
 *.h5
 *.keras
 *.pth
+*.pt
 *.pkl
 *.npz
 *.joblib
@@ -61,8 +62,17 @@ trades/
 .env
 .env.*
 secrets/
-config/*.json       # <-- VIGTIG: Ignorerer alle JSON config, inkl. Google API secrets!
-config/client_secret_*.json  # <-- EKSTRA SIKKERHED: ALDRIG committe dine Google-secrets!
+config/*.json
+config/client_secret_*.json
+
+# === MLflow, TensorBoard og eksperiment artefakter ===
+mlruns/
+mlruns.*
+runs/
+runs.*
+tensorboard/
+*.tensorboard
+*.event*
 
 # === VS Code, PyCharm, OS-filer ===
 .vscode/
@@ -127,3 +137,14 @@ desktop.ini
 
 # === Pyright type-checking artefakter ===
 typings/
+
+# === Diverse midlertidige, cache og ekstra eksperiment-artefakter ===
+*.tmp
+*.temp
+.cache/
+.cache/*
+.experiment/
+.DS_Store
+*.bak
+*.swp
+*.swo

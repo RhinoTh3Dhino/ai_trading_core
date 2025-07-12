@@ -96,7 +96,6 @@ def run_pipeline(
     Kører hele AI trading pipeline: indlæs data, ML/DL/ensemble inference, backtest, visualisering, metrics, TensorBoard og (valgfrit) Telegram.
     Kan kaldes fra både main.py, run_all.py, tests osv.
     """
-
     # Device management
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -210,4 +209,3 @@ def run_pipeline(
     print("\n🎉 Pipeline afsluttet uden fejl!")
 
     return metrics_dict
-

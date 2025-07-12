@@ -5,7 +5,7 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 - Understøtter både klassisk træning og Optuna hyperparameter-tuning (GPU/CPU)
 - Gemmer og loader model (.pt), log og metrics.
 - Automatisk brug af GPU hvis muligt.
-- INKLUDERER TensorBoard-integration!
+- INKLUDERER TensorBoard- OG MLflow-integration!
 """
 
 import os
@@ -24,6 +24,14 @@ import platform
 
 # === NYT: TensorBoard ===
 from torch.utils.tensorboard import SummaryWriter
+
+# === NYT: MLflow ===
+try:
+    import mlflow
+    import mlflow.pytorch
+    MLFLOW_AVAILABLE = True
+except ImportError:
+    MLFLOW_AVAILABLE = False
 
 try:
     import optuna
@@ -123,15 +131,32 @@ def train_pytorch_model(
     random_state=42,
     verbose=True,
     save_model=True,
+    use_mlflow=False,
 ):
-    # === Device-logning (pro) ===
     log_device_status(data_path, batch_size, epochs, learning_rate)
 
-    # === TensorBoard-writer ===
     tb_run_name = f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
 
-    # === Data ===
+    if use_mlflow and not MLFLOW_AVAILABLE:
+        print("❌ MLflow ikke installeret! (pip install mlflow)")
+        use_mlflow = False
+
+    if use_mlflow:
+        mlflow.start_run(run_name=tb_run_name)
+        mlflow.log_params({
+            "data_path": data_path,
+            "target_col": target_col,
+            "batch_size": batch_size,
+            "epochs": epochs,
+            "learning_rate": learning_rate,
+            "hidden_dim": hidden_dim,
+            "n_layers": n_layers,
+            "dropout": dropout,
+            "test_size": test_size,
+            "random_state": random_state,
+        })
+
     print(f"[INFO] Indlæser data fra: {data_path}")
     df = load_csv_auto(data_path)
     assert target_col in df.columns, f"target_col '{target_col}' ikke fundet!"
@@ -151,12 +176,13 @@ def train_pytorch_model(
     print(f"[INFO] Unikke targets: {sorted(y.unique())}")
     print(f"[INFO] Target distribution: \n{y.value_counts()}")
 
-    # --- Gem brugte features sammen med model ---
     if save_model:
         os.makedirs(MODEL_DIR, exist_ok=True)
         with open(FEATURES_PATH, "w") as f:
             json.dump(list(X.columns), f, indent=2)
         print(f"[INFO] Gemte brugte features til: {FEATURES_PATH}")
+        if use_mlflow:
+            mlflow.log_artifact(FEATURES_PATH)
 
     unique_classes = np.unique(y)
     weights = compute_class_weight(class_weight='balanced', classes=unique_classes, y=y)
@@ -164,7 +190,6 @@ def train_pytorch_model(
     weights = torch.tensor(weights, dtype=torch.float32).to(DEVICE)
     print(f"[INFO] Class weights (imbalance compensation): {weights}")
 
-    # Time-based split for tidsseriedata
     df = df.reset_index(drop=True)
     split_idx = int(len(df) * (1 - test_size))
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
@@ -205,7 +230,6 @@ def train_pytorch_model(
         train_loss /= len(train_loader)
         train_acc = train_correct / train_total if train_total > 0 else 0.0
 
-        # === Evaluer på val-set ===
         model.eval()
         val_loss = 0
         val_correct = 0
@@ -225,24 +249,29 @@ def train_pytorch_model(
         val_loss /= len(val_loader)
         val_acc = val_correct / val_total if val_total > 0 else 0.0
 
-        # === TensorBoard logging ===
         writer.add_scalar('Loss/train', train_loss, epoch)
         writer.add_scalar('Loss/val', val_loss, epoch)
         writer.add_scalar('Accuracy/train', train_acc, epoch)
         writer.add_scalar('Accuracy/val', val_acc, epoch)
 
+        if use_mlflow:
+            mlflow.log_metric('train_loss', train_loss, step=epoch)
+            mlflow.log_metric('val_loss', val_loss, step=epoch)
+            mlflow.log_metric('train_acc', train_acc, step=epoch)
+            mlflow.log_metric('val_acc', val_acc, step=epoch)
+
         if verbose:
             print(f"[{epoch:02d}/{epochs}] Train loss: {train_loss:.4f} | Val loss: {val_loss:.4f} | Train acc: {train_acc:.3f} | Val acc: {val_acc:.3f}")
 
-        # === Gem bedste model ===
         if save_model and val_acc > best_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), MODEL_PATH)
             print(f"✅ Ny bedste model gemt: {MODEL_PATH} (val_acc={val_acc:.3f})")
+            if use_mlflow:
+                mlflow.pytorch.log_model(model, "model")
 
-    writer.close()  # Luk TensorBoard-writer
+    writer.close()
 
-    # === Endelig rapport/log ===
     print("\n[INFO] Evaluering på valideringsdata:")
     print(classification_report(y_true, y_pred, zero_division=0))
     conf = confusion_matrix(y_true, y_pred)
@@ -255,11 +284,18 @@ def train_pytorch_model(
         f.write(log_str)
     print(f"[INFO] Træningslog gemt til: {LOG_PATH}")
 
+    if use_mlflow:
+        mlflow.log_artifact(LOG_PATH)
+        graphs_dir = "graphs"
+        if os.path.exists(graphs_dir):
+            for fn in os.listdir(graphs_dir):
+                if fn.endswith(".png"):
+                    mlflow.log_artifact(os.path.join(graphs_dir, fn))
+        mlflow.end_run()
+
     return best_acc
 
-# === Optuna-integration (GPU) ===
 def optuna_objective(trial):
-    # Optuna search space
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
     learning_rate = trial.suggest_loguniform("lr", 1e-4, 1e-2)
     hidden_dim = trial.suggest_int("hidden_dim", 32, 256)
@@ -267,7 +303,6 @@ def optuna_objective(trial):
     dropout = trial.suggest_float("dropout", 0.0, 0.5)
     epochs = trial.suggest_int("epochs", 10, 40)
 
-    # Brug de globale optuna_args!
     global optuna_args
     acc = train_pytorch_model(
         data_path=optuna_args["data"],
@@ -280,9 +315,8 @@ def optuna_objective(trial):
         dropout=dropout,
         test_size=optuna_args.get("test_size", 0.2),
         verbose=False,
-        save_model=False,  # Vi gemmer kun til sidst!
+        save_model=False,
     )
-    # Log til CSV efter hver trial (let analyse)
     with open(OPTUNA_LOG_PATH, "a", encoding="utf-8") as f:
         line = f"{datetime.now()},{batch_size},{learning_rate:.5f},{hidden_dim},{n_layers},{dropout:.2f},{epochs},{acc:.4f}\n"
         f.write(line)
@@ -295,7 +329,6 @@ def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
     print(f"🔍 Starter Optuna-tuning på: {data_path} ({n_trials} trials)")
     global optuna_args
     optuna_args = dict(data=data_path, target=target, test_size=test_size)
-    # Skriv header til optuna-log
     if not os.path.exists(OPTUNA_LOG_PATH):
         with open(OPTUNA_LOG_PATH, "w", encoding="utf-8") as f:
             f.write("datetime,batch_size,learning_rate,hidden_dim,n_layers,dropout,epochs,val_acc\n")
@@ -304,7 +337,6 @@ def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
     print("=== Optuna tuning færdig! ===")
     print("Bedste trial:", study.best_trial.params)
     print("Bedste accuracy:", study.best_trial.value)
-    # Træn og gem bedste model med de bedste hyperparametre
     best = study.best_trial.params
     train_pytorch_model(
         data_path=data_path,
@@ -321,9 +353,8 @@ def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
     )
     print(f"✅ Bedste model trænet og gemt til: {MODEL_PATH}")
 
-# === CLI-interface ===
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning")
+    parser = argparse.ArgumentParser(description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning + MLflow logging")
     parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
     parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
@@ -335,6 +366,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.0, help="Dropout-rate")
     parser.add_argument("--mode", type=str, default="train", choices=["train", "optuna"], help="Kørselstype: 'train' eller 'optuna'")
     parser.add_argument("--trials", type=int, default=20, help="Antal trials til Optuna (hvis valgt)")
+    parser.add_argument("--mlflow", action="store_true", help="Log til MLflow (experiment tracking)")
     args = parser.parse_args()
 
     if args.mode == "optuna":
@@ -357,4 +389,5 @@ if __name__ == "__main__":
             test_size=args.test_size,
             verbose=True,
             save_model=True,
+            use_mlflow=args.mlflow,
         )

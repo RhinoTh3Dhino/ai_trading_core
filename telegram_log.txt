@@ -6780,3 +6780,25 @@ TypeError: plot_performance() got an unexpected keyword argument 'model_type'
 [2025-07-12 17:02:20] Besked sendt OK.
 [2025-07-12 18:02:38] Sender besked: 🤖 2025-07-12 18:02:38 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
 [2025-07-12 18:02:38] Besked sendt OK.
+[2025-07-12 18:10:33] Sender besked: 🤖 2025-07-12 18:10:33 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: run_all | symbol: BTCUSDT | interval: 1h | model_type: ml
+[2025-07-12 18:10:33] Besked sendt OK.
+[2025-07-12 18:10:35] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 519 rækker, fil: btcusdt_1h_features_30d.csv
+[2025-07-12 18:10:35] Besked sendt OK.
+[2025-07-12 18:10:39] Sender besked: 🤖 2025-07-12 18:10:39 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: pipeline_core | symbol: BTCUSDT | interval: 1h | model_type: ml | feature_version: v1.0.0 | run_all: True
+[2025-07-12 18:10:39] Besked sendt OK.
+[2025-07-12 18:10:40] Sender billede: graphs//model_comparison.png (caption: BTCUSDT 1h | ML vs. DL vs. ENSEMBLE performance)
+[2025-07-12 18:10:40] Billede sendt OK.
+[2025-07-12 18:11:26] Sender besked: 🤖 2025-07-12 18:11:26 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: pipeline_core | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-12 18:11:26] Besked sendt OK.
+[2025-07-12 18:11:27] Sender billede: graphs//model_comparison.png (caption: BTCUSDT 1h | ML vs. DL vs. ENSEMBLE performance)
+[2025-07-12 18:11:27] Billede sendt OK.
+[2025-07-12 18:11:28] Sender billede: outputs/balance_trend.png (caption: 📈 Balanceudvikling)
+[2025-07-12 18:11:28] Billede sendt OK.
+[2025-07-12 18:11:29] Sender besked: ✅ Bot kørte OK og lavede backup: backups\2025-07-12\backup_18-11-28
+[2025-07-12 18:11:29] Besked sendt OK.
+[2025-07-12 18:53:08] Sender besked: 🤖 2025-07-12 18:53:08 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
+[2025-07-12 18:53:09] Besked sendt OK.
+[2025-07-12 19:35:15] Sender besked: 🤖 2025-07-12 19:35:15 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
+[2025-07-12 19:35:15] Besked sendt OK.
+[2025-07-12 19:43:14] Sender besked: 🤖 2025-07-12 19:43:14 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
+[2025-07-12 19:43:15] Besked sendt OK.
