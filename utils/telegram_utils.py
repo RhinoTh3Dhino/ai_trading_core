@@ -4,7 +4,7 @@ import os
 import requests
 import datetime
 from dotenv import load_dotenv
-from utils.plot_utils import generate_trend_graph  # <-- NY: Importér graf-generator
+from utils.plot_utils import generate_trend_graph  # ← Import til balance-graf
 
 load_dotenv()
 LOG_PATH = "telegram_log.txt"
@@ -29,7 +29,6 @@ def log_telegram(msg):
 
 def send_message(msg, chat_id=None, parse_mode=None, silent=False):
     log_telegram(f"Sender besked: {msg}")
-    # Læs token/chat_id hver gang (test/CI kompatibelt)
     token = os.getenv("TELEGRAM_TOKEN")
     _chat_id = chat_id if chat_id is not None else os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_enabled():

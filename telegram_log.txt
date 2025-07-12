@@ -6678,3 +6678,101 @@ Params: {'batch_size': 32, 'lr': 0.00850168404999719, 'hidden_dim': 193, 'n_laye
 [2025-07-12 02:36:22] Sender besked: ✅ Bedste model trænet og gemt til models\best_pytorch_model.pt
 Val_acc=0.5781
 [2025-07-12 02:36:22] Besked sendt OK.
+[2025-07-12 03:43:34] Sender besked: 🤖 2025-07-12 03:43:34 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-12 03:43:35] Besked sendt OK.
+[2025-07-12 03:43:35] Sender besked: ❌ Fejl i <lambda>: Error(s) in loading state_dict for TradingNet:
+	Missing key(s) in state_dict: "net.4.weight", "net.4.bias". 
+	size mismatch for net.0.weight: copying a param with shape torch.Size([193, 14]) from checkpoint, the shape in current model is torch.Size([64, 13]).
+	size mismatch for net.0.bias: copying a param with shape torch.Size([193]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for net.2.weight: copying a param with shape torch.Size([2, 193]) from checkpoint, the shape in current model is torch.Size([64, 64]).
+	size mismatch for net.2.bias: copying a param with shape torch.Size([2]) from checkpoint, the shape in current model is torch.Size([64]).
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 199, in <lambda>
+    safe_run(lambda: main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 135, in main
+    model = load_pytorch_model(feature_dim=len(feature_cols))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 80, in load_pytorch_model
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE_STR))
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\torch\nn\modules\module.py", line 2584, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for TradingNet:
+	Missing key(s) in state_dict: "net.4.weight", "net.4.bias". 
+	size mismatch for net.0.weight: copying a param with shape torch.Size([193, 14]) from checkpoint, the shape in current model is torch.Size([64, 13]).
+	size mismatch for net.0.bias: copying a param with shape torch.Size([193]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for net.2.weight: copying a param with shape torch.Size([2, 193]) from checkpoint, the shape in current model is torch.Size([64, 64]).
+	size mismatch for net.2.bias: copying a param with shape torch.Size([2]) from checkpoint, the shape in current model is torch.Size([64]).
+
+[2025-07-12 03:43:35] Besked sendt OK.
+[2025-07-12 03:45:47] Sender besked: 🤖 2025-07-12 03:45:47 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 03:45:47] Besked sendt OK.
+[2025-07-12 03:46:23] Sender besked: 🤖 2025-07-12 03:46:23 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-12 03:46:24] Besked sendt OK.
+[2025-07-12 03:46:24] Sender besked: ❌ Fejl i <lambda>: Error(s) in loading state_dict for TradingNet:
+	size mismatch for net.0.weight: copying a param with shape torch.Size([64, 14]) from checkpoint, the shape in current model is torch.Size([64, 13]).
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 199, in <lambda>
+    safe_run(lambda: main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 135, in main
+    model = load_pytorch_model(feature_dim=len(feature_cols))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 80, in load_pytorch_model
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE_STR))
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\torch\nn\modules\module.py", line 2584, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for TradingNet:
+	size mismatch for net.0.weight: copying a param with shape torch.Size([64, 14]) from checkpoint, the shape in current model is torch.Size([64, 13]).
+
+[2025-07-12 03:46:24] Besked sendt OK.
+[2025-07-12 04:01:36] Sender besked: 🤖 2025-07-12 04:01:36 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 04:01:36] Besked sendt OK.
+[2025-07-12 04:02:16] Sender besked: 🤖 2025-07-12 04:02:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-12 04:02:16] Besked sendt OK.
+[2025-07-12 04:02:16] Sender besked: ❌ Fejl i <lambda>: plot_performance() got an unexpected keyword argument 'model_type'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 224, in <lambda>
+    safe_run(lambda: main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 203, in main
+    plot_performance(balance_ml, trades_ml, model_type="ml", save_path=f"{GRAPH_DIR}/performance_ml.png")
+TypeError: plot_performance() got an unexpected keyword argument 'model_type'
+
+[2025-07-12 04:02:17] Besked sendt OK.
+[2025-07-12 04:09:49] Sender besked: 🤖 2025-07-12 04:09:49 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 04:09:50] Besked sendt OK.
+[2025-07-12 04:10:21] Sender besked: 🤖 2025-07-12 04:10:21 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-12 04:10:21] Besked sendt OK.
+[2025-07-12 04:10:21] Sender besked: ❌ Fejl i <lambda>: plot_performance() got an unexpected keyword argument 'model_type'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 224, in <lambda>
+    safe_run(lambda: main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 203, in main
+    plot_performance(balance_ml, trades_ml, model_type="ml", save_path=f"{GRAPH_DIR}/performance_ml.png")
+TypeError: plot_performance() got an unexpected keyword argument 'model_type'
+
+[2025-07-12 04:10:21] Besked sendt OK.
+[2025-07-12 04:16:29] Sender besked: 🤖 2025-07-12 04:16:29 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 04:16:30] Besked sendt OK.
+[2025-07-12 04:17:06] Sender besked: 🤖 2025-07-12 04:17:06 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-12 04:17:06] Besked sendt OK.
+[2025-07-12 04:17:07] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
+[2025-07-12 04:17:08] Billede sendt OK.

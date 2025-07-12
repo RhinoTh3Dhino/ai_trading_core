@@ -10,6 +10,7 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 import os
 import sys
 import argparse
+import json
 import pandas as pd
 import numpy as np
 import torch
@@ -32,6 +33,7 @@ from utils.telegram_utils import send_message
 # === Konfiguration ===
 MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
+FEATURES_PATH = os.path.join(MODEL_DIR, "best_pytorch_features.json")
 LOG_PATH = os.path.join(MODEL_DIR, "train_log_pytorch.txt")
 OPTUNA_LOG_PATH = os.path.join(MODEL_DIR, "optuna_trials.csv")
 
@@ -126,19 +128,29 @@ def train_pytorch_model(
     df = load_csv_auto(data_path)
     assert target_col in df.columns, f"target_col '{target_col}' ikke fundet!"
 
+    # --- ENS FEATURE-SELECTION SOM ENGINE.PY ---
     drop_cols = [target_col, "timestamp"]
-    X = df.drop([c for c in drop_cols if c in df.columns], axis=1)
+    feature_cols = [col for col in df.columns if col not in drop_cols]
+    X = df[feature_cols]
     y = df[target_col]
 
+    # Kun numeriske features (1:1 med engine)
     X_numeric = X.select_dtypes(include=[np.number])
     if X_numeric.shape[1] < X.shape[1]:
         ignored = set(X.columns) - set(X_numeric.columns)
         print(f"[ADVARSEL] Ignorerer ikke-numeriske features: {ignored}")
     X = X_numeric
 
-    print(f"[INFO] Features brugt til træning: {list(X.columns)}")
+    print(f"[INFO] Features brugt til træning: {list(X.columns)} Antal: {len(X.columns)}")
     print(f"[INFO] Unikke targets: {sorted(y.unique())}")
     print(f"[INFO] Target distribution: \n{y.value_counts()}")
+
+    # --- Gem brugte features sammen med model ---
+    if save_model:
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        with open(FEATURES_PATH, "w") as f:
+            json.dump(list(X.columns), f, indent=2)
+        print(f"[INFO] Gemte brugte features til: {FEATURES_PATH}")
 
     unique_classes = np.unique(y)
     weights = compute_class_weight(class_weight='balanced', classes=unique_classes, y=y)

@@ -5,16 +5,18 @@ import json
 import pandas as pd
 import numpy as np
 
+# --- Gør projektroden tilgængelig for imports ---
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 # === Central logging ===
 from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message
+from utils.telegram_utils import send_message, send_image
 
-# === CLI-argumenter: gør engine.py CLI-klar ===
+# === CLI-argumenter ===
 parser = argparse.ArgumentParser(description="AI Trading Engine")
 parser.add_argument("--features", type=str, required=True, help="Sti til feature-fil (CSV)")
 parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Trading symbol")
 parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)")
-parser.add_argument("--model_type", type=str, default="ml", choices=["ml", "dl", "ensemble"], help="Vælg model-type")
 parser.add_argument("--device", type=str, default=None, help="PyTorch device ('cuda'/'cpu'), auto hvis None")
 args = parser.parse_args()
 
@@ -27,16 +29,14 @@ device_info = log_device_status(
     extra={
         "symbol": SYMBOL,
         "interval": INTERVAL,
-        "model_type": args.model_type
+        "model_type": "multi_compare"
     },
     telegram_func=send_message,
     print_console=True
 )
 DEVICE_STR = device_info.get("device_str", "cpu")
 
-# === Importér resten af pipelinen ===
 from bot.monitor import ResourceMonitor
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
     from versions import (
@@ -48,8 +48,6 @@ except ImportError:
 
 from backtest.backtest import run_backtest, calc_backtest_metrics
 from utils.robust_utils import safe_run
-
-# Ensemble (Nyt)
 from ensemble.ensemble_predict import ensemble_predict
 
 from strategies.rsi_strategy import rsi_rule_based_signals
@@ -61,6 +59,7 @@ import torch
 # === PyTorch-model & paths ===
 MODEL_DIR = "models"
 PYTORCH_MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
+PYTORCH_FEATURES_PATH = os.path.join(MODEL_DIR, "best_pytorch_features.json")
 
 class TradingNet(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=2):
@@ -74,6 +73,15 @@ class TradingNet(torch.nn.Module):
         )
     def forward(self, x):
         return self.net(x)
+
+def load_trained_feature_list():
+    if not os.path.exists(PYTORCH_FEATURES_PATH):
+        print(f"[ADVARSEL] Kunne ikke finde {PYTORCH_FEATURES_PATH} – bruger alle numeriske features fra input.")
+        return None
+    with open(PYTORCH_FEATURES_PATH, "r") as f:
+        features = json.load(f)
+    print(f"[INFO] Loader feature-liste fra model: {features}")
+    return features
 
 def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH):
     if not os.path.exists(model_path):
@@ -107,9 +115,6 @@ def read_features_auto(file_path):
 GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]  # [ML, DL, Rule]
-RETRAIN_WINRATE_THRESHOLD = 0.30
-RETRAIN_PROFIT_THRESHOLD = 0.0
-MAX_RETRAINS = 3
 
 def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False):
     monitor = ResourceMonitor(
@@ -117,7 +122,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
         action="pause", log_file="outputs/debug/resource_log.csv"
     )
     monitor.start()
-
     try:
         DATA_PATH = args.features
         print("🔄 Indlæser features:", DATA_PATH)
@@ -125,77 +129,93 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
+        # --- Sikrer feature match til PyTorch-model (1:1) ---
+        trained_features = load_trained_feature_list()
+        if trained_features is not None:
+            missing = [f for f in trained_features if f not in df.columns]
+            if missing:
+                print(f"[FEJL] Følgende features mangler i input: {missing}")
+                raise RuntimeError("Feature-mismatch! Træn modellen forfra.")
+            X_dl = df[trained_features]
+        else:
+            # fallback: brug numeriske features bortset fra timestamp, target, regime, signal
+            fallback_cols = [col for col in df.select_dtypes(include=[np.number]).columns if col not in ("timestamp", "target", "regime", "signal")]
+            X_dl = df[fallback_cols]
+            print(f"[ADVARSEL] Kører med fallback-features: {fallback_cols}")
+
         feature_cols = [col for col in df.columns if col not in ("timestamp", "target", "regime", "signal")]
 
-        # ML og DL forudsigelser
-        if args.model_type == "dl":
-            print("🔄 Loader PyTorch DL-model ...")
-            model = load_pytorch_model(feature_dim=len(feature_cols))
-            if model is not None:
-                dl_preds, dl_probas = pytorch_predict(model, df[feature_cols])
-                if dl_probas.shape[1] == 2:
-                    signal_proba = dl_probas[:, 1]
-                    signals = (signal_proba > threshold).astype(int)
-                else:
-                    signals = dl_preds
-                print("✅ PyTorch DL-inference klar!")
-            else:
-                print("❌ Ingen DL-model fundet – fallback til random signaler")
-                signals = np.random.choice([0, 1], size=len(df))
+        metrics_dict = {}
 
-        elif args.model_type == "ml":
-            print("🛠️ ML-inference ikke implementeret i dette eksempel – fallback til random")
-            signals = np.random.choice([0, 1], size=len(df))
+        # --- ML ---
+        print("🛠️ ML-inference ikke implementeret – bruger random (baseline demo)")
+        ml_signals = np.random.choice([0, 1], size=len(df))
+        df["signal_ml"] = ml_signals
+        trades_ml, balance_ml = run_backtest(df, signals=ml_signals)
+        metrics_ml = calc_backtest_metrics(trades_ml, balance_ml)
+        metrics_dict["ML"] = metrics_ml
 
-        elif args.model_type == "ensemble":
-            print("🔄 Loader PyTorch DL-model (til ensemble)...")
-            model = load_pytorch_model(feature_dim=len(feature_cols))
-            if model is not None:
-                dl_preds, dl_probas = pytorch_predict(model, df[feature_cols])
-                dl_signals = (dl_probas[:, 1] > threshold).astype(int)
-            else:
-                dl_signals = np.random.choice([0, 1], size=len(df))
-
-            # ML placeholder (fx LightGBM, XGBoost – tilføj her senere)
-            ml_signals = np.random.choice([0, 1], size=len(df))
-
-            # Rule-based (eksempel: RSI)
-            rsi_signals = rsi_rule_based_signals(df, low=45, high=55)
-
-            # Ensemble voting!
-            signals = ensemble_predict(
-                ml_preds=ml_signals,
-                dl_preds=dl_signals,
-                rule_preds=rsi_signals,
-                weights=weights,
-                voting="majority",
-                debug=True    # Aktiver stemme-logning/visualisering
-            )
-            df["signal"] = signals
-
-            # Log stemme-fordeling for alle metoder og ensemble
-            print("Signal distribution:")
-            print("ML:", pd.Series(ml_signals).value_counts().to_dict())
-            print("DL:", pd.Series(dl_signals).value_counts().to_dict())
-            print("RSI:", pd.Series(rsi_signals).value_counts().to_dict())
-            print("Ensemble:", pd.Series(signals).value_counts().to_dict())
-            print("✅ Ensemble voting klar!")
-
+        # --- DL ---
+        print("🔄 Loader PyTorch DL-model ...")
+        model = load_pytorch_model(feature_dim=X_dl.shape[1])
+        if model is not None:
+            dl_preds, dl_probas = pytorch_predict(model, X_dl)
+            dl_signals = (dl_probas[:, 1] > threshold).astype(int)
+            print("✅ PyTorch DL-inference klar!")
         else:
-            print("Ukendt model_type – stopper.")
-            return
+            print("❌ Ingen DL-model fundet – fallback til random signaler")
+            dl_signals = np.random.choice([0, 1], size=len(df))
+        df["signal_dl"] = dl_signals
+        trades_dl, balance_dl = run_backtest(df, signals=dl_signals)
+        metrics_dl = calc_backtest_metrics(trades_dl, balance_dl)
+        metrics_dict["DL"] = metrics_dl
 
-        # Sæt signals for backtest hvis ikke ensemble
-        if args.model_type != "ensemble":
-            df["signal"] = signals
+        # --- Ensemble ---
+        rsi_signals = rsi_rule_based_signals(df, low=45, high=55)
+        ensemble_signals = ensemble_predict(
+            ml_preds=ml_signals,
+            dl_preds=dl_signals,
+            rule_preds=rsi_signals,
+            weights=weights,
+            voting="majority",
+            debug=True
+        )
+        df["signal_ensemble"] = ensemble_signals
+        trades_ens, balance_ens = run_backtest(df, signals=ensemble_signals)
+        metrics_ens = calc_backtest_metrics(trades_ens, balance_ens)
+        metrics_dict["Ensemble"] = metrics_ens
 
-        # === Backtest ===
-        trades_df, balance_df = run_backtest(df, signals=df["signal"])
-        print("TRADES DF:\n", trades_df)
-        print("BALANCE DF:\n", balance_df)
-        metrics = calc_backtest_metrics(trades_df, balance_df)
-        print("Backtest-metrics:", metrics)
-        print("🎉 Pipeline afsluttet uden fejl!")
+        # --- Log signal-distribution ---
+        print("\n=== Signal distributions ===")
+        print("ML:", pd.Series(ml_signals).value_counts().to_dict())
+        print("DL:", pd.Series(dl_signals).value_counts().to_dict())
+        print("RSI:", pd.Series(rsi_signals).value_counts().to_dict())
+        print("Ensemble:", pd.Series(ensemble_signals).value_counts().to_dict())
+
+        # --- Print metrics ---
+        print("\n=== Performance metrics (backtest) ===")
+        for model, metrics in metrics_dict.items():
+            print(f"{model}: {metrics}")
+
+        # --- Visualisering ---
+        from visualization.plot_performance import plot_performance
+        os.makedirs(GRAPH_DIR, exist_ok=True)
+        plot_performance(balance_ml, trades_ml, model_name="ML", save_path=f"{GRAPH_DIR}/performance_ml.png")
+        plot_performance(balance_dl, trades_dl, model_name="DL", save_path=f"{GRAPH_DIR}/performance_dl.png")
+        plot_performance(balance_ens, trades_ens, model_name="Ensemble", save_path=f"{GRAPH_DIR}/performance_ensemble.png")
+
+        from visualization.plot_comparison import plot_comparison
+        metric_keys = ["profit_pct", "win_rate", "drawdown_pct", "num_trades"]
+        plot_comparison(metrics_dict, metric_keys=metric_keys, save_path=f"{GRAPH_DIR}/model_comparison.png")
+        print(f"[INFO] Sammenlignings-graf gemt til {GRAPH_DIR}/model_comparison.png")
+
+        # (Valgfrit) Telegram-send
+        try:
+            send_image(f"{GRAPH_DIR}/model_comparison.png", caption="ML vs. DL vs. ENSEMBLE performance")
+        except Exception as e:
+            print(f"[ADVARSEL] Telegram-graf kunne ikke sendes: {e}")
+
+        print("\n🎉 Pipeline afsluttet uden fejl!")
 
     finally:
         monitor.stop()

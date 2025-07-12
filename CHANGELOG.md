@@ -137,6 +137,27 @@
 - Sikret, at pipeline og engine kan bruge/loade nye modeller uden manuelle ændringer
 
 
+## [vX.X.X] - 2025-07-12
+
+### Tilføjelser
+- Implementeret fuldautomatisk visualisering af strategi-performance for ML, DL og Ensemble
+- Tilføjet bar-chart sammenligningsgraf med nøgle-metrics for alle modeller
+- Auto-send af grafer og performance-rapport til Telegram (tekst + billede)
+- Forbedret logning og audit (BotStatus.md opdateres med hardware, data, run-context)
+- Robust fallback hvis model eller features ikke matcher
+
+### Rettelser
+- Sikret feature-matching ml. trænings- og produktions-pipeline (json + warnings)
+- Fjernet tidligere fejl med plot_performance() argumenter (nu 100% kompatibel)
+
+---
+
+**Step 6 er nu afsluttet og klar til Step 7!**
+
+
+
+
+
 
 ## [2025-05-23]
 ✅ Step 4 test
