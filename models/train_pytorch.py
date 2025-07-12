@@ -5,6 +5,7 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 - Understøtter både klassisk træning og Optuna hyperparameter-tuning (GPU/CPU)
 - Gemmer og loader model (.pt), log og metrics.
 - Automatisk brug af GPU hvis muligt.
+- INKLUDERER TensorBoard-integration!
 """
 
 import os
@@ -20,6 +21,9 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
 from datetime import datetime
 import platform
+
+# === NYT: TensorBoard ===
+from torch.utils.tensorboard import SummaryWriter
 
 try:
     import optuna
@@ -123,18 +127,20 @@ def train_pytorch_model(
     # === Device-logning (pro) ===
     log_device_status(data_path, batch_size, epochs, learning_rate)
 
+    # === TensorBoard-writer ===
+    tb_run_name = f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
+
     # === Data ===
     print(f"[INFO] Indlæser data fra: {data_path}")
     df = load_csv_auto(data_path)
     assert target_col in df.columns, f"target_col '{target_col}' ikke fundet!"
 
-    # --- ENS FEATURE-SELECTION SOM ENGINE.PY ---
     drop_cols = [target_col, "timestamp"]
     feature_cols = [col for col in df.columns if col not in drop_cols]
     X = df[feature_cols]
     y = df[target_col]
 
-    # Kun numeriske features (1:1 med engine)
     X_numeric = X.select_dtypes(include=[np.number])
     if X_numeric.shape[1] < X.shape[1]:
         ignored = set(X.columns) - set(X_numeric.columns)
@@ -183,6 +189,8 @@ def train_pytorch_model(
     for epoch in range(1, epochs + 1):
         model.train()
         train_loss = 0
+        train_correct = 0
+        train_total = 0
         for xb, yb in train_loader:
             xb, yb = xb.to(DEVICE), yb.to(DEVICE)
             optimizer.zero_grad()
@@ -191,28 +199,48 @@ def train_pytorch_model(
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
+            _, pred = torch.max(output, 1)
+            train_correct += (pred == yb).sum().item()
+            train_total += yb.size(0)
         train_loss /= len(train_loader)
+        train_acc = train_correct / train_total if train_total > 0 else 0.0
 
         # === Evaluer på val-set ===
         model.eval()
+        val_loss = 0
+        val_correct = 0
+        val_total = 0
         y_pred, y_true = [], []
         with torch.no_grad():
             for xb, yb in val_loader:
-                xb = xb.to(DEVICE)
+                xb, yb = xb.to(DEVICE), yb.to(DEVICE)
                 logits = model(xb)
-                preds = torch.argmax(logits, dim=1).cpu().numpy()
-                y_pred.extend(preds)
-                y_true.extend(yb.numpy())
-        acc = np.mean(np.array(y_pred) == np.array(y_true))
+                loss = criterion(logits, yb)
+                val_loss += loss.item()
+                preds = torch.argmax(logits, dim=1)
+                val_correct += (preds == yb).sum().item()
+                val_total += yb.size(0)
+                y_pred.extend(preds.cpu().numpy())
+                y_true.extend(yb.cpu().numpy())
+        val_loss /= len(val_loader)
+        val_acc = val_correct / val_total if val_total > 0 else 0.0
+
+        # === TensorBoard logging ===
+        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/val', val_loss, epoch)
+        writer.add_scalar('Accuracy/train', train_acc, epoch)
+        writer.add_scalar('Accuracy/val', val_acc, epoch)
 
         if verbose:
-            print(f"[{epoch:02d}/{epochs}] Train loss: {train_loss:.4f} | Val acc: {acc:.3f}")
+            print(f"[{epoch:02d}/{epochs}] Train loss: {train_loss:.4f} | Val loss: {val_loss:.4f} | Train acc: {train_acc:.3f} | Val acc: {val_acc:.3f}")
 
         # === Gem bedste model ===
-        if save_model and acc > best_acc:
-            best_acc = acc
+        if save_model and val_acc > best_acc:
+            best_acc = val_acc
             torch.save(model.state_dict(), MODEL_PATH)
-            print(f"✅ Ny bedste model gemt: {MODEL_PATH} (val_acc={acc:.3f})")
+            print(f"✅ Ny bedste model gemt: {MODEL_PATH} (val_acc={val_acc:.3f})")
+
+    writer.close()  # Luk TensorBoard-writer
 
     # === Endelig rapport/log ===
     print("\n[INFO] Evaluering på valideringsdata:")

@@ -1,6 +1,5 @@
 import sys
 import os
-import argparse
 import json
 import pandas as pd
 import numpy as np
@@ -8,33 +7,12 @@ import numpy as np
 # --- Gør projektroden tilgængelig for imports ---
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# === Central logging ===
 from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message, send_image
+from utils.ensemble_utils import load_best_ensemble_params  # <-- Nu bruges kun denne centrale version!
 
-# === CLI-argumenter ===
-parser = argparse.ArgumentParser(description="AI Trading Engine")
-parser.add_argument("--features", type=str, required=True, help="Sti til feature-fil (CSV)")
-parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Trading symbol")
-parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)")
-parser.add_argument("--device", type=str, default=None, help="PyTorch device ('cuda'/'cpu'), auto hvis None")
-args = parser.parse_args()
-
-SYMBOL = args.symbol
-INTERVAL = args.interval
-
-# === Device-detection og logging (centralt) ===
-device_info = log_device_status(
-    context="engine",
-    extra={
-        "symbol": SYMBOL,
-        "interval": INTERVAL,
-        "model_type": "multi_compare"
-    },
-    telegram_func=send_message,
-    print_console=True
-)
-DEVICE_STR = device_info.get("device_str", "cpu")
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
 
 from bot.monitor import ResourceMonitor
 
@@ -56,7 +34,6 @@ from strategies.ema_cross_strategy import ema_cross_signals
 
 import torch
 
-# === PyTorch-model & paths ===
 MODEL_DIR = "models"
 PYTORCH_MODEL_PATH = os.path.join(MODEL_DIR, "best_pytorch_model.pt")
 PYTORCH_FEATURES_PATH = os.path.join(MODEL_DIR, "best_pytorch_features.json")
@@ -83,20 +60,20 @@ def load_trained_feature_list():
     print(f"[INFO] Loader feature-liste fra model: {features}")
     return features
 
-def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH):
+def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device_str="cpu"):
     if not os.path.exists(model_path):
         print(f"❌ PyTorch-model ikke fundet: {model_path}")
         return None
     model = TradingNet(input_dim=feature_dim, output_dim=2)
-    model.load_state_dict(torch.load(model_path, map_location=DEVICE_STR))
+    model.load_state_dict(torch.load(model_path, map_location=device_str))
     model.eval()
-    model.to(DEVICE_STR)
-    print(f"✅ PyTorch-model indlæst fra {model_path} på {DEVICE_STR}")
+    model.to(device_str)
+    print(f"✅ PyTorch-model indlæst fra {model_path} på {device_str}")
     return model
 
-def pytorch_predict(model, X):
+def pytorch_predict(model, X, device_str="cpu"):
     with torch.no_grad():
-        X_tensor = torch.tensor(X.values, dtype=torch.float32).to(DEVICE_STR)
+        X_tensor = torch.tensor(X.values, dtype=torch.float32).to(device_str)
         logits = model(X_tensor)
         probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()
         preds = np.argmax(probs, axis=1)
@@ -116,16 +93,41 @@ GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]  # [ML, DL, Rule]
 
-def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False):
+def main(
+    features_path,
+    symbol="BTCUSDT",
+    interval="1h",
+    threshold=DEFAULT_THRESHOLD,
+    weights=DEFAULT_WEIGHTS,
+    device_str=None,
+    FORCE_DEBUG=False
+):
+    # Device-detection og logging (centralt)
+    device_str = device_str or ("cuda" if torch.cuda.is_available() else "cpu")
+    device_info = log_device_status(
+        context="engine",
+        extra={
+            "symbol": symbol,
+            "interval": interval,
+            "model_type": "multi_compare"
+        },
+        telegram_func=send_message,
+        print_console=True
+    )
+
     monitor = ResourceMonitor(
         ram_max=85, cpu_max=90, gpu_max=95, gpu_temp_max=80, check_interval=10,
         action="pause", log_file="outputs/debug/resource_log.csv"
     )
     monitor.start()
+
+    # TensorBoard-writer til inference metrics
+    tb_run_name = f"engine_inference_{symbol}_{interval}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
+
     try:
-        DATA_PATH = args.features
-        print("🔄 Indlæser features:", DATA_PATH)
-        df = read_features_auto(DATA_PATH)
+        print("🔄 Indlæser features:", features_path)
+        df = read_features_auto(features_path)
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
@@ -138,7 +140,6 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
                 raise RuntimeError("Feature-mismatch! Træn modellen forfra.")
             X_dl = df[trained_features]
         else:
-            # fallback: brug numeriske features bortset fra timestamp, target, regime, signal
             fallback_cols = [col for col in df.select_dtypes(include=[np.number]).columns if col not in ("timestamp", "target", "regime", "signal")]
             X_dl = df[fallback_cols]
             print(f"[ADVARSEL] Kører med fallback-features: {fallback_cols}")
@@ -157,9 +158,9 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
 
         # --- DL ---
         print("🔄 Loader PyTorch DL-model ...")
-        model = load_pytorch_model(feature_dim=X_dl.shape[1])
+        model = load_pytorch_model(feature_dim=X_dl.shape[1], device_str=device_str)
         if model is not None:
-            dl_preds, dl_probas = pytorch_predict(model, X_dl)
+            dl_preds, dl_probas = pytorch_predict(model, X_dl, device_str=device_str)
             dl_signals = (dl_probas[:, 1] > threshold).astype(int)
             print("✅ PyTorch DL-inference klar!")
         else:
@@ -197,6 +198,12 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
         for model, metrics in metrics_dict.items():
             print(f"{model}: {metrics}")
 
+        # --- TensorBoard logging ---
+        for model_name, metrics in metrics_dict.items():
+            for metric_key, value in metrics.items():
+                writer.add_scalar(f"{model_name}/{metric_key}", value)
+        writer.flush()
+
         # --- Visualisering ---
         from visualization.plot_performance import plot_performance
         os.makedirs(GRAPH_DIR, exist_ok=True)
@@ -218,7 +225,27 @@ def main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False
         print("\n🎉 Pipeline afsluttet uden fejl!")
 
     finally:
+        writer.close()
         monitor.stop()
 
+# === CLI kun når scriptet kaldes direkte ===
 if __name__ == "__main__":
-    safe_run(lambda: main(threshold=DEFAULT_THRESHOLD, weights=DEFAULT_WEIGHTS, FORCE_DEBUG=False))
+    import argparse
+    parser = argparse.ArgumentParser(description="AI Trading Engine")
+    parser.add_argument("--features", type=str, required=True, help="Sti til feature-fil (CSV)")
+    parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Trading symbol")
+    parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)")
+    parser.add_argument("--device", type=str, default=None, help="PyTorch device ('cuda'/'cpu'), auto hvis None")
+    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="Threshold for DL-signal")
+    parser.add_argument("--weights", type=float, nargs=3, default=DEFAULT_WEIGHTS, help="Voting weights ML DL Rule")
+    args = parser.parse_args()
+
+    safe_run(lambda: main(
+        features_path=args.features,
+        symbol=args.symbol,
+        interval=args.interval,
+        threshold=args.threshold,
+        weights=args.weights,
+        device_str=args.device,
+        FORCE_DEBUG=False
+    ))

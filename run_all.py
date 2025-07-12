@@ -4,7 +4,6 @@ import glob
 import os
 import argparse
 
-# === Central log-utils import ===
 from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message
 
@@ -24,6 +23,9 @@ parser.add_argument("--lookback", type=int, default=30, help="Antal dage at hent
 parser.add_argument("--rolling_window", type=int, default=None, help="Antal seneste bars til retraining (valgfri)")
 parser.add_argument("--feature_version", type=str, default="v1.0.0", help="Feature-version tag")
 parser.add_argument("--model_type", type=str, default="ml", choices=["ml", "dl", "ensemble"], help="Vælg model-type (ml, dl, ensemble)")
+parser.add_argument("--device", type=str, default=None, help="Device override ('cpu'/'cuda')")
+parser.add_argument("--no_telegram", action="store_true", help="Deaktiver Telegram (kun lokalt)")
+parser.add_argument("--no_tb", action="store_true", help="Deaktiver TensorBoard-logging")
 args = parser.parse_args()
 
 SYMBOL = args.symbol
@@ -32,6 +34,9 @@ LOOKBACK = args.lookback
 ROLLING_WINDOW = args.rolling_window
 FEATURE_VERSION = args.feature_version
 MODEL_TYPE = args.model_type
+DEVICE_OVERRIDE = args.device
+SEND_TELEGRAM = not args.no_telegram
+LOG_TO_TB = not args.no_tb
 
 def log_to_file(line, prefix="[INFO] "):
     os.makedirs("logs", exist_ok=True)
@@ -66,9 +71,10 @@ def main():
     device_info = log_device_status(
         context="run_all",
         extra={"symbol": SYMBOL, "interval": INTERVAL, "model_type": MODEL_TYPE},
-        telegram_func=send_message,   # Logger og sender status til TG
+        telegram_func=send_message if SEND_TELEGRAM else None,
         print_console=True
     )
+    device_str = DEVICE_OVERRIDE or device_info.get("device_str", "cpu")
 
     # Step 1: Hent rådata
     fetch_cmd = [
@@ -107,17 +113,31 @@ def main():
     ]
     run_command(feature_cmd, "Feature engineering")
 
-    # Step 3: Kør engine (strategi, backtest, ML/DL/ensemble)
-    engine_cmd = [
-        PYTHON, "bot/engine.py",
-        "--features", feature_output,
-        "--symbol", SYMBOL,
-        "--interval", INTERVAL,
-        "--model_type", MODEL_TYPE,
-        "--device", str(device_info.get("device_str", "cpu"))  # eller "cuda"/"cpu" hvis du vil være sikker
-    ]
-    run_command(engine_cmd, "Kør engine")
+    # Step 3: Hent ensemble-params fra utils (ikke hardkodet)
+    from utils.ensemble_utils import load_best_ensemble_params
+    threshold, weights = load_best_ensemble_params()
 
+    # Step 4: Kør pipeline (importeret direkte, ikke via subprocess)
+    print("\n🔹 Kører pipeline/core.py direkte ...")
+    from pipeline.core import run_pipeline
+    metrics = run_pipeline(
+        features_path=feature_output,
+        symbol=SYMBOL,
+        interval=INTERVAL,
+        threshold=threshold,
+        weights=weights,
+        log_to_tb=LOG_TO_TB,
+        device=device_str,
+        send_telegram=SEND_TELEGRAM,
+        plot_graphs=True,
+        save_graphs=True,
+        verbose=True,
+        extra_pipeline_info={
+            "feature_version": FEATURE_VERSION,
+            "run_all": True,
+            "model_type": MODEL_TYPE
+        }
+    )
     print("\n🎉 Pipeline kørt færdig uden fejl!")
     log_to_file("Pipeline kørt færdig uden fejl!\n")
 

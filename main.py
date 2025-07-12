@@ -11,8 +11,11 @@ from utils.telegram_utils import send_message
 from utils.report_utils import log_performance_to_history
 from utils.telegram_utils import generate_trend_graph, send_trend_graph
 from utils.robust_utils import safe_run
-from bot.engine import main as engine_main
-from bot.engine import load_best_ensemble_params
+
+# === NYT: Brug kun load_best_ensemble_params fra ensemble_utils ===
+from utils.ensemble_utils import load_best_ensemble_params
+
+from pipeline.core import run_pipeline
 
 # Indlæs miljøvariabler
 load_dotenv()
@@ -20,9 +23,6 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 def ensure_performance_history_exists():
-    """
-    Sikrer at outputs/performance_history.csv altid eksisterer (også hvis der ikke køres nogen handler).
-    """
     history_path = "outputs/performance_history.csv"
     if not os.path.exists(history_path):
         os.makedirs("outputs", exist_ok=True)
@@ -44,7 +44,6 @@ def ensure_changelog_exists():
 def ensure_balance_trend_exists():
     img_path = "outputs/balance_trend.png"
     if not os.path.exists(img_path):
-        # Opret dummy-trend-graf (fx 1 prik)
         import matplotlib.pyplot as plt
         os.makedirs("outputs", exist_ok=True)
         plt.figure(figsize=(8,4))
@@ -61,7 +60,6 @@ def ensure_balance_trend_exists():
 def main_trading_cycle():
     print("✅ Botten starter trading-cyklus...")
 
-    # Sikrer outputfiler fra starten (for CI)
     ensure_performance_history_exists()
     ensure_botstatus_exists()
     ensure_changelog_exists()
@@ -70,13 +68,24 @@ def main_trading_cycle():
     # Hent de bedste tuning-parametre (threshold + weights) før hver run!
     threshold, weights = load_best_ensemble_params()
     print(f"[INFO] Bruger threshold={threshold}, weights={weights} til dette run.")
-    try:
-        engine_main(threshold=threshold, weights=weights)
-    except Exception as e:
-        print(f"❌ FEJL i engine_main: {e}")
-        send_message(f"❌ FEJL i engine_main: {e}")
 
-    # Historik og trend-graf
+    try:
+        metrics = run_pipeline(
+            features_path="outputs/feature_data/btcusdt_1h_features_v1.0.0.csv",  # Tilpas evt. denne sti!
+            symbol="BTCUSDT",
+            interval="1h",
+            threshold=threshold,
+            weights=weights,
+            log_to_tb=True,
+            send_telegram=True,
+            plot_graphs=True,
+            save_graphs=True,
+            verbose=True,
+        )
+    except Exception as e:
+        print(f"❌ FEJL i pipeline: {e}")
+        send_message(f"❌ FEJL i pipeline: {e}")
+
     log_performance_to_history("outputs/portfolio_metrics_latest.csv")
 
     try:
@@ -93,7 +102,6 @@ def main_trading_cycle():
     print(f"✅ Backup gemt: {backup_path}")
     send_message(f"✅ Bot kørte OK og lavede backup: {backup_path}")
 
-    # Sikrer at alle artefakt-filer ALTID eksisterer!
     ensure_performance_history_exists()
     ensure_botstatus_exists()
     ensure_changelog_exists()
@@ -159,19 +167,10 @@ if __name__ == "__main__":
     if os.getenv("CI", "false").lower() == "true":
         safe_run(main)
     else:
-        # === Kør første trading-cyklus straks (så du ser output/Telegram med det samme) ===
         safe_run(main)
-
-        # Kør trading-cyklus hver time
         schedule.every().hour.at(":00").do(lambda: safe_run(main))
-
-        # Daglig status kl. 08:00
         schedule.every().day.at("08:00").do(lambda: safe_run(daily_status))
-
-        # Retrain hver nat kl. 03:00
         schedule.every().day.at("03:00").do(lambda: safe_run(retrain_models))
-
-        # Heartbeat hver time kl. xx:30
         schedule.every().hour.at(":30").do(lambda: safe_run(heartbeat))
 
         while True:

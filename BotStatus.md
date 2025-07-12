@@ -50,3 +50,5 @@
 2025-07-12 04:10:21 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
 2025-07-12 04:16:29 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
 2025-07-12 04:17:06 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+2025-07-12 17:02:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+2025-07-12 18:02:38 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: GPU (NVIDIA GeForce RTX 4070 Ti SUPER) | CUDA alloc: 0 MB / 16375 MB | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 10 | LR: 0.001
