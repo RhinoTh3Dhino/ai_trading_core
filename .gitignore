@@ -1,9 +1,12 @@
-# === Virtuelt Python-miljø ===
+# === Virtuelle Python-miljøer ===
 .venv/
 venv/
 ENV/
 env/
-# (Undgå ALDRIG at committe environments!)
+.venv_*/
+venv_*/
+.venv_tf_gpu/
+# (IGNORER ALLE Python virtual environments!)
 
 # === Backups, logs og cache ===
 backups/
