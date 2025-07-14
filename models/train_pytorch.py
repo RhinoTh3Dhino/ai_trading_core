@@ -6,7 +6,7 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 - Gemmer og loader model (.pt), log og metrics.
 - Automatisk brug af GPU hvis muligt.
 - INKLUDERER TensorBoard- OG MLflow-integration!
-- Early stopping og checkpointing!
+- Early stopping, checkpointing og mixed precision (AMP/fp16)!
 """
 
 import os
@@ -60,7 +60,7 @@ def log_to_file(line, prefix="[INFO] "):
     with open("logs/bot.log", "a", encoding="utf-8") as logf:
         logf.write(prefix + line)
 
-def log_device_status(data_path, batch_size, epochs, lr):
+def log_device_status(data_path, batch_size, epochs, lr, mixed_precision=False):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     torch_version = torch.__version__
     python_version = platform.python_version()
@@ -71,10 +71,10 @@ def log_device_status(data_path, batch_size, epochs, lr):
         cuda_mem_total = torch.cuda.get_device_properties(0).total_memory // (1024**2)
         status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
                        f"Device: GPU ({device_name}) | CUDA alloc: {cuda_mem_alloc} MB / {cuda_mem_total} MB | "
-                       f"Data: {data_path} | Batch: {batch_size} | Epochs: {epochs} | LR: {lr}\n")
+                       f"Data: {data_path} | Batch: {batch_size} | Epochs: {epochs} | LR: {lr} | Mixed Precision: {mixed_precision}\n")
     else:
         status_line = (f"{now} | PyTorch {torch_version} | Python {python_version} | "
-                       f"Device: CPU | Data: {data_path} | Batch: {batch_size} | Epochs: {epochs} | LR: {lr}\n")
+                       f"Device: CPU | Data: {data_path} | Batch: {batch_size} | Epochs: {epochs} | LR: {lr} | Mixed Precision: {mixed_precision}\n")
     print(f"[BotStatus.md] {status_line.strip()}")
     with open("BotStatus.md", "a", encoding="utf-8") as f:
         f.write(status_line)
@@ -140,9 +140,16 @@ def train_pytorch_model(
     patience=5,
     monitor="val_loss",
     min_delta=1e-4,
-    mlflow_exp="trading_ai"
+    mlflow_exp="trading_ai",
+    mixed_precision=False
 ):
-    log_device_status(data_path, batch_size, epochs, learning_rate)
+    # === Mixed precision setup ===
+    use_amp = mixed_precision and torch.cuda.is_available()
+    if mixed_precision and not torch.cuda.is_available():
+        print("[ADVARSEL] Mixed precision kræver GPU (CUDA). Kører kun float32.")
+        use_amp = False
+
+    log_device_status(data_path, batch_size, epochs, learning_rate, mixed_precision=use_amp)
     tb_run_name = f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
 
@@ -174,6 +181,7 @@ def train_pytorch_model(
             "early_stopping": early_stopping,
             "patience": patience,
             "monitor": monitor,
+            "mixed_precision": use_amp,
         })
 
     print(f"[INFO] Indlæser data fra: {data_path}")
@@ -228,6 +236,9 @@ def train_pytorch_model(
     criterion = nn.CrossEntropyLoss(weight=weights)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+    # === Mixed precision scaler ===
+    scaler = torch.cuda.amp.GradScaler() if use_amp else None
+
     best_val_metric = np.inf if monitor == "val_loss" else -np.inf
     best_epoch = 0
     best_acc = 0
@@ -241,10 +252,19 @@ def train_pytorch_model(
         for xb, yb in train_loader:
             xb, yb = xb.to(DEVICE), yb.to(DEVICE)
             optimizer.zero_grad()
-            output = model(xb)
-            loss = criterion(output, yb)
-            loss.backward()
-            optimizer.step()
+            # === Mixed precision context ===
+            if use_amp:
+                with torch.cuda.amp.autocast():
+                    output = model(xb)
+                    loss = criterion(output, yb)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                output = model(xb)
+                loss = criterion(output, yb)
+                loss.backward()
+                optimizer.step()
             train_loss += loss.item()
             _, pred = torch.max(output, 1)
             train_correct += (pred == yb).sum().item()
@@ -260,8 +280,14 @@ def train_pytorch_model(
         with torch.no_grad():
             for xb, yb in val_loader:
                 xb, yb = xb.to(DEVICE), yb.to(DEVICE)
-                logits = model(xb)
-                loss = criterion(logits, yb)
+                # === Mixed precision eval context ===
+                if use_amp:
+                    with torch.cuda.amp.autocast():
+                        logits = model(xb)
+                        loss = criterion(logits, yb)
+                else:
+                    logits = model(xb)
+                    loss = criterion(logits, yb)
                 val_loss += loss.item()
                 preds = torch.argmax(logits, dim=1)
                 val_correct += (preds == yb).sum().item()
@@ -321,6 +347,7 @@ def train_pytorch_model(
     print("Confusion matrix:\n", conf)
     log_str = f"\n== Træningslog {datetime.now()} ==\n" \
               f"Model: {MODEL_PATH}\nBest epoch: {best_epoch}\nVal_{monitor}: {best_val_metric:.3f}\n" \
+              f"Mixed Precision: {use_amp}\n" \
               f"Features: {list(X.columns)}\n\n" \
               f"Report:\n{classification_report(y_true, y_pred, zero_division=0)}\nConfusion:\n{conf}\n"
     with open(LOG_PATH, "a", encoding="utf-8") as f:
@@ -362,19 +389,20 @@ def optuna_objective(trial):
         test_size=optuna_args.get("test_size", 0.2),
         verbose=False,
         save_model=False,
+        mixed_precision=optuna_args.get("mixed_precision", False)
     )
     with open(OPTUNA_LOG_PATH, "a", encoding="utf-8") as f:
         line = f"{datetime.now()},{batch_size},{learning_rate:.5f},{hidden_dim},{n_layers},{dropout:.2f},{epochs},{metric:.4f}\n"
         f.write(line)
     return metric
 
-def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
+def run_optuna(data_path, target="target", n_trials=20, test_size=0.2, mixed_precision=False):
     if not OPTUNA_AVAILABLE:
         print("❌ Optuna ikke installeret! (pip install optuna)")
         return
     print(f"🔍 Starter Optuna-tuning på: {data_path} ({n_trials} trials)")
     global optuna_args
-    optuna_args = dict(data=data_path, target=target, test_size=test_size)
+    optuna_args = dict(data=data_path, target=target, test_size=test_size, mixed_precision=mixed_precision)
     if not os.path.exists(OPTUNA_LOG_PATH):
         with open(OPTUNA_LOG_PATH, "w", encoding="utf-8") as f:
             f.write("datetime,batch_size,learning_rate,hidden_dim,n_layers,dropout,epochs,val_metric\n")
@@ -396,11 +424,12 @@ def run_optuna(data_path, target="target", n_trials=20, test_size=0.2):
         test_size=test_size,
         verbose=True,
         save_model=True,
+        mixed_precision=mixed_precision
     )
     print(f"✅ Bedste model trænet og gemt til: {MODEL_PATH}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning + MLflow logging + Early stopping")
+    parser = argparse.ArgumentParser(description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning + MLflow logging + Early stopping + Mixed Precision (AMP/fp16)")
     parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
     parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
@@ -418,6 +447,7 @@ if __name__ == "__main__":
     parser.add_argument("--patience", type=int, default=5, help="Early stopping patience (antal epoker uden forbedring)")
     parser.add_argument("--monitor", type=str, default="val_loss", choices=["val_loss", "val_acc"], help="Monitor for early stopping")
     parser.add_argument("--min_delta", type=float, default=1e-4, help="Minimum forbedring (delta) før early stopping resetter")
+    parser.add_argument("--mixed_precision", action="store_true", help="Aktiver mixed precision (AMP/fp16, kræver GPU)")
     args = parser.parse_args()
 
     if args.mode == "optuna":
@@ -426,6 +456,7 @@ if __name__ == "__main__":
             target=args.target,
             n_trials=args.trials,
             test_size=args.test_size,
+            mixed_precision=args.mixed_precision,
         )
     else:
         train_pytorch_model(
@@ -446,4 +477,5 @@ if __name__ == "__main__":
             monitor=args.monitor,
             min_delta=args.min_delta,
             mlflow_exp=args.mlflow_exp,
+            mixed_precision=args.mixed_precision,
         )

@@ -105,9 +105,15 @@ def train_lightgbm_model(
             mlflow.log_artifact(FEATURES_PATH)
 
     # Split uden shuffle (tidsserie)
+    df = df.reset_index(drop=True)
     split_idx = int(len(df) * (1 - test_size))
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
+
+    print(f"[INFO] Train: {len(X_train)}, Val: {len(X_val)}")
+    print("[INFO] Train slutter:", df.iloc[split_idx-1]["timestamp"] if "timestamp" in df.columns else split_idx-1)
+    print("[INFO] Val starter:", df.iloc[split_idx]["timestamp"] if "timestamp" in df.columns else split_idx)
+    print(f"[INFO] Unikke targets: {sorted(y.unique())}")
 
     # MLflow experiment tracking
     if use_mlflow and MLFLOW_AVAILABLE:
@@ -128,7 +134,7 @@ def train_lightgbm_model(
             "random_state": random_state,
         })
 
-    # Model (NB: verbose SKAL IKKE gives til fit i nyeste lightgbm)
+    # Model
     model = lgb.LGBMClassifier(
         num_leaves=num_leaves,
         n_estimators=n_estimators,
@@ -138,7 +144,7 @@ def train_lightgbm_model(
         random_state=random_state,
         class_weight="balanced",
         n_jobs=-1,
-        verbose=-1,  # NB: verbose her, ikke i fit!
+        verbose=-1,
     )
     model.fit(X_train, y_train, eval_set=[(X_val, y_val)])
 
@@ -160,10 +166,13 @@ def train_lightgbm_model(
 
     # Gem model (checkpoint)
     if save_model:
-        model.booster_.save_model(MODEL_PATH)
-        print(f"✅ Model gemt til: {MODEL_PATH}")
-        if use_mlflow and MLFLOW_AVAILABLE:
-            mlflow.lightgbm.log_model(model, "model")
+        try:
+            model.booster_.save_model(MODEL_PATH)
+            print(f"✅ Model gemt til: {MODEL_PATH}")
+            if use_mlflow and MLFLOW_AVAILABLE:
+                mlflow.lightgbm.log_model(model, "model")
+        except Exception as e:
+            print(f"[ADVARSEL] Kunne ikke gemme model: {e}")
 
     # Log til fil
     log_str = f"\n== LightGBM-træningslog {now} ==\n" \

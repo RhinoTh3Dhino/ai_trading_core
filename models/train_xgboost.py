@@ -108,9 +108,15 @@ def train_xgboost_model(
             mlflow.log_artifact(FEATURES_PATH)
 
     # Split uden shuffle (tidsserie)
+    df = df.reset_index(drop=True)
     split_idx = int(len(df) * (1 - test_size))
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
+
+    print(f"[INFO] Train: {len(X_train)}, Val: {len(X_val)}")
+    print("[INFO] Train slutter:", df.iloc[split_idx-1]["timestamp"] if "timestamp" in df.columns else split_idx-1)
+    print("[INFO] Val starter:", df.iloc[split_idx]["timestamp"] if "timestamp" in df.columns else split_idx)
+    print(f"[INFO] Unikke targets: {sorted(y.unique())}")
 
     # MLflow experiment tracking
     if use_mlflow and MLFLOW_AVAILABLE:
@@ -171,10 +177,13 @@ def train_xgboost_model(
 
     # Gem model (checkpoint)
     if save_model:
-        model.save_model(MODEL_PATH)
-        print(f"✅ Model gemt til: {MODEL_PATH}")
-        if use_mlflow and MLFLOW_AVAILABLE:
-            mlflow.xgboost.log_model(model, "model")
+        try:
+            model.save_model(MODEL_PATH)
+            print(f"✅ Model gemt til: {MODEL_PATH}")
+            if use_mlflow and MLFLOW_AVAILABLE:
+                mlflow.xgboost.log_model(model, "model")
+        except Exception as e:
+            print(f"[ADVARSEL] Kunne ikke gemme model: {e}")
 
     # Log til fil
     log_str = f"\n== XGBoost-træningslog {now} ==\n" \

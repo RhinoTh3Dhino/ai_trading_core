@@ -6812,3 +6812,27 @@ TypeError: plot_performance() got an unexpected keyword argument 'model_type'
 [2025-07-12 21:12:24] Besked sendt OK.
 [2025-07-12 21:12:42] Sender besked: ✅ LightGBM træning færdig – Val acc: 0.625
 [2025-07-12 21:12:42] Besked sendt OK.
+[2025-07-12 22:48:33] Sender besked: 🤖 2025-07-12 22:48:33 | TensorFlow 2.16.1 | Python 3.11.9 | Device: CPU | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 22:48:33] Besked sendt OK.
+[2025-07-12 22:53:20] Sender besked: 🤖 2025-07-12 22:53:20 | TensorFlow 2.16.1 | Python 3.11.9 | Device: CPU | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 22:53:20] Besked sendt OK.
+[2025-07-12 22:53:30] Sender besked: ✅ Keras træning færdig – Val acc: 0.500
+[2025-07-12 22:53:30] Besked sendt OK.
+[2025-07-12 22:58:58] Sender besked: 🤖 2025-07-12 22:58:58 | TensorFlow 2.16.1 | Python 3.11.9 | Device: CPU | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 22:58:58] Besked sendt OK.
+[2025-07-12 22:59:07] Sender besked: ✅ Keras træning færdig – Val acc: 0.484
+[2025-07-12 22:59:08] Besked sendt OK.
+[2025-07-12 23:04:52] Sender besked: 🤖 2025-07-12 23:04:52 | TensorFlow 2.16.1 | Python 3.11.9 | Device: CPU | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 23:04:52] Besked sendt OK.
+[2025-07-12 23:05:00] Sender besked: ✅ Keras træning færdig – Val acc: 0.453
+[2025-07-12 23:05:01] Besked sendt OK.
+[2025-07-12 23:11:39] Sender besked: ✅ LightGBM træning færdig – Val acc: 0.625
+[2025-07-12 23:11:39] Besked sendt OK.
+[2025-07-12 23:19:15] Sender besked: 🤖 2025-07-12 23:19:15 | TensorFlow 2.16.1 | Python 3.11.9 | Device: CPU | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 23:19:15] Besked sendt OK.
+[2025-07-12 23:19:24] Sender besked: ✅ Keras træning færdig – Val acc: 0.469
+[2025-07-12 23:19:24] Besked sendt OK.
+[2025-07-12 23:19:41] Sender besked: 🤖 2025-07-12 23:19:41 | TensorFlow 2.16.1 | Python 3.11.9 | Device: CPU | Data: outputs/feature_data/btcusdt_1h_features_v1.0.0.csv | Batch: 32 | Epochs: 30 | LR: 0.001
+[2025-07-12 23:19:42] Besked sendt OK.
+[2025-07-12 23:19:51] Sender besked: ✅ Keras træning færdig – Val acc: 0.516
+[2025-07-12 23:19:51] Besked sendt OK.
