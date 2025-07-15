@@ -6878,3 +6878,96 @@ TypeError: can't convert np.ndarray of type numpy.object_. The only supported ty
 [2025-07-15 02:05:48] Besked sendt OK.
 [2025-07-15 02:05:54] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
 [2025-07-15 02:05:54] Billede sendt OK.
+[2025-07-15 03:23:33] Sender besked: 🤖 2025-07-15 03:23:33 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:23:33] Besked sendt OK.
+[2025-07-15 03:23:35] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69006,14) (19,) 
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 274, in <lambda>
+    safe_run(lambda: main(
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 192, in main
+    dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 103, in keras_lstm_predict
+    X_scaled = (X - mean) / scale
+ValueError: operands could not be broadcast together with shapes (69006,14) (19,) 
+
+[2025-07-15 03:23:35] Besked sendt OK.
+[2025-07-15 03:35:31] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69206 rækker, fil: BTCUSDT_1h_8760d.csv
+[2025-07-15 03:35:32] Besked sendt OK.
+[2025-07-15 03:37:54] Sender besked: 🤖 2025-07-15 03:37:54 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:37:55] Besked sendt OK.
+[2025-07-15 03:37:56] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69007,14) (19,) 
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 286, in <lambda>
+    safe_run(lambda: main(
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 204, in main
+    dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 119, in keras_lstm_predict
+    X_scaled = (X - mean) / scale
+ValueError: operands could not be broadcast together with shapes (69007,14) (19,) 
+
+[2025-07-15 03:37:56] Besked sendt OK.
+[2025-07-15 03:38:10] Sender besked: 🤖 2025-07-15 03:38:10 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:38:10] Besked sendt OK.
+[2025-07-15 03:38:12] Sender besked: ❌ Fejl i <lambda>: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 286, in <lambda>
+    safe_run(lambda: main(
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 207, in main
+    model = load_pytorch_model(feature_dim=X_dl.shape[1], device_str=device_str)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 90, in load_pytorch_model
+    model.load_state_dict(torch.load(model_path, map_location=device_str))
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 1026, in load
+    return _load(opened_zipfile,
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 1438, in _load
+    result = unpickler.load()
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 1408, in persistent_load
+    typed_storage = load_tensor(dtype, nbytes, key, _maybe_decode_ascii(location))
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 1382, in load_tensor
+    wrap_storage=restore_location(storage, location),
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 1308, in restore_location
+    return default_restore_location(storage, map_location)
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 391, in default_restore_location
+    result = fn(storage, location)
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 266, in _cuda_deserialize
+    device = validate_cuda_device(location)
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv_tf_gpu\lib\site-packages\torch\serialization.py", line 250, in validate_cuda_device
+    raise RuntimeError('Attempting to deserialize object on a CUDA '
+RuntimeError: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.
+
+[2025-07-15 03:38:12] Besked sendt OK.
+[2025-07-15 03:49:24] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69206 rækker, fil: BTCUSDT_1h_8760d.csv
+[2025-07-15 03:49:24] Besked sendt OK.
+[2025-07-15 03:51:08] Sender besked: 🤖 2025-07-15 03:51:08 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:51:08] Besked sendt OK.
+[2025-07-15 03:51:09] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69007,14) (19,) 
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 288, in <lambda>
+    safe_run(lambda: main(
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 206, in main
+    dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 121, in keras_lstm_predict
+    X_scaled = (X - mean) / scale
+ValueError: operands could not be broadcast together with shapes (69007,14) (19,) 
+
+[2025-07-15 03:51:10] Besked sendt OK.
+[2025-07-15 03:51:27] Sender besked: 🤖 2025-07-15 03:51:27 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:51:28] Besked sendt OK.
+[2025-07-15 03:51:33] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
+[2025-07-15 03:51:33] Billede sendt OK.
+[2025-07-15 03:52:01] Sender besked: 🤖 2025-07-15 03:52:01 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: backtest | strategy: ensemble | feature_file: data/features/BTCUSDT_1h_features_8760d.csv
+[2025-07-15 03:52:01] Besked sendt OK.
+[2025-07-15 03:52:03] Sender besked: 📊 Regime-performance:
+{-1: {'num_trades': 7752, 'win_rate': 0.19814241486068113, 'profit_pct': 0.9126253130082225, 'drawdown_pct': -99.81124103373219}, 1: {'num_trades': 7962, 'win_rate': 0.19605626726953027, 'profit_pct': 2.153836130129284, 'drawdown_pct': -99.8137912847352}}
+[2025-07-15 03:52:03] Besked sendt OK.

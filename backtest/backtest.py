@@ -9,9 +9,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
 from utils.telegram_utils import send_message
-from utils.log_utils import log_device_status  # <-- BRUG DENNE!
+from utils.log_utils import log_device_status
 
-# === Universal auto-loader til feature-CSV ===
 def load_csv_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
@@ -21,16 +20,13 @@ def load_csv_auto(file_path):
     else:
         return pd.read_csv(file_path)
 
-# Ensemble/voting
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
 from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
 
-# Klassiske strategier
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 from strategies.ema_cross_strategy import ema_cross_signals
 
-# Avancerede strategier
 from strategies.advanced_strategies import (
     ema_crossover_strategy,
     ema_rsi_regime_strategy,
@@ -41,10 +37,8 @@ from strategies.advanced_strategies import (
     add_adaptive_sl_tp,
 )
 
-# Gridsearch
 from strategies.gridsearch_strategies import grid_search_sl_tp_ema
 
-# ---- Settings ----
 FORCE_DEBUG = False
 FORCE_DUMMY_TRADES = False
 FEE = 0.0004
@@ -94,6 +88,18 @@ def force_trade_signals(length):
         signals.append(1 if i % 2 == 0 else -1)
     return np.array(signals)
 
+def clean_signals(signals, length):
+    """Accepterer signals som np.array, pd.Series eller liste – sikrer længde og int-type."""
+    if isinstance(signals, pd.Series):
+        signals = signals.values
+    signals = np.array(signals).astype(int)
+    if len(signals) != length:
+        print(f"[ADVARSEL] Signal-længde ({len(signals)}) matcher ikke data-længde ({length}) – tilpasser med 0.")
+        out = np.zeros(length, dtype=int)
+        out[:min(len(signals), length)] = signals[:min(len(signals), length)]
+        return out
+    return signals
+
 def run_backtest(
     df: pd.DataFrame,
     signals: list = None,
@@ -109,6 +115,7 @@ def run_backtest(
         if col not in df.columns:
             raise ValueError(f"❌ Mangler kolonnen '{col}' i DataFrame til backtest! ({list(df.columns)})")
     if signals is not None:
+        signals = clean_signals(signals, len(df))
         df["signal"] = signals
     elif "signal" not in df.columns:
         raise ValueError("Ingen signaler angivet til backtest!")
@@ -258,7 +265,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-    # === LOG device- og pipeline-status (pro-style, via log_utils) ===
     log_device_status(
         context="backtest",
         extra={"strategy": args.strategy, "feature_file": args.feature_path},
@@ -271,7 +277,6 @@ def main():
     print("Indlæst data med kolonner:", list(df.columns))
     df = compute_regime(df)
 
-    # --- Gridsearch over SL/TP/parametre (fx EMA kombinationer) ---
     if args.gridsearch:
         print("🔍 Kører gridsearch for EMA-strategier...")
         results_df = grid_search_sl_tp_ema(
@@ -280,14 +285,13 @@ def main():
             tp_grid=np.linspace(0.008, 0.025, 5),
             ema_fast_grid=[7, 9, 12, 15],
             ema_slow_grid=[21, 30, 34, 55],
-            regime_only=False,     # Du kan filtrere kun bull, bear etc.
+            regime_only=False,
             top_n=10,
             log_path="outputs/gridsearch/ema_gridsearch_results.csv"
         )
         print(results_df.head(10))
         return
 
-    # --- Vælg strategi/ensemble ---
     if FORCE_DEBUG:
         print("‼️ DEBUG: Forcerer skiftevis BUY/SELL på hele datasættet")
         signals = force_trade_signals(len(df))
@@ -308,7 +312,6 @@ def main():
             signals = rsi_mean_reversion(df)['signal']
         else:
             signals = rsi_rule_based_signals(df)
-
         print("Signal distribution:", pd.Series(signals).value_counts().to_dict())
 
     filtered_signals = signals

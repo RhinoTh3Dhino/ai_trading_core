@@ -1,3 +1,5 @@
+# features/feature_engineering.py
+
 import pandas as pd
 import hashlib
 import argparse
@@ -14,6 +16,9 @@ try:
 except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
+# === Hvis der findes en features-liste fra tidligere model, loades denne ===
+LSTM_FEATURES_PATH = "models/lstm_features.csv"
+
 def feature_hash(df: pd.DataFrame) -> str:
     """Returnerer hash af DataFrame for versionering."""
     return hashlib.md5(pd.util.hash_pandas_object(df, index=True).values).hexdigest()
@@ -21,11 +26,11 @@ def feature_hash(df: pd.DataFrame) -> str:
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     import ta
     df = df.copy()
-    # Sikrer korrekte datatyper
+    # Sikrer korrekte datatyper for alle kernekolonner
     for col in ['open', 'high', 'low', 'close', 'volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # ---- Feature engineering ----
+    # --- Klassiske tekniske indikatorer ---
     df["rsi_14"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
     df["ema_9"] = ta.trend.EMAIndicator(df["close"], window=9).ema_indicator()
     df["ema_21"] = ta.trend.EMAIndicator(df["close"], window=21).ema_indicator()
@@ -35,23 +40,24 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     df["macd"] = macd.macd()
     df["macd_signal"] = macd.macd_signal()
     df["atr_14"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
-    # Ekstra features (kan udvides)
+
+    # --- Ekstra: glidende gennemsnit, volatilitet, returns ---
     df["sma_50"] = ta.trend.SMAIndicator(df["close"], window=50).sma_indicator()
     df["sma_200"] = ta.trend.SMAIndicator(df["close"], window=200).sma_indicator()
     df["volatility_21"] = df["close"].rolling(window=21).std()
     df["returns_1h"] = df["close"].pct_change(periods=1)
     df["returns_24h"] = df["close"].pct_change(periods=24)
-    # Regime-beregning (bull=1, bear=-1, neutral=0)
-    df["regime"] = 0
-    df.loc[df["ema_50"] > df["ema_200"], "regime"] = 1   # bull
-    df.loc[df["ema_50"] < df["ema_200"], "regime"] = -1  # bear
 
-    # ---- Target engineering ----
-    # Eksempel: Target = 1 hvis close næste døgn > 1% op, ellers 0 (binary classification)
+    # --- Regime: bull=1, bear=-1, neutral=0 (kan bruges direkte i ML) ---
+    df["regime"] = 0
+    df.loc[df["ema_50"] > df["ema_200"], "regime"] = 1
+    df.loc[df["ema_50"] < df["ema_200"], "regime"] = -1
+
+    # --- Target engineering ---
     df["future_return"] = df["close"].shift(-24) / df["close"] - 1
     df["target"] = (df["future_return"] > 0.01).astype(int)
 
-    # ---- Drop rækker med NaN i kritiske kolonner ----
+    # --- Drop rækker med NaN i kritiske kolonner ---
     critical_cols = [
         "close", "ema_200", "rsi_14", "ema_9", "ema_21", "ema_50",
         "macd", "macd_signal", "atr_14", "regime", "target"
@@ -61,6 +67,17 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     after = len(df)
     if before != after:
         print(f"ℹ️ {before-after} rækker droppet pga. NaN i features/target.")
+
+    # --- Sikrer at alle tidligere brugte features (lstm_features.csv) er med ---
+    if os.path.exists(LSTM_FEATURES_PATH):
+        lstm_features = pd.read_csv(LSTM_FEATURES_PATH, header=None)[0].tolist()
+        missing = [col for col in lstm_features if col not in df.columns]
+        if missing:
+            print(f"‼️ ADVARSEL: Følgende features mangler og bliver fyldt med 0: {missing}")
+            for col in missing:
+                df[col] = 0.0  # Udfyld manglende features med 0 (alternativ: np.nan eller fill f.eks. med mean)
+        # Sortér kolonner så rækkefølge matcher lstm_features
+        df = df[[col for col in lstm_features if col in df.columns] + [c for c in df.columns if c not in lstm_features]]
     return df
 
 def find_latest_datafile(pattern: str = "data/BTCUSDT_1h_*.csv") -> str:
@@ -72,7 +89,7 @@ def find_latest_datafile(pattern: str = "data/BTCUSDT_1h_*.csv") -> str:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, required=False, help="Input-CSV med rå data (valgfri, finder selv nyeste hvis ikke angivet)")
+    parser.add_argument("--input", type=str, required=False, help="Input-CSV med rå data (finder selv nyeste hvis ikke angivet)")
     parser.add_argument("--output", type=str, required=True, help="Output-CSV med features")
     parser.add_argument("--version", type=str, default="v1.0.0", help="Feature-version (logges i meta og header)")
     args = parser.parse_args()
@@ -116,7 +133,7 @@ def main():
         )
         df_feat.to_csv(f, index=False)
 
-    # Gem hash/version i separat meta-fil (inkl. versionsinfo)
+    # Gem hash/version i separat meta-fil
     meta_path = os.path.splitext(args.output)[0] + "_meta.txt"
     with open(meta_path, "w", encoding="utf-8") as f:
         f.write(f"feature_version: {args.version}\n")

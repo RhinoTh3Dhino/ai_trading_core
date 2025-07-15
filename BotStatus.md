@@ -29,3 +29,11 @@
 2025-07-15 01:43:40 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
 [2025-07-15 02:04:27.421198] ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69205 rækker, fil: BTCUSDT_1h_8760d.csv
 2025-07-15 02:05:48 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+2025-07-15 03:23:33 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:34:45.184155] ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69206 rækker, fil: BTCUSDT_1h_8760d.csv
+2025-07-15 03:37:54 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+2025-07-15 03:38:10 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 03:48:35.617300] ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69206 rækker, fil: BTCUSDT_1h_8760d.csv
+2025-07-15 03:51:08 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+2025-07-15 03:51:27 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+2025-07-15 03:52:01 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: backtest | strategy: ensemble | feature_file: data/features/BTCUSDT_1h_features_8760d.csv
