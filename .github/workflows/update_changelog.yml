@@ -8,7 +8,7 @@ on:
 
 jobs:
   changelog:
-    runs-on: ubuntu-22.04   # <-- FIX: Brug 22.04 så Python 3.10 er tilgængelig
+    runs-on: ubuntu-22.04   # BRUG 22.04 for Python 3.10 support
 
     permissions:
       contents: write   # Tillad skrivning til repo (nødvendigt for auto-commit/push)
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10   # <-- KØR 3.10 FOR MAKSIMUM KOMPATIBILITET
+          python-version: '3.10'   # Python 3.10 er tilgængelig på ubuntu-22.04
 
       - name: Installer pip & afhængigheder
         run: |
@@ -72,7 +72,6 @@ jobs:
           else
             git commit -m "Auto-update CHANGELOG.md"
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            # Robust pull før push for at undgå rejected push:
             git pull --autostash origin $BRANCH
             git push origin $BRANCH
           fi
