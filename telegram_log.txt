@@ -6971,3 +6971,22 @@ ValueError: operands could not be broadcast together with shapes (69007,14) (19,
 [2025-07-15 03:52:03] Sender besked: 📊 Regime-performance:
 {-1: {'num_trades': 7752, 'win_rate': 0.19814241486068113, 'profit_pct': 0.9126253130082225, 'drawdown_pct': -99.81124103373219}, 1: {'num_trades': 7962, 'win_rate': 0.19605626726953027, 'profit_pct': 2.153836130129284, 'drawdown_pct': -99.8137912847352}}
 [2025-07-15 03:52:03] Besked sendt OK.
+[2025-07-15 20:47:02] Sender besked: Testbesked fra din AI trading bot!
+[2025-07-15 20:47:02] Besked sendt OK.
+[2025-07-15 20:47:02] Sender besked: 💓 Botten kører stadig! (20:47:02)
+[2025-07-15 20:47:02] Besked sendt OK.
+[2025-07-15 20:47:02] Heartbeat sendt.
+[2025-07-15 20:47:02] Sender besked: <b>📊 Performance Report BTCUSDT 1h 0-200</b>
+Sharpe: <b>1.12</b> | Calmar: <b>0.95</b> | Sortino: <b>1.34</b>
+Volatilitet: <b>2.50</b>
+Win-rate: <b>43.2%</b> | Profit faktor: <b>1.45</b>
+Kelly: <b>0.18</b> | Expectancy: <b>1.30%</b>
+Profit: <b>1234.00 (12.30%)</b>
+Max Drawdown: <b>-22.00%</b>
+Antal handler: <b>84</b>
+Bedste: <b>5.10%</b> | Værste: <b>-4.40%</b>
+
+[2025-07-15 20:47:02] Besked sendt OK.
+[2025-07-15 20:47:02] Performance report sendt til Telegram.
+[2025-07-15 20:47:02] Sender besked: Plot-utils ikke tilgængelig – trend-graf ikke genereret.
+[2025-07-15 20:47:03] Besked sendt OK.

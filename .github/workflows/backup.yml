@@ -16,9 +16,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.10   # MATCH RESTEN (TensorFlow 2.10.1 support)
 
       - name: Install dependencies
         run: |
@@ -38,6 +38,7 @@ jobs:
 
       # Upload backup som artifact (husk at backup.py skal gemme til fx backups/)
       - name: Upload backup artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backup
@@ -46,3 +47,12 @@ jobs:
       # (Ekstra step: log output for overblik)
       - name: Print backup-log summary
         run: echo "✅ Backup-workflow færdig – tjek artifacts eller logs for detaljer"
+
+      # (Ekstra - Telegram notification, hvis ønsket)
+      # - name: Send Telegram notification
+      #   if: always()
+      #   uses: appleboy/telegram-action@v0.1.1
+      #   with:
+      #     to: ${{ secrets.TELEGRAM_CHAT_ID }}
+      #     token: ${{ secrets.TELEGRAM_TOKEN }}
+      #     message: "✅ Auto-backup er færdig og artifact er uploadet! 🚀"

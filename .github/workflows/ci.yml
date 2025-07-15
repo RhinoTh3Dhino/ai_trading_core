@@ -37,7 +37,6 @@ jobs:
       run: |
         python main.py || true  # Kør videre selv ved fejl
 
-    # ==== NYT: Sikrer at alle outputfiler ALTID eksisterer, også hvis main.py fejler ====
     - name: Opret dummy outputfiler hvis de mangler (fail-safe)
       run: |
         mkdir -p outputs
@@ -45,12 +44,10 @@ jobs:
         touch outputs/balance_trend.png
         touch BotStatus.md
         touch CHANGELOG.md
-        # Skriv header til performance_history.csv hvis filen er tom
         if [ ! -s outputs/performance_history.csv ]; then
           echo "timestamp,Navn,Balance" > outputs/performance_history.csv
         fi
 
-    # ==== Tjek at alle centrale outputfiler findes (fail hvis ikke) ====
     - name: Tjek at alle centrale outputfiler findes
       run: |
         test -f outputs/performance_history.csv
@@ -59,9 +56,8 @@ jobs:
         test -f CHANGELOG.md
         echo "✅ Alle vigtige outputfiler findes!"
 
-    # ==== Upload artifacts: outputs, tests, logs, grafer ====
     - name: Upload artifacts (outputs, tests, logs, grafer)
-      if: always()  # Kør selv ved fejl!
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: outputs-and-tests
@@ -73,11 +69,9 @@ jobs:
           !**/*.pyc
           !**/__pycache__/
 
-    # ==== Struktur og dependencies tjek ====
     - name: Check struktur og dependencies
       run: echo "✅ Struktur og artifacts OK"
 
-    # ==== CI NOTIFIKATION: Telegram besked ====
     - name: Send Telegram notification (CI-status)
       if: always()
       env:
