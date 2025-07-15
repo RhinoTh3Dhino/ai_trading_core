@@ -8,7 +8,7 @@ on:
 
 jobs:
   changelog:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04   # <-- FIX: Brug 22.04 så Python 3.10 er tilgængelig
 
     permissions:
       contents: write   # Tillad skrivning til repo (nødvendigt for auto-commit/push)
