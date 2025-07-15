@@ -58,6 +58,7 @@ gputil==1.4.0   # GPU monitorering
 
 # === Market Data & Trading-API ===
 python-binance==1.0.19   # API til Binance data og trading
+ccxt==4.1.98             # <-- TILFØJET: CCXT til alle test og fetch_data
 
 # === Telegram, API, CI, Kommunikation ===
 python-telegram-bot==20.7
