@@ -1,5 +1,3 @@
-# utils/telegram_utils.py
-
 import os
 import requests
 import datetime
