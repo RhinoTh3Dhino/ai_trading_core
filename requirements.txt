@@ -17,7 +17,7 @@ numpy==1.24.3
 oauthlib==3.3.1
 opt_einsum==3.4.0
 packaging>=20.0,<25.0
-protobuf==3.19.6          # <--- KLART!
+protobuf==3.19.6
 six==1.17.0
 tensorboard==2.10.1
 tensorboard-data-server==0.6.1
