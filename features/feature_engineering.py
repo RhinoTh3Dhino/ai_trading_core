@@ -24,6 +24,8 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     # Sikrer korrekte datatyper
     for col in ['open', 'high', 'low', 'close', 'volume']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    # ---- Feature engineering ----
     df["rsi_14"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
     df["ema_9"] = ta.trend.EMAIndicator(df["close"], window=9).ema_indicator()
     df["ema_21"] = ta.trend.EMAIndicator(df["close"], window=21).ema_indicator()
@@ -33,12 +35,21 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     df["macd"] = macd.macd()
     df["macd_signal"] = macd.macd_signal()
     df["atr_14"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
-    # Robust regime-beregning (bull: 0, bear: 1)
+    # Ekstra features (kan udvides)
+    df["sma_50"] = ta.trend.SMAIndicator(df["close"], window=50).sma_indicator()
+    df["sma_200"] = ta.trend.SMAIndicator(df["close"], window=200).sma_indicator()
+    df["volatility_21"] = df["close"].rolling(window=21).std()
+    df["returns_1h"] = df["close"].pct_change(periods=1)
+    df["returns_24h"] = df["close"].pct_change(periods=24)
+    # Regime-beregning (bull=1, bear=-1, neutral=0)
     df["regime"] = 0
-    df.loc[df["ema_50"] > df["ema_200"], "regime"] = 0  # bull
-    df.loc[df["ema_50"] < df["ema_200"], "regime"] = 1  # bear
-    # Target-label: 1 hvis næste close > nuværende close, ellers 0
-    df["target"] = (df["close"].shift(-1) > df["close"]).astype(int)
+    df.loc[df["ema_50"] > df["ema_200"], "regime"] = 1   # bull
+    df.loc[df["ema_50"] < df["ema_200"], "regime"] = -1  # bear
+
+    # ---- Target engineering ----
+    # Eksempel: Target = 1 hvis close næste døgn > 1% op, ellers 0 (binary classification)
+    df["future_return"] = df["close"].shift(-24) / df["close"] - 1
+    df["target"] = (df["future_return"] > 0.01).astype(int)
 
     # ---- Drop rækker med NaN i kritiske kolonner ----
     critical_cols = [

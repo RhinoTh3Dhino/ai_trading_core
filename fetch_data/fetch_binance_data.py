@@ -10,34 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.telegram_utils import send_message
 
 from binance.client import Client
-import ta  # pip install ta
-
-def add_technical_indicators(df):
-    df = df.copy()
-    for col in ['open', 'high', 'low', 'close', 'volume']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-    df["rsi_14"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
-    df["ema_9"] = ta.trend.EMAIndicator(df["close"], window=9).ema_indicator()
-    df["ema_21"] = ta.trend.EMAIndicator(df["close"], window=21).ema_indicator()
-    df["ema_50"] = ta.trend.EMAIndicator(df["close"], window=50).ema_indicator()
-    df["ema_200"] = ta.trend.EMAIndicator(df["close"], window=200).ema_indicator()
-    macd = ta.trend.MACD(df["close"])
-    df["macd"] = macd.macd()
-    df["macd_signal"] = macd.macd_signal()
-    df["atr_14"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
-
-    # --- Regime labels som string ---
-    df["regime"] = "neutral"
-    df.loc[df["ema_50"] > df["ema_200"], "regime"] = "bull"
-    df.loc[df["ema_50"] < df["ema_200"], "regime"] = "bear"
-    return df
-
-def add_target_column(df, threshold=0):
-    """Binært target: 1 hvis close næste bar > nu, ellers 0."""
-    df = df.copy()
-    df["target"] = (df["close"].shift(-1) > df["close"] + threshold).astype(int)
-    df["target"] = df["target"].astype("Int64")   # Så sidste række bliver NaN/blank
-    return df
 
 def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30, rolling_window=None):
     client = Client(api_key=None, api_secret=None)
@@ -63,26 +35,28 @@ def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30, rolli
 def fetch_and_save(symbol: str, interval: str, outdir: str = "data", lookback_days: int = 30, rolling_window: int = None) -> pd.DataFrame:
     os.makedirs(outdir, exist_ok=True)
     now = datetime.now()
-    filename = f"{symbol.lower()}_{interval}_features_{lookback_days}d.csv"
+    filename = f"{symbol.upper()}_{interval}_{lookback_days}d.csv"
     outpath = os.path.join(outdir, filename)
     try:
         df = fetch_binance_ohlcv(symbol, interval, lookback_days, rolling_window)
-        if set(['timestamp', 'open', 'high', 'low', 'close', 'volume']).issubset(df.columns):
-            df = add_technical_indicators(df)
-            df = add_target_column(df)
-            # --- Drop NaN (forårsaget af indikator-beregning) og sidste target NaN ---
-            df = df.dropna().reset_index(drop=True)
-            df.to_csv(outpath, index=False)
-            msg = f"✅ Feature-data gemt: {symbol} {interval}, {len(df)} rækker, fil: {filename}"
-            print(msg)
-            send_message(msg)
-            with open("BotStatus.md", "a", encoding="utf-8") as logf:
-                logf.write(f"[{now}] {msg}\n")
-            return df
-        else:
-            raise Exception("En eller flere nødvendige kolonner mangler i hentet data.")
+        # Konverter kolonner til numerisk datatype (undtagen timestamp)
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        # Drop NaN rækker hvis de findes
+        before = len(df)
+        df = df.dropna(subset=['open', 'high', 'low', 'close', 'volume'])
+        after = len(df)
+        if before != after:
+            print(f"ℹ️ {before-after} rækker droppet pga. NaN i OHLCV.")
+        df.to_csv(outpath, index=False)
+        msg = f"✅ Rå OHLCV-data gemt: {symbol} {interval}, {len(df)} rækker, fil: {filename}"
+        print(msg)
+        send_message(msg)
+        with open("BotStatus.md", "a", encoding="utf-8") as logf:
+            logf.write(f"[{now}] {msg}\n")
+        return df
     except Exception as e:
-        files = sorted(glob.glob(os.path.join(outdir, f"{symbol.lower()}_{interval}_features_*.csv")), key=os.path.getmtime)
+        files = sorted(glob.glob(os.path.join(outdir, f"{symbol.upper()}_{interval}_*.csv")), key=os.path.getmtime)
         if files:
             fallback = files[-1]
             df = pd.read_csv(fallback)
@@ -104,7 +78,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="BTCUSDT")
     parser.add_argument("--interval", default="1h")
-    parser.add_argument("--outdir", default="outputs/feature_data")
+    parser.add_argument("--outdir", default="data")
     parser.add_argument("--lookback", type=int, default=30)
     parser.add_argument("--rolling_window", type=int, default=None, help="Antal seneste bars at bruge (valgfrit)")
     args = parser.parse_args()

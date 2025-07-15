@@ -1,0 +1,60 @@
+# Brug altid LF (Unix-style) line endings for alle tekstfiler (anbefalet for Python/data)
+* text=auto eol=lf
+
+# Python scripts og notebooks
+*.py  text eol=lf
+*.ipynb text eol=lf
+
+# Tekstbaserede konfigurations- og requirementsfiler
+*.txt text eol=lf
+*.md  text eol=lf
+*.csv text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ini text eol=lf
+*.toml text eol=lf
+*.env text eol=lf
+
+# Shell-, batch- og scripts
+*.sh  text eol=lf
+*.ps1 text eol=lf
+*.bat text eol=crlf
+*.psm1 text eol=lf
+
+# GitHub workflows
+*.github/workflows/* text eol=lf
+
+# Binære filer - ingen konvertering!
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.h5 binary
+*.pt binary
+*.pkl binary
+*.pb binary
+*.whl binary
+
+# Model- og vektorfiler
+*.onnx binary
+*.tflite binary
+
+# Microsoft Office og lignende
+*.xlsx binary
+*.xls binary
+*.docx binary
+
+# Fjern notebook outputs fra line ending konvertering (valgfrit, men god praksis)
+.ipynb filter=strip-notebook-output
+
+# Lad .gitattributes selv bruge LF
+.gitattributes text eol=lf
+
+# Lad .gitignore selv bruge LF
+.gitignore text eol=lf

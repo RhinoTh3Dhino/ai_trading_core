@@ -6836,3 +6836,45 @@ TypeError: plot_performance() got an unexpected keyword argument 'model_type'
 [2025-07-12 23:19:42] Besked sendt OK.
 [2025-07-12 23:19:51] Sender besked: ✅ Keras træning færdig – Val acc: 0.516
 [2025-07-12 23:19:51] Besked sendt OK.
+[2025-07-15 01:16:39] Sender besked: ✅ Feature-data gemt: ETHUSDT 1h, 8559 rækker, fil: ethusdt_1h_features_365d.csv
+[2025-07-15 01:16:39] Besked sendt OK.
+[2025-07-15 01:17:45] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 8559 rækker, fil: btcusdt_1h_features_365d.csv
+[2025-07-15 01:17:45] Besked sendt OK.
+[2025-07-15 01:19:10] Sender besked: 🤖 2025-07-15 01:19:10 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 01:19:11] Besked sendt OK.
+[2025-07-15 01:19:11] Sender besked: ❌ Fejl i <lambda>: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint8, and bool.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 243, in <lambda>
+    safe_run(lambda: main(
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 163, in main
+    dl_preds, dl_probas = pytorch_predict(model, X_dl, device_str=device_str)
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 76, in pytorch_predict
+    X_tensor = torch.tensor(X.values, dtype=torch.float32).to(device_str)
+TypeError: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint8, and bool.
+
+[2025-07-15 01:19:11] Besked sendt OK.
+[2025-07-15 01:23:47] Sender besked: 🤖 2025-07-15 01:23:47 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 01:23:47] Besked sendt OK.
+[2025-07-15 01:23:49] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
+[2025-07-15 01:23:49] Billede sendt OK.
+[2025-07-15 01:30:54] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 69005 rækker, fil: btcusdt_1h_features_8760d.csv
+[2025-07-15 01:30:54] Besked sendt OK.
+[2025-07-15 01:31:40] Sender besked: ✅ Feature-data gemt: ETHUSDT 1h, 69005 rækker, fil: ethusdt_1h_features_8760d.csv
+[2025-07-15 01:31:40] Besked sendt OK.
+[2025-07-15 01:39:35] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 69005 rækker, fil: btcusdt_1h_features_8760d.csv
+[2025-07-15 01:39:35] Besked sendt OK.
+[2025-07-15 01:43:10] Sender besked: ✅ Feature-data gemt: BTCUSDT 1h, 69005 rækker, fil: btcusdt_1h_features_8760d.csv
+[2025-07-15 01:43:10] Besked sendt OK.
+[2025-07-15 01:43:40] Sender besked: 🤖 2025-07-15 01:43:40 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 01:43:40] Besked sendt OK.
+[2025-07-15 01:43:41] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
+[2025-07-15 01:43:41] Billede sendt OK.
+[2025-07-15 02:05:18] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69205 rækker, fil: BTCUSDT_1h_8760d.csv
+[2025-07-15 02:05:19] Besked sendt OK.
+[2025-07-15 02:05:48] Sender besked: 🤖 2025-07-15 02:05:48 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-15 02:05:48] Besked sendt OK.
+[2025-07-15 02:05:54] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
+[2025-07-15 02:05:54] Billede sendt OK.

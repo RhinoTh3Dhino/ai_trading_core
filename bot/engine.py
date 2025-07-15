@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message, send_image
-from utils.ensemble_utils import load_best_ensemble_params  # <-- Nu bruges kun denne centrale version!
+from utils.ensemble_utils import load_best_ensemble_params
 
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
@@ -72,8 +72,19 @@ def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device_str="c
     return model
 
 def pytorch_predict(model, X, device_str="cpu"):
+    # Robust cast: konverter alle columns til numerisk (float), map evt. regime, og fyld NaN med 0
+    X_ = X.copy()
+    if "regime" in X_.columns and not np.issubdtype(X_["regime"].dtype, np.number):
+        print("[INFO] Omdanner 'regime' fra tekst til tal.")
+        regime_map = {"bull": 1, "neutral": 0, "bear": -1}
+        X_["regime"] = X_["regime"].map(regime_map).fillna(0)
+    # Tving alle columns til numerisk (float), NaN->0
+    X_ = X_.apply(pd.to_numeric, errors="coerce").fillna(0)
+    # Check for object/ikke-tallene columns
+    if (X_.dtypes == object).any():
+        print("⚠️ Advarsel: Der er stadig ikke-numeriske kolonner!", X_.dtypes)
     with torch.no_grad():
-        X_tensor = torch.tensor(X.values, dtype=torch.float32).to(device_str)
+        X_tensor = torch.tensor(X_.values, dtype=torch.float32).to(device_str)
         logits = model(X_tensor)
         probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()
         preds = np.argmax(probs, axis=1)
@@ -102,7 +113,6 @@ def main(
     device_str=None,
     FORCE_DEBUG=False
 ):
-    # Device-detection og logging (centralt)
     device_str = device_str or ("cuda" if torch.cuda.is_available() else "cpu")
     device_info = log_device_status(
         context="engine",
@@ -121,7 +131,6 @@ def main(
     )
     monitor.start()
 
-    # TensorBoard-writer til inference metrics
     tb_run_name = f"engine_inference_{symbol}_{interval}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
 
@@ -131,7 +140,6 @@ def main(
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
-        # --- Sikrer feature match til PyTorch-model (1:1) ---
         trained_features = load_trained_feature_list()
         if trained_features is not None:
             missing = [f for f in trained_features if f not in df.columns]
