@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10  # <-- MATCH CI/BUILD PIPELINE
+          python-version: 3.10   # <-- KØR 3.10 FOR MAKSIMUM KOMPATIBILITET
 
       - name: Installer pip & afhængigheder
         run: |

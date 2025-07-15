@@ -38,7 +38,7 @@ jobs:
 
       # Upload backup som artifact (husk at backup.py skal gemme til fx backups/)
       - name: Upload backup artifact
-        if: always()
+        if: always()   # Upload artifacts uanset succes eller fejl!
         uses: actions/upload-artifact@v4
         with:
           name: backup
