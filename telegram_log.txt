@@ -7057,3 +7057,235 @@ Train ML: <b>0.65%</b> | Val ML: <b>0.65%</b>
 [2025-07-17 00:03:57] Ensemble metrics sendt.
 [2025-07-17 00:03:58] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
 [2025-07-17 00:03:58] Billede sendt OK.
+[2025-07-17 00:25:13] Sender besked: 🤖 2025-07-17 00:25:13 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test.csv
+[2025-07-17 00:25:14] Besked sendt OK.
+[2025-07-17 00:25:14] Sender besked: ❌ Fejl i main: 'profit'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas\\_libs\\hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'profit'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 370, in main
+    metrics = calc_backtest_metrics(trades_df, balance_df)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 274, in calc_backtest_metrics
+    metrics = advanced_performance_metrics(trades_df, balance_df, initial_balance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 237, in advanced_performance_metrics
+    losses = (trades_df['profit'] < 0).astype(int)
+              ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'profit'
+
+[2025-07-17 00:25:14] Besked sendt OK.
+[2025-07-17 00:33:54] Sender besked: 🤖 2025-07-17 00:33:54 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test.csv
+[2025-07-17 00:33:54] Besked sendt OK.
+[2025-07-17 00:33:54] Sender besked: Walk-forward vindue 1:
+profit_pct: 0.0
+win_rate: None
+drawdown_pct: 0.0
+num_trades: 0
+max_consec_losses: 0
+recovery_bars: -1
+profit_factor: N/A
+sharpe: 0
+sortino: 0
+[2025-07-17 00:33:54] Besked sendt OK.
+[2025-07-17 00:33:54] Sender besked: Walk-forward vindue 2:
+profit_pct: 0.0
+win_rate: None
+drawdown_pct: 0.0
+num_trades: 0
+max_consec_losses: 0
+recovery_bars: -1
+profit_factor: N/A
+sharpe: 0
+sortino: 0
+[2025-07-17 00:33:54] Besked sendt OK.
+[2025-07-17 00:33:54] Sender besked: Walk-forward vindue 3:
+profit_pct: 0.0
+win_rate: None
+drawdown_pct: 0.0
+num_trades: 0
+max_consec_losses: 0
+recovery_bars: -1
+profit_factor: N/A
+sharpe: 0
+sortino: 0
+[2025-07-17 00:33:55] Besked sendt OK.
+[2025-07-17 00:40:32] Sender besked: 🤖 2025-07-17 00:40:32 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test.csv
+[2025-07-17 00:40:32] Besked sendt OK.
+[2025-07-17 00:40:32] Sender besked: Signal dist vindue 1: {-1: 52, 1: 51}
+[2025-07-17 00:40:32] Besked sendt OK.
+[2025-07-17 00:40:32] Sender besked: Walk-forward vindue 1:
+profit_pct: -0.59
+win_rate: None
+drawdown_pct: -0.55
+num_trades: 6
+max_consec_losses: 1
+recovery_bars: -1
+profit_factor: 0.31
+sharpe: -3.78
+sortino: -2.93
+[2025-07-17 00:40:32] Besked sendt OK.
+[2025-07-17 00:40:32] Sender besked: Signal dist vindue 2: {1: 52, -1: 51}
+[2025-07-17 00:40:32] Besked sendt OK.
+[2025-07-17 00:40:32] Sender besked: Walk-forward vindue 2:
+profit_pct: -0.73
+win_rate: None
+drawdown_pct: -1.11
+num_trades: 15
+max_consec_losses: 1
+recovery_bars: -1
+profit_factor: 3.65
+sharpe: -2.09
+sortino: -16734662760605.27
+[2025-07-17 00:40:33] Besked sendt OK.
+[2025-07-17 00:40:33] Sender besked: Signal dist vindue 3: {1: 59, -1: 44}
+[2025-07-17 00:40:33] Besked sendt OK.
+[2025-07-17 00:40:33] Sender besked: Walk-forward vindue 3:
+profit_pct: -0.78
+win_rate: None
+drawdown_pct: -1.03
+num_trades: 14
+max_consec_losses: 1
+recovery_bars: -1
+profit_factor: 0.84
+sharpe: -2.89
+sortino: -18879730385238.78
+[2025-07-17 00:40:33] Besked sendt OK.
+[2025-07-17 00:40:33] Sender billede: outputs/walkforward_performance.png (caption: 📈 Walk-forward analyse)
+[2025-07-17 00:40:34] Billede sendt OK.
+[2025-07-17 01:23:25] Sender besked: 🤖 2025-07-17 01:23:25 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test.csv
+[2025-07-17 01:23:26] Besked sendt OK.
+[2025-07-17 01:23:26] Sender besked: 📊 Regime-performance:
+{}
+[2025-07-17 01:23:26] Besked sendt OK.
+[2025-07-17 01:23:39] Sender besked: 🤖 2025-07-17 01:23:39 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test.csv
+[2025-07-17 01:23:39] Besked sendt OK.
+[2025-07-17 01:23:39] Sender besked: Signal dist vindue 1: {0: 103}
+[2025-07-17 01:23:39] Besked sendt OK.
+[2025-07-17 01:23:39] Sender besked: ‼️ Ingen handler i vindue 1! Signal dist: {0: 103}
+[2025-07-17 01:23:39] Besked sendt OK.
+[2025-07-17 01:23:39] Sender besked: Signal dist vindue 2: {0: 103}
+[2025-07-17 01:23:40] Besked sendt OK.
+[2025-07-17 01:23:40] Sender besked: ‼️ Ingen handler i vindue 2! Signal dist: {0: 103}
+[2025-07-17 01:23:40] Besked sendt OK.
+[2025-07-17 01:23:40] Sender besked: Signal dist vindue 3: {0: 103}
+[2025-07-17 01:23:40] Besked sendt OK.
+[2025-07-17 01:23:40] Sender besked: ‼️ Ingen handler i vindue 3! Signal dist: {0: 103}
+[2025-07-17 01:23:40] Besked sendt OK.
+[2025-07-17 01:23:40] Sender billede: outputs/walkforward_performance.png (caption: 📈 Walk-forward analyse)
+[2025-07-17 01:23:41] Billede sendt OK.
+[2025-07-17 01:23:54] Sender besked: 🤖 2025-07-17 01:23:54 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: ...
+[2025-07-17 01:23:55] Besked sendt OK.
+[2025-07-17 01:23:55] Sender besked: ❌ Fejl i main: [Errno 13] Permission denied: '...'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 282, in main
+    df = load_csv_auto(args.feature_path)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 402, in load_csv_auto
+    with open(file_path, "r", encoding="utf-8") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '...'
+
+[2025-07-17 01:23:55] Besked sendt OK.
+[2025-07-17 01:27:40] Sender besked: 🤖 2025-07-17 01:27:40 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: f35e4e3 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test.csv
+[2025-07-17 01:27:41] Besked sendt OK.
+[2025-07-17 01:27:41] Sender besked: Signal dist vindue 1: {1: 58, -1: 45}
+[2025-07-17 01:27:41] Besked sendt OK.
+[2025-07-17 01:27:41] Sender besked: Walk-forward vindue 1:
+profit_pct: -0.83
+win_rate: None
+drawdown_pct: -0.79
+num_trades: 9
+max_consec_losses: 1
+recovery_bars: -1
+profit_factor: 0.76
+sharpe: -4.75
+sortino: -5.15
+[2025-07-17 01:27:41] Besked sendt OK.
+[2025-07-17 01:27:41] Sender besked: Signal dist vindue 2: {-1: 59, 1: 44}
+[2025-07-17 01:27:41] Besked sendt OK.
+[2025-07-17 01:27:41] Sender besked: Walk-forward vindue 2:
+profit_pct: -0.6
+win_rate: None
+drawdown_pct: -0.8
+num_trades: 11
+max_consec_losses: 1
+recovery_bars: -1
+profit_factor: 1.64
+sharpe: -2.56
+sortino: -13873240381052.16
+[2025-07-17 01:27:41] Besked sendt OK.
+[2025-07-17 01:27:41] Sender besked: Signal dist vindue 3: {1: 60, -1: 43}
+[2025-07-17 01:27:41] Besked sendt OK.
+[2025-07-17 01:27:41] Sender besked: Walk-forward vindue 3:
+profit_pct: -0.78
+win_rate: None
+drawdown_pct: -1.19
+num_trades: 16
+max_consec_losses: 1
+recovery_bars: -1
+profit_factor: 0.3
+sharpe: -2.11
+sortino: -18509451783752.23
+[2025-07-17 01:27:42] Besked sendt OK.
+[2025-07-17 01:27:42] Sender billede: outputs/walkforward_performance.png (caption: 📈 Walk-forward analyse)
+[2025-07-17 01:27:42] Billede sendt OK.
+[2025-07-17 01:32:10] Sender billede: outputs/walkforward/walkforward_plot_BTCUSDT_1h_20250717_013210.png (caption: Walkforward-graf for BTCUSDT 1h
+Buy & Hold (test): 11.49%)
+[2025-07-17 01:32:10] Billede sendt OK.
+[2025-07-17 01:32:25] Sender billede: outputs/walkforward/walkforward_plot_BTCUSDT_4h_20250717_013224.png (caption: Walkforward-graf for BTCUSDT 4h
+Buy & Hold (test): 0.58%)
+[2025-07-17 01:32:25] Billede sendt OK.
+[2025-07-17 01:32:42] Sender billede: outputs/walkforward/walkforward_plot_ETHUSDT_1h_20250717_013242.png (caption: Walkforward-graf for ETHUSDT 1h
+Buy & Hold (test): -6.78%)
+[2025-07-17 01:32:43] Billede sendt OK.
+[2025-07-17 01:32:54] Sender billede: outputs/walkforward/walkforward_plot_ETHUSDT_4h_20250717_013254.png (caption: Walkforward-graf for ETHUSDT 4h
+Buy & Hold (test): 1.05%)
+[2025-07-17 01:32:54] Billede sendt OK.
+[2025-07-17 01:33:06] Sender billede: outputs/walkforward/walkforward_plot_DOGEUSDT_1h_20250717_013306.png (caption: Walkforward-graf for DOGEUSDT 1h
+Buy & Hold (test): 4.64%)
+[2025-07-17 01:33:06] Billede sendt OK.
+[2025-07-17 01:33:23] Sender billede: outputs/walkforward/walkforward_plot_DOGEUSDT_4h_20250717_013322.png (caption: Walkforward-graf for DOGEUSDT 4h
+Buy & Hold (test): 6.83%)
+[2025-07-17 01:33:23] Billede sendt OK.
+[2025-07-17 01:33:23] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323_top5_splits.csv (caption: TOP5 splits (CSV))
+[2025-07-17 01:33:23] Dokument sendt OK.
+[2025-07-17 01:33:23] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323_top5_splits.xlsx (caption: TOP5 splits (Excel))
+[2025-07-17 01:33:24] Dokument sendt OK.
+[2025-07-17 01:33:24] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323_top5_splits.json (caption: TOP5 splits (JSON))
+[2025-07-17 01:33:24] Dokument sendt OK.
+[2025-07-17 01:33:24] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323_top10_splits.csv (caption: TOP10 splits (CSV))
+[2025-07-17 01:33:24] Dokument sendt OK.
+[2025-07-17 01:33:24] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323_top10_splits.xlsx (caption: TOP10 splits (Excel))
+[2025-07-17 01:33:25] Dokument sendt OK.
+[2025-07-17 01:33:25] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323_top10_splits.json (caption: TOP10 splits (JSON))
+[2025-07-17 01:33:25] Dokument sendt OK.
+[2025-07-17 01:33:25] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323.csv (caption: Walkforward-summary (inkl. Buy & Hold, avancerede metrics, best/top5 markeringer))
+[2025-07-17 01:33:25] Dokument sendt OK.
+[2025-07-17 01:33:25] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323.xlsx (caption: Walkforward-summary (Excel))
+[2025-07-17 01:33:25] Dokument sendt OK.
+[2025-07-17 01:33:25] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323.json (caption: Walkforward-summary (JSON))
+[2025-07-17 01:33:26] Dokument sendt OK.

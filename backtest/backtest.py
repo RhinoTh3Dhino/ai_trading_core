@@ -8,10 +8,9 @@ import argparse
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
-from utils.telegram_utils import send_message
+from utils.telegram_utils import send_message, send_image
 from utils.log_utils import log_device_status
 
-# === Ensemble import: Klar til ny voting-logik! ===
 from ensemble.ensemble_predict import ensemble_predict
 
 from strategies.rsi_strategy import rsi_rule_based_signals
@@ -30,12 +29,30 @@ from strategies.advanced_strategies import (
 
 from strategies.gridsearch_strategies import grid_search_sl_tp_ema
 
+# --- AVANCERET METRICS ---
+from utils.metrics_utils import advanced_performance_metrics
+
 FORCE_DEBUG = False
 FORCE_DUMMY_TRADES = False
 FEE = 0.0004
 SL_PCT = 0.006
 TP_PCT = 0.012
 ALLOW_SHORT = True
+
+def walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20):
+    n = len(df)
+    train_len = int(n * train_size)
+    test_len = int(n * test_size)
+    step_len = int(n * step_size)
+    start = 0
+    splits = []
+    while start + train_len + test_len <= n:
+        train_idx = np.arange(start, start + train_len)
+        test_idx = np.arange(start + train_len, start + train_len + test_len)
+        if len(train_idx) >= min_train and len(test_idx) > 0:
+            splits.append((train_idx, test_idx))
+        start += step_len
+    return splits
 
 def compute_regime(df: pd.DataFrame, ema_col: str = "ema_200", price_col: str = "close") -> pd.DataFrame:
     if "regime" in df.columns:
@@ -80,7 +97,6 @@ def force_trade_signals(length):
     return np.array(signals)
 
 def clean_signals(signals, length):
-    """Accepterer signals som np.array, pd.Series eller liste – sikrer længde og int-type."""
     if isinstance(signals, pd.Series):
         signals = signals.values
     signals = np.array(signals).astype(int)
@@ -110,7 +126,7 @@ def run_backtest(
         df["signal"] = signals
     elif "signal" not in df.columns:
         raise ValueError("Ingen signaler angivet til backtest!")
-    if df[["close", "ema_200"]].isnull().any().any():
+    if "ema_200" in df.columns and df[["close", "ema_200"]].isnull().any().any():
         raise ValueError("❌ DataFrame indeholder NaN i 'close' eller 'ema_200'!")
     df = compute_regime(df)
     trades, balance_log = [], []
@@ -193,7 +209,6 @@ def run_backtest(
         if col not in balance_df.columns:
             balance_df[col] = None
 
-    # Dummy trades hvis alt fejler
     if FORCE_DUMMY_TRADES and (trades_df.empty or trades_df.shape[0] < 2):
         print("‼️ FORCE DEBUG: Ingen rigtige handler fundet – genererer dummy trades for test!")
         trades_df = pd.DataFrame([
@@ -213,24 +228,19 @@ def run_backtest(
     return trades_df, balance_df
 
 def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
-    if "balance" not in balance_df.columns or len(balance_df) == 0:
-        print("❌ FEJL: balance_df tom eller mangler kolonne 'balance'. Kan ikke beregne metrics.")
-        return {"profit_pct": 0, "win_rate": 0, "drawdown_pct": 0, "num_trades": 0}
-    profit = (balance_df["balance"].iloc[-1] - initial_balance) / initial_balance * 100
-    trade_types = trades_df["type"].values
-    tp_count = np.sum(trade_types == "TP")
-    sl_count = np.sum(trade_types == "SL")
-    win_rate = tp_count / (tp_count + sl_count) if (tp_count + sl_count) > 0 else 0
-    num_trades = len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])])
-    peak = balance_df["balance"].cummax()
-    drawdown = (balance_df["balance"] - peak) / peak
-    max_drawdown = drawdown.min() * 100 if not drawdown.empty else 0
-    return {
-        "profit_pct": round(profit, 2),
-        "win_rate": round(win_rate, 4),
-        "drawdown_pct": round(max_drawdown, 2),
-        "num_trades": int(num_trades)
+    metrics = advanced_performance_metrics(trades_df, balance_df, initial_balance)
+    out = {
+        "profit_pct": metrics.get("profit_pct", 0),
+        "win_rate": None,
+        "drawdown_pct": metrics.get("max_drawdown", 0),
+        "num_trades": len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])]),
+        "max_consec_losses": metrics.get("max_consec_losses", 0),
+        "recovery_bars": metrics.get("recovery_bars", -1),
+        "profit_factor": metrics.get("profit_factor", "N/A"),
+        "sharpe": metrics.get("sharpe", 0),
+        "sortino": metrics.get("sortino", 0),
     }
+    return out
 
 def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results.csv"):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -254,6 +264,11 @@ def parse_args():
     parser.add_argument("--gridsearch", action="store_true")
     parser.add_argument("--voting", type=str, default="majority", choices=["majority", "weighted", "sum"])
     parser.add_argument("--debug_ensemble", action="store_true")
+    parser.add_argument("--walkforward", action="store_true", help="Aktiver walk-forward analyse")
+    parser.add_argument("--train_size", type=float, default=0.6)
+    parser.add_argument("--test_size", type=float, default=0.2)
+    parser.add_argument("--step_size", type=float, default=0.1)
+    parser.add_argument("--force_trades", action="store_true", help="Tving signaler til BUY/SELL for test/debug")
     return parser.parse_args()
 
 def main():
@@ -285,17 +300,65 @@ def main():
         print(results_df.head(10))
         return
 
+    # === WALK-FORWARD ANALYSE ===
+    if args.walkforward:
+        splits = walk_forward_splits(df, train_size=args.train_size, test_size=args.test_size, step_size=args.step_size)
+        all_metrics = []
+        for i, (train_idx, test_idx) in enumerate(splits):
+            df_train = df.iloc[train_idx]
+            df_test = df.iloc[test_idx].copy()
+            if args.force_trades:
+                signals = np.random.choice([1, -1], size=len(df_test))
+            else:
+                ml_signals   = rsi_rule_based_signals(df_test, low=35, high=65)
+                rsi_signals  = rsi_rule_based_signals(df_test, low=40, high=60)
+                macd_signals = macd_cross_signals(df_test)
+                ema_signals  = ema_cross_signals(df_test)
+                signals = ensemble_predict(
+                    ml_signals,
+                    rsi_signals,
+                    rule_preds=macd_signals,
+                    extra_preds=[ema_signals],
+                    voting=args.voting,
+                    debug=args.debug_ensemble
+                )
+            sig_dist = pd.Series(signals).value_counts().to_dict()
+            print(f"Signal dist vindue {i+1}: {sig_dist}")
+            send_message(f"Signal dist vindue {i+1}: {sig_dist}")
+            df_test["signal"] = signals
+            trades_df, balance_df = run_backtest(df_test, signals=signals)
+            metrics = calc_backtest_metrics(trades_df, balance_df)
+            all_metrics.append(metrics)
+            summary = f"Walk-forward vindue {i+1}:\n" + "\n".join([f"{k}: {v}" for k, v in metrics.items()])
+            if trades_df.empty:
+                send_message(f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}")
+            else:
+                send_message(summary)
+        metrics_df = pd.DataFrame(all_metrics)
+        try:
+            import matplotlib.pyplot as plt
+            os.makedirs("outputs", exist_ok=True)
+            metrics_df[["profit_pct", "drawdown_pct"]].plot(marker="o")
+            plt.title("Walk-forward performance")
+            plt.ylabel("Value")
+            plt.xlabel("Vindue")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig("outputs/walkforward_performance.png")
+            send_image("outputs/walkforward_performance.png", caption="📈 Walk-forward analyse")
+        except Exception as e:
+            print(f"❌ Plot-fejl: {e}")
+        return
+
     if FORCE_DEBUG:
         print("‼️ DEBUG: Forcerer skiftevis BUY/SELL på hele datasættet")
         signals = force_trade_signals(len(df))
     else:
         if args.strategy == "ensemble":
-            # Eksempel: ensemble voting over flere rule-baserede strategier
             ml_signals   = rsi_rule_based_signals(df, low=35, high=65)
             rsi_signals  = rsi_rule_based_signals(df, low=40, high=60)
             macd_signals = macd_cross_signals(df)
             ema_signals  = ema_cross_signals(df)
-            # Fleksibel ensemble-funktion: voting-type og debug fra CLI
             signals = ensemble_predict(
                 ml_signals,
                 rsi_signals,
@@ -321,10 +384,10 @@ def main():
 
     trades_df, balance_df = run_backtest(df, signals=filtered_signals)
     metrics = calc_backtest_metrics(trades_df, balance_df)
-    save_backtest_results(metrics, version="v1.6.0", csv_path=args.results_path)
+    save_backtest_results(metrics, version="v1.7.0", csv_path=args.results_path)
     print("Backtest-metrics:", metrics)
-    save_with_metadata(balance_df, args.balance_path, version="v1.6.0")
-    save_with_metadata(trades_df, args.trades_path, version="v1.6.0")
+    save_with_metadata(balance_df, args.balance_path, version="v1.7.0")
+    save_with_metadata(trades_df, args.trades_path, version="v1.7.0")
     reg_stats = regime_performance(trades_df)
     print("Regime performance:", reg_stats)
     try:

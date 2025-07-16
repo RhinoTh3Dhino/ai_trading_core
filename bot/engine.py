@@ -16,6 +16,9 @@ from datetime import datetime
 
 from bot.monitor import ResourceMonitor
 
+# === NYT: Importér avancerede metrics direkte ===
+from utils.metrics_utils import advanced_performance_metrics
+
 try:
     from versions import (
         PIPELINE_VERSION, PIPELINE_COMMIT,
@@ -199,7 +202,7 @@ def main(
             print("[ADVARSEL] ML fallback: bruger random signaler.")
         df["signal_ml"] = ml_signals
         trades_ml, balance_ml = run_backtest(df, signals=ml_signals)
-        metrics_ml = calc_backtest_metrics(trades_ml, balance_ml)
+        metrics_ml = advanced_performance_metrics(trades_ml, balance_ml)  # NYT: Brug metrics_utils
         metrics_dict = {"ML": metrics_ml}
 
         # ---- DL (PyTorch eller LSTM) ----
@@ -228,7 +231,7 @@ def main(
                 dl_probas = np.stack([1-dl_signals, dl_signals], axis=1)
         df["signal_dl"] = dl_signals
         trades_dl, balance_dl = run_backtest(df, signals=dl_signals)
-        metrics_dl = calc_backtest_metrics(trades_dl, balance_dl)
+        metrics_dl = advanced_performance_metrics(trades_dl, balance_dl)
         metrics_dict["DL"] = metrics_dl
 
         # --- Ensemble ---
@@ -243,7 +246,7 @@ def main(
         )
         df["signal_ensemble"] = ensemble_signals
         trades_ens, balance_ens = run_backtest(df, signals=ensemble_signals)
-        metrics_ens = calc_backtest_metrics(trades_ens, balance_ens)
+        metrics_ens = advanced_performance_metrics(trades_ens, balance_ens)
         metrics_dict["Ensemble"] = metrics_ens
 
         print("\n=== Signal distributions ===")
@@ -280,7 +283,7 @@ def main(
         plot_performance(balance_ens, trades_ens, model_name="Ensemble", save_path=f"{GRAPH_DIR}/performance_ensemble.png")
 
         from visualization.plot_comparison import plot_comparison
-        metric_keys = ["profit_pct", "win_rate", "drawdown_pct", "num_trades"]
+        metric_keys = ["profit_pct", "max_drawdown", "sharpe", "sortino"]  # opdater til de avancerede metrics!
         plot_comparison(metrics_dict, metric_keys=metric_keys, save_path=f"{GRAPH_DIR}/model_comparison.png")
         print(f"[INFO] Sammenlignings-graf gemt til {GRAPH_DIR}/model_comparison.png")
 

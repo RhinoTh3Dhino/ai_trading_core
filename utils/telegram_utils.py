@@ -3,6 +3,9 @@ import requests
 import datetime
 from dotenv import load_dotenv
 
+# === NYT: Importér metrics_utils til brug for avanceret Telegram-summary ===
+from utils.metrics_utils import advanced_performance_metrics
+
 try:
     from utils.plot_utils import generate_trend_graph
 except ImportError:
@@ -123,6 +126,7 @@ def send_telegram_heartbeat(chat_id=None):
 
 def send_performance_report(metrics, symbol="", timeframe="", window=None, chat_id=None):
     """Send performance-summary til Telegram – HTML-format tilpasset."""
+    # Håndter evt. manglende felter robust
     msg = f"<b>📊 Performance Report {symbol} {timeframe} {window or ''}</b>\n"
     msg += f"Sharpe: <b>{metrics.get('sharpe', 0):.2f}</b> | Calmar: <b>{metrics.get('calmar', 0):.2f}</b> | Sortino: <b>{metrics.get('sortino', 0):.2f}</b>\n"
     msg += f"Volatilitet: <b>{metrics.get('volatility', 0):.2f}</b>\n"

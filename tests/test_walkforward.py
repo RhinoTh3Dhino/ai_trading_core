@@ -23,6 +23,7 @@ from utils.performance import (
 )
 from utils.telegram_utils import send_image, send_document
 
+# --- WALKFORWARD PARAMS ---
 DEFAULT_WINDOW_SIZE = 200
 MIN_WINDOW_SIZE = 100
 STEP_SIZE = 50
@@ -85,7 +86,7 @@ def plot_walkforward_results(results_df, symbol, tf):
     plt.tight_layout()
     filename = f"{OUTPUT_DIR}walkforward_plot_{symbol}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
     plt.savefig(filename)
-    plt.show()
+    plt.close()
     print(f"✅ Walkforward performance-graf gemt som {filename}")
     return filename
 
@@ -143,7 +144,7 @@ if __name__ == "__main__":
                     except Exception:
                         test_metrics['rolling_sharpe'] = np.nan
 
-                    # Trade duration: split alle værdier ud til individuelle felter!
+                    # Trade duration
                     try:
                         td_train = calculate_trade_duration(train_trades)
                         for key, value in td_train.items():
@@ -161,7 +162,7 @@ if __name__ == "__main__":
                         test_metrics['median_trade_duration'] = 0.0
                         test_metrics['max_trade_duration'] = 0.0
 
-                    # Regime drawdown: split dicts ud til kolonner
+                    # Regime drawdown
                     try:
                         reg_dd_train = calculate_regime_drawdown(train_trades)
                         train_metrics.update(flatten_dict(reg_dd_train, "regime_"))
@@ -176,7 +177,7 @@ if __name__ == "__main__":
                     train_metrics = {f"train_{k}": v for k, v in train_metrics.items()}
                     test_metrics = {f"test_{k}": v for k, v in test_metrics.items()}
 
-                    # Buy & Hold for både train og test
+                    # Buy & Hold
                     train_buyhold = np.nan
                     test_buyhold = np.nan
                     if "close" in train_df.columns and "close" in test_df.columns:
@@ -308,7 +309,6 @@ if __name__ == "__main__":
             "test_max_drawdown", "test_calmar", "test_volatility", "test_kelly_criterion",
             "test_buyhold_pct", "test_rolling_sharpe",
             "test_mean_trade_duration", "test_median_trade_duration", "test_max_trade_duration",
-            # Eksempel: regime_drawdown_bull, regime_drawdown_bear, ...
             "is_best_split", "is_top5_split"
         ]
         show_cols = [col for col in cols_to_show if col in results_df.columns]

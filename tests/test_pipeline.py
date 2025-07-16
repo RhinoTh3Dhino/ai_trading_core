@@ -32,6 +32,9 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
+# === NYT: Import af avancerede metrics ===
+from utils.metrics_utils import advanced_performance_metrics
+
 # ======= KONFIGURATION =======
 FEATURE_COLS = ["ATR", "RSI", "EMA", "MACD", "price"]
 TARGET_COL = "target"
@@ -49,11 +52,6 @@ def log(msg):
 
 # ======= ENSEMBLE VOTING =======
 def ensemble_voting(*model_preds):
-    """
-    Samler predictions fra flere modeller via majority voting.
-    Forventer at hver argument er en 1D numpy array med signaler (fx 0/1/2).
-    Returnerer en 1D numpy array med ensemble-signaler.
-    """
     preds = np.vstack(model_preds)
     voted = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=preds)
     return voted
@@ -65,7 +63,6 @@ def split_data(df):
     val   = df.iloc[int(n*0.7):int(n*0.9)]
     test  = df.iloc[int(n*0.9):]
     log(f"Train: {len(train)}, Val: {len(val)}, Test: {len(test)}")
-    # Sikring mod datalæk
     assert train.index.max() < val.index.min() < test.index.min(), "Datasplit overlappede!"
     return train, val, test
 
@@ -80,11 +77,22 @@ def train_ml_model(train, val, test):
     for name, data in zip(['Train','Val','Test'], [train, val, test]):
         preds = model.predict(data[FEATURE_COLS])
         acc = accuracy_score(data[TARGET_COL], preds)
+        # NYT: Udregn avanceret metrics for test
+        if name == "Test":
+            perf_metrics = advanced_performance_metrics(
+                pd.DataFrame({
+                    "profit": np.where(preds==data[TARGET_COL], 1, -1)  # Simpel: 1 for korrekt, -1 for forkert
+                }),
+                pd.DataFrame({
+                    "balance": np.cumsum(np.where(preds==data[TARGET_COL], 1, -1)) + 1000
+                }),
+                initial_balance=1000
+            )
+            log(f"Avanceret test-metrics: {perf_metrics}")
         metrics[name] = acc
         all_preds[name] = preds
         log(f"{name}-accuracy: {acc:.4f}")
         log(f"{name} report:\n{classification_report(data[TARGET_COL], preds)}")
-    # Test indlæsning af model
     model2 = joblib.load("models/best_ml_model.pkl")
     test_pred_reload = model2.predict(test[FEATURE_COLS])
     assert np.array_equal(test_pred_reload, model.predict(test[FEATURE_COLS])), "Model gem/indlæs fejl!"
@@ -139,7 +147,6 @@ def train_dl_model(train, val, test):
             val_preds = model(X_val.to(device))
             val_loss = loss_fn(val_preds, y_val.to(device)).item()
         log(f"Epoch {epoch+1:02d}: train_loss={total_loss/len(train_loader):.4f} val_loss={val_loss:.4f}")
-        # Early stopping
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience = 0
@@ -150,7 +157,6 @@ def train_dl_model(train, val, test):
                 log("Early stopping aktiveret!")
                 break
 
-    # Test evaluering
     model.load_state_dict(torch.load("models/best_dl_model.pt"))
     model.eval()
     all_preds = {}
@@ -161,6 +167,18 @@ def train_dl_model(train, val, test):
                                    [y_train, y_val, y_test]):
             preds = model(X.to(device)).argmax(dim=1).cpu().numpy()
             acc = accuracy_score(y.cpu().numpy(), preds)
+            # NYT: Avanceret test-metrics for Test
+            if name == "Test":
+                perf_metrics = advanced_performance_metrics(
+                    pd.DataFrame({
+                        "profit": np.where(preds==y.cpu().numpy(), 1, -1)
+                    }),
+                    pd.DataFrame({
+                        "balance": np.cumsum(np.where(preds==y.cpu().numpy(), 1, -1)) + 1000
+                    }),
+                    initial_balance=1000
+                )
+                log(f"Avanceret test-metrics (DL): {perf_metrics}")
             all_preds[name] = preds
             log(f"{name} accuracy (DL): {acc:.4f}")
             log(f"{name} report (DL):\n" + classification_report(y.cpu().numpy(), preds))
@@ -172,12 +190,22 @@ def run_pipeline(df):
     train, val, test = split_data(df)
     ml_model, ml_metrics, ml_preds = train_ml_model(train, val, test)
     dl_model, dl_preds = train_dl_model(train, val, test)
-    
     # ======= ENSEMBLE VOTING PÅ TEST =======
     log("Kører ensemble voting (ML + DL)...")
     ens_test = ensemble_voting(ml_preds['Test'], dl_preds['Test'])
     ens_acc = accuracy_score(test[TARGET_COL], ens_test)
+    # NYT: Avanceret metrics for ensemble
+    perf_metrics = advanced_performance_metrics(
+        pd.DataFrame({
+            "profit": np.where(ens_test==test[TARGET_COL].values, 1, -1)
+        }),
+        pd.DataFrame({
+            "balance": np.cumsum(np.where(ens_test==test[TARGET_COL].values, 1, -1)) + 1000
+        }),
+        initial_balance=1000
+    )
     log(f"Test accuracy (Ensemble): {ens_acc:.4f}")
+    log(f"Avanceret ensemble-metrics: {perf_metrics}")
     log("Test report (Ensemble):\n" + classification_report(test[TARGET_COL], ens_test))
     # GEM ALLE METRICS
     out = {
@@ -186,6 +214,7 @@ def run_pipeline(df):
         "ml_test_acc": ml_metrics["Test"],
         "dl_test_acc": accuracy_score(test[TARGET_COL], dl_preds['Test']),
         "ensemble_test_acc": ens_acc,
+        **{f"ensemble_{k}": v for k, v in perf_metrics.items()},
         "datetime": datetime.now().isoformat(),
         "feature_cols": FEATURE_COLS
     }
@@ -203,7 +232,6 @@ def run_pipeline(df):
 
 # ======= MAIN =======
 if __name__ == "__main__":
-    # Brug din egen data, fx: df = pd.read_csv("data/cleaned_features.csv")
     # Dummy testdata til CI eller udvikling:
     df = pd.DataFrame({
         "ATR": np.random.rand(1000),
