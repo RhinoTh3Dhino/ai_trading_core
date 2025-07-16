@@ -6990,3 +6990,70 @@ Bedste: <b>5.10%</b> | Værste: <b>-4.40%</b>
 [2025-07-15 20:47:02] Performance report sendt til Telegram.
 [2025-07-15 20:47:02] Sender besked: Plot-utils ikke tilgængelig – trend-graf ikke genereret.
 [2025-07-15 20:47:03] Besked sendt OK.
+[2025-07-16 23:38:53] Sender besked: 🤖 2025-07-16 23:38:53 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: 2a31bcb | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_v_test_20250610.csv
+[2025-07-16 23:38:53] Besked sendt OK.
+[2025-07-16 23:38:53] Sender besked: ❌ Fejl i main: [Errno 2] No such file or directory: 'outputs/feature_data/btc_1h_features_v_test_20250610.csv'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 267, in main
+    df = load_csv_auto(args.feature_path)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 339, in load_csv_auto
+    with open(file_path, "r", encoding="utf-8") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'outputs/feature_data/btc_1h_features_v_test_20250610.csv'
+
+[2025-07-16 23:38:53] Besked sendt OK.
+[2025-07-16 23:43:39] Sender besked: 🤖 2025-07-16 23:43:39 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: 2a31bcb | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test_20250708.csv
+[2025-07-16 23:43:40] Besked sendt OK.
+[2025-07-16 23:43:40] Sender besked: ❌ Fejl i main: [Errno 2] No such file or directory: 'outputs/feature_data/btc_1h_features_test_20250708.csv'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 267, in main
+    df = load_csv_auto(args.feature_path)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\backtest\backtest.py", line 339, in load_csv_auto
+    with open(file_path, "r", encoding="utf-8") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'outputs/feature_data/btc_1h_features_test_20250708.csv'
+
+[2025-07-16 23:43:40] Besked sendt OK.
+[2025-07-16 23:48:08] Sender besked: 🤖 2025-07-16 23:48:07 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: 2a31bcb | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btc_1h_features_test_20250708_20250708.csv
+[2025-07-16 23:48:08] Besked sendt OK.
+[2025-07-16 23:48:08] Sender besked: 📊 Regime-performance:
+{}
+[2025-07-16 23:48:08] Besked sendt OK.
+[2025-07-16 23:56:16] Sender besked: 🤖 2025-07-16 23:56:16 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: 2a31bcb | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-16 23:56:16] Besked sendt OK.
+[2025-07-16 23:56:17] Sender besked: ❌ Fejl i <lambda>: 'numpy.ndarray' object has no attribute 'predict'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 310, in <lambda>
+    safe_run(lambda: main(
+                     ^^^^^
+  File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 196, in main
+    ml_signals = ml_model.predict(X_ml)
+                 ^^^^^^^^^^^^^^^^
+AttributeError: 'numpy.ndarray' object has no attribute 'predict'
+
+[2025-07-16 23:56:17] Besked sendt OK.
+[2025-07-17 00:03:56] Sender besked: 🤖 2025-07-17 00:03:56 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: 2a31bcb | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
+[2025-07-17 00:03:56] Besked sendt OK.
+[2025-07-17 00:03:57] Sender besked: 🤖 <b>Ensemble/voting performance</b>
+Test accuracy: <b>0.65%</b>
+ML test: <b>0.65%</b> | DL test: <b>0.65%</b>
+Train ML: <b>0.65%</b> | Val ML: <b>0.65%</b>
+
+[2025-07-17 00:03:57] Besked sendt OK.
+[2025-07-17 00:03:57] Ensemble metrics sendt.
+[2025-07-17 00:03:58] Sender billede: graphs//model_comparison.png (caption: ML vs. DL vs. ENSEMBLE performance)
+[2025-07-17 00:03:58] Billede sendt OK.

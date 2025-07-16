@@ -148,6 +148,17 @@ def send_strategy_metrics(metrics, chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
+def send_ensemble_metrics(metrics, details=None, chat_id=None):
+    """Send ensemble (voting)-metrics inkl. detaljer til Telegram."""
+    msg = "🤖 <b>Ensemble/voting performance</b>\n"
+    msg += f"Test accuracy: <b>{metrics.get('ensemble_test_acc', 0):.2%}</b>\n"
+    msg += f"ML test: <b>{metrics.get('ml_test_acc', 0):.2%}</b> | DL test: <b>{metrics.get('dl_test_acc', 0):.2%}</b>\n"
+    msg += f"Train ML: <b>{metrics.get('ml_train_acc', 0):.2%}</b> | Val ML: <b>{metrics.get('ml_val_acc', 0):.2%}</b>\n"
+    if details:
+        msg += f"\n<b>Details:</b>\n{details}\n"
+    send_message(msg, parse_mode="HTML", chat_id=chat_id)
+    log_telegram("Ensemble metrics sendt.")
+
 def send_auto_status_summary(summary_text, image_path=None, doc_path=None, chat_id=None):
     """Send samlet status, evt. med graf/dokument."""
     send_message(summary_text, chat_id=chat_id)

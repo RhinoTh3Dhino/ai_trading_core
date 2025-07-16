@@ -2,27 +2,37 @@
 
 import numpy as np
 
-def ensemble_predict(ml_preds, dl_preds, rule_preds=None, extra_preds=None, weights=None, voting="majority", debug=False):
+def ensemble_predict(
+    ml_preds, 
+    dl_preds, 
+    rule_preds=None, 
+    extra_preds=None, 
+    weights=None, 
+    voting="majority", 
+    debug=False
+):
     """
     Kombinér ML, DL (og evt. rule-based og ekstra) predictions til ensemble-voting.
-    
+
     Args:
         ml_preds (array-like): ML predictions (0/1 eller -1/1)
         dl_preds (array-like): DL predictions (0/1 eller -1/1)
         rule_preds (array-like, optional): Rule-based signal (0/1, -1/1 eller None)
-        extra_preds (list, optional): Liste over ekstra signal-arrays
+        extra_preds (list, optional): Liste over ekstra signal-arrays (fx andre modeller)
         weights (list, optional): Weights pr. model/signal
         voting (str): 'majority', 'weighted', 'sum'
         debug (bool): Udskriv ekstra information
-        
+
     Returns:
         np.array: Ensemble-voting output (0/1 eller -1/1 afhængig af input)
     """
+    # Saml alle predictions i én liste
     all_preds = [ml_preds, dl_preds]
     if rule_preds is not None:
         all_preds.append(rule_preds)
     if extra_preds is not None:
         all_preds.extend(extra_preds)
+    
     # Ensret alle til 1D np.array, cast til int8
     all_preds = [np.asarray(p).flatten().astype(np.int8) for p in all_preds]
     n = len(all_preds[0])
@@ -33,19 +43,24 @@ def ensemble_predict(ml_preds, dl_preds, rule_preds=None, extra_preds=None, weig
 
     if debug:
         print("[Ensemble] Ensemble input matrix:\n", preds)
+
+    # Default weights
     if weights is None:
         weights = [1.0] * preds.shape[1]
-    weights = np.array(weights)
-    assert len(weights) == preds.shape[1], f"Antal weights ({len(weights)}) matcher ikke antal input ({preds.shape[1]})"
-
-    # Normaliserer til 0/1 hvis input er -1/1
-    if np.any(preds == -1):
+    weights = np.array(weights, dtype=np.float32)
+    if len(weights) != preds.shape[1]:
+        raise ValueError(f"Antal weights ({len(weights)}) matcher ikke antal input ({preds.shape[1]})")
+    
+    # Normaliser til 0/1 hvis der er -1/1 input
+    input_has_neg = np.any(preds == -1)
+    if input_has_neg:
         preds_bin = (preds > 0).astype(int)
     else:
-        preds_bin = preds
+        preds_bin = preds.copy()
 
-    # --- Voting logik ---
+    # === VOTING LOGIK ===
     if voting == "majority":
+        # Klassisk: hver model tæller 1 (eller vægt), output = 1 hvis >50% stemmer for
         votes = np.round(preds_bin * weights).astype(int)
         summed = np.sum(votes, axis=1)
         threshold = 0.5 * np.sum(weights)
@@ -53,28 +68,28 @@ def ensemble_predict(ml_preds, dl_preds, rule_preds=None, extra_preds=None, weig
             print(f"[Ensemble] Weights: {weights}, summed votes: {summed}, threshold: {threshold}")
         result = (summed > threshold).astype(int)
     elif voting == "weighted":
+        # Brug vægtet gennemsnit af alle modeller
         score = np.average(preds_bin, axis=1, weights=weights)
         if debug:
             print(f"[Ensemble] Weighted scores: {score}")
         result = (score > 0.5).astype(int)
     elif voting == "sum":
+        # Samlet signal: sum(preds*weights), brug evt. -1/1 logik
         summed = np.sum(preds * weights, axis=1)
         if debug:
             print(f"[Ensemble] Summed signals (inkl. -1/1): {summed}")
-        # output: 1 hvis samlet signal > 0, 0 ellers (kan tilpasses til -1/1 hvis ønskes)
         result = (summed > 0).astype(int)
     else:
         raise ValueError("Ukendt voting-type: %s" % voting)
 
-    # Hvis originalt input var -1/1 og du vil have -1/1 output:
-    if np.any(preds == -1) and not np.all(np.isin(result, [0,1])):
-        # Map evt. 0 til -1, hvis du ønsker -1/1 signaler videre
+    # Hvis original input var -1/1, tillad -1/1 output (valgfrit)
+    if input_has_neg and not np.all(np.isin(result, [0,1])):
         result = np.where(result == 0, -1, 1)
     return result
 
 # === CLI-test ===
 if __name__ == "__main__":
-    # Dummy test
+    # Dummy test for både 0/1 og -1/1 logik
     ml = np.array([1, 0, 1, 0])
     dl = np.array([1, 1, 0, 0])
     rsi = np.array([0, 0, 1, 1])

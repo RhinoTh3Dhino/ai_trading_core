@@ -10,7 +10,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message, send_image
+from utils.telegram_utils import send_message, send_image, send_ensemble_metrics
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
@@ -58,9 +58,6 @@ class TradingNet(torch.nn.Module):
         return self.net(x)
 
 def load_trained_feature_list():
-    """
-    Returnerer features-list brugt til træning af DL-modellen (PyTorch eller LSTM).
-    """
     if os.path.exists(PYTORCH_FEATURES_PATH):
         with open(PYTORCH_FEATURES_PATH, "r") as f:
             features = json.load(f)
@@ -87,10 +84,6 @@ def load_ml_model():
         return None, None
 
 def reconcile_features(df, feature_list):
-    """
-    Sikrer at alle kolonner fra feature_list findes i df (ellers udfyldes de med 0),
-    og sorterer kolonnerne i korrekt rækkefølge.
-    """
     missing = [col for col in feature_list if col not in df.columns]
     if missing:
         print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
@@ -130,7 +123,6 @@ def keras_lstm_predict(df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PA
         return np.zeros(len(df))
     mean = np.load(LSTM_SCALER_MEAN_PATH)
     scale = np.load(LSTM_SCALER_SCALE_PATH)
-    # Sikrer at alle features findes og i korrekt rækkefølge
     df_X = reconcile_features(df, feature_cols)
     X = df_X.values
     X_scaled = (X - mean) / scale
@@ -263,6 +255,17 @@ def main(
         print("\n=== Performance metrics (backtest) ===")
         for model, metrics in metrics_dict.items():
             print(f"{model}: {metrics}")
+
+        # Telegram ensemble performance direkte
+        send_ensemble_metrics(
+            {
+                "ml_test_acc": metrics_ml.get("profit_pct", 0)/100,
+                "ml_train_acc": metrics_ml.get("profit_pct", 0)/100,  # evt. justér til rigtige værdier
+                "ml_val_acc": metrics_ml.get("profit_pct", 0)/100,    # evt. justér
+                "dl_test_acc": metrics_dl.get("profit_pct", 0)/100,
+                "ensemble_test_acc": metrics_ens.get("profit_pct", 0)/100
+            }
+        )
 
         for model_name, metrics in metrics_dict.items():
             for metric_key, value in metrics.items():

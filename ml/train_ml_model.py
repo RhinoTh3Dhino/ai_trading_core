@@ -17,13 +17,23 @@ def main():
     parser.add_argument("--n_estimators", type=int, default=100)
     args = parser.parse_args()
 
+    os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
+    os.makedirs(os.path.dirname(args.features_out), exist_ok=True)
+
     df = pd.read_csv(args.data, comment="#").dropna(subset=[args.target])
     num_cols = df.select_dtypes(include='number').columns.tolist()
     feature_cols = [c for c in num_cols if c not in [args.target, "future_return"]]
+    # Ekstra: advarsel hvis nogen kolonner mangler fra tidligere feature set
+    missing = [col for col in feature_cols if col not in df.columns]
+    if missing:
+        print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
+        for col in missing:
+            df[col] = 0.0
+
     X = df[feature_cols]
     y = df[args.target].astype(int)
 
-    # Split 70/15/15 (kun for test, re-train på alt bagefter)
+    # Split 70/15/15 (kun for val-test, retrain på alt bagefter)
     n = len(df)
     train_end = int(n * 0.7)
     val_end = int(n * 0.85)
@@ -36,6 +46,11 @@ def main():
     print("\nVal Accuracy:", accuracy_score(y_val, val_preds))
     print(classification_report(y_val, val_preds))
 
+    # Test på test-sæt (valgfrit)
+    test_preds = clf.predict(X_test)
+    print("Test Accuracy:", accuracy_score(y_test, test_preds))
+    print(classification_report(y_test, test_preds))
+
     # Endelig træning på alt data!
     clf.fit(X, y)
     with open(args.model_out, "wb") as f:
@@ -44,6 +59,12 @@ def main():
         json.dump(feature_cols, f)
     print(f"[INFO] ML-model og feature-liste gemt til '{args.model_out}', '{args.features_out}'")
     print(f"[INFO] Features: {feature_cols}")
+
+    # Test-load (robusthedstjek)
+    with open(args.model_out, "rb") as f:
+        loaded_model = pickle.load(f)
+    assert hasattr(loaded_model, "predict"), "❌ Model har ikke predict()-metode!"
+    print("✅ Test-load af ML-model: OK")
 
 if __name__ == "__main__":
     main()

@@ -11,17 +11,8 @@ from utils.robust_utils import safe_run
 from utils.telegram_utils import send_message
 from utils.log_utils import log_device_status
 
-def load_csv_auto(file_path):
-    with open(file_path, "r", encoding="utf-8") as f:
-        first_line = f.readline()
-    if first_line.startswith("#"):
-        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
-        return pd.read_csv(file_path, skiprows=1)
-    else:
-        return pd.read_csv(file_path)
-
-from ensemble.majority_vote_ensemble import majority_vote_ensemble
-from ensemble.weighted_vote_ensemble import weighted_vote_ensemble
+# === Ensemble import: Klar til ny voting-logik! ===
+from ensemble.ensemble_predict import ensemble_predict
 
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
@@ -261,6 +252,8 @@ def parse_args():
     parser.add_argument("--trades_path", type=str, default="data/trades.csv")
     parser.add_argument("--strategy", type=str, default="ensemble", choices=["ensemble", "voting", "regime", "ema_rsi", "meanrev"])
     parser.add_argument("--gridsearch", action="store_true")
+    parser.add_argument("--voting", type=str, default="majority", choices=["majority", "weighted", "sum"])
+    parser.add_argument("--debug_ensemble", action="store_true")
     return parser.parse_args()
 
 def main():
@@ -297,11 +290,20 @@ def main():
         signals = force_trade_signals(len(df))
     else:
         if args.strategy == "ensemble":
+            # Eksempel: ensemble voting over flere rule-baserede strategier
             ml_signals   = rsi_rule_based_signals(df, low=35, high=65)
             rsi_signals  = rsi_rule_based_signals(df, low=40, high=60)
             macd_signals = macd_cross_signals(df)
             ema_signals  = ema_cross_signals(df)
-            signals = majority_vote_ensemble(ml_signals, rsi_signals, macd_signals, ema_signals)
+            # Fleksibel ensemble-funktion: voting-type og debug fra CLI
+            signals = ensemble_predict(
+                ml_signals,
+                rsi_signals,
+                rule_preds=macd_signals,
+                extra_preds=[ema_signals],
+                voting=args.voting,
+                debug=args.debug_ensemble
+            )
         elif args.strategy == "voting":
             signals = voting_ensemble(df)['signal']
         elif args.strategy == "regime":
@@ -332,6 +334,15 @@ def main():
                 send_message(f"⚠️ Win-rate i {regime}-regime er under 20%!")
     except Exception as e:
         print(f"⚠️ Telegram-fejl: {e}")
+
+def load_csv_auto(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
+        return pd.read_csv(file_path, skiprows=1)
+    else:
+        return pd.read_csv(file_path)
 
 if __name__ == "__main__":
     safe_run(main)
