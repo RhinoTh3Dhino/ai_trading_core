@@ -1,3 +1,5 @@
+# fetch_data/fetch_binance_data.py
+
 import argparse
 import glob
 import os
@@ -75,13 +77,22 @@ def fetch_and_save(symbol: str, interval: str, outdir: str = "data", lookback_da
             raise
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--symbol", default="BTCUSDT")
-    parser.add_argument("--interval", default="1h")
-    parser.add_argument("--outdir", default="data")
-    parser.add_argument("--lookback", type=int, default=30)
+    parser = argparse.ArgumentParser(description="Hent og gem rå OHLCV-data fra Binance til CSV.")
+    parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Symbol, fx BTCUSDT, ETHUSDT osv.")
+    parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval, fx 1h, 4h, 1d")
+    parser.add_argument("--outdir", type=str, default="data", help="Output-mappe for CSV")
+    parser.add_argument("--lookback", type=int, default=None, help="Antal dage tilbage at hente (kan også hedde --days)")
+    parser.add_argument("--days", type=int, default=None, help="Alias for --lookback")
     parser.add_argument("--rolling_window", type=int, default=None, help="Antal seneste bars at bruge (valgfrit)")
     args = parser.parse_args()
+
+    # Håndter alias for --days
+    lookback_days = args.lookback if args.lookback is not None else args.days if args.days is not None else 30
+
     df = fetch_and_save(
-        args.symbol, args.interval, args.outdir, args.lookback, args.rolling_window
+        args.symbol,
+        args.interval,
+        args.outdir,
+        lookback_days,
+        args.rolling_window
     )

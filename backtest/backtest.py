@@ -1,3 +1,5 @@
+# backtest/backtest.py
+
 import sys, os
 import pandas as pd
 import numpy as np
@@ -12,11 +14,9 @@ from utils.telegram_utils import send_message, send_image
 from utils.log_utils import log_device_status
 
 from ensemble.ensemble_predict import ensemble_predict
-
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 from strategies.ema_cross_strategy import ema_cross_signals
-
 from strategies.advanced_strategies import (
     ema_crossover_strategy,
     ema_rsi_regime_strategy,
@@ -26,11 +26,26 @@ from strategies.advanced_strategies import (
     voting_ensemble,
     add_adaptive_sl_tp,
 )
-
 from strategies.gridsearch_strategies import grid_search_sl_tp_ema
-
-# --- AVANCERET METRICS ---
 from utils.metrics_utils import advanced_performance_metrics
+
+# === Monitoring-parametre fra config ===
+try:
+    from config.monitoring_config import (
+        ALARM_THRESHOLDS,
+        ALERT_ON_DRAWNDOWN,
+        ALERT_ON_WINRATE,
+        ALERT_ON_PROFIT,
+        ENABLE_MONITORING,
+    )
+except ImportError:
+    ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 0.20, "profit": -10}
+    ALERT_ON_DRAWNDOWN = True
+    ALERT_ON_WINRATE = True
+    ALERT_ON_PROFIT = True
+    ENABLE_MONITORING = True
+
+from utils.monitoring_utils import send_live_metrics
 
 FORCE_DEBUG = False
 FORCE_DUMMY_TRADES = False
@@ -231,7 +246,7 @@ def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
     metrics = advanced_performance_metrics(trades_df, balance_df, initial_balance)
     out = {
         "profit_pct": metrics.get("profit_pct", 0),
-        "win_rate": None,
+        "win_rate": metrics.get("win_rate", 0),
         "drawdown_pct": metrics.get("max_drawdown", 0),
         "num_trades": len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])]),
         "max_consec_losses": metrics.get("max_consec_losses", 0),
@@ -270,6 +285,15 @@ def parse_args():
     parser.add_argument("--step_size", type=float, default=0.1)
     parser.add_argument("--force_trades", action="store_true", help="Tving signaler til BUY/SELL for test/debug")
     return parser.parse_args()
+
+def load_csv_auto(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+    if first_line.startswith("#"):
+        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
+        return pd.read_csv(file_path, skiprows=1)
+    else:
+        return pd.read_csv(file_path)
 
 def main():
     args = parse_args()
@@ -334,6 +358,17 @@ def main():
                 send_message(f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}")
             else:
                 send_message(summary)
+            # === Monitoring/alarmer på test-vindue
+            if ENABLE_MONITORING:
+                send_live_metrics(
+                    trades_df, balance_df,
+                    symbol="WALKFORWARD",
+                    timeframe=f"win{i+1}",
+                    thresholds=ALARM_THRESHOLDS,
+                    alert_on_drawdown=ALERT_ON_DRAWNDOWN,
+                    alert_on_winrate=ALERT_ON_WINRATE,
+                    alert_on_profit=ALERT_ON_PROFIT
+                )
         metrics_df = pd.DataFrame(all_metrics)
         try:
             import matplotlib.pyplot as plt
@@ -392,20 +427,19 @@ def main():
     print("Regime performance:", reg_stats)
     try:
         send_message(f"📊 Regime-performance:\n{reg_stats}")
-        for regime, stats in reg_stats.items():
-            if stats["win_rate"] is not None and stats["win_rate"] < 0.2 and regime in ("bear", "neutral"):
-                send_message(f"⚠️ Win-rate i {regime}-regime er under 20%!")
+        # === Monitoring/alarmer på fuld run
+        if ENABLE_MONITORING:
+            send_live_metrics(
+                trades_df, balance_df,
+                symbol="BACKTEST",
+                timeframe="all",
+                thresholds=ALARM_THRESHOLDS,
+                alert_on_drawdown=ALERT_ON_DRAWNDOWN,
+                alert_on_winrate=ALERT_ON_WINRATE,
+                alert_on_profit=ALERT_ON_PROFIT
+            )
     except Exception as e:
         print(f"⚠️ Telegram-fejl: {e}")
-
-def load_csv_auto(file_path):
-    with open(file_path, "r", encoding="utf-8") as f:
-        first_line = f.readline()
-    if first_line.startswith("#"):
-        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
-        return pd.read_csv(file_path, skiprows=1)
-    else:
-        return pd.read_csv(file_path)
 
 if __name__ == "__main__":
     safe_run(main)

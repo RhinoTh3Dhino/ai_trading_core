@@ -11,7 +11,29 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-from config.config import COINS, TIMEFRAMES
+
+# === Centralt styrede konfigurationer ===
+try:
+    from config.monitoring_config import (
+        COINS,
+        TIMEFRAMES,
+        WALKFORWARD_DEFAULT_WINDOW_SIZE,
+        WALKFORWARD_MIN_WINDOW_SIZE,
+        WALKFORWARD_STEP_SIZE,
+        WALKFORWARD_TRAIN_SIZE,
+        ENABLE_MONITORING,
+        ALARM_THRESHOLDS,
+    )
+except ImportError:
+    COINS = ["BTCUSDT", "ETHUSDT", "DOGEUSDT"]
+    TIMEFRAMES = ["1h", "4h"]
+    WALKFORWARD_DEFAULT_WINDOW_SIZE = 200
+    WALKFORWARD_MIN_WINDOW_SIZE = 100
+    WALKFORWARD_STEP_SIZE = 50
+    WALKFORWARD_TRAIN_SIZE = 0.7
+    ENABLE_MONITORING = True
+    ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
+
 from strategies.advanced_strategies import ema_crossover_strategy, ema_rsi_regime_strategy, voting_ensemble
 from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.gridsearch_strategies import paper_trade_simple
@@ -23,11 +45,11 @@ from utils.performance import (
 )
 from utils.telegram_utils import send_image, send_document
 
-# --- WALKFORWARD PARAMS ---
-DEFAULT_WINDOW_SIZE = 200
-MIN_WINDOW_SIZE = 100
-STEP_SIZE = 50
-TRAIN_SIZE = 0.7
+# --- WALKFORWARD PARAMS (hentet fra config hvis muligt) ---
+DEFAULT_WINDOW_SIZE = WALKFORWARD_DEFAULT_WINDOW_SIZE
+MIN_WINDOW_SIZE = WALKFORWARD_MIN_WINDOW_SIZE
+STEP_SIZE = WALKFORWARD_STEP_SIZE
+TRAIN_SIZE = WALKFORWARD_TRAIN_SIZE
 
 OUTPUT_DIR = "outputs/walkforward/"
 BACKUP_DIR = os.path.join(OUTPUT_DIR, "backup")

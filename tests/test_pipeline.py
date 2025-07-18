@@ -1,3 +1,9 @@
+# ======= SYS.PATH ROOT-FIX =======
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# =================================
+
 """
 tests/test_pipeline.py
 
@@ -6,22 +12,10 @@ for AI trading bot – nu med ensemble voting!
 Kører både ML (XGBoost/sklearn) og DL (PyTorch)
 på dummy-data eller din egen dataset – og tjekker at ALTING virker.
 
-Funktioner:
-- Automatisk data split (train/val/test) på tidsrække
-- ML-model: træning, evaluering, gem/indlæsning, metrics
-- DL-model (PyTorch): træning på GPU, early stopping, gem/indlæs, metrics
-- Ensemble voting: kombinerer ML og DL signaler
-- Print af ALLE nøgletal, warnings, fejl
-- Automatisk backup af bedste modeller
-- Kode er 100% klar til VS Code/GitHub Actions
-
 Brug:
 $ python -m tests.test_pipeline
-
-Kræver: torch, scikit-learn, joblib, numpy, pandas
 """
 
-import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -32,16 +26,41 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-# === NYT: Import af avancerede metrics ===
+# === Importer config (centralt styret) ===
+try:
+    from config.monitoring_config import (
+        PIPELINE_FEATURE_COLS,
+        PIPELINE_TARGET_COL,
+        PIPELINE_BATCH_SIZE,
+        PIPELINE_EPOCHS,
+        PIPELINE_PATIENCE_LIMIT,
+        PIPELINE_SEED,
+        PIPELINE_INITIAL_BALANCE,
+        ENABLE_MONITORING,
+        ALARM_THRESHOLDS,
+    )
+except ImportError:
+    PIPELINE_FEATURE_COLS = ["ATR", "RSI", "EMA", "MACD", "price"]
+    PIPELINE_TARGET_COL = "target"
+    PIPELINE_BATCH_SIZE = 256
+    PIPELINE_EPOCHS = 20
+    PIPELINE_PATIENCE_LIMIT = 5
+    PIPELINE_SEED = 42
+    PIPELINE_INITIAL_BALANCE = 1000
+    ENABLE_MONITORING = True
+    ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
+
 from utils.metrics_utils import advanced_performance_metrics
 
 # ======= KONFIGURATION =======
-FEATURE_COLS = ["ATR", "RSI", "EMA", "MACD", "price"]
-TARGET_COL = "target"
-BATCH_SIZE = 256
-EPOCHS = 20
-PATIENCE_LIMIT = 5
-SEED = 42
+FEATURE_COLS = PIPELINE_FEATURE_COLS
+TARGET_COL = PIPELINE_TARGET_COL
+BATCH_SIZE = PIPELINE_BATCH_SIZE
+EPOCHS = PIPELINE_EPOCHS
+PATIENCE_LIMIT = PIPELINE_PATIENCE_LIMIT
+SEED = PIPELINE_SEED
+INITIAL_BALANCE = PIPELINE_INITIAL_BALANCE
+
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 os.makedirs("models", exist_ok=True)
@@ -84,9 +103,9 @@ def train_ml_model(train, val, test):
                     "profit": np.where(preds==data[TARGET_COL], 1, -1)  # Simpel: 1 for korrekt, -1 for forkert
                 }),
                 pd.DataFrame({
-                    "balance": np.cumsum(np.where(preds==data[TARGET_COL], 1, -1)) + 1000
+                    "balance": np.cumsum(np.where(preds==data[TARGET_COL], 1, -1)) + INITIAL_BALANCE
                 }),
-                initial_balance=1000
+                initial_balance=INITIAL_BALANCE
             )
             log(f"Avanceret test-metrics: {perf_metrics}")
         metrics[name] = acc
@@ -174,9 +193,9 @@ def train_dl_model(train, val, test):
                         "profit": np.where(preds==y.cpu().numpy(), 1, -1)
                     }),
                     pd.DataFrame({
-                        "balance": np.cumsum(np.where(preds==y.cpu().numpy(), 1, -1)) + 1000
+                        "balance": np.cumsum(np.where(preds==y.cpu().numpy(), 1, -1)) + INITIAL_BALANCE
                     }),
-                    initial_balance=1000
+                    initial_balance=INITIAL_BALANCE
                 )
                 log(f"Avanceret test-metrics (DL): {perf_metrics}")
             all_preds[name] = preds
@@ -200,9 +219,9 @@ def run_pipeline(df):
             "profit": np.where(ens_test==test[TARGET_COL].values, 1, -1)
         }),
         pd.DataFrame({
-            "balance": np.cumsum(np.where(ens_test==test[TARGET_COL].values, 1, -1)) + 1000
+            "balance": np.cumsum(np.where(ens_test==test[TARGET_COL].values, 1, -1)) + INITIAL_BALANCE
         }),
-        initial_balance=1000
+        initial_balance=INITIAL_BALANCE
     )
     log(f"Test accuracy (Ensemble): {ens_acc:.4f}")
     log(f"Avanceret ensemble-metrics: {perf_metrics}")

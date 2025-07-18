@@ -22,7 +22,7 @@ if PROJECT_ROOT not in sys.path:
 
 import optuna
 
-from train_pytorch import train_pytorch_model
+from trainers.train_pytorch import train_pytorch_model
 
 # Telegram-integration (valgfrit)
 try:

@@ -7289,3 +7289,468 @@ Buy & Hold (test): 6.83%)
 [2025-07-17 01:33:25] Dokument sendt OK.
 [2025-07-17 01:33:25] Sender dokument: outputs/walkforward/walkforward_summary_20250717_013323.json (caption: Walkforward-summary (JSON))
 [2025-07-17 01:33:26] Dokument sendt OK.
+[2025-07-17 02:54:47] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_30d.csv
+[2025-07-17 02:54:47] Besked sendt OK.
+[2025-07-17 03:11:42] Sender besked: 🤖 2025-07-17 03:11:42 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-17 03:11:42] Besked sendt OK.
+[2025-07-17 03:14:35] Sender besked: 🤖 2025-07-17 03:14:35 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-17 03:14:35] Besked sendt OK.
+[2025-07-17 03:14:36] Sender besked: Strategi-metrics:
+Profit: 0.65%
+Win-rate: 66.7%
+Drawdown: -0.16%
+Sharpe: 2.36
+Antal handler: 3
+[2025-07-17 03:14:36] Besked sendt OK.
+[2025-07-17 03:14:36] Strategi-metrics sendt.
+[2025-07-17 03:20:24] Sender besked: 🤖 2025-07-17 03:20:24 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-17 03:20:25] Besked sendt OK.
+[2025-07-17 03:20:25] Sender besked: Strategi-metrics:
+Profit: -0.66%
+Win-rate: 0.0%
+Drawdown: -0.62%
+Sharpe: -3.36
+Antal handler: 2
+[2025-07-17 03:20:25] Besked sendt OK.
+[2025-07-17 03:20:25] Strategi-metrics sendt.
+[2025-07-17 03:20:25] Sender besked: ⚠️ ADVARSEL: Win-rate er 0.0% (grænse: 20%)
+[2025-07-17 03:20:25] Besked sendt OK.
+[2025-07-17 03:29:13] Sender besked: 🤖 2025-07-17 03:29:13 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-17 03:29:13] Besked sendt OK.
+[2025-07-17 03:29:14] Sender besked: Strategi-metrics:
+Profit: -0.32%
+Win-rate: 25.0%
+Drawdown: -0.28%
+Sharpe: -5.18
+Antal handler: 4
+[2025-07-17 03:29:14] Besked sendt OK.
+[2025-07-17 03:29:14] Strategi-metrics sendt.
+[2025-07-18 17:20:54] Sender besked: 🤖 2025-07-18 17:20:54 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 17:20:54] Besked sendt OK.
+[2025-07-18 17:20:58] Sender besked: Strategi-metrics:
+Profit: -0.32%
+Win-rate: 25.0%
+Drawdown: -0.28%
+Sharpe: -5.18
+Antal handler: 4
+[2025-07-18 17:20:59] Besked sendt OK.
+[2025-07-18 17:20:59] Strategi-metrics sendt.
+[2025-07-18 17:29:43] Sender besked: 🤖 2025-07-18 17:29:43 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 17:29:43] Besked sendt OK.
+[2025-07-18 17:29:44] Sender besked: Strategi-metrics:
+Profit: -0.32%
+Win-rate: 25.0%
+Drawdown: -0.28%
+Sharpe: -5.18
+Antal handler: 4
+[2025-07-18 17:29:44] Besked sendt OK.
+[2025-07-18 17:29:44] Strategi-metrics sendt.
+[2025-07-18 17:33:45] Sender besked: 🤖 2025-07-18 17:33:45 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 17:33:45] Besked sendt OK.
+[2025-07-18 17:33:45] Sender besked: Strategi-metrics:
+Profit: -0.32%
+Win-rate: 25.0%
+Drawdown: -0.28%
+Sharpe: -5.18
+Antal handler: 4
+[2025-07-18 17:33:46] Besked sendt OK.
+[2025-07-18 17:33:46] Strategi-metrics sendt.
+[2025-07-18 17:35:05] Sender besked: 🤖 2025-07-18 17:35:05 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 17:35:05] Besked sendt OK.
+[2025-07-18 17:35:05] Sender besked: Strategi-metrics:
+Profit: -0.32%
+Win-rate: 25.0%
+Drawdown: -0.28%
+Sharpe: -5.18
+Antal handler: 4
+[2025-07-18 17:35:05] Besked sendt OK.
+[2025-07-18 17:35:05] Strategi-metrics sendt.
+[2025-07-18 18:01:26] Sender besked: 🤖 2025-07-18 18:01:26 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 18:01:26] Besked sendt OK.
+[2025-07-18 18:01:27] Sender besked: Strategi-metrics:
+Profit: 0.65%
+Win-rate: 66.7%
+Drawdown: -0.16%
+Sharpe: 2.36
+Antal handler: 3
+[2025-07-18 18:01:27] Besked sendt OK.
+[2025-07-18 18:01:27] Strategi-metrics sendt.
+[2025-07-18 20:03:53] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 4318 rækker, fil: BTCUSDT_1h_180d.csv
+[2025-07-18 20:03:53] Besked sendt OK.
+[2025-07-18 20:14:50] Sender besked: 🤖 2025-07-18 20:14:50 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 20:14:50] Besked sendt OK.
+[2025-07-18 20:14:51] Sender besked: Strategi-metrics:
+Profit: -0.16%
+Win-rate: 50.0%
+Drawdown: -0.16%
+Sharpe: -4.96
+Antal handler: 2
+[2025-07-18 20:14:51] Besked sendt OK.
+[2025-07-18 20:14:51] Strategi-metrics sendt.
+[2025-07-18 20:52:32] Sender besked: 🤖 2025-07-18 20:52:32 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 20:52:32] Besked sendt OK.
+[2025-07-18 20:52:33] Sender besked: Strategi-metrics:
+Profit: -0.16%
+Win-rate: 50.0%
+Drawdown: -0.16%
+Sharpe: -4.96
+Antal handler: 2
+[2025-07-18 20:52:33] Besked sendt OK.
+[2025-07-18 20:52:33] Strategi-metrics sendt.
+[2025-07-18 20:54:29] Sender besked: 🤖 2025-07-18 20:54:29 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 20:54:29] Besked sendt OK.
+[2025-07-18 20:54:30] Sender besked: Strategi-metrics:
+Profit: -0.16%
+Win-rate: 50.0%
+Drawdown: -0.16%
+Sharpe: -4.96
+Antal handler: 2
+[2025-07-18 20:54:30] Besked sendt OK.
+[2025-07-18 20:54:30] Strategi-metrics sendt.
+[2025-07-18 20:56:55] Sender besked: 🤖 2025-07-18 20:56:55 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 20:56:56] Besked sendt OK.
+[2025-07-18 20:56:56] Sender besked: Strategi-metrics:
+Profit: -17.14%
+Win-rate: 97.0%
+Drawdown: -17.11%
+Sharpe: -25.98
+Antal handler: 235
+[2025-07-18 20:56:56] Besked sendt OK.
+[2025-07-18 20:56:56] Strategi-metrics sendt.
+[2025-07-18 20:56:56] Sender besked: ‼️ ADVARSEL: Profit er -17.14% (grænse: -10%)
+[2025-07-18 20:56:57] Besked sendt OK.
+[2025-07-18 22:23:10] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 718 rækker, fil: BTCUSDT_1h_30d.csv
+[2025-07-18 22:23:11] Besked sendt OK.
+[2025-07-18 22:37:29] Sender besked: 🤖 2025-07-18 22:37:28 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: backtest | strategy: ensemble | feature_file: outputs/feature_data/btcusdt_1h_features_v1.0_20250718.csv
+[2025-07-18 22:37:29] Besked sendt OK.
+[2025-07-18 22:37:29] Sender besked: 📊 Regime-performance:
+{0: {'num_trades': 2, 'win_rate': 0.5, 'profit_pct': 0.012782235629940061, 'drawdown_pct': -0.15990402559742734}, 1: {'num_trades': 4, 'win_rate': 0.25, 'profit_pct': 0.004421605835969468, 'drawdown_pct': -0.23976012796158558}}
+[2025-07-18 22:37:29] Besked sendt OK.
+[2025-07-18 22:37:29] Sender besked: <b>📈 Live monitoring (BACKTEST all)</b>
+Profit: <b>-0.24%</b> | Drawdown: <b>-0.24%</b> | Win-rate: <b>66.7%</b> | Sharpe: <b>-1.48</b> | Trades: <b>3</b>
+Profit factor: <b>2.49</b>
+[2025-07-18 22:37:29] Besked sendt OK.
+[2025-07-18 22:38:42] Sender besked: 🤖 2025-07-18 22:38:42 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 22:38:42] Besked sendt OK.
+[2025-07-18 22:38:43] Sender besked: Strategi-metrics:
+Profit: -1.97%
+Win-rate: 60.0%
+Drawdown: -1.93%
+Sharpe: -3.55
+Antal handler: 20
+[2025-07-18 22:38:43] Besked sendt OK.
+[2025-07-18 22:38:43] Strategi-metrics sendt.
+[2025-07-18 22:42:18] Sender besked: 🤖 2025-07-18 22:42:18 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 22:42:19] Besked sendt OK.
+[2025-07-18 22:42:19] Sender besked: 🤖 2025-07-18 22:42:19 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 22:42:19] Besked sendt OK.
+[2025-07-18 22:42:19] Sender besked: Strategi-metrics:
+Profit: -26.86%
+Win-rate: 54.0%
+Drawdown: -26.84%
+Sharpe: -41.65
+Antal handler: 391
+[2025-07-18 22:42:20] Besked sendt OK.
+[2025-07-18 22:42:20] Strategi-metrics sendt.
+[2025-07-18 22:42:20] Sender besked: 🚨 ALARM: Drawdown er -26.84% (grænse: -20%)
+[2025-07-18 22:42:20] Besked sendt OK.
+[2025-07-18 22:42:20] Sender besked: ‼️ ADVARSEL: Profit er -26.86% (grænse: -10%)
+[2025-07-18 22:42:20] Besked sendt OK.
+[2025-07-18 22:42:20] Sender besked: 🤖 2025-07-18 22:42:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 22:42:20] Besked sendt OK.
+[2025-07-18 22:42:20] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/ethusdt_1h_features_latest.csv')
+[2025-07-18 22:42:20] Besked sendt OK.
+[2025-07-18 22:42:20] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 22:42</b>
+
+⚠️ BTCUSDT 1h: FEJL eller ingen metrics retur
+⚠️ ETHUSDT 1h: FEJL eller ingen metrics retur
+[2025-07-18 22:42:20] Besked sendt OK.
+[2025-07-18 22:50:35] Sender besked: ✅ Rå OHLCV-data gemt: ETHUSDT 1h, 718 rækker, fil: ETHUSDT_1h_30d.csv
+[2025-07-18 22:50:35] Besked sendt OK.
+[2025-07-18 22:56:27] Sender besked: 🤖 2025-07-18 22:56:27 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 22:56:27] Besked sendt OK.
+[2025-07-18 22:56:28] Sender besked: Strategi-metrics:
+Profit: -2.61%
+Win-rate: 54.5%
+Drawdown: -2.61%
+Sharpe: -6.47
+Antal handler: 33
+[2025-07-18 22:56:28] Besked sendt OK.
+[2025-07-18 22:56:28] Strategi-metrics sendt.
+[2025-07-18 22:56:45] Sender besked: 🤖 2025-07-18 22:56:45 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 22:56:45] Besked sendt OK.
+[2025-07-18 22:56:45] Sender besked: 🤖 2025-07-18 22:56:45 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 22:56:45] Besked sendt OK.
+[2025-07-18 22:56:46] Sender besked: Strategi-metrics:
+Profit: -26.86%
+Win-rate: 54.0%
+Drawdown: -26.84%
+Sharpe: -41.65
+Antal handler: 391
+[2025-07-18 22:56:46] Besked sendt OK.
+[2025-07-18 22:56:46] Strategi-metrics sendt.
+[2025-07-18 22:56:46] Sender besked: 🚨 ALARM: Drawdown er -26.84% (grænse: -20%)
+[2025-07-18 22:56:46] Besked sendt OK.
+[2025-07-18 22:56:46] Sender besked: ‼️ ADVARSEL: Profit er -26.86% (grænse: -10%)
+[2025-07-18 22:56:46] Besked sendt OK.
+[2025-07-18 22:56:46] Sender besked: 🤖 2025-07-18 22:56:46 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 22:56:47] Besked sendt OK.
+[2025-07-18 22:56:47] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/ethusdt_1h_features_latest.csv')
+[2025-07-18 22:56:47] Besked sendt OK.
+[2025-07-18 22:56:47] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 22:56</b>
+
+📊 BTCUSDT 1h | P/L: -26.86% | WR: 54.0% | DD: -26.84% | Trades: 391
+⚠️ ETHUSDT 1h: FEJL eller ingen metrics retur
+[2025-07-18 22:56:47] Besked sendt OK.
+[2025-07-18 23:03:33] Sender besked: 🤖 2025-07-18 23:03:33 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 23:03:33] Besked sendt OK.
+[2025-07-18 23:03:33] Sender besked: 🤖 2025-07-18 23:03:33 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:03:34] Besked sendt OK.
+[2025-07-18 23:03:34] Sender besked: Strategi-metrics:
+Profit: -26.86%
+Win-rate: 54.0%
+Drawdown: -26.84%
+Sharpe: -41.65
+Antal handler: 391
+[2025-07-18 23:03:35] Besked sendt OK.
+[2025-07-18 23:03:35] Strategi-metrics sendt.
+[2025-07-18 23:03:35] Sender besked: 🚨 ALARM: Drawdown er -26.84% (grænse: -20%)
+[2025-07-18 23:03:35] Besked sendt OK.
+[2025-07-18 23:03:35] Sender besked: ‼️ ADVARSEL: Profit er -26.86% (grænse: -10%)
+[2025-07-18 23:03:35] Besked sendt OK.
+[2025-07-18 23:03:35] Sender besked: 🤖 2025-07-18 23:03:35 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:03:35] Besked sendt OK.
+[2025-07-18 23:03:35] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/ethusdt_1h_features_latest.csv')
+[2025-07-18 23:03:36] Besked sendt OK.
+[2025-07-18 23:03:36] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 23:03</b>
+
+📊 BTCUSDT 1h | P/L: -26.86% | WR: 54.0% | DD: -26.84% | Trades: 391
+⚠️ ETHUSDT 1h: FEJL eller ingen metrics retur
+[2025-07-18 23:03:36] Besked sendt OK.
+[2025-07-18 23:15:09] Sender besked: 🤖 2025-07-18 23:15:09 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:15:09] Besked sendt OK.
+[2025-07-18 23:15:09] Sender besked: Strategi-metrics:
+Profit: -1.97%
+Win-rate: 60.0%
+Drawdown: -1.93%
+Sharpe: -3.55
+Antal handler: 20
+[2025-07-18 23:15:10] Besked sendt OK.
+[2025-07-18 23:15:10] Strategi-metrics sendt.
+[2025-07-18 23:16:03] Sender besked: 🤖 2025-07-18 23:16:03 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:16:03] Besked sendt OK.
+[2025-07-18 23:16:04] Sender besked: Strategi-metrics:
+Profit: -1.97%
+Win-rate: 60.0%
+Drawdown: -1.93%
+Sharpe: -3.55
+Antal handler: 20
+[2025-07-18 23:16:04] Besked sendt OK.
+[2025-07-18 23:16:04] Strategi-metrics sendt.
+[2025-07-18 23:16:35] Sender besked: 🤖 2025-07-18 23:16:34 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:16:35] Besked sendt OK.
+[2025-07-18 23:16:35] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/doesnotexist.csv')
+[2025-07-18 23:16:35] Besked sendt OK.
+[2025-07-18 23:16:50] Sender besked: 🤖 2025-07-18 23:16:50 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 23:16:51] Besked sendt OK.
+[2025-07-18 23:16:51] Sender besked: 🤖 2025-07-18 23:16:51 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:16:51] Besked sendt OK.
+[2025-07-18 23:16:51] Sender besked: Strategi-metrics:
+Profit: -14.65%
+Win-rate: 54.5%
+Drawdown: -14.62%
+Sharpe: -40.4
+Antal handler: 198
+[2025-07-18 23:16:52] Besked sendt OK.
+[2025-07-18 23:16:52] Strategi-metrics sendt.
+[2025-07-18 23:16:52] Sender besked: ‼️ ADVARSEL: Profit er -14.65% (grænse: -10%)
+[2025-07-18 23:16:52] Besked sendt OK.
+[2025-07-18 23:16:52] Sender besked: 🤖 2025-07-18 23:16:52 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:16:52] Besked sendt OK.
+[2025-07-18 23:16:52] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/ethusdt_1h_features_latest.csv')
+[2025-07-18 23:16:52] Besked sendt OK.
+[2025-07-18 23:16:52] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 23:16</b>
+
+📊 BTCUSDT 1h | P/L: -14.65% | WR: 54.5% | DD: -14.62% | Trades: 198
+⚠️ ETHUSDT 1h: FEJL eller ingen metrics retur (-)
+[2025-07-18 23:16:52] Besked sendt OK.
+[2025-07-18 23:19:27] Sender besked: 🤖 2025-07-18 23:19:27 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:26:13] Sender besked: Bot-status:
+2025-07-18 23:26:13 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:26:13] Sender besked: Strategi-metrics:
+Profit: -1.18%
+Win-rate: 40.0%
+Drawdown: -1.18%
+Sharpe: -4.14
+Antal handler: 10
+[2025-07-18 23:30:46] Sender besked: Bot-status:
+2025-07-18 23:30:46 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:30:46] Sender besked: Strategi-metrics:
+Profit: -1.18%
+Win-rate: 40.0%
+Drawdown: -1.18%
+Sharpe: -4.14
+Antal handler: 10
+[2025-07-18 23:30:52] Sender besked: Bot-status:
+2025-07-18 23:30:52 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:30:52] Sender besked: Strategi-metrics:
+Profit: -0.56%
+Win-rate: 28.6%
+Drawdown: -0.52%
+Sharpe: -5.77
+Antal handler: 7
+[2025-07-18 23:30:57] Sender besked: Bot-status:
+2025-07-18 23:30:57 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 23:30:57] Sender besked: Bot-status:
+2025-07-18 23:30:57 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:30:58] Sender besked: Strategi-metrics:
+Profit: -2.76%
+Win-rate: 51.4%
+Drawdown: -2.72%
+Sharpe: -28.36
+Antal handler: 35
+[2025-07-18 23:36:08] Sender besked: Bot-status:
+2025-07-18 23:36:08 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:36:09] Sender besked: Strategi-metrics:
+Profit: -1.18%
+Win-rate: 40.0%
+Drawdown: -1.18%
+Sharpe: -4.14
+Antal handler: 10
+[2025-07-18 23:36:14] Sender besked: Bot-status:
+2025-07-18 23:36:14 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:36:14] Sender besked: Strategi-metrics:
+Profit: 0.40%
+Win-rate: 16.7%
+Drawdown: -0.40%
+Sharpe: 1.15
+Antal handler: 6
+[2025-07-18 23:36:15] Sender besked: ⚠️ ADVARSEL: Win-rate er 16.7% (grænse: 25%)
+[2025-07-18 23:36:20] Sender besked: Bot-status:
+2025-07-18 23:36:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 23:36:20] Sender besked: Bot-status:
+2025-07-18 23:36:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:36:21] Sender besked: Strategi-metrics:
+Profit: -2.76%
+Win-rate: 51.4%
+Drawdown: -2.72%
+Sharpe: -28.36
+Antal handler: 35
+[2025-07-18 23:36:21] Sender besked: Bot-status:
+2025-07-18 23:36:21 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:36:21] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 23:36</b>
+
+📊 BTCUSDT 1h | P/L: -2.76% | WR: 51.4% | DD: -2.72% | Trades: 35
+⚠️ ETHUSDT 1h: Exception – 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>
+[2025-07-18 23:41:20] Sender besked: Bot-status:
+2025-07-18 23:41:20 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:41:21] Besked sendt OK.
+[2025-07-18 23:41:21] Sender besked: Strategi-metrics:
+Profit: -1.18%
+Win-rate: 40.0%
+Drawdown: -1.18%
+Sharpe: -4.14
+Antal handler: 10
+[2025-07-18 23:41:21] Besked sendt OK.
+[2025-07-18 23:41:21] Strategi-metrics sendt.
+[2025-07-18 23:41:26] Sender besked: Bot-status:
+2025-07-18 23:41:26 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:41:26] Besked sendt OK.
+[2025-07-18 23:41:26] Sender besked: Strategi-metrics:
+Profit: -0.56%
+Win-rate: 28.6%
+Drawdown: -0.52%
+Sharpe: -5.77
+Antal handler: 7
+[2025-07-18 23:41:26] Besked sendt OK.
+[2025-07-18 23:41:26] Strategi-metrics sendt.
+[2025-07-18 23:41:31] Sender besked: Bot-status:
+2025-07-18 23:41:31 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 23:41:32] Besked sendt OK.
+[2025-07-18 23:41:32] Sender besked: Bot-status:
+2025-07-18 23:41:32 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:41:32] Besked sendt OK.
+[2025-07-18 23:41:32] Sender besked: Strategi-metrics:
+Profit: -2.76%
+Win-rate: 51.4%
+Drawdown: -2.72%
+Sharpe: -28.36
+Antal handler: 35
+[2025-07-18 23:41:32] Besked sendt OK.
+[2025-07-18 23:41:32] Strategi-metrics sendt.
+[2025-07-18 23:41:32] Sender besked: Bot-status:
+2025-07-18 23:41:32 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:41:33] Besked sendt OK.
+[2025-07-18 23:41:33] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 23:41</b>
+
+📊 BTCUSDT 1h | P/L: -2.76% | WR: 51.4% | DD: -2.72% | Trades: 35
+⚠️ ETHUSDT 1h: Exception – 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>
+[2025-07-18 23:41:33] FEJL ved sendMessage: {"ok":false,"error_code":400,"description":"Bad Request: can't parse entities: Unsupported start tag \"undefined\" at byte offset 244"}
+[2025-07-18 23:41:37] Sender besked: Bot-status:
+2025-07-18 23:41:37 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-18 23:41:38] Besked sendt OK.
+[2025-07-18 23:41:38] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-18 23:41</b>
+
+
+[2025-07-18 23:41:38] Besked sendt OK.
+[2025-07-18 23:41:43] Sender besked: Bot-status:
+2025-07-18 23:41:43 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-18 23:41:43] Besked sendt OK.
+[2025-07-19 00:09:19] Sender besked: Bot-status:
+2025-07-19 00:09:19 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-19 00:09:20] Besked sendt OK.
+[2025-07-19 00:09:20] Sender besked: Strategi-metrics:
+Profit: -1.18%
+Win-rate: 40.0%
+Drawdown: -1.18%
+Sharpe: -4.14
+Antal handler: 10
+[2025-07-19 00:09:20] Besked sendt OK.
+[2025-07-19 00:09:20] Strategi-metrics sendt.
+[2025-07-19 00:09:25] Sender besked: Bot-status:
+2025-07-19 00:09:25 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-19 00:09:25] Besked sendt OK.
+[2025-07-19 00:09:25] Sender besked: Strategi-metrics:
+Profit: -0.38%
+Win-rate: 28.6%
+Drawdown: -0.48%
+Sharpe: -3.24
+Antal handler: 7
+[2025-07-19 00:09:25] Besked sendt OK.
+[2025-07-19 00:09:25] Strategi-metrics sendt.
+[2025-07-19 00:09:30] Sender besked: Bot-status:
+2025-07-19 00:09:30 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-19 00:09:30] Besked sendt OK.
+[2025-07-19 00:09:30] Sender besked: Bot-status:
+2025-07-19 00:09:30 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-19 00:09:31] Besked sendt OK.
+[2025-07-19 00:09:31] Sender besked: Strategi-metrics:
+Profit: -2.76%
+Win-rate: 51.4%
+Drawdown: -2.72%
+Sharpe: -28.36
+Antal handler: 35
+[2025-07-19 00:09:31] Besked sendt OK.
+[2025-07-19 00:09:31] Strategi-metrics sendt.
+[2025-07-19 00:09:31] Sender besked: Bot-status:
+2025-07-19 00:09:31 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-19 00:09:31] Besked sendt OK.
+[2025-07-19 00:09:31] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/ethusdt_1h_features_latest.csv')
+[2025-07-19 00:09:32] Besked sendt OK.
+[2025-07-19 00:09:32] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-19 00:09</b>
+
+📊 BTCUSDT 1h | P/L: -2.76% | WR: 51.4% | DD: -2.72% | Trades: 35
+⚠️ ETHUSDT 1h: FEJL eller ingen metrics retur (-)
+[2025-07-19 00:09:32] Besked sendt OK.
+[2025-07-19 00:09:37] Sender besked: Bot-status:
+2025-07-19 00:09:37 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: multi_live_simulator
+[2025-07-19 00:09:37] Besked sendt OK.
+[2025-07-19 00:09:37] Sender besked: 📡 <b>Multi Live Paper Trading Status 2025-07-19 00:09</b>
+
+
+[2025-07-19 00:09:37] Besked sendt OK.
+[2025-07-19 00:09:42] Sender besked: Bot-status:
+2025-07-19 00:09:42 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a15a742 | Context: live_simulator
+[2025-07-19 00:09:42] Besked sendt OK.
+[2025-07-19 00:09:42] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/DOES_NOT_EXIST.csv')
+[2025-07-19 00:09:42] Besked sendt OK.

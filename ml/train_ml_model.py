@@ -7,20 +7,34 @@ import argparse
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
+from datetime import datetime
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Træn ML-model (RandomForest) på feature-CSV og gem til disk.")
     parser.add_argument("--data", type=str, required=True, help="Sti til feature-CSV")
-    parser.add_argument("--target", type=str, default="target", help="Target-kolonne")
+    parser.add_argument("--target", type=str, default="target", help="Target-kolonne (fx 'target')")
     parser.add_argument("--model_out", type=str, default="models/best_ml_model.pkl")
     parser.add_argument("--features_out", type=str, default="models/best_ml_features.json")
     parser.add_argument("--n_estimators", type=int, default=100)
+    parser.add_argument("--backup", action="store_true", help="Gem backup/versioneret kopi af model og features")
     args = parser.parse_args()
 
     os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
     os.makedirs(os.path.dirname(args.features_out), exist_ok=True)
 
-    df = pd.read_csv(args.data, comment="#").dropna(subset=[args.target])
+    print(f"📂 Læser feature-CSV: {args.data}")
+    try:
+        df = pd.read_csv(args.data, comment="#")
+    except Exception as e:
+        print(f"❌ FEJL ved indlæsning af data: {e}")
+        return
+
+    if args.target not in df.columns:
+        print(f"❌ FEJL: Target-kolonnen '{args.target}' findes ikke i data!")
+        print(f"Tilgængelige kolonner: {list(df.columns)}")
+        return
+
+    df = df.dropna(subset=[args.target])
     num_cols = df.select_dtypes(include='number').columns.tolist()
     feature_cols = [c for c in num_cols if c not in [args.target, "future_return"]]
     # Ekstra: advarsel hvis nogen kolonner mangler fra tidligere feature set
@@ -32,6 +46,8 @@ def main():
 
     X = df[feature_cols]
     y = df[args.target].astype(int)
+
+    print(f"ℹ️ Feature-kolonner ({len(feature_cols)}): {feature_cols}")
 
     # Split 70/15/15 (kun for val-test, retrain på alt bagefter)
     n = len(df)
@@ -58,7 +74,17 @@ def main():
     with open(args.features_out, "w") as f:
         json.dump(feature_cols, f)
     print(f"[INFO] ML-model og feature-liste gemt til '{args.model_out}', '{args.features_out}'")
-    print(f"[INFO] Features: {feature_cols}")
+
+    # Backup/versionering hvis ønsket
+    if args.backup:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_model = args.model_out.replace(".pkl", f"_{ts}.pkl")
+        backup_features = args.features_out.replace(".json", f"_{ts}.json")
+        with open(backup_model, "wb") as f:
+            pickle.dump(clf, f)
+        with open(backup_features, "w") as f:
+            json.dump(feature_cols, f)
+        print(f"💾 Backup gemt: {backup_model}, {backup_features}")
 
     # Test-load (robusthedstjek)
     with open(args.model_out, "rb") as f:

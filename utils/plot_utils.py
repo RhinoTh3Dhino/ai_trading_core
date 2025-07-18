@@ -17,14 +17,23 @@ def generate_trend_graph(
     os.makedirs(os.path.dirname(img_path), exist_ok=True)
     if not os.path.exists(history_path):
         print(f"[WARN] Historik-fil findes ikke: {history_path}. Opretter dummy-graf.")
-        # Lav dummy-data
+        # Dummy-data
         df = pd.DataFrame({
             "timestamp": [pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")],
             "Navn": ["Ingen data"],
             "Balance": [0]
         })
     else:
-        df = pd.read_csv(history_path)
+        try:
+            df = pd.read_csv(history_path)
+        except Exception as e:
+            print(f"[WARN] Kunne ikke indlæse {history_path}: {e}. Opretter dummy-graf.")
+            df = pd.DataFrame({
+                "timestamp": [pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")],
+                "Navn": ["Ingen data"],
+                "Balance": [0]
+            })
+        # Sikring mod tom fil eller manglende kolonner
         if df.empty or not all(col in df.columns for col in ["timestamp", "Balance", "Navn"]):
             print("[WARN] Mangler nødvendige kolonner i performance_history.csv – opretter dummy-graf.")
             df = pd.DataFrame({

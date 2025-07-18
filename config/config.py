@@ -34,10 +34,18 @@ for group in FEATURES.values():
     ALL_FEATURES.extend([f for f in group if not f.startswith("#") and f.strip() != ""])
 ALL_FEATURES = list(dict.fromkeys(ALL_FEATURES))  # Unik liste
 
-# === Trading-opsætning ===
-COINS = ["BTCUSDT", "ETHUSDT", "DOGEUSDT"]
-TIMEFRAMES = ["1h", "4h"]
+# === Coin/strategi-opsætning fra coins_config.py ===
+try:
+    from config.coins_config import COIN_CONFIGS, ENABLED_COINS, ENABLED_TIMEFRAMES
+except ImportError:
+    COIN_CONFIGS = {}
+    ENABLED_COINS = ["BTCUSDT"]
+    ENABLED_TIMEFRAMES = ["1h"]
 
+COINS = ENABLED_COINS
+TIMEFRAMES = ENABLED_TIMEFRAMES
+
+# === (Fallback: Default global SL/TP hvis ikke defineret pr. coin) ===
 STOP_LOSS = 0.02      # 2%
 TAKE_PROFIT = 0.04    # 4%
 RISK_LEVELS = [0.01, 0.02, 0.03]  # Til position sizing
@@ -83,8 +91,8 @@ OPTIONS = {
 # === Dokumentation ===
 """
 - FEATURES: Brug ALL_FEATURES i ML/DL-pipeline, eller vælg grupper dynamisk.
-- COINS, TIMEFRAMES: Automatisk support for multi-coin/-timeframe backtest og trading.
-- STOP_LOSS, TAKE_PROFIT: Standard risk management.
+- COINS, TIMEFRAMES: Hentes nu fra coins_config.py (kan skaleres).
+- STOP_LOSS, TAKE_PROFIT: Bruges kun som global fallback.
 - ML_PARAMS: Kan bruges direkte i model-træning og hyperparam tuning.
 - TELEGRAM: Skal sættes via .env for sikkerhed i produktion!
 - OPTIONS: Til SaaS, CI/CD, cloud, monitoring, backup mv.
@@ -92,7 +100,7 @@ OPTIONS = {
 
 # === Nem adgang fra andre moduler ===
 __all__ = [
-    "FEATURES", "ALL_FEATURES", "COINS", "TIMEFRAMES", "STOP_LOSS", "TAKE_PROFIT",
+    "FEATURES", "ALL_FEATURES", "COIN_CONFIGS", "COINS", "TIMEFRAMES", "STOP_LOSS", "TAKE_PROFIT",
     "RISK_LEVELS", "REGIME_THRESHOLDS", "DATA_PATH", "MODEL_PATH", "LOG_PATH",
     "TELEGRAM", "ML_PARAMS", "ENSEMBLE_WEIGHTS", "OPTIONS"
 ]

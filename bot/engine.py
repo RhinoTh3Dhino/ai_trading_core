@@ -10,14 +10,29 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message, send_image, send_ensemble_metrics
+from utils.telegram_utils import send_message, send_image
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
 from bot.monitor import ResourceMonitor
-
-# === NYT: Importér avancerede metrics direkte ===
 from utils.metrics_utils import advanced_performance_metrics
+from utils.monitoring_utils import send_live_metrics
+
+# === Monitoring-config import ===
+try:
+    from config.monitoring_config import (
+        ALARM_THRESHOLDS,
+        ALERT_ON_DRAWNDOWN,
+        ALERT_ON_WINRATE,
+        ALERT_ON_PROFIT,
+        ENABLE_MONITORING,
+    )
+except ImportError:
+    ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 0.20, "profit": -10}
+    ALERT_ON_DRAWNDOWN = True
+    ALERT_ON_WINRATE = True
+    ALERT_ON_PROFIT = True
+    ENABLE_MONITORING = True
 
 try:
     from versions import (
@@ -27,7 +42,7 @@ try:
 except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
-from backtest.backtest import run_backtest, calc_backtest_metrics
+from backtest.backtest import run_backtest
 from utils.robust_utils import safe_run
 from ensemble.ensemble_predict import ensemble_predict
 
@@ -46,6 +61,8 @@ LSTM_SCALER_SCALE_PATH = os.path.join(MODEL_DIR, "lstm_scaler_scale.npy")
 LSTM_MODEL_PATH = os.path.join(MODEL_DIR, "lstm_model.h5")
 ML_MODEL_PATH = os.path.join(MODEL_DIR, "best_ml_model.pkl")
 ML_FEATURES_PATH = os.path.join(MODEL_DIR, "best_ml_features.json")
+
+# === Hjælpefunktioner ===
 
 class TradingNet(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=2):
@@ -92,8 +109,7 @@ def reconcile_features(df, feature_list):
         print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
         for col in missing:
             df[col] = 0.0
-    df = df[feature_list]
-    return df
+    return df[feature_list]
 
 def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device_str="cpu"):
     if not os.path.exists(model_path):
@@ -202,7 +218,7 @@ def main(
             print("[ADVARSEL] ML fallback: bruger random signaler.")
         df["signal_ml"] = ml_signals
         trades_ml, balance_ml = run_backtest(df, signals=ml_signals)
-        metrics_ml = advanced_performance_metrics(trades_ml, balance_ml)  # NYT: Brug metrics_utils
+        metrics_ml = advanced_performance_metrics(trades_ml, balance_ml)
         metrics_dict = {"ML": metrics_ml}
 
         # ---- DL (PyTorch eller LSTM) ----
@@ -259,17 +275,19 @@ def main(
         for model, metrics in metrics_dict.items():
             print(f"{model}: {metrics}")
 
-        # Telegram ensemble performance direkte
-        send_ensemble_metrics(
-            {
-                "ml_test_acc": metrics_ml.get("profit_pct", 0)/100,
-                "ml_train_acc": metrics_ml.get("profit_pct", 0)/100,  # evt. justér til rigtige værdier
-                "ml_val_acc": metrics_ml.get("profit_pct", 0)/100,    # evt. justér
-                "dl_test_acc": metrics_dl.get("profit_pct", 0)/100,
-                "ensemble_test_acc": metrics_ens.get("profit_pct", 0)/100
-            }
-        )
+        # === Live monitoring/alerting (styrer al logik via config/monitoring_config.py) ===
+        if ENABLE_MONITORING:
+            send_live_metrics(
+                trades_ens, balance_ens,
+                symbol=symbol,
+                timeframe=interval,
+                thresholds=ALARM_THRESHOLDS,
+                alert_on_drawdown=ALERT_ON_DRAWNDOWN,
+                alert_on_winrate=ALERT_ON_WINRATE,
+                alert_on_profit=ALERT_ON_PROFIT
+            )
 
+        # Logging til TensorBoard og graf-visualisering
         for model_name, metrics in metrics_dict.items():
             for metric_key, value in metrics.items():
                 writer.add_scalar(f"{model_name}/{metric_key}", value)
@@ -283,7 +301,7 @@ def main(
         plot_performance(balance_ens, trades_ens, model_name="Ensemble", save_path=f"{GRAPH_DIR}/performance_ensemble.png")
 
         from visualization.plot_comparison import plot_comparison
-        metric_keys = ["profit_pct", "max_drawdown", "sharpe", "sortino"]  # opdater til de avancerede metrics!
+        metric_keys = ["profit_pct", "max_drawdown", "sharpe", "sortino"]
         plot_comparison(metrics_dict, metric_keys=metric_keys, save_path=f"{GRAPH_DIR}/model_comparison.png")
         print(f"[INFO] Sammenlignings-graf gemt til {GRAPH_DIR}/model_comparison.png")
 
