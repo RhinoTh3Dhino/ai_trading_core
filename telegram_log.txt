@@ -7754,3 +7754,51 @@ Antal handler: 35
 [2025-07-19 00:09:42] Besked sendt OK.
 [2025-07-19 00:09:42] Sender besked: ❌ Live-simulering FEJL: Kunne ikke loade features ([Errno 2] No such file or directory: 'outputs/feature_data/DOES_NOT_EXIST.csv')
 [2025-07-19 00:09:42] Besked sendt OK.
+[2025-07-21 23:19:30] Sender besked: ✅ LGBM training færdig | Val acc: 1.000
+[2025-07-21 23:19:30] Besked sendt OK.
+[2025-07-21 23:25:33] Sender besked: ✅ LGBM training færdig | Val acc: 1.000
+[2025-07-21 23:25:34] Besked sendt OK.
+[2025-07-21 23:29:47] Sender besked: ✅ LGBM training færdig | Val acc: 1.000
+[2025-07-21 23:29:47] Besked sendt OK.
+[2025-07-21 23:37:06] Sender besked: ✅ LGBM training færdig | Val acc: 1.000
+[2025-07-21 23:37:06] Besked sendt OK.
+[2025-07-21 23:50:27] Sender besked: ✅ LGBM training færdig | Val acc: 1.000
+[2025-07-21 23:50:27] Besked sendt OK.
+[2025-07-21 23:54:40] Sender besked: ✅ LGBM training færdig | Val acc: 1.000
+[2025-07-21 23:54:40] Besked sendt OK.
+[2025-07-21 23:55:05] Sender billede: outputs/walkforward/walkforward_plot_BTCUSDT_1h_20250721_235505.png (caption: Walkforward-graf for BTCUSDT 1h
+Buy & Hold (test): 11.49%)
+[2025-07-21 23:55:05] Billede sendt OK.
+[2025-07-21 23:55:15] Sender billede: outputs/walkforward/walkforward_plot_BTCUSDT_4h_20250721_235515.png (caption: Walkforward-graf for BTCUSDT 4h
+Buy & Hold (test): 0.58%)
+[2025-07-21 23:55:16] Billede sendt OK.
+[2025-07-21 23:55:25] Sender billede: outputs/walkforward/walkforward_plot_ETHUSDT_1h_20250721_235525.png (caption: Walkforward-graf for ETHUSDT 1h
+Buy & Hold (test): -6.78%)
+[2025-07-21 23:55:26] Billede sendt OK.
+[2025-07-21 23:55:41] Sender billede: outputs/walkforward/walkforward_plot_ETHUSDT_4h_20250721_235541.png (caption: Walkforward-graf for ETHUSDT 4h
+Buy & Hold (test): 1.05%)
+[2025-07-21 23:55:41] Billede sendt OK.
+[2025-07-21 23:56:15] Sender billede: outputs/walkforward/walkforward_plot_DOGEUSDT_1h_20250721_235615.png (caption: Walkforward-graf for DOGEUSDT 1h
+Buy & Hold (test): 4.64%)
+[2025-07-21 23:56:15] Billede sendt OK.
+[2025-07-21 23:56:35] Sender billede: outputs/walkforward/walkforward_plot_DOGEUSDT_4h_20250721_235635.png (caption: Walkforward-graf for DOGEUSDT 4h
+Buy & Hold (test): 6.83%)
+[2025-07-21 23:56:35] Billede sendt OK.
+[2025-07-21 23:56:37] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635_top5_splits.csv (caption: TOP5 splits (CSV))
+[2025-07-21 23:56:37] Dokument sendt OK.
+[2025-07-21 23:56:37] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635_top5_splits.xlsx (caption: TOP5 splits (Excel))
+[2025-07-21 23:56:37] Dokument sendt OK.
+[2025-07-21 23:56:37] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635_top5_splits.json (caption: TOP5 splits (JSON))
+[2025-07-21 23:56:37] Dokument sendt OK.
+[2025-07-21 23:56:37] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635_top10_splits.csv (caption: TOP10 splits (CSV))
+[2025-07-21 23:56:38] Dokument sendt OK.
+[2025-07-21 23:56:38] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635_top10_splits.xlsx (caption: TOP10 splits (Excel))
+[2025-07-21 23:56:38] Dokument sendt OK.
+[2025-07-21 23:56:38] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635_top10_splits.json (caption: TOP10 splits (JSON))
+[2025-07-21 23:56:38] Dokument sendt OK.
+[2025-07-21 23:56:38] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635.csv (caption: Walkforward-summary (inkl. Buy & Hold, avancerede metrics, best/top5 markeringer))
+[2025-07-21 23:56:38] Dokument sendt OK.
+[2025-07-21 23:56:38] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635.xlsx (caption: Walkforward-summary (Excel))
+[2025-07-21 23:56:38] Dokument sendt OK.
+[2025-07-21 23:56:38] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635.json (caption: Walkforward-summary (JSON))
+[2025-07-21 23:56:39] Dokument sendt OK.

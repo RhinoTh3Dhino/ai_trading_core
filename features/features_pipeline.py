@@ -1,11 +1,9 @@
-import sys
 import os
 import re
 import pandas as pd
 from datetime import datetime
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 # Importér konfiguration centralt
 from config.config import FEATURES, COINS, TIMEFRAMES

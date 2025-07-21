@@ -1,11 +1,9 @@
 import time
 import schedule
 import datetime
-import sys
-import os
 import traceback
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils.telegram_utils import send_telegram_message, send_telegram_heartbeat
 
 def send_daily_status():

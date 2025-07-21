@@ -1,13 +1,11 @@
 # features/generate_features.py
 
-import sys
-import os
+
 import argparse
 import pandas as pd
 import numpy as np
 
-# Sikrer at projekt-roden er på sys.path uanset hvor du kører fra
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from features.features_pipeline import generate_features, save_features
 

@@ -1,13 +1,12 @@
 # backtest/backtest.py
 
-import sys, os
 import pandas as pd
 import numpy as np
 import datetime
 import subprocess
 import argparse
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
 from utils.telegram_utils import send_message, send_image

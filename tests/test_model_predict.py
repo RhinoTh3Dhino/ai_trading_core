@@ -4,12 +4,10 @@ Test af ML-model load + predict + robust fallback.
 Kør fra projektroden:  python tests/test_model_predict.py
 """
 
-import os
-import sys
+
 import pandas as pd
 
-# Gør det muligt at importere fra bot/ og utils/
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from bot.engine import load_ml_model, reconcile_features
 
@@ -19,7 +17,7 @@ N_ROWS = 20  # Hvor mange rækker vi vil teste på
 
 def main():
     # 1. Indlæs features
-    if not os.path.exists(FEATURE_PATH):
+    if 
         print(f"❌ Feature-fil ikke fundet: {FEATURE_PATH}")
         return
     df = pd.read_csv(FEATURE_PATH)

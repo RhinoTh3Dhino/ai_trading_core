@@ -1,11 +1,7 @@
-import sys
-import os
+
 import numpy as np
 
-# Find projektroden og sæt sys.path så imports virker overalt (CI, VS Code, CLI)
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
+
 
 try:
     from backtest.metrics import calculate_sharpe, calculate_drawdown

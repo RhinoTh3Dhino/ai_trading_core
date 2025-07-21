@@ -1,4 +1,4 @@
-import sys, os
+
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Importér strategi- og ensemblefunktioner
 from ensemble.majority_vote_ensemble import majority_vote_ensemble

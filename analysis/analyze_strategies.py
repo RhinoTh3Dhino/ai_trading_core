@@ -1,6 +1,5 @@
 # analyze_strategies.py
-import sys
-import os
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,7 +9,7 @@ import platform
 import subprocess
 
 # Tilføj rodmappen til sys.path for at kunne importere dine egne moduler
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 # === OUTPUT DIR ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

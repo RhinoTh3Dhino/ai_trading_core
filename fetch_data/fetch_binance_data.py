@@ -2,13 +2,12 @@
 
 import argparse
 import glob
-import os
+
 import pandas as pd
-import sys
+
 from datetime import datetime, timedelta
 
-# Sikrer import virker uanset hvorfra scriptet køres:
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils.telegram_utils import send_message
 
 from binance.client import Client

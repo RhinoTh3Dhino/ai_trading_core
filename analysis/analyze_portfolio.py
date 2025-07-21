@@ -1,4 +1,4 @@
-import sys, os, glob, json
+import glob, json
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 # === LÆS COINS FRA config/coins.json (fallback til default) ===
 COINS_JSON_PATH = os.path.join("config", "coins.json")

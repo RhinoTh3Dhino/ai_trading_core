@@ -1,13 +1,11 @@
 # fetch_data/binance_downloader.py
 
-import os
 import pandas as pd
 from datetime import datetime
 from time import sleep
 
-# Hent coins og timeframes direkte fra config.py!
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 from config.config import COINS, TIMEFRAMES
 
 # Prøv at importere Binance-klienten

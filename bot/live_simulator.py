@@ -1,14 +1,12 @@
 # bot/live_simulator.py
 
-import sys
-import os
+
 import pandas as pd
 import numpy as np
 import glob
 from datetime import datetime
 import argparse
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message, send_strategy_metrics

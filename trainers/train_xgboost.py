@@ -8,7 +8,7 @@ Træner en XGBoost-model til trading-signaler (klassifikation)
 """
 
 import os
-import sys
+
 import argparse
 import json
 import pandas as pd
@@ -36,7 +36,7 @@ try:
 except ImportError:
     raise ImportError("Du mangler xgboost! Installer med: pip install xgboost")
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils.telegram_utils import send_message
 
 MODEL_DIR = "models"

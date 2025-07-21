@@ -1,5 +1,3 @@
-import sys
-import os
 
 # Brug Agg-backend FØR import af matplotlib!
 import matplotlib
@@ -10,7 +8,7 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="joblib")
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 import pandas as pd
 import numpy as np

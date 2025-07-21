@@ -1,15 +1,14 @@
 # bot/paper_trader.py
 
-import sys
-import os
+import os 
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import glob
 import matplotlib.pyplot as plt
 
-# --- sys.path-trick så du altid kan importere strategies/ og utils/ ---
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 
 # Importér strategier (efter sys.path-trick!)
 from strategies.advanced_strategies import (

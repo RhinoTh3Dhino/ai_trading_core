@@ -1,228 +1,91 @@
 """
-models/train_lightgbm.py
+trainers/train_lightgbm.py
 
 Træner en LightGBM-model til trading-signaler (klassifikation)
-- Understøtter klassisk træning og MLflow experiment tracking
-- Gemmer og loader model (.txt), log og metrics
-- Automatisk feature selection og artefakt-logging
+- Simpel kernepipeline til hurtige baseline-tests
+- Automatisk feature selection, gemmer model og accuracy
 """
 
+# Sikrer korrekt sys.path – projektroden lægges ind først
 import os
 import sys
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from utils.project_path import ensure_project_root
+ensure_project_root()
+
 import argparse
-import json
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from sklearn.metrics import classification_report, confusion_matrix
-
-# === MLflow ===
-try:
-    import mlflow
-    import mlflow.lightgbm
-    MLFLOW_AVAILABLE = True
-except ImportError:
-    MLFLOW_AVAILABLE = False
-
-# --- MLflow-utils hvis muligt ---
-try:
-    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
-    MLUTILS_AVAILABLE = True
-except ImportError:
-    MLUTILS_AVAILABLE = False
-
-try:
-    import lightgbm as lgb
-except ImportError:
-    raise ImportError("Du mangler lightgbm! Installer med: pip install lightgbm")
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import lightgbm as lgb
+from sklearn.metrics import accuracy_score
 from utils.telegram_utils import send_message
 
 MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, "best_lightgbm_model.txt")
-FEATURES_PATH = os.path.join(MODEL_DIR, "best_lightgbm_features.json")
-LOG_PATH = os.path.join(MODEL_DIR, "train_log_lightgbm.txt")
-
-def ensure_mlflow_run_closed():
-    if MLFLOW_AVAILABLE and mlflow.active_run() is not None:
-        print("[MLflow] Aktivt run fundet, lukker...")
-        mlflow.end_run()
-
-def log_to_file(line, prefix="[INFO] "):
-    os.makedirs("logs", exist_ok=True)
-    with open("logs/bot.log", "a", encoding="utf-8") as logf:
-        logf.write(prefix + line)
 
 def load_csv_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
-    if first_line.startswith("#"):
-        print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
-        return pd.read_csv(file_path, skiprows=1)
-    else:
-        return pd.read_csv(file_path)
+    skiprows = 1 if first_line.startswith("#") else 0
+    return pd.read_csv(file_path, skiprows=skiprows)
 
-def train_lightgbm_model(
-    data_path,
-    target_col="target",
-    test_size=0.2,
-    random_state=42,
-    num_leaves=31,
-    n_estimators=100,
-    learning_rate=0.1,
-    subsample=1.0,
-    colsample_bytree=1.0,
-    verbose=True,
-    save_model=True,
-    use_mlflow=False,
-    mlflow_exp="trading_ai"
-):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[INFO] Træning af LightGBM-model ({now})")
+def train_lightgbm_model(data_path, target_col="target", n_estimators=100, learning_rate=0.1, save_model=True):
     print(f"[INFO] Læser data fra: {data_path}")
-
     df = load_csv_auto(data_path)
-    assert target_col in df.columns, f"target_col '{target_col}' ikke fundet!"
 
-    drop_cols = [target_col, "timestamp"] if "timestamp" in df.columns else [target_col]
-    feature_cols = [col for col in df.columns if col not in drop_cols]
-    X = df[feature_cols]
+    if target_col not in df.columns:
+        print(f"[ADVARSEL] Target-kolonne '{target_col}' ikke fundet – dummy target oprettes.")
+        df[target_col] = 0  # Dummy target, kun til pipeline-test
+
+    X = df.drop(columns=[target_col, "timestamp"], errors="ignore").select_dtypes(include=[np.number])
     y = df[target_col]
 
-    X_numeric = X.select_dtypes(include=[np.number])
-    if X_numeric.shape[1] < X.shape[1]:
-        ignored = set(X.columns) - set(X_numeric.columns)
-        print(f"[ADVARSEL] Ignorerer ikke-numeriske features: {ignored}")
-    X = X_numeric
-
-    if save_model:
-        os.makedirs(MODEL_DIR, exist_ok=True)
-        with open(FEATURES_PATH, "w") as f:
-            json.dump(list(X.columns), f, indent=2)
-        print(f"[INFO] Gemte brugte features til: {FEATURES_PATH}")
-        if use_mlflow and MLFLOW_AVAILABLE:
-            mlflow.log_artifact(FEATURES_PATH)
-
-    # Split uden shuffle (tidsserie)
-    df = df.reset_index(drop=True)
-    split_idx = int(len(df) * (1 - test_size))
+    split_idx = int(len(df) * 0.8)
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
 
-    print(f"[INFO] Train: {len(X_train)}, Val: {len(X_val)}")
-    print("[INFO] Train slutter:", df.iloc[split_idx-1]["timestamp"] if "timestamp" in df.columns else split_idx-1)
-    print("[INFO] Val starter:", df.iloc[split_idx]["timestamp"] if "timestamp" in df.columns else split_idx)
-    print(f"[INFO] Unikke targets: {sorted(y.unique())}")
+    print(f"[INFO] Træner model på {len(X_train)} samples, validerer på {len(X_val)} samples")
 
-    # MLflow experiment tracking
-    if use_mlflow and MLFLOW_AVAILABLE:
-        ensure_mlflow_run_closed()
-        if MLUTILS_AVAILABLE:
-            setup_mlflow(experiment_name=mlflow_exp)
-            start_mlflow_run(run_name=f"lgbm_{now.replace(':','_')}")
-        else:
-            mlflow.set_experiment(mlflow_exp)
-            mlflow.start_run(run_name=f"lgbm_{now.replace(':','_')}")
-        mlflow.log_params({
-            "num_leaves": num_leaves,
-            "n_estimators": n_estimators,
-            "learning_rate": learning_rate,
-            "subsample": subsample,
-            "colsample_bytree": colsample_bytree,
-            "test_size": test_size,
-            "random_state": random_state,
-        })
-
-    # Model
     model = lgb.LGBMClassifier(
-        num_leaves=num_leaves,
         n_estimators=n_estimators,
         learning_rate=learning_rate,
-        subsample=subsample,
-        colsample_bytree=colsample_bytree,
-        random_state=random_state,
-        class_weight="balanced",
-        n_jobs=-1,
-        verbose=-1,
+        class_weight="balanced"
     )
-    model.fit(X_train, y_train, eval_set=[(X_val, y_val)])
+    model.fit(X_train, y_train)
 
-    # Evaluer
     y_pred = model.predict(X_val)
-    acc = np.mean(y_pred == y_val)
-    report = classification_report(y_val, y_pred, zero_division=0, output_dict=True)
-    conf = confusion_matrix(y_val, y_pred)
+    acc = accuracy_score(y_val, y_pred)
+    print(f"✅ Val accuracy: {acc:.3f}")
 
-    if verbose:
-        print(f"[INFO] Val accuracy: {acc:.3f}")
-        print(classification_report(y_val, y_pred, zero_division=0))
-        print("Confusion matrix:\n", conf)
-
-    # MLflow metrics
-    if use_mlflow and MLFLOW_AVAILABLE:
-        mlflow.log_metric("val_acc", acc)
-        mlflow.log_metrics({f"f1_{k}": v["f1-score"] for k, v in report.items() if isinstance(v, dict) and "f1-score" in v})
-
-    # Gem model (checkpoint)
     if save_model:
-        try:
-            model.booster_.save_model(MODEL_PATH)
-            print(f"✅ Model gemt til: {MODEL_PATH}")
-            if use_mlflow and MLFLOW_AVAILABLE:
-                mlflow.lightgbm.log_model(model, "model")
-        except Exception as e:
-            print(f"[ADVARSEL] Kunne ikke gemme model: {e}")
-
-    # Log til fil
-    log_str = f"\n== LightGBM-træningslog {now} ==\n" \
-              f"Model: {MODEL_PATH}\nVal_acc: {acc:.3f}\n" \
-              f"Features: {list(X.columns)}\n\n" \
-              f"Report:\n{classification_report(y_val, y_pred, zero_division=0)}\nConfusion:\n{conf}\n"
-    with open(LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(log_str)
-    print(f"[INFO] Træningslog gemt til: {LOG_PATH}")
-
-    if use_mlflow and MLFLOW_AVAILABLE:
-        mlflow.log_artifact(LOG_PATH)
-        if MLUTILS_AVAILABLE:
-            end_mlflow_run()
-        else:
-            mlflow.end_run()
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        model.booster_.save_model(MODEL_PATH)
+        print(f"[INFO] Model gemt: {MODEL_PATH}")
 
     try:
-        send_message(f"✅ LightGBM træning færdig – Val acc: {acc:.3f}")
+        send_message(f"✅ LGBM training færdig | Val acc: {acc:.3f}")
     except Exception as e:
         print(f"[ADVARSEL] Telegram fejl: {e}")
 
     return acc
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Træn LightGBM-model til trading + MLflow logging")
-    parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
-    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
-    parser.add_argument("--test_size", type=float, default=0.2, help="Test split")
-    parser.add_argument("--num_leaves", type=int, default=31, help="Antal blade (tree leaves)")
-    parser.add_argument("--n_estimators", type=int, default=100, help="Antal træer (estimators)")
-    parser.add_argument("--learning_rate", type=float, default=0.1, help="Learning rate")
-    parser.add_argument("--subsample", type=float, default=1.0, help="Subsample ratio")
-    parser.add_argument("--colsample_bytree", type=float, default=1.0, help="Colsample bytree")
-    parser.add_argument("--no_save", action="store_true", help="Gem ikke model")
-    parser.add_argument("--mlflow", action="store_true", help="Log til MLflow (experiment tracking)")
-    parser.add_argument("--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name")
+    parser = argparse.ArgumentParser(description="Træn LightGBM baseline-model til trading-signaler")
+    parser.add_argument("--data", type=str, required=True, help="Path til features-data (.csv)")
+    parser.add_argument("--target", type=str, default="target", help="Target-kolonne")
+    parser.add_argument("--n_estimators", type=int, default=100)
+    parser.add_argument("--learning_rate", type=float, default=0.1)
+    parser.add_argument("--no_save", action="store_true")
     args = parser.parse_args()
 
     train_lightgbm_model(
         data_path=args.data,
         target_col=args.target,
-        test_size=args.test_size,
-        num_leaves=args.num_leaves,
         n_estimators=args.n_estimators,
         learning_rate=args.learning_rate,
-        subsample=args.subsample,
-        colsample_bytree=args.colsample_bytree,
-        verbose=True,
-        save_model=not args.no_save,
-        use_mlflow=args.mlflow,
-        mlflow_exp=args.mlflow_exp,
+        save_model=not args.no_save
     )

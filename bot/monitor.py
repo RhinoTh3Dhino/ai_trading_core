@@ -2,8 +2,7 @@ import psutil
 import GPUtil
 import time
 import threading
-import os
-import sys
+
 
 class ResourceMonitor:
     def __init__(self, ram_max=90, cpu_max=90, gpu_max=90, gpu_temp_max=85, check_interval=10, 

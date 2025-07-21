@@ -1,13 +1,11 @@
 # tests/test_plot_comparison.py
 
-import os
-import sys
+
 import shutil
 import pandas as pd
 import numpy as np
 
-# Sikrer, at visualization/ kan importeres
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from visualization.plot_comparison import plot_comparison
 

@@ -33,7 +33,32 @@ Dette projekt er fundamentet for en avanceret, robust og modulær AI trading bot
 
 ---
 
-## 🚀 Quickstart
+## 🚀 **Kørsel af scripts og tests – run.py som universal script-runner**
+
+   **Dette projekt bruger en central runner-fil run.py som entrypoint til alle scripts og tests.**
+
+   **Hvorfor denne struktur?**
+   - Automatisk korrekt import: Du slipper for sys.path-hacks i hvert enkelt script og test.
+   - Bedre portabilitet: Uanset om du kører lokalt, via CI/CD (GitHub Actions) eller i Docker, vil importen altid virke.
+   - Nem vedligeholdelse: Ændringer i projektstruktur kræver kun tilretning ét sted.
+
+**Sådan bruges det**
+
+**Kør et script:**
+
+- python run.py scripts/retrain.py --symbol BTCUSDT --epochs 20
+
+**Kør en test:**
+
+- python run.py tests/test_features.py
+
+**python run.py tests/test_features.py**
+
+- python run.py scripts/generate_report.py --date 2024-07-01 --format csv
+
+---
+
+## 🚀 **Quickstart**
 
 - **1. Klon repo og installer dependencies:**
 - git clone <dit-repo-url>

@@ -1,12 +1,17 @@
 # tests/test_walkforward.py
 
-import sys
+# 📌 Sikrer korrekt sys.path til projektroden
 import os
+import sys
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# ✅ Korrekte imports
 import glob
 import traceback
 import shutil
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,7 +39,11 @@ except ImportError:
     ENABLE_MONITORING = True
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
 
-from strategies.advanced_strategies import ema_crossover_strategy, ema_rsi_regime_strategy, voting_ensemble
+from strategies.advanced_strategies import (
+    ema_crossover_strategy,
+    ema_rsi_regime_strategy,
+    voting_ensemble,
+)
 from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.gridsearch_strategies import paper_trade_simple
 from utils.performance import (
@@ -44,6 +53,7 @@ from utils.performance import (
     calculate_regime_drawdown,
 )
 from utils.telegram_utils import send_image, send_document
+
 
 # --- WALKFORWARD PARAMS (hentet fra config hvis muligt) ---
 DEFAULT_WINDOW_SIZE = WALKFORWARD_DEFAULT_WINDOW_SIZE
