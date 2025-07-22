@@ -10,8 +10,8 @@ from utils.telegram_utils import (
     LOG_PATH,
 )
 
+
 def test_telegram_enabled_false(monkeypatch):
-    # Tving Telegram til at være deaktiveret
     monkeypatch.setenv("TELEGRAM_TOKEN", "none")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "none")
     assert not telegram_enabled(), "telegram_enabled burde returnere False når variabler mangler"
@@ -19,10 +19,12 @@ def test_telegram_enabled_false(monkeypatch):
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "dummy_id")
     assert not telegram_enabled(), "telegram_enabled burde returnere False for dummy_token/dummy_id"
 
+
 def test_telegram_enabled_true(monkeypatch):
     monkeypatch.setenv("TELEGRAM_TOKEN", "valid_token")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "valid_id")
     assert telegram_enabled(), "telegram_enabled burde returnere True med valide værdier"
+
 
 def test_send_message_noop(monkeypatch, capsys):
     monkeypatch.setenv("TELEGRAM_TOKEN", "none")
@@ -33,12 +35,12 @@ def test_send_message_noop(monkeypatch, capsys):
     assert "[TESTMODE]" in captured.out, "Forventer [TESTMODE]-output når Telegram er deaktiveret"
     assert "Testbesked fra test" in captured.out, "Testbesked skal fremgå i output"
 
+
 def test_log_telegram_creates_log(tmp_path):
     log_file = tmp_path / "telegram_test_log.txt"
     msg = "Log besked fra test"
     orig_log_path = LOG_PATH
     try:
-        # Override global log path direkte
         from utils import telegram_utils
         telegram_utils.LOG_PATH = str(log_file)
         log_telegram(msg)
@@ -46,14 +48,17 @@ def test_log_telegram_creates_log(tmp_path):
         content = log_file.read_text(encoding="utf-8")
         assert msg in content, "Log besked findes ikke i log-filen"
     finally:
-        telegram_utils.LOG_PATH = orig_log_path  # Restore
+        telegram_utils.LOG_PATH = orig_log_path
+
 
 def test_send_telegram_heartbeat(monkeypatch, capsys):
     monkeypatch.setenv("TELEGRAM_TOKEN", "none")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "none")
     send_telegram_heartbeat()
     captured = capsys.readouterr()
-    assert "hjertelyd" in captured.out.lower(), "Heartbeat besked mangler i output"
+    assert "[testmode]" in captured.out.lower(), "Testmode markering mangler"
+    assert "botten kører stadig" in captured.out.lower(), "Heartbeat besked mangler i output"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
