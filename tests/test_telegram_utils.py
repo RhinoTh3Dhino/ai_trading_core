@@ -1,45 +1,59 @@
+# tests/test_telegram_utils.py
+
 import os
 import pytest
-from utils import telegram_utils
+from utils.telegram_utils import (
+    telegram_enabled,
+    send_message,
+    log_telegram,
+    send_telegram_heartbeat,
+    LOG_PATH,
+)
 
 def test_telegram_enabled_false(monkeypatch):
     # Tving Telegram til at være deaktiveret
     monkeypatch.setenv("TELEGRAM_TOKEN", "none")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "none")
-    assert not telegram_utils.telegram_enabled(), "telegram_enabled burde returnere False når variabler mangler"
+    assert not telegram_enabled(), "telegram_enabled burde returnere False når variabler mangler"
     monkeypatch.setenv("TELEGRAM_TOKEN", "dummy_token")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "dummy_id")
-    assert not telegram_utils.telegram_enabled(), "telegram_enabled burde returnere False for dummy_token/dummy_id"
+    assert not telegram_enabled(), "telegram_enabled burde returnere False for dummy_token/dummy_id"
 
 def test_telegram_enabled_true(monkeypatch):
-    # Brug ikke-reserverede værdier
-    monkeypatch.setenv("TELEGRAM_TOKEN", "fake_token")
-    monkeypatch.setenv("TELEGRAM_CHAT_ID", "fake_id")
-    assert telegram_utils.telegram_enabled(), "telegram_enabled burde returnere True for ikke-tomme og ikke-reserverede værdier"
+    monkeypatch.setenv("TELEGRAM_TOKEN", "valid_token")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "valid_id")
+    assert telegram_enabled(), "telegram_enabled burde returnere True med valide værdier"
 
 def test_send_message_noop(monkeypatch, capsys):
-    # Sikrer at send_message ikke fejler når Telegram er inaktiv
     monkeypatch.setenv("TELEGRAM_TOKEN", "none")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "none")
-    result = telegram_utils.send_message("Testbesked", silent=False)
-    assert result is None
+    result = send_message("Testbesked fra test")
+    assert result is None, "send_message() skal returnere None i testmode"
     captured = capsys.readouterr()
-    assert "[CI/test]" in captured.out or "[CI/test]" in captured.err
+    assert "[TESTMODE]" in captured.out, "Forventer [TESTMODE]-output når Telegram er deaktiveret"
+    assert "Testbesked fra test" in captured.out, "Testbesked skal fremgå i output"
 
 def test_log_telegram_creates_log(tmp_path):
-    # Sikrer at log_telegram faktisk skriver til fil
-    log_path = tmp_path / "telegram_log.txt"
-    msg = "Logtest"
-    # Midlertidig override af global log_path
-    orig_log_path = telegram_utils.LOG_PATH
-    telegram_utils.LOG_PATH = str(log_path)
-    telegram_utils.log_telegram(msg)
-    assert log_path.exists()
-    content = log_path.read_text(encoding="utf-8")
-    assert msg in content
-    telegram_utils.LOG_PATH = orig_log_path  # Restore
+    log_file = tmp_path / "telegram_test_log.txt"
+    msg = "Log besked fra test"
+    orig_log_path = LOG_PATH
+    try:
+        # Override global log path direkte
+        from utils import telegram_utils
+        telegram_utils.LOG_PATH = str(log_file)
+        log_telegram(msg)
+        assert log_file.exists(), "Log-fil blev ikke oprettet"
+        content = log_file.read_text(encoding="utf-8")
+        assert msg in content, "Log besked findes ikke i log-filen"
+    finally:
+        telegram_utils.LOG_PATH = orig_log_path  # Restore
 
-def test_send_telegram_heartbeat(monkeypatch):
+def test_send_telegram_heartbeat(monkeypatch, capsys):
     monkeypatch.setenv("TELEGRAM_TOKEN", "none")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "none")
-    telegram_utils.send_telegram_heartbeat()
+    send_telegram_heartbeat()
+    captured = capsys.readouterr()
+    assert "hjertelyd" in captured.out.lower(), "Heartbeat besked mangler i output"
+
+if __name__ == "__main__":
+    pytest.main([__file__])

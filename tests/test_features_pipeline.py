@@ -9,7 +9,7 @@ from datetime import datetime
 # Sæt korrekt working directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-os.chdir(PROJECT_ROOT)  # Sikrer korrekt working directory
+os.chdir(PROJECT_ROOT)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
@@ -40,7 +40,14 @@ def make_version_with_timestamp(version):
 def ensure_dir_exists(path):
     os.makedirs(path, exist_ok=True)
 
-def test_generate_features_pipeline(args):
+class DummyArgs:
+    data_path = DEFAULT_DATA_PATH
+    symbol = DEFAULT_SYMBOL
+    timeframe = DEFAULT_TIMEFRAME
+    version = DEFAULT_VERSION
+
+def test_generate_features_pipeline():
+    args = DummyArgs()
     print(f"[INFO] Kører med data_path={args.data_path}")
 
     ensure_dir_exists("outputs/feature_data")
@@ -87,4 +94,8 @@ def test_generate_features_pipeline(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    test_generate_features_pipeline(args)
+    DummyArgs.data_path = args.data_path
+    DummyArgs.symbol = args.symbol
+    DummyArgs.timeframe = args.timeframe
+    DummyArgs.version = args.version
+    test_generate_features_pipeline()
