@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # ml/train_ml_model.py
 
 import os
@@ -13,8 +14,8 @@ def main():
     parser = argparse.ArgumentParser(description="Træn ML-model (RandomForest) på feature-CSV og gem til disk.")
     parser.add_argument("--data", type=str, required=True, help="Sti til feature-CSV")
     parser.add_argument("--target", type=str, default="target", help="Target-kolonne (fx 'target')")
-    parser.add_argument("--model_out", type=str, default="models/best_ml_model.pkl")
-    parser.add_argument("--features_out", type=str, default="models/best_ml_features.json")
+    parser.add_argument("--model_out", type=str, default=PROJECT_ROOT / "models" / "best_ml_model.pkl"  # AUTO PATH CONVERTED)
+    parser.add_argument("--features_out", type=str, default=PROJECT_ROOT / "models" / "best_ml_features.json"  # AUTO PATH CONVERTED)
     parser.add_argument("--n_estimators", type=int, default=100)
     parser.add_argument("--backup", action="store_true", help="Gem backup/versioneret kopi af model og features")
     args = parser.parse_args()

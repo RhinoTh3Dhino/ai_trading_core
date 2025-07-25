@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # bot/paper_trader.py
 
 import os 
@@ -30,7 +31,7 @@ FEE = 0.0005
 
 def find_latest_feature_file(symbol, tf, version="v1.3"):
     """Finder seneste feature-fil med mønster."""
-    pattern = f"outputs/feature_data/{symbol.lower()}_{tf}_features_{version}_*.csv"
+    pattern = fPROJECT_ROOT / "outputs" / "feature_data/{symbol.lower()}_{tf}_features_{version}_*.csv"  # AUTO PATH CONVERTED
     files = glob.glob(pattern)
     if not files:
         return None
@@ -75,7 +76,7 @@ def plot_trades(df, trades_df, journal_path):
 def paper_trade(
     df,
     sl=SL, tp=TP, start_balance=START_BALANCE, fee=FEE,
-    JOURNAL_PATH="outputs/paper_trades.csv",
+    JOURNAL_PATH=PROJECT_ROOT / "outputs" / "paper_trades.csv"  # AUTO PATH CONVERTED,
     use_adaptive_sl_tp=False
 ):
     balance = start_balance
@@ -179,5 +180,5 @@ if __name__ == "__main__":
             # df = ema_rsi_adx_strategy(df)
             df = voting_ensemble(df)
 
-            journal_path = f"outputs/paper_trades_{symbol.lower()}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            journal_path = fPROJECT_ROOT / "outputs" / "paper_trades_{symbol.lower()}_{tf}_{datetime.now().strftime("  # AUTO PATH CONVERTED%Y%m%d_%H%M%S')}.csv"
             paper_trade(df, JOURNAL_PATH=journal_path)

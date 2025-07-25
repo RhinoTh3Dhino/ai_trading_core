@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 """
 models/optuna_tuner.py
 
@@ -30,8 +31,8 @@ try:
 except ImportError:
     send_message = lambda msg: None
 
-OPTUNA_LOG_PATH = os.path.join("models", "optuna_trials.csv")
-MODEL_PATH = os.path.join("models", "best_pytorch_model.pt")
+OPTUNA_LOG_PATH = PROJECT_ROOT / "models" / "optuna_trials.csv"  # AUTO PATH CONVERTED
+MODEL_PATH = PROJECT_ROOT / "models" / "best_pytorch_model.pt"  # AUTO PATH CONVERTED
 
 def optuna_objective(trial, data_path, target, test_size):
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])

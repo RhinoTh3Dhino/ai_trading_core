@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # utils/ensemble_utils.py
 
 import json
@@ -5,7 +6,7 @@ import os
 
 DEFAULT_ENSEMBLE_THRESHOLD = 0.7
 DEFAULT_ENSEMBLE_WEIGHTS = [1.0, 1.0, 0.7]
-PARAMS_PATH = "models/best_ensemble_params.json"
+PARAMS_PATH = PROJECT_ROOT / "models" / "best_ensemble_params.json"  # AUTO PATH CONVERTED
 
 def load_best_ensemble_params():
     """
@@ -63,4 +64,3 @@ def simple_voting(ml_signal, dl_signal, rule_signal, weights=None):
     if score >= 0.5 * sum(weights):
         return 1
     return 0
-

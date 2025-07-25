@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # backtest/backtest.py
 
 import pandas as pd
@@ -256,7 +257,7 @@ def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
     }
     return out
 
-def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results.csv"):
+def save_backtest_results(metrics, version="v1", csv_path=PROJECT_ROOT / "data" / "backtest_results.csv"  # AUTO PATH CONVERTED):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     git_hash = get_git_hash()
     row = {"timestamp": timestamp, "version": version, "git_hash": git_hash, **metrics}
@@ -270,10 +271,10 @@ def save_backtest_results(metrics, version="v1", csv_path="data/backtest_results
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--feature_path", type=str, default="outputs/feature_data/btc_1h_features_v_test_20250610.csv")
-    parser.add_argument("--results_path", type=str, default="data/backtest_results.csv")
-    parser.add_argument("--balance_path", type=str, default="data/balance.csv")
-    parser.add_argument("--trades_path", type=str, default="data/trades.csv")
+    parser.add_argument("--feature_path", type=str, default=PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"  # AUTO PATH CONVERTED)
+    parser.add_argument("--results_path", type=str, default=PROJECT_ROOT / "data" / "backtest_results.csv"  # AUTO PATH CONVERTED)
+    parser.add_argument("--balance_path", type=str, default=PROJECT_ROOT / "data" / "balance.csv"  # AUTO PATH CONVERTED)
+    parser.add_argument("--trades_path", type=str, default=PROJECT_ROOT / "data" / "trades.csv"  # AUTO PATH CONVERTED)
     parser.add_argument("--strategy", type=str, default="ensemble", choices=["ensemble", "voting", "regime", "ema_rsi", "meanrev"])
     parser.add_argument("--gridsearch", action="store_true")
     parser.add_argument("--voting", type=str, default="majority", choices=["majority", "weighted", "sum"])
@@ -318,7 +319,7 @@ def main():
             ema_slow_grid=[21, 30, 34, 55],
             regime_only=False,
             top_n=10,
-            log_path="outputs/gridsearch/ema_gridsearch_results.csv"
+            log_path=PROJECT_ROOT / "outputs" / "gridsearch/ema_gridsearch_results.csv"  # AUTO PATH CONVERTED
         )
         print(results_df.head(10))
         return
@@ -378,8 +379,8 @@ def main():
             plt.xlabel("Vindue")
             plt.grid(True)
             plt.tight_layout()
-            plt.savefig("outputs/walkforward_performance.png")
-            send_image("outputs/walkforward_performance.png", caption="📈 Walk-forward analyse")
+            plt.savefig(PROJECT_ROOT / "outputs" / "walkforward_performance.png"  # AUTO PATH CONVERTED)
+            send_image(PROJECT_ROOT / "outputs" / "walkforward_performance.png"  # AUTO PATH CONVERTED, caption="📈 Walk-forward analyse")
         except Exception as e:
             print(f"❌ Plot-fejl: {e}")
         return

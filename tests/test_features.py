@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 
 from features.ta_indicators import add_ta_indicators
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # ---------- KONFIG ----------
-CSV_PATH = "data/BTCUSDT_1h.csv"    # Tilpas evt. til dit filnavn
+CSV_PATH = PROJECT_ROOT / "data" / "BTCUSDT_1h.csv"  # AUTO PATH CONVERTED    # Tilpas evt. til dit filnavn
 
 # ---------- DUMMYDATA HVIS CSV MANGLER ----------
 if not os.path.exists(CSV_PATH):

@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import pandas as pd
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 def update_bot_status(
     md_path,
     run_id,
@@ -31,7 +32,7 @@ def log_to_changelog(run_id, version, notes, changelog_path="CHANGELOG.md"):
         f.write(entry)
     print(f"[INFO] CHANGELOG.md opdateret: {changelog_path}")
 
-def print_status(portfolio_metrics_path="outputs/portfolio_metrics_latest.csv"):
+def print_status(portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"  # AUTO PATH CONVERTED):
     if not os.path.exists(portfolio_metrics_path):
         print("Ingen portefølje-metrics fundet.")
         return
@@ -66,7 +67,7 @@ def export_trade_journal(trades_df, output_path):
     trades_df.to_csv(output_path, index=False, encoding="utf-8")
     print(f"[INFO] Trade journal eksporteret: {output_path}")
 
-def log_performance_to_history(portfolio_metrics_path, history_path="outputs/performance_history.csv"):
+def log_performance_to_history(portfolio_metrics_path, history_path=PROJECT_ROOT / "outputs" / "performance_history.csv"  # AUTO PATH CONVERTED):
     """
     Logger altid til performance_history.csv – opretter fil med default-header hvis der ikke er data.
     """
@@ -99,4 +100,3 @@ def log_performance_to_history(portfolio_metrics_path, history_path="outputs/per
         df = pd.concat([df_hist, df], ignore_index=True)
     df.to_csv(history_path, index=False)
     print(f"[INFO] performance_history.csv opdateret ({len(df)} rækker).")
-

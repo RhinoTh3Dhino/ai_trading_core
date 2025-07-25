@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # bot/multi_live_simulator.py
 
 
@@ -16,19 +17,19 @@ MULTI_CONFIG = [
     {
         "symbol": "btcusdt",
         "timeframe": "1h",
-        "features_path": "outputs/feature_data/btcusdt_1h_features_v1.3_20250718.csv",
+        "features_path": PROJECT_ROOT / "outputs" / "feature_data/btcusdt_1h_features_v1.3_20250718.csv"  # AUTO PATH CONVERTED,
         "n_rows": 500,
     },
     {
         "symbol": "ethusdt",
         "timeframe": "1h",
-        "features_path": "outputs/feature_data/ethusdt_1h_features_latest.csv",
+        "features_path": PROJECT_ROOT / "outputs" / "feature_data/ethusdt_1h_features_latest.csv"  # AUTO PATH CONVERTED,
         "n_rows": 500,
     },
     {
         "symbol": "dogeusdt",
         "timeframe": "1h",
-        "features_path": "outputs/feature_data/dogeusdt_1h_features_latest.csv",
+        "features_path": PROJECT_ROOT / "outputs" / "feature_data/dogeusdt_1h_features_latest.csv"  # AUTO PATH CONVERTED,
         "n_rows": 500,
     },
     # Tilføj flere coins/timeframes her!

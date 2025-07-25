@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # analyze_walkforward.py
 
 import os
@@ -8,7 +9,7 @@ from datetime import datetime
 
 # === Find og indlæs nyeste walkforward-summary ===
 summary_files = sorted(
-    glob.glob("outputs/walkforward/walkforward_summary_*.csv"),
+    glob.glob(PROJECT_ROOT / "outputs" / "walkforward/walkforward_summary_*.csv"  # AUTO PATH CONVERTED),
     key=os.path.getmtime,
 )
 if not summary_files:
@@ -48,7 +49,7 @@ plt.ylabel("Test Sharpe Ratio")
 plt.title("Test Sharpe Ratio på tværs af splits")
 plt.legend()
 plt.tight_layout()
-sharpe_plot = f"outputs/walkforward/plot_sharpe_per_split_{datetime.now():%Y%m%d_%H%M%S}.png"
+sharpe_plot = fPROJECT_ROOT / "outputs" / "walkforward/plot_sharpe_per_split_{datetime.now():%Y%m%d_%H%M%S}.png"  # AUTO PATH CONVERTED
 plt.savefig(sharpe_plot)
 print(f"✅ Gemte plot: {sharpe_plot}")
 
@@ -64,7 +65,7 @@ plt.ylabel("Pct / Winrate")
 plt.title("Winrate og Buy & Hold på tværs af splits")
 plt.legend()
 plt.tight_layout()
-winrate_plot = f"outputs/walkforward/plot_winrate_buyhold_per_split_{datetime.now():%Y%m%d_%H%M%S}.png"
+winrate_plot = fPROJECT_ROOT / "outputs" / "walkforward/plot_winrate_buyhold_per_split_{datetime.now():%Y%m%d_%H%M%S}.png"  # AUTO PATH CONVERTED
 plt.savefig(winrate_plot)
 print(f"✅ Gemte plot: {winrate_plot}")
 
@@ -79,7 +80,7 @@ if "test_rolling_sharpe" in df.columns:
     plt.title("Rolling Sharpe på tværs af splits")
     plt.legend()
     plt.tight_layout()
-    fname = f"outputs/walkforward/plot_rolling_sharpe_{datetime.now():%Y%m%d_%H%M%S}.png"
+    fname = fPROJECT_ROOT / "outputs" / "walkforward/plot_rolling_sharpe_{datetime.now():%Y%m%d_%H%M%S}.png"  # AUTO PATH CONVERTED
     plt.savefig(fname)
     print(f"✅ Gemte plot: {fname}")
 
@@ -93,7 +94,7 @@ if "test_trade_duration" in df.columns:
     plt.title("Trade Duration på tværs af splits")
     plt.legend()
     plt.tight_layout()
-    fname = f"outputs/walkforward/plot_trade_duration_{datetime.now():%Y%m%d_%H%M%S}.png"
+    fname = fPROJECT_ROOT / "outputs" / "walkforward/plot_trade_duration_{datetime.now():%Y%m%d_%H%M%S}.png"  # AUTO PATH CONVERTED
     plt.savefig(fname)
     print(f"✅ Gemte plot: {fname}")
 
@@ -107,14 +108,14 @@ if "test_regime_drawdown" in df.columns:
     plt.title("Regime Drawdown på tværs af splits")
     plt.legend()
     plt.tight_layout()
-    fname = f"outputs/walkforward/plot_regime_drawdown_{datetime.now():%Y%m%d_%H%M%S}.png"
+    fname = fPROJECT_ROOT / "outputs" / "walkforward/plot_regime_drawdown_{datetime.now():%Y%m%d_%H%M%S}.png"  # AUTO PATH CONVERTED
     plt.savefig(fname)
     print(f"✅ Gemte plot: {fname}")
 
 # === Gem top5/top10 splits til CSV/Excel/JSON ===
 for N, tag in [(5, "top5"), (10, "top10")]:
     topN = df.sort_values("test_sharpe", ascending=False).head(N)
-    topN_csv = f"outputs/walkforward/{tag}_sharpe_splits_{datetime.now():%Y%m%d_%H%M%S}.csv"
+    topN_csv = fPROJECT_ROOT / "outputs" / "walkforward/{tag}_sharpe_splits_{datetime.now():%Y%m%d_%H%M%S}.csv"  # AUTO PATH CONVERTED
     topN_excel = topN_csv.replace(".csv", ".xlsx")
     topN_json = topN_csv.replace(".csv", ".json")
     topN.to_csv(topN_csv, index=False)

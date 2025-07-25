@@ -1,10 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 
 def generate_trend_graph(
-    history_path="outputs/performance_history.csv",
-    img_path="outputs/balance_trend.png",
+    history_path=PROJECT_ROOT / "outputs" / "performance_history.csv",  # AUTO PATH CONVERTED
+    img_path=PROJECT_ROOT / "outputs" / "balance_trend.png",            # AUTO PATH CONVERTED
     title="Balanceudvikling over tid",
     xlabel="Tid",
     ylabel="Balance",

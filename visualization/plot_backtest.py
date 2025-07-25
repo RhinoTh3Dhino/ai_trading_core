@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 
-def plot_backtest(balance_csv="data/balance.csv", symbol="BTC", save_dir="graphs/"):
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+def plot_backtest(balance_csv=PROJECT_ROOT / "data" / "balance.csv"  # AUTO PATH CONVERTED, symbol="BTC", save_dir="graphs/"):
     # Læs balance-data
     if isinstance(balance_csv, str):
         if not os.path.exists(balance_csv):
@@ -41,4 +42,4 @@ def plot_backtest(balance_csv="data/balance.csv", symbol="BTC", save_dir="graphs
 
 if __name__ == "__main__":
     # Kør direkte fra terminal:
-    plot_backtest(balance_csv="data/balance.csv", symbol="BTC", save_dir="graphs/")
+    plot_backtest(balance_csv=PROJECT_ROOT / "data" / "balance.csv"  # AUTO PATH CONVERTED, symbol="BTC", save_dir="graphs/")

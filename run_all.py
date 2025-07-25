@@ -7,6 +7,7 @@ import argparse
 from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # === Tilføj projektroden til sys.path for robuste imports (CLI & VS Code) ===
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "."))
@@ -90,7 +91,7 @@ def main():
     run_command(fetch_cmd, f"Hent rådata for {SYMBOL} {INTERVAL}")
 
     # Find nyeste fil
-    datafiles = sorted(glob.glob(f"data/{SYMBOL}_{INTERVAL}_*.csv"))
+    datafiles = sorted(glob.glob(fPROJECT_ROOT / "data" / "{SYMBOL}_{INTERVAL}_*.csv"  # AUTO PATH CONVERTED))
     if not datafiles:
         err = f"Ingen datafiler fundet efter download. Stopper.\n"
         log_to_file(err, prefix="[ERROR] ")
@@ -102,7 +103,7 @@ def main():
     print(f"✅ Nyeste datafil: {input_file}")
 
     # Step 2: Feature engineering
-    feature_dir = "outputs/feature_data"
+    feature_dir = PROJECT_ROOT / "outputs" / "feature_data"  # AUTO PATH CONVERTED
     os.makedirs(feature_dir, exist_ok=True)
     feature_output = f"{feature_dir}/{SYMBOL.lower()}_{INTERVAL}_features_{FEATURE_VERSION}.csv"
     feature_cmd = [

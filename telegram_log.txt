@@ -7802,3 +7802,86 @@ Buy & Hold (test): 6.83%)
 [2025-07-21 23:56:38] Dokument sendt OK.
 [2025-07-21 23:56:38] Sender dokument: outputs/walkforward/walkforward_summary_20250721_235635.json (caption: Walkforward-summary (JSON))
 [2025-07-21 23:56:39] Dokument sendt OK.
+[2025-07-23 00:34:48] Sender besked: 📈 Baseline Model Trained
+Accuracy: 58.88%
+Winrate (TP først): 0.00%
+Sharpe: -1000000000.00
+[2025-07-23 00:34:49] Besked sendt OK.
+[2025-07-24 23:31:41] Sender besked: 📊 Gridsearch (TP/SL targets) – Bedste:
+target_tp1.5_sl1.5
+Accuracy: 50.96%
+Winrate: 0.00%
+Sharpe: 1.43
+Rækker: 14131
+[2025-07-24 23:31:41] Besked sendt OK.
+[2025-07-25 19:13:58] Sender besked: ⚠️ EDGE IKKE FUNDENDE!
+🚦 Gridsearch Winrate Summary
+Bedste: target_tp1.0_sl1.0
+Features: ['close']
+Winrate: 0.00%
+Accuracy: 48.95%
+n_1: 557, n_0: 6032 (Test: 6589)
+[2025-07-25 19:13:58] Besked sendt OK.
+[2025-07-25 19:42:45] Sender besked: 📊 Gridsearch (TP/SL targets) – Bedste:
+target_tp1.0_sl1.0
+Accuracy: 50.37%
+Winrate: 0.00%
+Sharpe: 0.58
+Rækker: 16471
+[2025-07-25 19:42:45] Besked sendt OK.
+[2025-07-25 19:51:09] Sender besked: 📊 Gridsearch (TP/SL targets) – Bedste:
+target_tp1.5_sl1.5
+Accuracy: 50.96%
+Winrate: 0.00%
+Sharpe: 1.43
+n_1: 5143, n_0: 510 (Test: 5653)
+[2025-07-25 19:51:10] Besked sendt OK.
+[2025-07-25 20:13:41] Sender besked: 📊 Gridsearch Regime-Target
+Bedste features: ['close']
+Accuracy: 57.42%
+Winrate: 0.00%
+Sharpe: 0.00
+n_1: 0, n_0: 6334 (Test: 6334)
+[2025-07-25 20:13:41] Besked sendt OK.
+[2025-07-25 21:55:10] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target
+Accuracy: 51.01%
+Winrate: 93.24%
+Sharpe: 1.68
+n_1: 6519, n_0: 494 (Test: 7013)
+[2025-07-25 21:55:10] Besked sendt OK.
+[2025-07-25 22:40:38] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.42%
+Winrate: 0.00%
+Sharpe: 0.00
+n_1: 0, n_0: 6334 (Test: 6334)
+[2025-07-25 22:40:38] Besked sendt OK.
+[2025-07-25 22:40:48] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 0.00%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-07-25 22:40:49] Besked sendt OK.
+[2025-07-25 22:40:58] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 70.90%
+Winrate: 0.00%
+Sharpe: 0.03
+n_1: 3736, n_0: 3528 (Test: 7264)
+[2025-07-25 22:40:58] Besked sendt OK.
+[2025-07-25 22:41:08] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 56.44%
+Winrate: 0.00%
+Sharpe: -0.02
+n_1: 3110, n_0: 3224 (Test: 6334)
+[2025-07-25 22:41:08] Besked sendt OK.
+[2025-07-25 22:41:17] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 0.00%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-07-25 22:41:18] Besked sendt OK.

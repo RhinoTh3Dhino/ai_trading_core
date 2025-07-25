@@ -1,10 +1,11 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # visualization/plot_metrics.py
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-def plot_metrics_over_time(csv_path="data/model_eval.csv", out_path="data/metrics_over_time.png"):
+def plot_metrics_over_time(csv_path=PROJECT_ROOT / "data" / "model_eval.csv"  # AUTO PATH CONVERTED, out_path=PROJECT_ROOT / "data" / "metrics_over_time.png"  # AUTO PATH CONVERTED):
     # Tjek om filen findes
     if not os.path.exists(csv_path):
         print(f"❌ Filen {csv_path} findes ikke!")

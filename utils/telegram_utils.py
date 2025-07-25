@@ -1,3 +1,5 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+
 import os
 import requests
 import datetime
@@ -17,7 +19,7 @@ except ImportError:
     generate_trend_graph = None
 
 load_dotenv()
-LOG_PATH = "telegram_log.txt"
+LOG_PATH = PROJECT_ROOT / "telegram_log.txt"  # AUTO PATH CONVERTED
 
 def telegram_enabled():
     token = os.getenv("TELEGRAM_TOKEN")
@@ -144,7 +146,12 @@ def send_auto_status_summary(summary_text, image_path=None, doc_path=None, chat_
     if doc_path and os.path.exists(doc_path):
         send_document(doc_path, caption="📊 Trade Journal", chat_id=chat_id)
 
-def send_trend_graph(chat_id=None, history_path="outputs/performance_history.csv", img_path="outputs/balance_trend.png", caption="📈 Balanceudvikling"):
+def send_trend_graph(
+    chat_id=None,
+    history_path=PROJECT_ROOT / "outputs" / "performance_history.csv",  # AUTO PATH CONVERTED
+    img_path=PROJECT_ROOT / "outputs" / "balance_trend.png",            # AUTO PATH CONVERTED
+    caption="📈 Balanceudvikling"
+):
     try:
         if generate_trend_graph:
             img_path = generate_trend_graph(history_path=history_path, img_path=img_path)
@@ -159,7 +166,6 @@ def send_trend_graph(chat_id=None, history_path="outputs/performance_history.csv
         log_telegram(f"EXCEPTION ved send_trend_graph: {e}")
         send_message(f"Fejl ved generering/sending af trend-graf: {e}", chat_id=chat_id)
 
-# === Wrapper: Live-metrics & alarm-funktion til brug overalt i systemet ===
 def send_live_metrics(trades_df, balance_df, symbol="", timeframe="", thresholds=None, chat_id=None):
     """
     Send live performance-metrics og alarmer til Telegram.

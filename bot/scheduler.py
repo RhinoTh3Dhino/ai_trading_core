@@ -6,6 +6,7 @@ import traceback
 
 from utils.telegram_utils import send_telegram_message, send_telegram_heartbeat
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 def send_daily_status():
     """
     Sender daglig status med trading-metrics.
@@ -13,7 +14,7 @@ def send_daily_status():
     """
     import pandas as pd
     try:
-        df = pd.read_csv("data/backtest_results.csv")
+        df = pd.read_csv(PROJECT_ROOT / "data" / "backtest_results.csv"  # AUTO PATH CONVERTED)
         last = df.iloc[-1]
         msg = (
             f"📊 Daglig status\n"

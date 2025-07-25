@@ -4,6 +4,7 @@ import time
 import threading
 
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 class ResourceMonitor:
     def __init__(self, ram_max=90, cpu_max=90, gpu_max=90, gpu_temp_max=85, check_interval=10, 
                  action="pause", log_file=None, verbose=True):
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         gpu_temp_max=80,
         check_interval=10,
         action="pause",  # Kan også være "kill" eller "warn"
-        log_file="outputs/debug/resource_log.csv"
+        log_file=PROJECT_ROOT / "outputs" / "debug/resource_log.csv"  # AUTO PATH CONVERTED
     )
     monitor.start()
     # Din træningskode her – monitoren kører i baggrunden

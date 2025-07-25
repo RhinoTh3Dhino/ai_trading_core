@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # ml/train_model.py
 
 import os
@@ -29,7 +30,7 @@ def build_lstm_model(input_shape, n_classes=2):
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     return model
 
-def train_lstm_model(df, feature_cols, target_col="target", seq_length=48, epochs=30, batch_size=64, model_path="models/lstm_model.h5"):
+def train_lstm_model(df, feature_cols, target_col="target", seq_length=48, epochs=30, batch_size=64, model_path=PROJECT_ROOT / "models" / "lstm_model.h5"  # AUTO PATH CONVERTED):
     """Træner og gemmer LSTM til klassifikation + feature/scaler files."""
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df[feature_cols])
@@ -63,9 +64,9 @@ def train_lstm_model(df, feature_cols, target_col="target", seq_length=48, epoch
     print(classification_report(y_test, preds))
 
     # === GEM feature-liste og scaler for downstream inference ===
-    feature_path = "models/lstm_features.csv"
-    mean_path = "models/lstm_scaler_mean.npy"
-    scale_path = "models/lstm_scaler_scale.npy"
+    feature_path = PROJECT_ROOT / "models" / "lstm_features.csv"  # AUTO PATH CONVERTED
+    mean_path = PROJECT_ROOT / "models" / "lstm_scaler_mean.npy"  # AUTO PATH CONVERTED
+    scale_path = PROJECT_ROOT / "models" / "lstm_scaler_scale.npy"  # AUTO PATH CONVERTED
     pd.Series(feature_cols).to_csv(feature_path, index=False, header=False)
     np.save(mean_path, scaler.mean_)
     np.save(scale_path, scaler.scale_)
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument("--seq_length", type=int, default=48)
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--model_out", type=str, default="models/lstm_model.h5")
+    parser.add_argument("--model_out", type=str, default=PROJECT_ROOT / "models" / "lstm_model.h5"  # AUTO PATH CONVERTED)
     args = parser.parse_args()
 
     # Indlæs data
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     print(f"Træner på features: {feature_cols}")
 
     # Hvis du har tidligere feature-fil (fx fra models/lstm_features.csv), advar hvis rækkefølge er forskellig:
-    feature_path = "models/lstm_features.csv"
+    feature_path = PROJECT_ROOT / "models" / "lstm_features.csv"  # AUTO PATH CONVERTED
     if os.path.exists(feature_path):
         prev_features = pd.read_csv(feature_path, header=None)[0].tolist()
         if feature_cols != prev_features:

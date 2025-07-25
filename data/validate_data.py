@@ -1,5 +1,6 @@
 import pandas as pd
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 def validate_csv_data(filepath):
     """
     Validerer indholdet af en trading-csv og udskriver info/statistik.
@@ -37,4 +38,4 @@ def validate_csv_data(filepath):
 
 if __name__ == "__main__":
     # Eksempel på brug
-    validate_csv_data("data/BTCUSDT_1h.csv")
+    validate_csv_data(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv"  # AUTO PATH CONVERTED)

@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 def safe_str(x):
     """Sørger for at alle feature-navne er rene str – aldrig array eller liste."""
     # np.generic = fx numpy.str_ etc.
@@ -16,7 +17,7 @@ def safe_str(x):
 def plot_feature_importance(
     feature_names,
     importance_scores,
-    out_path="outputs/feature_importance.png",
+    out_path=PROJECT_ROOT / "outputs" / "feature_importance.png"  # AUTO PATH CONVERTED,
     method="Permutation",
     top_n=None,
     show=False
@@ -68,7 +69,7 @@ def plot_feature_importance(
 def plot_shap_importance(
     shap_values,
     feature_names,
-    out_path="outputs/feature_importance_shap.png",
+    out_path=PROJECT_ROOT / "outputs" / "feature_importance_shap.png"  # AUTO PATH CONVERTED,
     top_n=None,
     show=False
 ):
@@ -108,4 +109,4 @@ if __name__ == "__main__":
     # Demo: Bruges kun hvis scriptet køres direkte
     feature_names = ["RSI", "MACD", "EMA21", "Close", "Volume"]
     importance_scores = [0.25, 0.12, 0.05, 0.33, 0.22]
-    plot_feature_importance(feature_names, importance_scores, out_path="outputs/feature_importance_demo.png", method="Permutation", top_n=5, show=True)
+    plot_feature_importance(feature_names, importance_scores, out_path=PROJECT_ROOT / "outputs" / "feature_importance_demo.png"  # AUTO PATH CONVERTED, method="Permutation", top_n=5, show=True)

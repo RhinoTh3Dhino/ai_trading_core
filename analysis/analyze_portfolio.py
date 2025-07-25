@@ -2,6 +2,7 @@ import glob, json
 import pandas as pd
 import numpy as np
 import matplotlib
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -27,7 +28,7 @@ else:
     COINS = ["BTC", "ETH", "DOGE"]
 
 # === DATA/FIL-STANDARD ===
-FEATURE_DIR = "outputs/feature_data/"
+FEATURE_DIR = PROJECT_ROOT / "outputs" / "feature_data/"  # AUTO PATH CONVERTED
 RUN_ID = datetime.now().strftime("%Y-%m-%d_%H%M")
 OUTPUT_DIR = "outputs/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)

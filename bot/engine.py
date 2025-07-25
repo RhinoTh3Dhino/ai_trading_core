@@ -1,3 +1,4 @@
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 # bot/engine.py
 
 
@@ -193,7 +194,7 @@ def main(
 
     monitor = ResourceMonitor(
         ram_max=85, cpu_max=90, gpu_max=95, gpu_temp_max=80, check_interval=10,
-        action="pause", log_file="outputs/debug/resource_log.csv"
+        action="pause", log_file=PROJECT_ROOT / "outputs" / "debug/resource_log.csv"  # AUTO PATH CONVERTED
     )
     monitor.start()
 

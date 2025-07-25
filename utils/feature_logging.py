@@ -2,6 +2,7 @@ import os
 import datetime
 import pandas as pd
 
+from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
 def log_top_features_to_md(top_features, md_path="BotStatus.md", model_name="ML", run_time=None):
     """Logger top-5 features til BotStatus.md med timestamp og modelnavn."""
     if run_time is None:
@@ -13,7 +14,7 @@ def log_top_features_to_md(top_features, md_path="BotStatus.md", model_name="ML"
         f.write(entry)
     print(f"✅ Top-5 features logget til {md_path}")
 
-def log_top_features_csv(top_features, csv_path="data/top_features_history.csv", model_name="ML", run_time=None):
+def log_top_features_csv(top_features, csv_path=PROJECT_ROOT / "data" / "top_features_history.csv"  # AUTO PATH CONVERTED, model_name="ML", run_time=None):
     """Gemmer top-5 features med importance i CSV for historisk sammenligning."""
     if run_time is None:
         run_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

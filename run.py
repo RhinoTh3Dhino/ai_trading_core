@@ -29,6 +29,14 @@ def main():
     os.chdir(project_root)
     print(f"[INFO] Working directory sat til: {project_root}")
 
+    # Tilføj projektroden til sys.path (for barneprocesser også)
+    pythonpath = os.environ.get("PYTHONPATH", "")
+    if project_root not in pythonpath.split(os.pathsep):
+        pythonpath = os.pathsep.join([project_root, pythonpath]) if pythonpath else project_root
+        os.environ["PYTHONPATH"] = pythonpath
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+
     # Valider script path
     script_path = os.path.join(project_root, args.script)
     if not os.path.isfile(script_path):
@@ -40,7 +48,7 @@ def main():
     print(f"[INFO] Kommando: {' '.join(cmd)}")
 
     try:
-        result = subprocess.run(cmd, check=True)
+        result = subprocess.run(cmd, check=True, env=os.environ)
         print("[OK] Script kørt færdigt uden fejl!")
     except subprocess.CalledProcessError as e:
         print(f"[FEJL] Script fejlede med kode {e.returncode}")
