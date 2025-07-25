@@ -150,6 +150,37 @@
 - Sikret feature-matching ml. trænings- og produktions-pipeline (json + warnings)
 - Fjernet tidligere fejl med plot_performance() argumenter (nu 100% kompatibel)
 
+
+### Diagnose, sanity-pipeline, feature importance & distributions – automatiseret validering 26/07-25
+
+✅ Diagnose & sanity-check af AI trading pipeline
+------------------------------------------------
+- Færdiggjort 1️⃣ Forstå og valider problemet (diagnose):
+  - Target-validering, split, debug, class balance, confusion matrix, classification report direkte i gridsearch_train.py.
+- Implementeret 2️⃣ Sanity-check: Har features signal?
+  - Automatisk test via tests/test_gridsearch_sanity.py (run.py-basering)
+  - Eksporterer og validerer y_test/y_preds, accuracy > random baseline, ingen class collapse.
+  - Telegram-integration med resultater.
+- Tilføjet/udvidet analysis/feature_importance.py:
+  - LightGBM feature importance, top_n, auto-plot og CSV-eksport.
+- Tilføjet analysis/feature_distribution.py:
+  - Distributionsplots for alle features og auto-pairplot. Gemmer til outputs/feature_dist.
+- Alle scripts og sanity-tests dokumenteret og opdateret til modulær brug via run.py
+- Testet – alle sanity-points bestået, data og modelvalidering OK.
+
+Eksempler på tilføjede/ændrede filer:
+
+  - scripts/gridsearch_train.py
+
+  - analysis/sanity_check.py
+
+  - analysis/feature_importance.py
+
+  - analysis/feature_distribution.py
+
+  - tests/test_gridsearch_sanity.py
+
+
 ---
 
 **Step 6 er nu afsluttet og klar til Step 7!**

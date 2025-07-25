@@ -7,7 +7,8 @@ Logger, debugger og gemmer resultater til CSV.
 Nu med:
 - On-the-fly balancering (undersample/oversample direkte i gridsearch)
 - Automatisk class weights (LightGBM)
-- Bedre fejlbeskeder & brugervenlighed
+- Diagnose-debug: Target-, y_train-, y_test- og prediction-fordeling (Chain-of-Thought)
+- Eksport af y_test og preds til sanity check
 
 Brug fx:
 python run.py scripts/gridsearch_train.py --input data/BTCUSDT_1h_with_target.csv --features close,rsi_14 --target target_regime_adapt --balance undersample --class_weights auto --test_size 0.4
@@ -16,10 +17,10 @@ python run.py scripts/gridsearch_train.py --input data/BTCUSDT_1h_with_target.cs
 import argparse
 import pandas as pd
 import numpy as np
+import os
 from lightgbm import LGBMClassifier, early_stopping, log_evaluation
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import os
 
 from utils.project_path import PROJECT_ROOT
 from utils.telegram_utils import send_telegram_message
@@ -31,7 +32,6 @@ def balance_df(df, target, method="undersample", random_state=42, verbose=True):
     max_class = counts.max()
     if verbose:
         print(f"Før balancering: {dict(counts)}")
-
     dfs = []
     if method == "undersample":
         n = min_class
@@ -49,7 +49,6 @@ def balance_df(df, target, method="undersample", random_state=42, verbose=True):
             print(f"Oversamplet alle klasser til: {n}")
     else:
         raise ValueError(f"Ukendt balanceringsmetode: {method}")
-
     after_counts = balanced[target].value_counts()
     print(f"Efter balancering: {dict(after_counts)}")
     return balanced
@@ -79,7 +78,16 @@ def get_target_columns(df, user_target=None):
 def train_and_eval(df, feature_cols, target_col, test_size=0.4, class_weights=None):
     X = df[feature_cols]
     y = df[target_col]
+    # Diagnose: Target fordeling (hele datasættet)
+    print("\nDEBUG – target fordeling i data:")
+    print(pd.Series(y).value_counts(dropna=False))
+
+    y = y.astype(int)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, shuffle=False)
+    print("\nDEBUG – y_train fordeling:")
+    print(pd.Series(y_train).value_counts(dropna=False))
+    print("DEBUG – y_test fordeling:")
+    print(pd.Series(y_test).value_counts(dropna=False))
 
     model = LGBMClassifier(
         n_estimators=500,
@@ -87,20 +95,19 @@ def train_and_eval(df, feature_cols, target_col, test_size=0.4, class_weights=No
         objective="binary",
         random_state=42
     )
-    # Brug callbacks i stedet for direkte early_stopping_rounds!
     model.fit(
         X_train, y_train,
         eval_set=[(X_test, y_test)],
         callbacks=[early_stopping(20), log_evaluation(50)]
     )
     preds = model.predict(X_test)
+    print("\nDEBUG – preds fordeling:", pd.Series(preds).value_counts(dropna=False))
     accuracy = accuracy_score(y_test, preds)
     report = classification_report(y_test, preds, output_dict=True, zero_division=0)
-    winrate = report['1']['recall'] if '1' in report else 0.0
+    winrate = report.get('1', {}).get('recall', 0.0)
     returns = np.where(preds == 1, 1, -1)
     sharpe = calculate_sharpe(returns)
 
-    # DEBUG: Udskriv fordeling af prediction og confusion matrix
     n_1 = int((preds == 1).sum())
     n_0 = int((preds == 0).sum())
     n_test = len(preds)
@@ -108,6 +115,14 @@ def train_and_eval(df, feature_cols, target_col, test_size=0.4, class_weights=No
     print(f"[DEBUG] Prediction fordeling - 1: {n_1}, 0: {n_0}, test size: {n_test}")
     print("[DEBUG] Confusion Matrix:\n", cm)
     print("[DEBUG] Classification report:\n", classification_report(y_test, preds, zero_division=0))
+
+    # --- EKSPORT AF Y_TEST OG PREDS ---
+    outputs_dir = os.path.join(PROJECT_ROOT, "outputs")
+    os.makedirs(outputs_dir, exist_ok=True)
+    pd.Series(y_test).to_csv(os.path.join(outputs_dir, "y_test.csv"), index=False, header=False)
+    pd.Series(preds).to_csv(os.path.join(outputs_dir, "y_preds.csv"), index=False, header=False)
+    print(f"[OK] Gemte sanity check-filer: {outputs_dir}/y_test.csv & y_preds.csv")
+
     return accuracy, winrate, sharpe, n_1, n_0, n_test
 
 def main():
@@ -138,7 +153,7 @@ def main():
 
     results = []
     for target_col in target_cols:
-        print(f"[INFO] Træner på target: {target_col}")
+        print(f"\n[INFO] Træner på target: {target_col}")
         df_tmp = df.dropna(subset=[target_col] + feature_cols)
         if len(df_tmp) < 500:
             print(f"[ADVARSEL] For få rækker ({len(df_tmp)}) for target {target_col}, springer over.")
