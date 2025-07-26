@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # utils/ensemble_utils.py
 
 import json
@@ -6,7 +6,8 @@ import os
 
 DEFAULT_ENSEMBLE_THRESHOLD = 0.7
 DEFAULT_ENSEMBLE_WEIGHTS = [1.0, 1.0, 0.7]
-PARAMS_PATH = PROJECT_ROOT / "models" / "best_ensemble_params.json"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+PARAMS_PATH = PROJECT_ROOT / "models" / "best_ensemble_params.json"
 
 def load_best_ensemble_params():
     """

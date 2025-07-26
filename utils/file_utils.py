@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # utils/file_utils.py
 
 import os
@@ -49,4 +49,5 @@ def save_with_metadata(df, out_path, version="v1.0.0", extra_metadata=None):
 # Eksempel/test
 if __name__ == "__main__":
     test_df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    save_with_metadata(test_df, PROJECT_ROOT / "outputs" / "test_out.csv"  # AUTO PATH CONVERTED, version="v1.2.3", extra_metadata={"source": "unittest"})
+# AUTO PATH CONVERTED
+    save_with_metadata(test_df, PROJECT_ROOT / "outputs" / "test_out.csv", version="v1.2.3", extra_metadata={"source": "unittest"})

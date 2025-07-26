@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 
 # Importér patterns direkte
 from features.patterns import add_all_patterns
@@ -86,7 +86,8 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
 def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1") -> str:
     today = datetime.now().strftime('%Y%m%d')
     filename = f"{symbol.lower()}_{timeframe}_features_{version}_{today}.csv"
-    output_dir = PROJECT_ROOT / "outputs" / "feature_data/"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    output_dir = PROJECT_ROOT / "outputs" / "feature_data/"
     os.makedirs(output_dir, exist_ok=True)
     full_path = os.path.join(output_dir, filename)
     df.to_csv(full_path, index=False)
@@ -94,7 +95,8 @@ def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = 
     return full_path
 
 def load_features(symbol: str, timeframe: str, version_prefix: str = "v1") -> pd.DataFrame:
-    folder = PROJECT_ROOT / "outputs" / "feature_data/"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    folder = PROJECT_ROOT / "outputs" / "feature_data/"
     files = [f for f in os.listdir(folder) if f.startswith(f"{symbol.lower()}_{timeframe}_features_{version_prefix}")]
     if not files:
         raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} ({version_prefix})")

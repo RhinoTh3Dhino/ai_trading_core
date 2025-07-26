@@ -3,7 +3,7 @@ import pandas as pd
 
 
 
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # Importer dine funktioner fra korrekt modul-sti
 from utils.report_utils import (
     update_bot_status,
@@ -18,7 +18,8 @@ from utils.report_utils import (
 os.makedirs("outputs", exist_ok=True)
 
 # Opret test-csv med portefølje-metrics, hvis den ikke findes
-test_csv_path = PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+test_csv_path = PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"
 if not os.path.exists(test_csv_path):
     with open(test_csv_path, "w", encoding="utf-8") as f:
         f.write("Navn,Balance,Profit,WinRate\nBTC,1200,12.3,0.65\nETH,900,8.9,0.54\n")
@@ -33,8 +34,10 @@ update_bot_status(
     portfolio_metrics_path=test_csv_path,
     version="vTEST",
     notes="Dette er en test.",
-    plot_path=None,                 # Sæt evt. til PROJECT_ROOT / "outputs" / "dummy.png"  # AUTO PATH CONVERTED
-    trade_journal_path=None         # Sæt evt. til PROJECT_ROOT / "outputs" / "test_trade_journal.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    plot_path=None,                 # Sæt evt. til PROJECT_ROOT / "outputs" / "dummy.png"
+# AUTO PATH CONVERTED
+    trade_journal_path=None         # Sæt evt. til PROJECT_ROOT / "outputs" / "test_trade_journal.csv"
 )
 
 # 3. Test log_to_changelog
@@ -63,4 +66,5 @@ df = pd.DataFrame([
     {"tid": "2024-07-07", "symbol": "BTC", "ret": 0.05},
     {"tid": "2024-07-07", "symbol": "ETH", "ret": 0.02}
 ])
-export_trade_journal(df, PROJECT_ROOT / "outputs" / "test_trade_journal.csv"  # AUTO PATH CONVERTED)
+# AUTO PATH CONVERTED
+export_trade_journal(df, PROJECT_ROOT / "outputs" / "test_trade_journal.csv")

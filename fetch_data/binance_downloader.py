@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # fetch_data/binance_downloader.py
 
 import pandas as pd
@@ -46,7 +46,8 @@ if __name__ == "__main__":
         for tf in TIMEFRAMES:
             # Binance interval format (1h, 4h, 1d ...)
             tf_binance = tf if "m" in tf or "h" in tf or "d" in tf else f"{tf}"
-            out_csv = fPROJECT_ROOT / "data" / "{symbol}_{tf}.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+            out_csv = fPROJECT_ROOT / "data" / "{symbol}_{tf}.csv"
             try:
                 download_binance_ohlcv(
                     symbol=symbol,

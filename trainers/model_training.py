@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
     accuracy_score, classification_report, confusion_matrix,
     precision_score, recall_score, f1_score
 )
@@ -105,21 +105,24 @@ def log_model_metrics(filename, y_true, y_pred, model_name, version="v1", random
     cm_df.to_csv(cm_file, index=False)
     print(f"✅ Confusion matrix gemt som CSV: {cm_file}")
 
-def load_best_accuracy(meta_path=PROJECT_ROOT / "models" / "best_model_meta.json"  # AUTO PATH CONVERTED):
+# AUTO PATH CONVERTED
+def load_best_accuracy(meta_path=PROJECT_ROOT / "models" / "best_model_meta.json"):
     if os.path.exists(meta_path):
         with open(meta_path, "r") as f:
             meta = json.load(f)
         return meta.get("accuracy", 0.0)
     return 0.0
 
-def load_best_model_features(meta_path=PROJECT_ROOT / "models" / "best_model_meta.json"  # AUTO PATH CONVERTED):
+# AUTO PATH CONVERTED
+def load_best_model_features(meta_path=PROJECT_ROOT / "models" / "best_model_meta.json"):
     if os.path.exists(meta_path):
         with open(meta_path, "r") as f:
             meta = json.load(f)
         return meta.get("features", None)
     return None
 
-def save_best_model(model, accuracy, model_path=PROJECT_ROOT / "models" / "best_model.pkl"  # AUTO PATH CONVERTED, meta_path=PROJECT_ROOT / "models" / "best_model_meta.json"  # AUTO PATH CONVERTED, features=None, random_seed=None):
+# AUTO PATH CONVERTED
+def save_best_model(model, accuracy, model_path=PROJECT_ROOT / "models" / "best_model.pkl", meta_path=PROJECT_ROOT / "models" / "best_model_meta.json", features=None, random_seed=None):
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
     meta = {
@@ -132,7 +135,8 @@ def save_best_model(model, accuracy, model_path=PROJECT_ROOT / "models" / "best_
         json.dump(meta, f, indent=2)
     print(f"✅ Ny bedste model gemt: {model_path} (accuracy: {accuracy:.4f}) med {len(features) if features else 'ukendt'} features")
 
-def plot_feature_importance(feature_names, importance_scores, out_path=PROJECT_ROOT / "outputs" / "feature_importance.png"  # AUTO PATH CONVERTED, method="Permutation", top_n=15):
+# AUTO PATH CONVERTED
+def plot_feature_importance(feature_names, importance_scores, out_path=PROJECT_ROOT / "outputs" / "feature_importance.png", method="Permutation", top_n=15):
     feature_names = np.array(feature_names)
     importance_scores = np.array(importance_scores)
     idx = np.argsort(importance_scores)[::-1][:top_n]
@@ -176,7 +180,8 @@ def calculate_shap_importance(model, X_val):
     sorted_idx = shap_imp.argsort()[::-1]
     return [to_str(x) for x in feature_names[sorted_idx]], [float(x) for x in shap_imp[sorted_idx]]
 
-def plot_shap_importance(feature_names, shap_scores, out_path=PROJECT_ROOT / "outputs" / "shap.png"  # AUTO PATH CONVERTED, top_n=15):
+# AUTO PATH CONVERTED
+def plot_shap_importance(feature_names, shap_scores, out_path=PROJECT_ROOT / "outputs" / "shap.png", top_n=15):
     feature_names = np.array(feature_names)
     shap_scores = np.array(shap_scores, dtype=np.float64)
     idx = np.argsort(shap_scores)[::-1][:top_n]
@@ -235,7 +240,8 @@ def run_feature_importance_and_selection(
     df_log.to_csv(log_path, index=False)
 
     log_top_features_to_md(top_perm, md_path="BotStatus.md", model_name=strategy_name)
-    log_top_features_csv(top_perm, csv_path=PROJECT_ROOT / "data" / "top_features_history.csv"  # AUTO PATH CONVERTED, model_name=strategy_name)
+# AUTO PATH CONVERTED
+    log_top_features_csv(top_perm, csv_path=PROJECT_ROOT / "data" / "top_features_history.csv", model_name=strategy_name)
 
     perm_caption = f"📊 Permutation Feature Importance ({strategy_name})\nTop-5:\n" + \
                    "\n".join([f"{n}: {s:.3f}" for n, s in top_perm])
@@ -298,15 +304,18 @@ def train_model(features, target_col='target', version="v1", telegram_chat_id=No
     print("Accuracy:", acc)
     print(classification_report(y_test, preds))
 
-    log_model_metrics(PROJECT_ROOT / "data" / "model_eval.csv"  # AUTO PATH CONVERTED, y_test, preds, "RandomForest", version=version, random_seed=random_seed)
+# AUTO PATH CONVERTED
+    log_model_metrics(PROJECT_ROOT / "data" / "model_eval.csv", y_test, preds, "RandomForest", version=version, random_seed=random_seed)
 
     new_model, selected_features, *_ = run_feature_importance_and_selection(
         model, X_train, y_train, X_test, y_test, strategy_name="ML", telegram_chat_id=telegram_chat_id
     )
 
     best_acc = load_best_accuracy()
-    model_path = PROJECT_ROOT / "models" / "best_model.pkl"  # AUTO PATH CONVERTED
-    meta_path = PROJECT_ROOT / "models" / "best_model_meta.json"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    model_path = PROJECT_ROOT / "models" / "best_model.pkl"
+# AUTO PATH CONVERTED
+    meta_path = PROJECT_ROOT / "models" / "best_model_meta.json"
 
     if acc > best_acc or not os.path.exists(model_path):
         save_best_model(new_model, acc, model_path, meta_path, features=selected_features, random_seed=random_seed)
@@ -326,7 +335,8 @@ def main():
     if not features_path or not os.path.exists(features_path):
         print(f"➡️ Finder nyeste features-CSV i outputs/feature_data/")
         import glob
-        feature_files = sorted(glob.glob(PROJECT_ROOT / "outputs" / "feature_data/btcusdt_1h_features*.csv"  # AUTO PATH CONVERTED))
+# AUTO PATH CONVERTED
+        feature_files = sorted(glob.glob(PROJECT_ROOT / "outputs" / "feature_data/btcusdt_1h_features*.csv"))
         if not feature_files:
             raise FileNotFoundError("Ingen features-CSV fundet i outputs/feature_data/")
         features_path = feature_files[-1]

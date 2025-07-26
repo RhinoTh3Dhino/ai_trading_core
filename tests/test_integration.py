@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 def test_status_file_exists():
     # Opret en dummy BotStatus.md hvis den mangler
     if not os.path.exists("BotStatus.md"):
@@ -13,7 +13,8 @@ def test_status_file_exists():
 
 def test_performance_history_grows():
     # Opret dummy performance_history.csv hvis den mangler
-    history_path = PROJECT_ROOT / "outputs" / "performance_history.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    history_path = PROJECT_ROOT / "outputs" / "performance_history.csv"
     os.makedirs("outputs", exist_ok=True)
     if not os.path.exists(history_path):
         df = pd.DataFrame([{"Navn": "BTC", "Balance": 1000, "timestamp": "2025-07-07T23:00:00"}])

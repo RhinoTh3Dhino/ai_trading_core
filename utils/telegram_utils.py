@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 
 import os
 import requests
@@ -19,7 +19,8 @@ except ImportError:
     generate_trend_graph = None
 
 load_dotenv()
-LOG_PATH = PROJECT_ROOT / "telegram_log.txt"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+LOG_PATH = PROJECT_ROOT / "telegram_log.txt"
 
 def telegram_enabled():
     token = os.getenv("TELEGRAM_TOKEN")
@@ -148,8 +149,10 @@ def send_auto_status_summary(summary_text, image_path=None, doc_path=None, chat_
 
 def send_trend_graph(
     chat_id=None,
-    history_path=PROJECT_ROOT / "outputs" / "performance_history.csv",  # AUTO PATH CONVERTED
-    img_path=PROJECT_ROOT / "outputs" / "balance_trend.png",            # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    history_path=PROJECT_ROOT / "outputs" / "performance_history.csv",
+# AUTO PATH CONVERTED
+    img_path=PROJECT_ROOT / "outputs" / "balance_trend.png",
     caption="📈 Balanceudvikling"
 ):
     try:

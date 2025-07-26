@@ -12,7 +12,7 @@ from utils.report_utils import log_performance_to_history
 from utils.telegram_utils import generate_trend_graph, send_trend_graph
 from utils.robust_utils import safe_run
 
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # === NYT: Brug kun load_best_ensemble_params fra ensemble_utils ===
 from utils.ensemble_utils import load_best_ensemble_params
 
@@ -24,7 +24,8 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 def ensure_performance_history_exists():
-    history_path = PROJECT_ROOT / "outputs" / "performance_history.csv"  # AUTO PATH CONVERTED
+
+    history_path = PROJECT_ROOT / "outputs" / "performance_history.csv"
     if not os.path.exists(history_path):
         os.makedirs("outputs", exist_ok=True)
         pd.DataFrame([{"timestamp": "", "Navn": "", "Balance": ""}]).to_csv(history_path, index=False)
@@ -43,7 +44,8 @@ def ensure_changelog_exists():
         print("🟡 Oprettede CHANGELOG.md (dummy for CI)")
 
 def ensure_balance_trend_exists():
-    img_path = PROJECT_ROOT / "outputs" / "balance_trend.png"  # AUTO PATH CONVERTED
+
+    img_path = PROJECT_ROOT / "outputs" / "balance_trend.png"
     if not os.path.exists(img_path):
         import matplotlib.pyplot as plt
         os.makedirs("outputs", exist_ok=True)
@@ -72,7 +74,8 @@ def main_trading_cycle():
 
     try:
         metrics = run_pipeline(
-            features_path=PROJECT_ROOT / "outputs" / "feature_data/btcusdt_1h_features_v1.0.0.csv"  # AUTO PATH CONVERTED,  # Tilpas evt. denne sti!
+
+            features_path=PROJECT_ROOT / "outputs" / "feature_data/btcusdt_1h_features_v1.0.0.csv",  # Tilpas evt. denne sti!
             symbol="BTCUSDT",
             interval="1h",
             threshold=threshold,
@@ -87,7 +90,8 @@ def main_trading_cycle():
         print(f"❌ FEJL i pipeline: {e}")
         send_message(f"❌ FEJL i pipeline: {e}")
 
-    log_performance_to_history(PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"  # AUTO PATH CONVERTED)
+
+    log_performance_to_history(PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv")
 
     try:
         img_path = generate_trend_graph()

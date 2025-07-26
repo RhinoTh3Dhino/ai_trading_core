@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # bot/live_simulator.py
 
 
@@ -44,16 +44,19 @@ except ImportError:
     ALERT_ON_WINRATE = True
     ALERT_ON_PROFIT = True
     ENABLE_MONITORING = True
-    LIVE_SIM_FEATURES_PATH = PROJECT_ROOT / "outputs" / "feature_data/live_features.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    LIVE_SIM_FEATURES_PATH = PROJECT_ROOT / "outputs" / "feature_data/live_features.csv"
     LIVE_SIM_INITIAL_BALANCE = 1000
     LIVE_SIM_NROWS = 300
     LIVE_SIM_CHAT_ID = None
     MODEL_TYPE = "ML"
     LIVE_SIM_SYMBOL = "btc"
     LIVE_SIM_TIMEFRAME = "1h"
-    LIVE_SIM_FEATURES_DIR = PROJECT_ROOT / "outputs" / "feature_data"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+    LIVE_SIM_FEATURES_DIR = PROJECT_ROOT / "outputs" / "feature_data"
 
-def find_latest_feature_csv(symbol="btc", timeframe="1h", feature_dir=PROJECT_ROOT / "outputs" / "feature_data"  # AUTO PATH CONVERTED):
+# AUTO PATH CONVERTED
+def find_latest_feature_csv(symbol="btc", timeframe="1h", feature_dir=PROJECT_ROOT / "outputs" / "feature_data"):
     """Finder den nyeste feature-CSV for valgt symbol/timeframe."""
     pattern = f"{feature_dir}/{symbol.lower()}_{timeframe}_features*.csv"
     files = glob.glob(pattern)
@@ -156,8 +159,10 @@ def main(features_path=None, n_rows=LIVE_SIM_NROWS, symbol=LIVE_SIM_SYMBOL, time
     try:
         metrics = calculate_live_metrics(trades_df, balance_df, initial_balance=LIVE_SIM_INITIAL_BALANCE)
         print("Live-metrics:", metrics)
-        save_with_metadata(trades_df, PROJECT_ROOT / "outputs" / "live_trades.csv"  # AUTO PATH CONVERTED)
-        save_with_metadata(balance_df, PROJECT_ROOT / "outputs" / "live_balance.csv"  # AUTO PATH CONVERTED)
+# AUTO PATH CONVERTED
+        save_with_metadata(trades_df, PROJECT_ROOT / "outputs" / "live_trades.csv")
+# AUTO PATH CONVERTED
+        save_with_metadata(balance_df, PROJECT_ROOT / "outputs" / "live_balance.csv")
     except Exception as e:
         msg = f"[FEJL] i metricsberegning/gem: {e}"
         print(msg)

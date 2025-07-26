@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # features/feature_engineering.py
 
 import pandas as pd
@@ -18,7 +18,8 @@ except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
 # === Hvis der findes en features-liste fra tidligere model, loades denne ===
-LSTM_FEATURES_PATH = PROJECT_ROOT / "models" / "lstm_features.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+LSTM_FEATURES_PATH = PROJECT_ROOT / "models" / "lstm_features.csv"
 
 def feature_hash(df: pd.DataFrame) -> str:
     """Returnerer hash af DataFrame for versionering."""
@@ -81,10 +82,12 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
         df = df[[col for col in lstm_features if col in df.columns] + [c for c in df.columns if c not in lstm_features]]
     return df
 
-def find_latest_datafile(pattern: str = PROJECT_ROOT / "data" / "BTCUSDT_1h_*.csv"  # AUTO PATH CONVERTED) -> str:
+# AUTO PATH CONVERTED
+def find_latest_datafile(pattern: str = PROJECT_ROOT / "data" / "BTCUSDT_1h_*.csv") -> str:
     files = sorted(glob.glob(pattern), key=os.path.getmtime)
     if not files:
-        files = sorted(glob.glob(PROJECT_ROOT / "data" / "*.csv"  # AUTO PATH CONVERTED), key=os.path.getmtime)
+# AUTO PATH CONVERTED
+        files = sorted(glob.glob(PROJECT_ROOT / "data" / "*.csv"), key=os.path.getmtime)
     files = [f for f in files if all(x not in os.path.basename(f).lower() for x in ['feature', 'history', 'importance', 'result'])]
     return files[-1] if files else None
 

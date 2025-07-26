@@ -1,8 +1,10 @@
 import os
 import re
 
-PROJECT_ROOT_IMPORT = "from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED"
-MARKER = "  # AUTO PATH CONVERTED"
+
+PROJECT_ROOT_IMPORT = "from utils.project_path import PROJECT_ROOT"
+
+MARKER = ""
 
 def find_py_files(root_dir):
     for dirpath, dirnames, filenames in os.walk(root_dir):

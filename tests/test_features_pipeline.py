@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 print("=== TEST: START af NY version af test_features_pipeline.py ===")
 
 import os
@@ -21,7 +21,8 @@ except Exception as e:
     print("[FEJL] Kunne ikke importere features_pipeline:", e)
     sys.exit(1)
 
-DEFAULT_DATA_PATH = os.path.join(PROJECT_ROOT, PROJECT_ROOT / "data" / "test_data/BTCUSDT_1h_test.csv"  # AUTO PATH CONVERTED)
+# AUTO PATH CONVERTED
+DEFAULT_DATA_PATH = os.path.join(PROJECT_ROOT, PROJECT_ROOT / "data" / "test_data/BTCUSDT_1h_test.csv")
 DEFAULT_SYMBOL = "BTC"
 DEFAULT_TIMEFRAME = "1h"
 DEFAULT_VERSION = "test"
@@ -51,7 +52,8 @@ def test_generate_features_pipeline():
     args = DummyArgs()
     print(f"[INFO] Kører med data_path={args.data_path}")
 
-    ensure_dir_exists(PROJECT_ROOT / "outputs" / "feature_data"  # AUTO PATH CONVERTED)
+# AUTO PATH CONVERTED
+    ensure_dir_exists(PROJECT_ROOT / "outputs" / "feature_data")
 
     assert os.path.exists(args.data_path), f"Testdata mangler: {args.data_path}"
     raw_df = pd.read_csv(args.data_path, sep=";")

@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # strategies/gridsearch_strategies.py
 
 import os
@@ -17,7 +17,8 @@ def grid_search_sl_tp_ema(
     regime_only=True,
     regime_col="regime",
     regime_value="bull",
-    log_path=PROJECT_ROOT / "outputs" / "gridsearch/gridsearch_results.csv"  # AUTO PATH CONVERTED,
+# AUTO PATH CONVERTED
+    log_path=PROJECT_ROOT / "outputs" / "gridsearch/gridsearch_results.csv",
     strategy_func=ema_crossover_strategy,
     rename_to_ema9_21=True,
     top_n=5

@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # tests/test_walkforward.py
 
 # 📌 Sikrer korrekt sys.path til projektroden
@@ -62,12 +62,14 @@ MIN_WINDOW_SIZE = WALKFORWARD_MIN_WINDOW_SIZE
 STEP_SIZE = WALKFORWARD_STEP_SIZE
 TRAIN_SIZE = WALKFORWARD_TRAIN_SIZE
 
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "walkforward/"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+OUTPUT_DIR = PROJECT_ROOT / "outputs" / "walkforward/"
 BACKUP_DIR = os.path.join(OUTPUT_DIR, "backup")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
-def get_latest_feature_file(symbol, timeframe, feature_dir=PROJECT_ROOT / "outputs" / "feature_data"  # AUTO PATH CONVERTED):
+# AUTO PATH CONVERTED
+def get_latest_feature_file(symbol, timeframe, feature_dir=PROJECT_ROOT / "outputs" / "feature_data"):
     pattern = f"{feature_dir}/{symbol.lower()}_{timeframe}_features_v1.3_*.csv"
     files = glob.glob(pattern)
     if not files:

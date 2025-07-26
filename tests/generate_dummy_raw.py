@@ -2,8 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
-os.makedirs(PROJECT_ROOT / "outputs" / "data"  # AUTO PATH CONVERTED, exist_ok=True)
+from utils.project_path import PROJECT_ROOT
+# AUTO PATH CONVERTED
+os.makedirs(PROJECT_ROOT / "outputs" / "data", exist_ok=True)
 symbols = ["btcusdt", "ethusdt", "dogeusdt"]
 timeframes = ["1h", "4h"]
 
@@ -18,6 +19,7 @@ for symbol in symbols:
             "close": np.random.uniform(25000, 35000, n),
             "volume": np.random.uniform(10, 1000, n)
         })
-        path = fPROJECT_ROOT / "outputs" / "data/{symbol}_{tf}_raw.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+        path = fPROJECT_ROOT / "outputs" / "data/{symbol}_{tf}_raw.csv"
         df.to_csv(path, index=False)
         print(f"✅ Dummy data gemt: {path}")

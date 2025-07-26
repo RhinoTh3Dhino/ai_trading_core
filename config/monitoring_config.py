@@ -1,4 +1,4 @@
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # config/monitoring_config.py
 """
 Konfiguration af overvågning, alarmer og monitoring-regler for AI trading bot.
@@ -35,14 +35,16 @@ ENABLED_SYMBOLS = None             # Fx ["BTCUSDT", "ETHUSDT"] eller None for al
 ENABLED_TIMEFRAMES = None          # Fx ["1h", "4h"] eller None for alle
 
 # === Monitoring paths og default-parametre for live-simulering ===
-LIVE_SIM_FEATURES_PATH = PROJECT_ROOT / "outputs" / "feature_data/live_features.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+LIVE_SIM_FEATURES_PATH = PROJECT_ROOT / "outputs" / "feature_data/live_features.csv"
 LIVE_SIM_INITIAL_BALANCE = 1000
 LIVE_SIM_NROWS = 300
 LIVE_SIM_CHAT_ID = None
 MODEL_TYPE = "ML"
 LIVE_SIM_SYMBOL = "btcusdt"
 LIVE_SIM_TIMEFRAME = "1h"
-LIVE_SIM_FEATURES_DIR = PROJECT_ROOT / "outputs" / "feature_data"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+LIVE_SIM_FEATURES_DIR = PROJECT_ROOT / "outputs" / "feature_data"
 
 # === Version, navngivning og udvidelser ===
 MONITORING_VERSION = "v1.0.1"

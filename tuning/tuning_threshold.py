@@ -15,7 +15,7 @@ from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 from ensemble.majority_vote_ensemble import weighted_vote_ensemble
 
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 # === Load miljøvariabler fra .env ===
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -42,7 +42,8 @@ def send_telegram_message(message):
         print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {message}")
 
 # === Konstanter til tuning ===
-DATA_PATH = PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"  # AUTO PATH CONVERTED
+# AUTO PATH CONVERTED
+DATA_PATH = PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"
 SYMBOL = "BTC"
 TUNER_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(TUNER_DIR, "tuning_log.txt")

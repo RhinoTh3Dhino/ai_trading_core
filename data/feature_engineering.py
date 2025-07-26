@@ -1,7 +1,7 @@
 import pandas as pd
 import ta  # pip install ta
 
-from utils.project_path import PROJECT_ROOT  # AUTO PATH CONVERTED
+from utils.project_path import PROJECT_ROOT
 def create_features(input_csv, output_csv):
     # Prøv både komma og semikolon som separator!
     df = pd.read_csv(input_csv)
@@ -31,4 +31,5 @@ def create_features(input_csv, output_csv):
     print(f"✅ Features gemt: {output_csv}")
 
 if __name__ == "__main__":
-    create_features(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv"  # AUTO PATH CONVERTED, PROJECT_ROOT / "data" / "BTCUSDT_1h_features.csv"  # AUTO PATH CONVERTED)
+# AUTO PATH CONVERTED
+    create_features(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv", PROJECT_ROOT / "data" / "BTCUSDT_1h_features.csv")
