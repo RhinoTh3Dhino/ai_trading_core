@@ -7,10 +7,11 @@ Træner en LightGBM-model til trading-signaler (klassifikation)
 """
 
 # Sikrer korrekt sys.path – projektroden lægges ind først
+from pathlib import Path
 import os
 import sys
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 

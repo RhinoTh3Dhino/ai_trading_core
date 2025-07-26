@@ -6,10 +6,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import glob
+from pathlib import Path
 import matplotlib.pyplot as plt
-
-
-
 
 # Importér strategier (efter sys.path-trick!)
 from strategies.advanced_strategies import (
@@ -31,8 +29,7 @@ FEE = 0.0005
 
 def find_latest_feature_file(symbol, tf, version="v1.3"):
     """Finder seneste feature-fil med mønster."""
-# AUTO PATH CONVERTED
-    pattern = fPROJECT_ROOT / "outputs" / "feature_data/{symbol.lower()}_{tf}_features_{version}_*.csv"
+    pattern = str(Path(PROJECT_ROOT) / "outputs" / "feature_data" / f"{symbol.lower()}_{tf}_features_{version}_*.csv")
     files = glob.glob(pattern)
     if not files:
         return None
@@ -68,7 +65,7 @@ def plot_trades(df, trades_df, journal_path):
     plt.legend()
     plt.tight_layout()
 
-    png_path = journal_path.replace('.csv', '.png')
+    png_path = str(journal_path).replace('.csv', '.png')
     plt.savefig(png_path)
     print(f"✅ Trade-graf gemt som {png_path}")
 
@@ -77,8 +74,7 @@ def plot_trades(df, trades_df, journal_path):
 def paper_trade(
     df,
     sl=SL, tp=TP, start_balance=START_BALANCE, fee=FEE,
-# AUTO PATH CONVERTED
-    JOURNAL_PATH=PROJECT_ROOT / "outputs" / "paper_trades.csv",
+    JOURNAL_PATH=None,
     use_adaptive_sl_tp=False
 ):
     balance = start_balance
@@ -89,6 +85,9 @@ def paper_trade(
     n_wins = 0
     n_trades = 0
     entry_row = None  # Til adaptiv SL/TP
+
+    if JOURNAL_PATH is None:
+        JOURNAL_PATH = Path(PROJECT_ROOT) / "outputs" / "paper_trades.csv"
 
     for i, row in df.iterrows():
         # ENTRY
@@ -146,8 +145,8 @@ def paper_trade(
         })
 
     trades_df = pd.DataFrame(trades)
-    os.makedirs(os.path.dirname(JOURNAL_PATH), exist_ok=True)
-    trades_df.to_csv(JOURNAL_PATH, index=False)
+    os.makedirs(os.path.dirname(str(JOURNAL_PATH)), exist_ok=True)
+    trades_df.to_csv(str(JOURNAL_PATH), index=False)
 
     win_rate = n_wins / n_trades * 100 if n_trades > 0 else 0
     print(f"Slutbalance: {balance:.2f}")
@@ -182,6 +181,5 @@ if __name__ == "__main__":
             # df = ema_rsi_adx_strategy(df)
             df = voting_ensemble(df)
 
-# AUTO PATH CONVERTED
-            journal_path = fPROJECT_ROOT / "outputs" / "paper_trades_{symbol.lower()}_{tf}_{datetime.now().strftime("%Y%m%d_%H%M%S')}.csv"
+            journal_path = Path(PROJECT_ROOT) / "outputs" / f"paper_trades_{symbol.lower()}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             paper_trade(df, JOURNAL_PATH=journal_path)

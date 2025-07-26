@@ -1,5 +1,11 @@
 # tests/test_log_utils.py
 
+import sys
+import os
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 from utils.log_utils import log_device_status
 from utils.telegram_utils import send_message  # hvis du vil teste Telegram
 

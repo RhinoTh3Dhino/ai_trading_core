@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 import sys
 import glob
@@ -10,7 +11,7 @@ from utils.telegram_utils import send_message
 from utils.project_path import PROJECT_ROOT
 # === Tilføj projektroden til sys.path for robuste imports (CLI & VS Code) ===
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "."))
+PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 

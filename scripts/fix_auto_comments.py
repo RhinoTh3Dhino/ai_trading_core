@@ -1,7 +1,8 @@
+from pathlib import Path
 import os
 import re
 
-PROJECT_ROOT = "."  # Kør fra projektroden
+PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 
 def fix_autopath_comments(rootdir=PROJECT_ROOT):
     changed_files = 0

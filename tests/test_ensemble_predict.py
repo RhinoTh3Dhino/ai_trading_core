@@ -5,11 +5,18 @@ Tester ensemble_predict funktionalitet.
 """
 
 # Sikrer korrekt sys.path til projektroden
+import sys
+import os
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from pathlib import Path
 import os
 import sys
 import numpy as np
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 

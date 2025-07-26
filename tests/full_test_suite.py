@@ -4,6 +4,12 @@ Kører automatisk alle tests i tests/-mappen via run.py-runner
 Sikrer at alle test-scripts loader korrekt uden sys.path-hacks.
 """
 
+import sys
+import os
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 import os
 import subprocess
 import sys

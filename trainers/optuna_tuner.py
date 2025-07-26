@@ -1,3 +1,4 @@
+from pathlib import Path
 from utils.project_path import PROJECT_ROOT
 """
 models/optuna_tuner.py
@@ -15,7 +16,7 @@ from datetime import datetime
 
 # Sikrer, at models/ og projektrod er i path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 if PROJECT_ROOT not in sys.path:
