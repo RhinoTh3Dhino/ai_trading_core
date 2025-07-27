@@ -1,3 +1,5 @@
+# tests/test_features_pipeline.py
+
 from utils.project_path import PROJECT_ROOT
 from pathlib import Path
 import os
@@ -9,8 +11,7 @@ from datetime import datetime
 print("=== TEST: START af NY version af test_features_pipeline.py ===")
 
 # Sørg for at working dir er projektroden (så relative paths virker!)
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-os.chdir(PROJECT_ROOT)
+os.chdir(str(PROJECT_ROOT))
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -21,15 +22,15 @@ except Exception as e:
     print("[FEJL] Kunne ikke importere features_pipeline:", e)
     sys.exit(1)
 
-# Brug kun Path-objekter!
-DEFAULT_DATA_PATH = str(Path(PROJECT_ROOT) / "data" / "test_data/BTCUSDT_1h_test.csv")
+# Path-objekter overalt!
+DEFAULT_DATA_PATH = Path(PROJECT_ROOT) / "data" / "test_data" / "BTCUSDT_1h_test.csv"
 DEFAULT_SYMBOL = "BTC"
 DEFAULT_TIMEFRAME = "1h"
 DEFAULT_VERSION = "test"
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test features pipeline")
-    parser.add_argument("--data_path", type=str, default=DEFAULT_DATA_PATH, help="Path til testdata (CSV)")
+    parser.add_argument("--data_path", type=str, default=str(DEFAULT_DATA_PATH), help="Path til testdata (CSV)")
     parser.add_argument("--symbol", type=str, default=DEFAULT_SYMBOL, help="Symbol, fx BTC")
     parser.add_argument("--timeframe", type=str, default=DEFAULT_TIMEFRAME, help="Timeframe, fx 1h")
     parser.add_argument("--version", type=str, default=DEFAULT_VERSION, help="Version-label, fx test")
@@ -43,7 +44,7 @@ def ensure_dir_exists(path):
     Path(path).mkdir(parents=True, exist_ok=True)
 
 class DummyArgs:
-    data_path = DEFAULT_DATA_PATH
+    data_path = str(DEFAULT_DATA_PATH)
     symbol = DEFAULT_SYMBOL
     timeframe = DEFAULT_TIMEFRAME
     version = DEFAULT_VERSION
@@ -55,12 +56,15 @@ def test_generate_features_pipeline():
     # Opret output-folder med Path (robust til både str og Path)
     ensure_dir_exists(Path(PROJECT_ROOT) / "outputs" / "feature_data")
 
-    assert os.path.exists(args.data_path), f"Testdata mangler: {args.data_path}"
+    assert Path(args.data_path).exists(), f"Testdata mangler: {args.data_path}"
     raw_df = pd.read_csv(args.data_path, sep=";")
     assert len(raw_df) > 0, "Rådata er tom"
 
-    if "datetime" in raw_df.columns:
+    # Robust kolonne-mapping
+    if "datetime" in raw_df.columns and "timestamp" not in raw_df.columns:
         raw_df.rename(columns={"datetime": "timestamp"}, inplace=True)
+    if "Timestamp" in raw_df.columns and "timestamp" not in raw_df.columns:
+        raw_df.rename(columns={"Timestamp": "timestamp"}, inplace=True)
 
     for col in ["open", "high", "low", "close", "volume"]:
         if col in raw_df.columns:
@@ -88,10 +92,12 @@ def test_generate_features_pipeline():
 
     version_ts = make_version_with_timestamp(args.version)
     path = save_features(features_df, args.symbol, args.timeframe, version_ts)
-    assert os.path.exists(path), f"Featurefil blev ikke gemt: {path}"
+    assert Path(path).exists(), f"Featurefil blev ikke gemt: {path}"
 
     loaded_df = load_features(args.symbol, args.timeframe, version_prefix=version_ts)
     assert len(loaded_df) > 0, "Indlæst features er tom"
+    for col in expected_cols:
+        assert col in loaded_df.columns, f"[LOAD] Feature mangler i indlæst fil: {col}"
 
     print("✅ Alle feature-tests bestået!")
 
