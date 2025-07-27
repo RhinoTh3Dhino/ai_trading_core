@@ -73,7 +73,7 @@ def get_target_columns(df, user_target=None):
         if user_target not in df.columns:
             raise ValueError(f"Target '{user_target}' ikke fundet i dataframe!")
         return [user_target]
-    return [col for col in df.columns if col.startswith('target_tp') or col.startswith('target_regime') or col == 'target']
+    return [col for col in df.columns if col.name.startswith('target_tp') or col.name.startswith('target_regime') or col == 'target']
 
 def train_and_eval(df, feature_cols, target_col, test_size=0.4, class_weights=None):
     X = df[feature_cols]

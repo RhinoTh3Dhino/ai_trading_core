@@ -24,7 +24,7 @@ def main():
         ['close', 'rsi_14', 'ema_9'],
         ['close', 'rsi_14', 'ema_9', 'macd', 'macd_signal', 'vwap', 'atr_14'],
     ]
-    TARGET_COLS = [c for c in pd.read_csv(args.input, nrows=1).columns if c.startswith("target_")]
+    TARGET_COLS = [c for c in pd.read_csv(args.input, nrows=1).columns if c.name.startswith("target_")]
 
     df = pd.read_csv(args.input)
     results = []

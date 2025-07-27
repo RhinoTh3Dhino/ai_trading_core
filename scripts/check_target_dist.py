@@ -4,7 +4,7 @@ import pandas as pd
 df = pd.read_csv("data/BTCUSDT_1h_features.csv")
 
 # Loop igennem alle kolonner, der starter med "target_"
-for col in [c for c in df.columns if c.startswith("target_")]:
+for col in [c for c in df.columns if c.name.startswith("target_")]:
     print(f"\n=== {col} ===")
     print(df[col].value_counts(dropna=False))  # viser antal 1, 0 og evt. NaN
     pct_1 = (df[col] == 1).mean() * 100
