@@ -111,11 +111,12 @@ def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = 
 
 def load_features(symbol: str, timeframe: str, version_prefix: str = "v1") -> pd.DataFrame:
     folder = Path(PROJECT_ROOT) / "outputs" / "feature_data"
-    files = [f for f in os.listdir(folder) if f.startswith(f"{symbol.lower()}_{timeframe}_features_{version_prefix}")]
+    # Brug Path-API så det virker både på Windows og Linux
+    files = [f for f in folder.iterdir() if f.is_file() and f.name.startswith(f"{symbol.lower()}_{timeframe}_features_{version_prefix}")]
     if not files:
         raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} ({version_prefix})")
-    files.sort(reverse=True)
-    newest_file = folder / files[0]
+    files.sort(key=lambda x: x.name, reverse=True)
+    newest_file = files[0]
     print(f"📥 Indlæser features: {newest_file}")
     return pd.read_csv(newest_file)
 
