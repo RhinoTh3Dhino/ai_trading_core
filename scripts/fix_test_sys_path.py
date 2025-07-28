@@ -37,7 +37,7 @@ def main():
     n = 0
     for root, dirs, files in os.walk("tests"):
         for fname in files:
-            if fname.endswith(".py"):
+            if str(fname).endswith(".py"):
                 fpath = os.path.join(root, fname)
                 if patch_file(fpath):
                     n += 1

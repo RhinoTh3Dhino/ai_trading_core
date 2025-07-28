@@ -23,7 +23,7 @@ def clean_pycache(root="."):
                 print(f"[FEJL] Kunne ikke slette {pycache_path}: {e}")
         # Slet alle .pyc filer
         for fname in filenames:
-            if fname.endswith(".pyc"):
+            if str(fname).endswith(".pyc"):
                 pyc_path = os.path.join(dirpath, fname)
                 try:
                     os.remove(pyc_path)

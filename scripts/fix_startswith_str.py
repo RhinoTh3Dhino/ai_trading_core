@@ -32,7 +32,7 @@ def main():
         if ".venv" in root or "backups" in root or "__pycache__" in root:
             continue
         for fname in files:
-            if fname.endswith(".py"):
+            if str(fname).endswith(".py"):
                 fpath = os.path.join(root, fname)
                 if fix_startswith_str_in_file(fpath):
                     n_fixed += 1

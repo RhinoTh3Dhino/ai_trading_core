@@ -12,7 +12,7 @@ def find_py_files(root_dir):
         if any(skip in dirpath for skip in [".venv", "venv", "__pycache__"]):
             continue
         for filename in filenames:
-            if filename.endswith(".py") and not filename == "fix_paths.py":
+            if str(filename).endswith(".py") and not filename == "fix_paths.py":
                 yield os.path.join(dirpath, filename)
 
 def needs_project_root(content):

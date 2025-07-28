@@ -11,7 +11,7 @@ def fix_autopath_comments(rootdir=PROJECT_ROOT):
 
     for subdir, _, files in os.walk(rootdir):
         for fname in files:
-            if fname.endswith(".py"):
+            if str(fname).endswith(".py"):
                 fpath = os.path.join(subdir, fname)
                 try:
                     with open(fpath, encoding="utf-8") as f:

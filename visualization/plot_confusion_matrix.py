@@ -77,12 +77,12 @@ if __name__ == "__main__":
 
     # Smart indlæsning (tillader både CSV/NPY og ren kolonne)
     def smart_load(path):
-        if path.endswith(".csv"):
+        if str(path).endswith(".csv"):
             df = pd.read_csv(path)
             return df.iloc[:,0].values
-        elif path.endswith(".npy"):
+        elif str(path).endswith(".npy"):
             return np.load(path)
-        elif path.endswith(".txt"):
+        elif str(path).endswith(".txt"):
             return np.loadtxt(path)
         else:
             raise ValueError("Ukendt filtype: "+path)
