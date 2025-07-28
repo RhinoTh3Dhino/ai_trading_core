@@ -92,7 +92,7 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
     df = df.dropna(subset=[col for col in feature_cols if col in df.columns])
 
     # --- Tilføj target hvis ikke findes (fallback) ---
-    if not any([col for col in df.columns if col.name.startswith('target')]):
+    if not any([col for col in df.columns if str(col).startswith('target')]):
         df['target'] = (df['close'].shift(-1) > df['close']).astype(int)
 
     df.reset_index(drop=True, inplace=True)

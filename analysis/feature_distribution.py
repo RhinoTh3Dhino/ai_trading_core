@@ -35,7 +35,7 @@ def main():
         features = [col.strip() for col in args.features.split(",")]
     else:
         # Default: alle numeriske kolonner (ekskl. timestamp og targets)
-        features = [c for c in df.select_dtypes(include='number').columns if not c.name.startswith("target") and c != "timestamp"]
+        features = [c for c in df.select_dtypes(include='number').columns if not str(c).startswith("target") and c != "timestamp"]
 
     if len(features) == 0:
         print("[FEJL] Ingen features fundet.")

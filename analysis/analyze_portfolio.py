@@ -103,7 +103,7 @@ def aggregate_coin_metrics(coin, regime_stats_dict):
     return data
 
 def plot_portfolio_heatmap(df, run_id, output_dir=OUTPUT_DIR):
-    heatmap_df = df.set_index("Coin")[[c for c in df.columns if c.endswith("_win")]]
+    heatmap_df = df.set_index("Coin")[[c for c in df.columns if str(c).endswith("_win")]]
     heatmap_df = heatmap_df.apply(pd.to_numeric, errors='coerce').fillna(0)
     import seaborn as sns
     plt.figure(figsize=(10, 6))
