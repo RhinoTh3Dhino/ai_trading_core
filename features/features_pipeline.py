@@ -78,7 +78,6 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
     df = add_all_patterns(df, breakout_lookback=20, vol_mult=2.0)
 
     # --- ENSURE volume_spike-kolonne eksisterer ---
-    # Hvis add_all_patterns genererer 'vol_spike', omdøb den til 'volume_spike'
     if "vol_spike" in df.columns:
         df.rename(columns={"vol_spike": "volume_spike"}, inplace=True)
 
@@ -88,7 +87,6 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
         'bb_upper', 'bb_lower',
         'breakout_up', 'breakout_down', 'volume_spike', 'bull_engulf', 'bear_engulf', 'doji', 'hammer'
     ]
-    # Kun drop kolonner der eksisterer i df
     df = df.dropna(subset=[col for col in feature_cols if col in df.columns])
 
     # --- Tilføj target hvis ikke findes (fallback) ---
@@ -101,7 +99,6 @@ def generate_features(df: pd.DataFrame, feature_config: dict = None) -> pd.DataF
 def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1") -> str:
     today = datetime.now().strftime('%Y%m%d')
     filename = f"{symbol.lower()}_{timeframe}_features_{version}_{today}.csv"
-    # Brug Pathlib overalt
     output_dir = Path(PROJECT_ROOT) / "outputs" / "feature_data"
     output_dir.mkdir(parents=True, exist_ok=True)
     full_path = output_dir / filename
@@ -112,10 +109,15 @@ def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = 
 def load_features(symbol: str, timeframe: str, version_prefix: str = "v1") -> pd.DataFrame:
     folder = Path(PROJECT_ROOT) / "outputs" / "feature_data"
     # Brug Path-API så det virker både på Windows og Linux
-    files = [f for f in folder.iterdir() if f.is_file() and str(f).startswith(f"{symbol.lower()}_{timeframe}_features_{version_prefix}")]
+    # NB: Matcher *begyndelsen* af filnavnet med version_prefix og ignorerer evt. ekstra dato
+    files = [
+        f for f in folder.iterdir()
+        if f.is_file() and f.name.startswith(f"{symbol.lower()}_{timeframe}_features_{version_prefix}")
+    ]
     if not files:
         raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} ({version_prefix})")
-    files.sort(key=lambda x: x.name, reverse=True)
+    # Sortér efter filnavn (dato bagerst) eller efter modified time for safety
+    files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
     newest_file = files[0]
     print(f"📥 Indlæser features: {newest_file}")
     return pd.read_csv(newest_file)

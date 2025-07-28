@@ -8015,3 +8015,48 @@ n_1: 2831, n_0: 2572 (Test: 5403)
 [2025-07-26 03:01:53] Sender besked: 💓 Botten kører stadig! (03:01:53)
 [2025-07-26 03:01:53] [TESTMODE] Besked ikke sendt – Telegram inaktiv
 [2025-07-26 03:01:53] Heartbeat sendt.
+[2025-07-28 22:25:03] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-07-28 22:25:03] Besked sendt OK.
+[2025-07-28 22:25:04] Sender besked: Bot-status:
+2025-07-28 22:25:04 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: 14b68a9 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-07-28 22:25:04] Besked sendt OK.
+[2025-07-28 22:25:04] Sender besked: Testbesked fra test
+[2025-07-28 22:25:04] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-28 22:25:04] Sender besked: 💓 Botten kører stadig! (22:25:04)
+[2025-07-28 22:25:04] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-28 22:25:04] Heartbeat sendt.
+[2025-07-28 22:34:59] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-07-28 22:35:00] Besked sendt OK.
+[2025-07-28 22:35:00] Sender besked: Bot-status:
+2025-07-28 22:35:00 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: 14b68a9 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-07-28 22:35:00] Besked sendt OK.
+[2025-07-28 22:35:01] Sender besked: Testbesked fra test
+[2025-07-28 22:35:01] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-28 22:35:01] Sender besked: 💓 Botten kører stadig! (22:35:01)
+[2025-07-28 22:35:01] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-28 22:35:01] Heartbeat sendt.
+[2025-07-28 22:42:10] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-07-28 22:42:11] Besked sendt OK.
+[2025-07-28 22:42:11] Sender besked: Bot-status:
+2025-07-28 22:42:11 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: 14b68a9 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-07-28 22:42:12] Besked sendt OK.
+[2025-07-28 22:42:12] Sender besked: Testbesked fra test
+[2025-07-28 22:42:12] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-28 22:42:12] Sender besked: 💓 Botten kører stadig! (22:42:12)
+[2025-07-28 22:42:12] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-07-28 22:42:12] Heartbeat sendt.
