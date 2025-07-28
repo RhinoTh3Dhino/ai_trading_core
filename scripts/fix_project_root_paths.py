@@ -33,7 +33,7 @@ def fix_project_root_in_file(filepath):
     if changed and needs_import(lines):
         # Find første import-linje
         for idx, line in enumerate(new_lines):
-            if line.startswith("import") or line.startswith("from "):
+            if str(line).startswith("import") or str(line).startswith("from "):
                 # Indsæt før første import
                 new_lines.insert(idx, IMPORT_LINE)
                 import_added = True

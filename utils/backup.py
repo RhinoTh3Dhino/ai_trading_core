@@ -80,7 +80,7 @@ def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
         if os.path.isdir(day_path):
             backups = [
                 d for d in os.listdir(day_path)
-                if d.startswith("backup_")
+                if str(d).startswith("backup_")
             ]
             backups.sort(reverse=True)  # nyeste først
             for b in backups[keep_per_day:]:

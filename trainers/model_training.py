@@ -33,7 +33,7 @@ from utils.feature_logging import (
 def read_features_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
-    if first_line.startswith("#"):
+    if str(first_line).startswith("#"):
         print("🔎 Meta-header fundet – springer første linje over (skiprows=1).")
         df = pd.read_csv(file_path, skiprows=1)
     else:

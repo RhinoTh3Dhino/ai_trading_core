@@ -31,7 +31,7 @@ MODEL_PATH = os.path.join(MODEL_DIR, "best_lightgbm_model.txt")
 def load_csv_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
-    skiprows = 1 if first_line.startswith("#") else 0
+    skiprows = 1 if str(first_line).startswith("#") else 0
     return pd.read_csv(file_path, skiprows=skiprows)
 
 def train_lightgbm_model(data_path, target_col="target", n_estimators=100, learning_rate=0.1, save_model=True):

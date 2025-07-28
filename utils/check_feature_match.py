@@ -30,7 +30,7 @@ def check_feature_match(feature_file, verbose=True):
     # Indlæs CSV med skiprows hvis meta-header
     with open(feature_file, "r", encoding="utf-8") as f:
         first_line = f.readline()
-    if first_line.startswith("#"):
+    if str(first_line).startswith("#"):
         df = pd.read_csv(feature_file, skiprows=1)
     else:
         df = pd.read_csv(feature_file)

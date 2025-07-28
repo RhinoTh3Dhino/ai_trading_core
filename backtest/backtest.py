@@ -294,7 +294,7 @@ def parse_args():
 def load_csv_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
-    if first_line.startswith("#"):
+    if str(first_line).startswith("#"):
         print("[INFO] Meta-header fundet i CSV – loader med skiprows=1")
         return pd.read_csv(file_path, skiprows=1)
     else:

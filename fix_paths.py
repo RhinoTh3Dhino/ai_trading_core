@@ -30,7 +30,7 @@ def insert_import(content):
     # Find første linje efter øvrige imports (typisk under "import" eller "from ...")
     insert_idx = 0
     for idx, line in enumerate(lines):
-        if not (line.startswith("import") or line.startswith("from") or line.strip() == ""):
+        if not (str(line).startswith("import") or str(line).startswith("from") or line.strip() == ""):
             insert_idx = idx
             break
     lines.insert(insert_idx, PROJECT_ROOT_IMPORT)
