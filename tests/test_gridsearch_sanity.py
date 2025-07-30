@@ -28,18 +28,17 @@ OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 Y_TEST_PATH = OUTPUTS_DIR / "y_test.csv"
 Y_PREDS_PATH = OUTPUTS_DIR / "y_preds.csv"
 
-# Automatisk feature-generering, hvis filen mangler
 def ensure_features_file():
+    """Sikrer at feature-filen altid findes og har target_regime_adapt."""
+    # -- (1) Opret/overskriv feature-fil hvis den ikke findes --
     if not DATA_FEATURES_PATH.exists():
         print(f"[SETUP] Features-fil mangler ({DATA_FEATURES_PATH}). Genererer fra rådata ...")
-        # Brug din features pipeline
         try:
             from features.features_pipeline import generate_features
         except Exception as e:
             print(f"[FEJL] Kunne ikke importere features pipeline: {e}")
             sys.exit(1)
         if not DATA_RAW_PATH.exists():
-            # Opret en lille dummy-df hvis rå data også mangler
             print(f"[SETUP] Mangler rådata {DATA_RAW_PATH}, opretter dummy-fil.")
             n = 200
             df = pd.DataFrame({
@@ -54,13 +53,26 @@ def ensure_features_file():
         else:
             df = pd.read_csv(DATA_RAW_PATH, sep=";")
         features_df = generate_features(df)
+        # ----> Tilføj target_regime_adapt hvis mangler
+        if "regime" in features_df.columns and "target_regime_adapt" not in features_df.columns:
+            features_df["target_regime_adapt"] = (features_df["regime"].shift(-1) != features_df["regime"]).astype(int)
         features_df.to_csv(DATA_FEATURES_PATH, index=False)
         print(f"[SETUP] Gemte features til {DATA_FEATURES_PATH}")
     else:
-        print(f"[SETUP] Features-fil fundet: {DATA_FEATURES_PATH}")
+        # -- (2) Opdater eksisterende feature-fil hvis target_regime_adapt mangler --
+        features_df = pd.read_csv(DATA_FEATURES_PATH)
+        if "target_regime_adapt" not in features_df.columns:
+            print("[SETUP] Tilføjer manglende kolonne 'target_regime_adapt'...")
+            if "regime" not in features_df.columns:
+                print("[FEJL] Kan ikke generere target_regime_adapt – mangler regime-kolonne!")
+                sys.exit(1)
+            features_df["target_regime_adapt"] = (features_df["regime"].shift(-1) != features_df["regime"]).astype(int)
+            features_df.to_csv(DATA_FEATURES_PATH, index=False)
+        else:
+            print(f"[SETUP] Features-fil fundet: {DATA_FEATURES_PATH}")
 
 def test_gridsearch_pipeline():
-    ensure_features_file()  # Sikr at feature-filen altid eksisterer!
+    ensure_features_file()  # Sikr at feature-filen altid eksisterer og er korrekt!
 
     # Slet evt. gamle outputs for at sikre clean test
     for f in [Y_TEST_PATH, Y_PREDS_PATH]:
