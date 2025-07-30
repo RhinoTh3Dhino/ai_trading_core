@@ -12,38 +12,69 @@ Kør: python -m tests.test_gridsearch_sanity
 import sys
 import os
 from pathlib import Path
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(str(PROJECT_ROOT)))
 import subprocess
-import os
 import pandas as pd
 import numpy as np
-import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent.parent
-DATA_PATH = PROJECT_ROOT / "data" / "BTCUSDT_1h_features.csv"
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+DATA_RAW_PATH = PROJECT_ROOT / "data" / "BTCUSDT_1h.csv"
+DATA_FEATURES_PATH = PROJECT_ROOT / "data" / "BTCUSDT_1h_features.csv"
 RUN_PATH = PROJECT_ROOT / "run.py"
 GRIDSEARCH_REL_PATH = "scripts/gridsearch_train.py"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 Y_TEST_PATH = OUTPUTS_DIR / "y_test.csv"
 Y_PREDS_PATH = OUTPUTS_DIR / "y_preds.csv"
 
+# Automatisk feature-generering, hvis filen mangler
+def ensure_features_file():
+    if not DATA_FEATURES_PATH.exists():
+        print(f"[SETUP] Features-fil mangler ({DATA_FEATURES_PATH}). Genererer fra rådata ...")
+        # Brug din features pipeline
+        try:
+            from features.features_pipeline import generate_features
+        except Exception as e:
+            print(f"[FEJL] Kunne ikke importere features pipeline: {e}")
+            sys.exit(1)
+        if not DATA_RAW_PATH.exists():
+            # Opret en lille dummy-df hvis rå data også mangler
+            print(f"[SETUP] Mangler rådata {DATA_RAW_PATH}, opretter dummy-fil.")
+            n = 200
+            df = pd.DataFrame({
+                "timestamp": pd.date_range("2023-01-01", periods=n, freq="h"),
+                "open": np.random.uniform(25000, 35000, n),
+                "high": np.random.uniform(25500, 35500, n),
+                "low": np.random.uniform(24500, 34500, n),
+                "close": np.random.uniform(25000, 35000, n),
+                "volume": np.random.uniform(10, 1000, n)
+            })
+            df.to_csv(DATA_RAW_PATH, index=False, sep=";")
+        else:
+            df = pd.read_csv(DATA_RAW_PATH, sep=";")
+        features_df = generate_features(df)
+        features_df.to_csv(DATA_FEATURES_PATH, index=False)
+        print(f"[SETUP] Gemte features til {DATA_FEATURES_PATH}")
+    else:
+        print(f"[SETUP] Features-fil fundet: {DATA_FEATURES_PATH}")
+
 def test_gridsearch_pipeline():
-    # 0. Slet evt. gamle outputs for at sikre clean test
+    ensure_features_file()  # Sikr at feature-filen altid eksisterer!
+
+    # Slet evt. gamle outputs for at sikre clean test
     for f in [Y_TEST_PATH, Y_PREDS_PATH]:
         if f.exists():
             f.unlink()
 
     print("[TEST] Starter gridsearch_train.py sanity pipeline via run.py...")
-    print(f"[TEST] Kommando: {sys.executable} {RUN_PATH} {GRIDSEARCH_REL_PATH} --input {DATA_PATH} --features close,rsi_14,ema_9 --target target_regime_adapt --balance undersample --test_size 0.4")
+    print(f"[TEST] Kommando: {sys.executable} {RUN_PATH} {GRIDSEARCH_REL_PATH} --input {DATA_FEATURES_PATH} --features close,rsi_14,ema_9 --target target_regime_adapt --balance undersample --test_size 0.4")
 
     cmd = [
         sys.executable,
         str(RUN_PATH),
         GRIDSEARCH_REL_PATH,
-        "--input", str(DATA_PATH),
+        "--input", str(DATA_FEATURES_PATH),
         "--features", "close,rsi_14,ema_9",
         "--target", "target_regime_adapt",
         "--balance", "undersample",
