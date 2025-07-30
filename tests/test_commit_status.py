@@ -5,14 +5,14 @@ import os
 from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    sys.path.insert(0, str(str(PROJECT_ROOT)))
 import sys
 import os
 import unittest
 from unittest.mock import patch
 
 # Tilføj projekt-roden til sys.path så Python kan finde update_bot_status.py
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, str(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))))
 
 from update_bot_status import commit_bot_status
 

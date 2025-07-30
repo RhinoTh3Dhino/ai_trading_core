@@ -7,7 +7,7 @@ try:
     from pathlib import Path
     PROJECT_ROOT = Path(__file__).parent.parent.resolve()
     if str(PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(PROJECT_ROOT))
+        sys.path.insert(0, str(str(PROJECT_ROOT)))
     import tensorflow as tf
     print("TensorFlow version:", tf.__version__)
     gpus = tf.config.list_physical_devices('GPU')

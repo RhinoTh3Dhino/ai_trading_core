@@ -19,7 +19,7 @@ def ensure_project_root(verbose: bool = False):
     """
     project_root_str = str(PROJECT_ROOT)
     if project_root_str not in sys.path:
-        sys.path.insert(0, project_root_str)
+        sys.path.insert(0, str(project_root_str))
         if verbose:
             print(f"[INFO] Added PROJECT_ROOT to sys.path: {project_root_str}")
     elif verbose:

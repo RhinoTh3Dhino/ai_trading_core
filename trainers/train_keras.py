@@ -43,7 +43,7 @@ try:
 except ImportError:
     MLUTILS_AVAILABLE = False
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, str(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))))
 from utils.telegram_utils import send_message
 
 MODEL_DIR = "models"

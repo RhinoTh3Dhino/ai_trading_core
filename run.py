@@ -35,7 +35,7 @@ def main():
         pythonpath = os.pathsep.join([project_root, pythonpath]) if pythonpath else project_root
         os.environ["PYTHONPATH"] = pythonpath
     if project_root not in sys.path:
-        sys.path.insert(0, project_root)
+        sys.path.insert(0, str(project_root))
 
     # Valider script path
     script_path = os.path.join(project_root, args.script)

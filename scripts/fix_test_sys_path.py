@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    sys.path.insert(0, str(str(PROJECT_ROOT)))
 
 '''
 
@@ -15,7 +15,7 @@ def patch_file(file_path):
         content = f.read()
 
     # Hvis allerede sat ind, skip!
-    if 'sys.path.insert(0, str(PROJECT_ROOT))' in content:
+    if 'sys.path.insert(0, str(str(PROJECT_ROOT)))' in content:
         return False
 
     # Find første ikke-docstring import eller tom linje

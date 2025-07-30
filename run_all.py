@@ -13,7 +13,7 @@ from utils.project_path import PROJECT_ROOT
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 PYTHON = sys.executable
 

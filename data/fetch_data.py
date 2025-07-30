@@ -8,7 +8,7 @@ from utils.project_path import PROJECT_ROOT
 # ---- Relativt import-trick: Sikrer at 'utils' kan importeres uanset hvorfra scriptet køres ----
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(str(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))))
 from utils.robust_utils import safe_run  # ← Tilføjet robusthed!
 
 def hent_binance_data(symbol="BTC/USDT", timeframe="1h", limit=1000, start=None, slut=None, filnavn=None):

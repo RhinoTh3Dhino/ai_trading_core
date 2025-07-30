@@ -13,7 +13,7 @@ print("=== TEST: START af NY version af test_features_pipeline.py ===")
 # Sørg for at working dir er projektroden (så relative paths virker!)
 os.chdir(str(PROJECT_ROOT))
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    sys.path.insert(0, str(str(PROJECT_ROOT)))
 
 # Import features pipeline
 try:
