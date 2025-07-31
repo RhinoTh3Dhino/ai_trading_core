@@ -1,6 +1,7 @@
 import sys
 import os
 from pathlib import Path
+
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
@@ -8,8 +9,8 @@ import os
 import pandas as pd
 
 
-
 from utils.project_path import PROJECT_ROOT
+
 # Importer dine funktioner fra korrekt modul-sti
 from utils.report_utils import (
     update_bot_status,
@@ -17,7 +18,7 @@ from utils.report_utils import (
     print_status,
     build_telegram_summary,
     backup_file,
-    export_trade_journal
+    export_trade_journal,
 )
 
 # Sikrer at 'outputs/' eksisterer (ellers fejler test)
@@ -40,10 +41,10 @@ update_bot_status(
     portfolio_metrics_path=test_csv_path,
     version="vTEST",
     notes="Dette er en test.",
-# AUTO PATH CONVERTED
-    plot_path=None,                 # Sæt evt. til PROJECT_ROOT / "outputs" / "dummy.png"
-# AUTO PATH CONVERTED
-    trade_journal_path=None         # Sæt evt. til PROJECT_ROOT / "outputs" / "test_trade_journal.csv"
+    # AUTO PATH CONVERTED
+    plot_path=None,  # Sæt evt. til PROJECT_ROOT / "outputs" / "dummy.png"
+    # AUTO PATH CONVERTED
+    trade_journal_path=None,  # Sæt evt. til PROJECT_ROOT / "outputs" / "test_trade_journal.csv"
 )
 
 # 3. Test log_to_changelog
@@ -51,7 +52,7 @@ log_to_changelog(
     run_id="TEST001",
     version="vTEST",
     notes="Første changelog-test.",
-    changelog_path="CHANGELOG.md"
+    changelog_path="CHANGELOG.md",
 )
 
 # 4. Test build_telegram_summary
@@ -59,7 +60,7 @@ telegram_msg = build_telegram_summary(
     run_id="TEST001",
     portfolio_metrics_path=test_csv_path,
     version="vTEST",
-    extra_msg="Ekstra status fra test."
+    extra_msg="Ekstra status fra test.",
 )
 print("--- Telegram-summary ---")
 print(telegram_msg)
@@ -68,9 +69,11 @@ print(telegram_msg)
 backup_file(test_csv_path)
 
 # 6. Test export_trade_journal
-df = pd.DataFrame([
-    {"tid": "2024-07-07", "symbol": "BTC", "ret": 0.05},
-    {"tid": "2024-07-07", "symbol": "ETH", "ret": 0.02}
-])
+df = pd.DataFrame(
+    [
+        {"tid": "2024-07-07", "symbol": "BTC", "ret": 0.05},
+        {"tid": "2024-07-07", "symbol": "ETH", "ret": 0.02},
+    ]
+)
 # AUTO PATH CONVERTED
 export_trade_journal(df, PROJECT_ROOT / "outputs" / "test_trade_journal.csv")

@@ -13,14 +13,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
+
 def plot_confusion(y_true, y_pred, title="Confusion matrix"):
     cm = confusion_matrix(y_true, y_pred)
     fig, ax = plt.subplots(figsize=(4, 4))
-    im = ax.imshow(cm, cmap='Blues')
-    ax.set_xticks([0,1])
-    ax.set_yticks([0,1])
-    ax.set_xticklabels(['SHORT (0)', 'LONG (1)'])
-    ax.set_yticklabels(['SHORT (0)', 'LONG (1)'])
+    im = ax.imshow(cm, cmap="Blues")
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(["SHORT (0)", "LONG (1)"])
+    ax.set_yticklabels(["SHORT (0)", "LONG (1)"])
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.title(title)
@@ -32,10 +33,23 @@ def plot_confusion(y_true, y_pred, title="Confusion matrix"):
     plt.tight_layout()
     plt.show()
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Sanity check: sammenlign model mod naive baselines.")
-    parser.add_argument("--test_targets", type=str, required=True, help="Path til y_test.csv (targets fra test split)")
-    parser.add_argument("--predictions", type=str, required=True, help="Path til y_preds.csv (model predictions på test split)")
+    parser = argparse.ArgumentParser(
+        description="Sanity check: sammenlign model mod naive baselines."
+    )
+    parser.add_argument(
+        "--test_targets",
+        type=str,
+        required=True,
+        help="Path til y_test.csv (targets fra test split)",
+    )
+    parser.add_argument(
+        "--predictions",
+        type=str,
+        required=True,
+        help="Path til y_preds.csv (model predictions på test split)",
+    )
     args = parser.parse_args()
 
     # Indlæs data (forventet én kolonne, ingen header)
@@ -97,6 +111,7 @@ def main():
         pct = 100 * c / len(y_test)
         print(f"Klasse {u}: {c} ({pct:.1f}%)")
     print("\nHvis én klasse dominerer markant, vil naive strategier være svære at slå!")
+
 
 if __name__ == "__main__":
     main()

@@ -1,11 +1,11 @@
 from utils.project_path import PROJECT_ROOT
+
 # bot/multi_live_simulator.py
 
 
 import pandas as pd
 import argparse
 from datetime import datetime
-
 
 
 from utils.log_utils import log_device_status
@@ -17,23 +17,30 @@ MULTI_CONFIG = [
     {
         "symbol": "btcusdt",
         "timeframe": "1h",
-        "features_path": PROJECT_ROOT / "outputs" / "feature_data/btcusdt_1h_features_v1.3_20250718.csv",
+        "features_path": PROJECT_ROOT
+        / "outputs"
+        / "feature_data/btcusdt_1h_features_v1.3_20250718.csv",
         "n_rows": 500,
     },
     {
         "symbol": "ethusdt",
         "timeframe": "1h",
-        "features_path": PROJECT_ROOT / "outputs" / "feature_data/ethusdt_1h_features_latest.csv",
+        "features_path": PROJECT_ROOT
+        / "outputs"
+        / "feature_data/ethusdt_1h_features_latest.csv",
         "n_rows": 500,
     },
     {
         "symbol": "dogeusdt",
         "timeframe": "1h",
-        "features_path": PROJECT_ROOT / "outputs" / "feature_data/dogeusdt_1h_features_latest.csv",
+        "features_path": PROJECT_ROOT
+        / "outputs"
+        / "feature_data/dogeusdt_1h_features_latest.csv",
         "n_rows": 500,
     },
     # Tilføj flere coins/timeframes her!
 ]
+
 
 def status_text(symbol, timeframe, metrics, for_console=False):
     """
@@ -43,7 +50,9 @@ def status_text(symbol, timeframe, metrics, for_console=False):
     if not isinstance(metrics, dict) or metrics.get("profit_pct") is None:
         err = metrics.get("error", "-") if isinstance(metrics, dict) else "-"
         if for_console:
-            return f"{symbol.upper()} {timeframe}: FEJL eller ingen metrics retur ({err})"
+            return (
+                f"{symbol.upper()} {timeframe}: FEJL eller ingen metrics retur ({err})"
+            )
         return f"⚠️ {symbol.upper()} {timeframe}: FEJL eller ingen metrics retur ({err})"
     base = (
         f"{symbol.upper()} {timeframe} | "
@@ -57,16 +66,23 @@ def status_text(symbol, timeframe, metrics, for_console=False):
     else:
         return f"📊 {base}"
 
+
 def multi_live_simulation(configs=MULTI_CONFIG, n_rows_override=None):
     all_metrics = []
     all_status_telegram = []
-    log_device_status(context="multi_live_simulator", print_console=True, telegram_func=send_message)
+    log_device_status(
+        context="multi_live_simulator", print_console=True, telegram_func=send_message
+    )
     for conf in configs:
         symbol = conf.get("symbol")
         timeframe = conf.get("timeframe")
         features_path = conf.get("features_path")
-        n_rows = n_rows_override if n_rows_override is not None else conf.get("n_rows", 300)
-        print(f"\n=== Kører live-simulering for {symbol.upper()} {timeframe} ({n_rows} rækker) ===")
+        n_rows = (
+            n_rows_override if n_rows_override is not None else conf.get("n_rows", 300)
+        )
+        print(
+            f"\n=== Kører live-simulering for {symbol.upper()} {timeframe} ({n_rows} rækker) ==="
+        )
         try:
             # Kald single live_simulator for hvert symbol/timeframe
             metrics = run_live_sim(
@@ -87,14 +103,32 @@ def multi_live_simulation(configs=MULTI_CONFIG, n_rows_override=None):
         all_status_telegram.append(status_telegram)
     # --- Send samlet Telegram-status ---
     date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    msg = f"📡 <b>Multi Live Paper Trading Status {date_str}</b>\n\n" + "\n".join(all_status_telegram)
+    msg = f"📡 <b>Multi Live Paper Trading Status {date_str}</b>\n\n" + "\n".join(
+        all_status_telegram
+    )
     send_message(msg, parse_mode="HTML")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--coins", type=str, default=None, help="Kommasepareret liste af coins (fx 'btcusdt,ethusdt')")
-    parser.add_argument("--timeframes", type=str, default=None, help="Kommasepareret liste af timeframes (fx '1h,4h')")
-    parser.add_argument("--n_rows", type=int, default=None, help="Antal rækker per symbol/timeframe (overrider default)")
+    parser.add_argument(
+        "--coins",
+        type=str,
+        default=None,
+        help="Kommasepareret liste af coins (fx 'btcusdt,ethusdt')",
+    )
+    parser.add_argument(
+        "--timeframes",
+        type=str,
+        default=None,
+        help="Kommasepareret liste af timeframes (fx '1h,4h')",
+    )
+    parser.add_argument(
+        "--n_rows",
+        type=int,
+        default=None,
+        help="Antal rækker per symbol/timeframe (overrider default)",
+    )
     args = parser.parse_args()
     # Dynamisk override via CLI (valgfrit)
     configs = MULTI_CONFIG

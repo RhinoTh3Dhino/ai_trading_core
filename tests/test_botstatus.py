@@ -2,12 +2,14 @@
 import sys
 import os
 from pathlib import Path
+
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
 import unittest
 import os
 from utils.botstatus import update_bot_status
+
 
 class TestBotStatus(unittest.TestCase):
     def test_update_bot_status_creates_file(self):
@@ -18,6 +20,7 @@ class TestBotStatus(unittest.TestCase):
         print("DEBUG content:", repr(content))
         # Søg efter "Test" (uden emoji) for at sikre det virker i alle miljøer
         self.assertIn("Test", content)
+
 
 if __name__ == "__main__":
     unittest.main()

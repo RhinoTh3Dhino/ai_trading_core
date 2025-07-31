@@ -1,13 +1,14 @@
 import subprocess
 from datetime import datetime
 
+
 def update_bot_status(
-    version="v0.1", 
-    strategy="N/A", 
-    model="N/A", 
+    version="v0.1",
+    strategy="N/A",
+    model="N/A",
     status="Aktiv",
     backup_path="Ingen",
-    error_msg="Ingen"
+    error_msg="Ingen",
 ):
     # Nu med korrekt encoding og tilpasset format til test/produktion
     date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -23,6 +24,7 @@ def update_bot_status(
     with open("BotStatus.md", "w", encoding="utf-8") as f:
         f.write(content)
 
+
 def commit_bot_status():
     try:
         subprocess.run(["git", "add", "BotStatus.md"], check=True)
@@ -31,6 +33,7 @@ def commit_bot_status():
         print("✅ BotStatus.md er committet og pushet til GitHub")
     except subprocess.CalledProcessError as e:
         print(f"❌ Git-kommando fejlede: {e}")
+
 
 if __name__ == "__main__":
     # Testkørsel (kan køres direkte)

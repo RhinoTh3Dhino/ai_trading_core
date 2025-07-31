@@ -8,6 +8,7 @@ MODEL_DIR = "models"
 PYTORCH_FEATURES_PATH = os.path.join(MODEL_DIR, "best_pytorch_features.json")
 LSTM_FEATURES_PATH = os.path.join(MODEL_DIR, "lstm_features.csv")
 
+
 def load_trained_features():
     """Finder og loader feature-listen for PyTorch eller LSTM model."""
     if os.path.exists(PYTORCH_FEATURES_PATH):
@@ -22,6 +23,7 @@ def load_trained_features():
     else:
         print("❌ Ingen features gemt for model! Træn model først.")
         return None
+
 
 def check_feature_match(feature_file, verbose=True):
     features_trained = load_trained_features()
@@ -40,8 +42,10 @@ def check_feature_match(feature_file, verbose=True):
     features_actual = [col for col in features_actual if col not in ignore_cols]
     # Sammenlign
     missing = [f for f in features_trained if f not in features_actual]
-    extra   = [f for f in features_actual if f not in features_trained]
-    order_mismatch = features_trained != [col for col in features_actual if col in features_trained]
+    extra = [f for f in features_actual if f not in features_trained]
+    order_mismatch = features_trained != [
+        col for col in features_actual if col in features_trained
+    ]
 
     if verbose:
         print("\n=== Feature Match Report ===")
@@ -58,9 +62,17 @@ def check_feature_match(feature_file, verbose=True):
 
     return not missing and not order_mismatch
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tjek at feature-CSV matcher din models feature-liste (rækkefølge og navne)")
-    parser.add_argument("--csv", type=str, required=True, help="Path til din feature-CSV (med eller uden meta-header)")
+    parser = argparse.ArgumentParser(
+        description="Tjek at feature-CSV matcher din models feature-liste (rækkefølge og navne)"
+    )
+    parser.add_argument(
+        "--csv",
+        type=str,
+        required=True,
+        help="Path til din feature-CSV (med eller uden meta-header)",
+    )
     args = parser.parse_args()
     ok = check_feature_match(args.csv)
     if ok:

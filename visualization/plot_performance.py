@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
+
 def plot_performance(
     balance_df,
     trades_df=None,
@@ -46,7 +47,9 @@ def plot_performance(
     # --- Plot balance ---
     plt.plot(x, balance, label="Balance", color="#0057B8", linewidth=2)
     # --- Plot drawdown som område ---
-    plt.fill_between(x, balance + drawdown, balance, color="red", alpha=0.13, label="Drawdown")
+    plt.fill_between(
+        x, balance + drawdown, balance, color="red", alpha=0.13, label="Drawdown"
+    )
 
     # --- Trades (BUY/TP/SL) ---
     if show_trades and trades_df is not None and len(trades_df) > 0:
@@ -57,19 +60,50 @@ def plot_performance(
             buys = trades[trades["type"].str.upper() == "BUY"]
             tps = trades[trades["type"].str.upper() == "TP"]
             sls = trades[trades["type"].str.upper() == "SL"]
-            plt.scatter(buys["timestamp"], buys["balance"], marker="^", color="green", label="BUY", zorder=5)
-            plt.scatter(tps["timestamp"], tps["balance"], marker="o", color="lime", label="TP", zorder=5)
-            plt.scatter(sls["timestamp"], sls["balance"], marker="v", color="red", label="SL", zorder=5)
+            plt.scatter(
+                buys["timestamp"],
+                buys["balance"],
+                marker="^",
+                color="green",
+                label="BUY",
+                zorder=5,
+            )
+            plt.scatter(
+                tps["timestamp"],
+                tps["balance"],
+                marker="o",
+                color="lime",
+                label="TP",
+                zorder=5,
+            )
+            plt.scatter(
+                sls["timestamp"],
+                sls["balance"],
+                marker="v",
+                color="red",
+                label="SL",
+                zorder=5,
+            )
 
     # --- Pris (overlay på sekundær y-akse hvis tilgængelig) ---
     if "close" in balance_df.columns:
         ax2 = plt.gca().twinx()
-        ax2.plot(x, balance_df["close"], color="grey", linestyle="--", linewidth=1, alpha=0.35, label="Pris")
+        ax2.plot(
+            x,
+            balance_df["close"],
+            color="grey",
+            linestyle="--",
+            linewidth=1,
+            alpha=0.35,
+            label="Pris",
+        )
         ax2.set_ylabel("Pris (USDT)", color="grey")
-        ax2.tick_params(axis='y', labelcolor='grey')
+        ax2.tick_params(axis="y", labelcolor="grey")
 
     # --- Titel og labels ---
-    title = f"{symbol} | {model_name.upper() if model_name else 'AI Model'} | Performance"
+    title = (
+        f"{symbol} | {model_name.upper() if model_name else 'AI Model'} | Performance"
+    )
     if title_extra:
         title += f" | {title_extra}"
     plt.title(title)
@@ -89,12 +123,18 @@ def plot_performance(
     print(f"[Plot] Gemte performance-plot til: {save_path}")
     return save_path
 
+
 # === CLI-brug/test ===
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Plot performance for AI trading bot")
-    parser.add_argument("--balance", type=str, required=True, help="Path til balance_df (CSV)")
-    parser.add_argument("--trades", type=str, default=None, help="Path til trades_df (CSV)")
+    parser.add_argument(
+        "--balance", type=str, required=True, help="Path til balance_df (CSV)"
+    )
+    parser.add_argument(
+        "--trades", type=str, default=None, help="Path til trades_df (CSV)"
+    )
     parser.add_argument("--symbol", type=str, default="BTCUSDT")
     parser.add_argument("--model_name", type=str, default="AI Model")
     parser.add_argument("--title_extra", type=str, default=None)
@@ -107,5 +147,5 @@ if __name__ == "__main__":
         trades_df=trades_df,
         symbol=args.symbol,
         model_name=args.model_name,
-        title_extra=args.title_extra or "CLI Test"
+        title_extra=args.title_extra or "CLI Test",
     )

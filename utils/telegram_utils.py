@@ -22,6 +22,7 @@ load_dotenv()
 # AUTO PATH CONVERTED
 LOG_PATH = PROJECT_ROOT / "telegram_log.txt"
 
+
 def telegram_enabled():
     token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
@@ -31,6 +32,7 @@ def telegram_enabled():
         return False
     return True
 
+
 def log_telegram(msg):
     t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
@@ -38,6 +40,7 @@ def log_telegram(msg):
             f.write(f"[{t}] {msg}\n")
     except Exception:
         print(f"[ADVARSEL] Telegram-log fejlede: {msg}")
+
 
 def send_message(msg, chat_id=None, parse_mode=None, silent=False):
     log_telegram(f"Sender besked: {msg}")
@@ -66,7 +69,9 @@ def send_message(msg, chat_id=None, parse_mode=None, silent=False):
         log_telegram(f"EXCEPTION ved sendMessage: {e}")
         return None
 
+
 send_telegram_message = send_message  # Alias
+
 
 def send_image(photo_path, caption="", chat_id=None, silent=False):
     log_telegram(f"Sender billede: {photo_path} (caption: {caption})")
@@ -74,7 +79,9 @@ def send_image(photo_path, caption="", chat_id=None, silent=False):
     _chat_id = chat_id if chat_id is not None else os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_enabled():
         if not silent:
-            print(f"[TESTMODE] Ville have sendt billede: {photo_path} (caption: {caption})")
+            print(
+                f"[TESTMODE] Ville have sendt billede: {photo_path} (caption: {caption})"
+            )
         log_telegram("[TESTMODE] Billede ikke sendt – Telegram inaktiv")
         return None
     url = f"https://api.telegram.org/bot{token}/sendPhoto"
@@ -95,13 +102,16 @@ def send_image(photo_path, caption="", chat_id=None, silent=False):
         log_telegram(f"EXCEPTION ved sendPhoto: {e}")
         return None
 
+
 def send_document(doc_path, caption="", chat_id=None, silent=False):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
     token = os.getenv("TELEGRAM_TOKEN")
     _chat_id = chat_id if chat_id is not None else os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_enabled():
         if not silent:
-            print(f"[TESTMODE] Ville have sendt dokument: {doc_path} (caption: {caption})")
+            print(
+                f"[TESTMODE] Ville have sendt dokument: {doc_path} (caption: {caption})"
+            )
         log_telegram("[TESTMODE] Dokument ikke sendt – Telegram inaktiv")
         return None
     url = f"https://api.telegram.org/bot{token}/sendDocument"
@@ -122,11 +132,13 @@ def send_document(doc_path, caption="", chat_id=None, silent=False):
         log_telegram(f"EXCEPTION ved sendDocument: {e}")
         return None
 
+
 def send_telegram_heartbeat(chat_id=None):
     t = datetime.datetime.now().strftime("%H:%M:%S")
     msg = f"💓 Botten kører stadig! ({t})"
     send_message(msg, chat_id=chat_id)
     log_telegram("Heartbeat sendt.")
+
 
 def send_strategy_metrics(metrics, chat_id=None):
     msg = (
@@ -140,36 +152,48 @@ def send_strategy_metrics(metrics, chat_id=None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
-def send_auto_status_summary(summary_text, image_path=None, doc_path=None, chat_id=None):
+
+def send_auto_status_summary(
+    summary_text, image_path=None, doc_path=None, chat_id=None
+):
     send_message(summary_text, chat_id=chat_id)
     if image_path and os.path.exists(image_path):
         send_image(image_path, caption="📈 Equity Curve", chat_id=chat_id)
     if doc_path and os.path.exists(doc_path):
         send_document(doc_path, caption="📊 Trade Journal", chat_id=chat_id)
 
+
 def send_trend_graph(
     chat_id=None,
-# AUTO PATH CONVERTED
+    # AUTO PATH CONVERTED
     history_path=PROJECT_ROOT / "outputs" / "performance_history.csv",
-# AUTO PATH CONVERTED
+    # AUTO PATH CONVERTED
     img_path=PROJECT_ROOT / "outputs" / "balance_trend.png",
-    caption="📈 Balanceudvikling"
+    caption="📈 Balanceudvikling",
 ):
     try:
         if generate_trend_graph:
-            img_path = generate_trend_graph(history_path=history_path, img_path=img_path)
+            img_path = generate_trend_graph(
+                history_path=history_path, img_path=img_path
+            )
             if img_path and os.path.exists(img_path):
                 send_image(img_path, caption=caption, chat_id=chat_id)
             else:
                 send_message("Kunne ikke generere balance-trend-graf.", chat_id=chat_id)
         else:
-            send_message("Plot-utils ikke tilgængelig – trend-graf ikke genereret.", chat_id=chat_id)
+            send_message(
+                "Plot-utils ikke tilgængelig – trend-graf ikke genereret.",
+                chat_id=chat_id,
+            )
     except Exception as e:
         print(f"[FEJL] Fejl ved trend-graf: {e}")
         log_telegram(f"EXCEPTION ved send_trend_graph: {e}")
         send_message(f"Fejl ved generering/sending af trend-graf: {e}", chat_id=chat_id)
 
-def send_live_metrics(trades_df, balance_df, symbol="", timeframe="", thresholds=None, chat_id=None):
+
+def send_live_metrics(
+    trades_df, balance_df, symbol="", timeframe="", thresholds=None, chat_id=None
+):
     """
     Send live performance-metrics og alarmer til Telegram.
     thresholds: dict, fx {"drawdown": -20, "winrate": 20, "profit": -10}
@@ -188,26 +212,42 @@ def send_live_metrics(trades_df, balance_df, symbol="", timeframe="", thresholds
     alarm_msgs = []
     if thresholds:
         if check_drawdown_alert(metrics, threshold=thresholds.get("drawdown", -20)):
-            alarm_msgs.append(f"🚨 ADVARSEL: Max drawdown under {thresholds.get('drawdown', -20)}%! ({metrics['drawdown_pct']:.2f}%)")
+            alarm_msgs.append(
+                f"🚨 ADVARSEL: Max drawdown under {thresholds.get('drawdown', -20)}%! ({metrics['drawdown_pct']:.2f}%)"
+            )
         if check_winrate_alert(metrics, threshold=thresholds.get("winrate", 20)):
-            alarm_msgs.append(f"🚨 ADVARSEL: Win-rate under {thresholds.get('winrate', 20)}%! ({metrics['win_rate']:.1f}%)")
+            alarm_msgs.append(
+                f"🚨 ADVARSEL: Win-rate under {thresholds.get('winrate', 20)}%! ({metrics['win_rate']:.1f}%)"
+            )
         if check_profit_alert(metrics, threshold=thresholds.get("profit", -10)):
-            alarm_msgs.append(f"🚨 ADVARSEL: Profit under {thresholds.get('profit', -10)}%! ({metrics['profit_pct']:.2f}%)")
+            alarm_msgs.append(
+                f"🚨 ADVARSEL: Profit under {thresholds.get('profit', -10)}%! ({metrics['profit_pct']:.2f}%)"
+            )
     if alarm_msgs:
         for alarm in alarm_msgs:
             send_message(alarm, chat_id=chat_id)
             log_telegram(alarm)
+
 
 # Testfunktion
 if __name__ == "__main__":
     send_message("Testbesked fra din AI trading bot!")
     send_telegram_heartbeat()
     import pandas as pd
+
     # Dummy for live-metrics test
     balance_df = pd.DataFrame({"balance": [1000, 980, 950, 990, 970, 1005]})
-    trades_df = pd.DataFrame({
-        "type": ["BUY", "TP", "BUY", "SL", "BUY", "TP", "SELL", "TP", "SELL", "SL"],
-        "profit": [0, 0.02, 0, -0.015, 0, 0.01, 0, 0.03, 0, -0.012]
-    })
-    send_live_metrics(trades_df, balance_df, symbol="BTCUSDT", timeframe="1h", thresholds={"drawdown": -2, "winrate": 60, "profit": -1})
+    trades_df = pd.DataFrame(
+        {
+            "type": ["BUY", "TP", "BUY", "SL", "BUY", "TP", "SELL", "TP", "SELL", "SL"],
+            "profit": [0, 0.02, 0, -0.015, 0, 0.01, 0, 0.03, 0, -0.012],
+        }
+    )
+    send_live_metrics(
+        trades_df,
+        balance_df,
+        symbol="BTCUSDT",
+        timeframe="1h",
+        thresholds={"drawdown": -2, "winrate": 60, "profit": -1},
+    )
     send_trend_graph()

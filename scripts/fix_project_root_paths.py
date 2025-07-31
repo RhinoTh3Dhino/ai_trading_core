@@ -2,14 +2,16 @@ import os
 import re
 from pathlib import Path  # <-- VIGTIG: Tilføjet import
 
-REPLACEMENT = 'PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB'
-IMPORT_LINE = 'from pathlib import Path\n'
+REPLACEMENT = "PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB"
+IMPORT_LINE = "from pathlib import Path\n"
+
 
 def needs_import(lines):
-    return not any('from pathlib import Path' in l for l in lines)
+    return not any("from pathlib import Path" in l for l in lines)
+
 
 def fix_project_root_in_file(filepath):
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
 
     changed = False
@@ -18,13 +20,17 @@ def fix_project_root_in_file(filepath):
 
     for idx, line in enumerate(lines):
         # Find linjer med PROJECT_ROOT = ...
-        if re.search(r'PROJECT_ROOT\s*=', line):
+        if re.search(r"PROJECT_ROOT\s*=", line):
             # Fang forskellige "forkerte" måder:
-            if ("os.path" in line or "os.path.abspath" in line
-                or '"' in line or "'" in line):
+            if (
+                "os.path" in line
+                or "os.path.abspath" in line
+                or '"' in line
+                or "'" in line
+            ):
                 # Erstat med ny version
                 print(f"[RETTER] {filepath} - linje {idx+1}: {line.strip()}")
-                new_lines.append(REPLACEMENT + '\n')
+                new_lines.append(REPLACEMENT + "\n")
                 changed = True
                 continue
         new_lines.append(line)
@@ -51,6 +57,7 @@ def fix_project_root_in_file(filepath):
         return True
     return False
 
+
 def main():
     n_fixed = 0
     for root, dirs, files in os.walk("."):
@@ -63,6 +70,7 @@ def main():
                 if fix_project_root_in_file(fpath):
                     n_fixed += 1
     print(f"\n[FÆRDIG] Antal filer rettet: {n_fixed}")
+
 
 if __name__ == "__main__":
     main()

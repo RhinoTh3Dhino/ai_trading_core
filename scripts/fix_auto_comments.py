@@ -4,6 +4,7 @@ import re
 
 PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 
+
 def fix_autopath_comments(rootdir=PROJECT_ROOT):
     changed_files = 0
     skipped_files = []
@@ -25,11 +26,11 @@ def fix_autopath_comments(rootdir=PROJECT_ROOT):
                 lines_changed = 0
                 for line in lines:
                     if "" in line:
-# AUTO PATH CONVERTED
+                        # AUTO PATH CONVERTED
                         fixed_line = re.sub(r"\s*", "", line.rstrip())
                         # Tilføj kommentaren på linjen over, hvis det er en function def eller assignment
                         if "(" in fixed_line or "=" in fixed_line:
-# AUTO PATH CONVERTED
+                            # AUTO PATH CONVERTED
                             new_lines.append("\n")
                         new_lines.append(fixed_line + "\n")
                         lines_changed += 1
@@ -50,8 +51,9 @@ def fix_autopath_comments(rootdir=PROJECT_ROOT):
         print("\n[ADVARSEL] Filer sprunget over pga. encoding-fejl:")
         for f in skipped_files:
             print(f"  - {f}")
-# AUTO PATH CONVERTED
+    # AUTO PATH CONVERTED
     print("\nAlle inline kommentarer er nu flyttet/fjernet.")
+
 
 if __name__ == "__main__":
     fix_autopath_comments()

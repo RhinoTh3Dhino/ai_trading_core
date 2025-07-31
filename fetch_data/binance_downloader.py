@@ -1,10 +1,10 @@
 from utils.project_path import PROJECT_ROOT
+
 # fetch_data/binance_downloader.py
 
 import pandas as pd
 from datetime import datetime
 from time import sleep
-
 
 
 from config.config import COINS, TIMEFRAMES
@@ -21,21 +21,35 @@ API_KEY = os.getenv("BINANCE_API_KEY", "")
 API_SECRET = os.getenv("BINANCE_API_SECRET", "")
 client = Client(API_KEY, API_SECRET)
 
+
 def download_binance_ohlcv(symbol, interval, start_str, end_str, out_csv):
     print(f"Henter {symbol} {interval} fra {start_str} til {end_str} ...")
     klines = client.get_historical_klines(symbol, interval, start_str, end_str)
-    cols = ['timestamp', 'open', 'high', 'low', 'close', 'volume',
-            'close_time', 'quote_asset', 'n_trades', 'taker_base_vol', 'taker_quote_vol', 'ignore']
+    cols = [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "close_time",
+        "quote_asset",
+        "n_trades",
+        "taker_base_vol",
+        "taker_quote_vol",
+        "ignore",
+    ]
     df = pd.DataFrame(klines, columns=cols)
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
     # Behold kun relevante kolonner og gem som float (med punktum!)
-    df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-    for col in ['open', 'high', 'low', 'close', 'volume']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df[["timestamp", "open", "high", "low", "close", "volume"]]
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
     # Gem CSV med ; og punktum som decimal (dansk/international friendly)
     os.makedirs(os.path.dirname(out_csv), exist_ok=True)
     df.to_csv(out_csv, index=False, sep=";", decimal=".")
     print(f"✅ Gemte {len(df)} rækker til {out_csv}")
+
 
 if __name__ == "__main__":
     # Indstil hvor langt tilbage du vil hente (fx 2 år)
@@ -46,7 +60,7 @@ if __name__ == "__main__":
         for tf in TIMEFRAMES:
             # Binance interval format (1h, 4h, 1d ...)
             tf_binance = tf if "m" in tf or "h" in tf or "d" in tf else f"{tf}"
-# AUTO PATH CONVERTED
+            # AUTO PATH CONVERTED
             out_csv = fPROJECT_ROOT / "data" / "{symbol}_{tf}.csv"
             try:
                 download_binance_ohlcv(
@@ -54,7 +68,7 @@ if __name__ == "__main__":
                     interval=tf_binance,
                     start_str=START_DATE,
                     end_str=END_DATE,
-                    out_csv=out_csv
+                    out_csv=out_csv,
                 )
                 # Undgå at ramme rate-limits!
                 sleep(1)

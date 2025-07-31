@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
 
+
 def create_lstm_sequences(df: pd.DataFrame, seq_length: int = 48):
     """
     Omdanner DataFrame til LSTM sekvenser (X) til prediction.
@@ -13,19 +14,23 @@ def create_lstm_sequences(df: pd.DataFrame, seq_length: int = 48):
     data = df.values
     sequences = []
     for i in range(len(data) - seq_length + 1):
-        sequences.append(data[i:i+seq_length])
+        sequences.append(data[i : i + seq_length])
     return np.array(sequences)
+
 
 def load_trained_model(model_path: str):
     """
-    Loader en Keras model fra disk. 
+    Loader en Keras model fra disk.
     """
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model-fil ikke fundet: {model_path}")
     model = load_model(model_path)
     return model
 
-def predict_with_model(df: pd.DataFrame, model_path: str, seq_length: int = 48) -> np.ndarray:
+
+def predict_with_model(
+    df: pd.DataFrame, model_path: str, seq_length: int = 48
+) -> np.ndarray:
     """
     Forbereder data og laver prediktioner med den trænede model.
     Args:
@@ -40,6 +45,7 @@ def predict_with_model(df: pd.DataFrame, model_path: str, seq_length: int = 48) 
     preds = model.predict(X)
     return preds
 
+
 if __name__ == "__main__":
     # Test eksempel: indlæs features, kald predict og print resultater
     import sys
@@ -53,9 +59,9 @@ if __name__ == "__main__":
     model_path = sys.argv[2]
 
     df = pd.read_csv(feature_csv)
-    if 'timestamp' in df.columns:
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-        df = df.drop(columns=['timestamp'])  # Fjern timestamp for ML input
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df = df.drop(columns=["timestamp"])  # Fjern timestamp for ML input
 
     print(f"Loader model fra {model_path}...")
     predictions = predict_with_model(df, model_path)

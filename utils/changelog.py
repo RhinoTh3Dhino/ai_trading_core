@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 
+
 def append_to_changelog(message, changelog_file="CHANGELOG.md"):
     """
     Tilføjer en entry til CHANGELOG.md (eller testfil) med timestamp og besked.

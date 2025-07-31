@@ -1,12 +1,12 @@
 from utils.project_path import PROJECT_ROOT
+
 # bot/engine.py
 
-
+import os
 import json
 import pickle
 import pandas as pd
 import numpy as np
-
 
 
 from utils.log_utils import log_device_status
@@ -36,11 +36,18 @@ except ImportError:
 
 try:
     from versions import (
-        PIPELINE_VERSION, PIPELINE_COMMIT,
-        FEATURE_VERSION, ENGINE_VERSION, ENGINE_COMMIT, MODEL_VERSION, LABEL_STRATEGY
+        PIPELINE_VERSION,
+        PIPELINE_COMMIT,
+        FEATURE_VERSION,
+        ENGINE_VERSION,
+        ENGINE_COMMIT,
+        MODEL_VERSION,
+        LABEL_STRATEGY,
     )
 except ImportError:
-    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
+    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = (
+        ENGINE_COMMIT
+    ) = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
 from backtest.backtest import run_backtest
 from utils.robust_utils import safe_run
@@ -64,6 +71,7 @@ ML_FEATURES_PATH = os.path.join(MODEL_DIR, "best_ml_features.json")
 
 # === Hjælpefunktioner ===
 
+
 class TradingNet(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=2):
         super().__init__()
@@ -74,8 +82,10 @@ class TradingNet(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(hidden_dim, output_dim),
         )
+
     def forward(self, x):
         return self.net(x)
+
 
 def load_trained_feature_list():
     if os.path.exists(PYTORCH_FEATURES_PATH):
@@ -88,8 +98,11 @@ def load_trained_feature_list():
         print(f"[INFO] Loader LSTM feature-liste fra model: {features}")
         return features
     else:
-        print(f"[ADVARSEL] Ingen feature-liste fundet – bruger alle numeriske features fra input.")
+        print(
+            f"[ADVARSEL] Ingen feature-liste fundet – bruger alle numeriske features fra input."
+        )
         return None
+
 
 def load_ml_model():
     if os.path.exists(ML_MODEL_PATH) and os.path.exists(ML_FEATURES_PATH):
@@ -103,13 +116,17 @@ def load_ml_model():
         print("[ADVARSEL] Ingen trænet ML-model fundet – bruger random baseline.")
         return None, None
 
+
 def reconcile_features(df, feature_list):
     missing = [col for col in feature_list if col not in df.columns]
     if missing:
-        print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
+        print(
+            f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}"
+        )
         for col in missing:
             df[col] = 0.0
     return df[feature_list]
+
 
 def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device_str="cpu"):
     if not os.path.exists(model_path):
@@ -121,6 +138,7 @@ def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device_str="c
     model.to(device_str)
     print(f"✅ PyTorch-model indlæst fra {model_path} på {device_str}")
     return model
+
 
 def pytorch_predict(model, X, device_str="cpu"):
     X_ = X.copy()
@@ -135,8 +153,10 @@ def pytorch_predict(model, X, device_str="cpu"):
         preds = np.argmax(probs, axis=1)
     return preds, probs
 
+
 def keras_lstm_predict(df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PATH):
     from tensorflow.keras.models import load_model
+
     if not os.path.exists(model_path):
         print(f"❌ Keras LSTM-model ikke fundet: {model_path}")
         return np.zeros(len(df))
@@ -147,7 +167,7 @@ def keras_lstm_predict(df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PA
     X_scaled = (X - mean) / scale
     X_seq = []
     for i in range(len(X_scaled) - seq_length):
-        X_seq.append(X_scaled[i:i+seq_length])
+        X_seq.append(X_scaled[i : i + seq_length])
     X_seq = np.array(X_seq)
     model = load_model(model_path)
     probs = model.predict(X_seq)
@@ -155,6 +175,7 @@ def keras_lstm_predict(df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PA
     preds_full = np.zeros(len(df), dtype=int)
     preds_full[seq_length:] = preds
     return preds_full
+
 
 def read_features_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
@@ -166,9 +187,11 @@ def read_features_auto(file_path):
         df = pd.read_csv(file_path)
     return df
 
+
 GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]
+
 
 def main(
     features_path,
@@ -178,24 +201,25 @@ def main(
     weights=DEFAULT_WEIGHTS,
     device_str=None,
     use_lstm=False,
-    FORCE_DEBUG=False
+    FORCE_DEBUG=False,
 ):
     device_str = device_str or ("cuda" if torch.cuda.is_available() else "cpu")
     device_info = log_device_status(
         context="engine",
-        extra={
-            "symbol": symbol,
-            "interval": interval,
-            "model_type": "multi_compare"
-        },
+        extra={"symbol": symbol, "interval": interval, "model_type": "multi_compare"},
         telegram_func=send_message,
-        print_console=True
+        print_console=True,
     )
 
     monitor = ResourceMonitor(
-        ram_max=85, cpu_max=90, gpu_max=95, gpu_temp_max=80, check_interval=10,
-# AUTO PATH CONVERTED
-        action="pause", log_file=PROJECT_ROOT / "outputs" / "debug/resource_log.csv"
+        ram_max=85,
+        cpu_max=90,
+        gpu_max=95,
+        gpu_temp_max=80,
+        check_interval=10,
+        # AUTO PATH CONVERTED
+        action="pause",
+        log_file=PROJECT_ROOT / "outputs" / "debug/resource_log.csv",
     )
     monitor.start()
 
@@ -227,25 +251,33 @@ def main(
         if trained_features is not None:
             X_dl = reconcile_features(df, trained_features)
         else:
-            fallback_cols = [col for col in df.select_dtypes(include=[np.number]).columns if col not in ("timestamp", "target", "regime", "signal")]
+            fallback_cols = [
+                col
+                for col in df.select_dtypes(include=[np.number]).columns
+                if col not in ("timestamp", "target", "regime", "signal")
+            ]
             X_dl = df[fallback_cols]
             print(f"[ADVARSEL] Kører med fallback-features: {fallback_cols}")
 
         print("🔄 Loader DL-model ...")
         if use_lstm and os.path.exists(LSTM_MODEL_PATH):
             print("✅ Bruger Keras LSTM til inference.")
-            dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
-            dl_probas = np.stack([1-dl_signals, dl_signals], axis=1)
+            dl_signals = keras_lstm_predict(
+                df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH
+            )
+            dl_probas = np.stack([1 - dl_signals, dl_signals], axis=1)
         else:
             model = load_pytorch_model(feature_dim=X_dl.shape[1], device_str=device_str)
             if model is not None:
-                dl_preds, dl_probas = pytorch_predict(model, X_dl, device_str=device_str)
+                dl_preds, dl_probas = pytorch_predict(
+                    model, X_dl, device_str=device_str
+                )
                 dl_signals = (dl_probas[:, 1] > threshold).astype(int)
                 print("✅ PyTorch DL-inference klar!")
             else:
                 print("❌ Ingen DL-model fundet – fallback til random signaler")
                 dl_signals = np.random.choice([0, 1], size=len(df))
-                dl_probas = np.stack([1-dl_signals, dl_signals], axis=1)
+                dl_probas = np.stack([1 - dl_signals, dl_signals], axis=1)
         df["signal_dl"] = dl_signals
         trades_dl, balance_dl = run_backtest(df, signals=dl_signals)
         metrics_dl = advanced_performance_metrics(trades_dl, balance_dl)
@@ -259,7 +291,7 @@ def main(
             rule_preds=rsi_signals,
             weights=weights,
             voting="majority",
-            debug=True
+            debug=True,
         )
         df["signal_ensemble"] = ensemble_signals
         trades_ens, balance_ens = run_backtest(df, signals=ensemble_signals)
@@ -279,13 +311,14 @@ def main(
         # === Live monitoring/alerting (styrer al logik via config/monitoring_config.py) ===
         if ENABLE_MONITORING:
             send_live_metrics(
-                trades_ens, balance_ens,
+                trades_ens,
+                balance_ens,
                 symbol=symbol,
                 timeframe=interval,
                 thresholds=ALARM_THRESHOLDS,
                 alert_on_drawdown=ALERT_ON_DRAWNDOWN,
                 alert_on_winrate=ALERT_ON_WINRATE,
-                alert_on_profit=ALERT_ON_PROFIT
+                alert_on_profit=ALERT_ON_PROFIT,
             )
 
         # Logging til TensorBoard og graf-visualisering
@@ -296,18 +329,42 @@ def main(
 
         # --- Visualisering ---
         from visualization.plot_performance import plot_performance
+
         os.makedirs(GRAPH_DIR, exist_ok=True)
-        plot_performance(balance_ml, trades_ml, model_name="ML", save_path=f"{GRAPH_DIR}/performance_ml.png")
-        plot_performance(balance_dl, trades_dl, model_name="DL", save_path=f"{GRAPH_DIR}/performance_dl.png")
-        plot_performance(balance_ens, trades_ens, model_name="Ensemble", save_path=f"{GRAPH_DIR}/performance_ensemble.png")
+        plot_performance(
+            balance_ml,
+            trades_ml,
+            model_name="ML",
+            save_path=f"{GRAPH_DIR}/performance_ml.png",
+        )
+        plot_performance(
+            balance_dl,
+            trades_dl,
+            model_name="DL",
+            save_path=f"{GRAPH_DIR}/performance_dl.png",
+        )
+        plot_performance(
+            balance_ens,
+            trades_ens,
+            model_name="Ensemble",
+            save_path=f"{GRAPH_DIR}/performance_ensemble.png",
+        )
 
         from visualization.plot_comparison import plot_comparison
+
         metric_keys = ["profit_pct", "max_drawdown", "sharpe", "sortino"]
-        plot_comparison(metrics_dict, metric_keys=metric_keys, save_path=f"{GRAPH_DIR}/model_comparison.png")
+        plot_comparison(
+            metrics_dict,
+            metric_keys=metric_keys,
+            save_path=f"{GRAPH_DIR}/model_comparison.png",
+        )
         print(f"[INFO] Sammenlignings-graf gemt til {GRAPH_DIR}/model_comparison.png")
 
         try:
-            send_image(f"{GRAPH_DIR}/model_comparison.png", caption="ML vs. DL vs. ENSEMBLE performance")
+            send_image(
+                f"{GRAPH_DIR}/model_comparison.png",
+                caption="ML vs. DL vs. ENSEMBLE performance",
+            )
         except Exception as e:
             print(f"[ADVARSEL] Telegram-graf kunne ikke sendes: {e}")
 
@@ -317,25 +374,53 @@ def main(
         writer.close()
         monitor.stop()
 
+
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="AI Trading Engine")
-    parser.add_argument("--features", type=str, required=True, help="Sti til feature-fil (CSV)")
+    parser.add_argument(
+        "--features", type=str, required=True, help="Sti til feature-fil (CSV)"
+    )
     parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Trading symbol")
-    parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)")
-    parser.add_argument("--device", type=str, default=None, help="PyTorch device ('cuda'/'cpu'), auto hvis None")
-    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="Threshold for DL-signal")
-    parser.add_argument("--weights", type=float, nargs=3, default=DEFAULT_WEIGHTS, help="Voting weights ML DL Rule")
-    parser.add_argument("--use_lstm", action="store_true", help="Brug Keras LSTM-model i stedet for PyTorch (DL)")
+    parser.add_argument(
+        "--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help="PyTorch device ('cuda'/'cpu'), auto hvis None",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=DEFAULT_THRESHOLD,
+        help="Threshold for DL-signal",
+    )
+    parser.add_argument(
+        "--weights",
+        type=float,
+        nargs=3,
+        default=DEFAULT_WEIGHTS,
+        help="Voting weights ML DL Rule",
+    )
+    parser.add_argument(
+        "--use_lstm",
+        action="store_true",
+        help="Brug Keras LSTM-model i stedet for PyTorch (DL)",
+    )
     args = parser.parse_args()
 
-    safe_run(lambda: main(
-        features_path=args.features,
-        symbol=args.symbol,
-        interval=args.interval,
-        threshold=args.threshold,
-        weights=args.weights,
-        device_str=args.device,
-        use_lstm=args.use_lstm,
-        FORCE_DEBUG=False
-    ))
+    safe_run(
+        lambda: main(
+            features_path=args.features,
+            symbol=args.symbol,
+            interval=args.interval,
+            threshold=args.threshold,
+            weights=args.weights,
+            device_str=args.device,
+            use_lstm=args.use_lstm,
+            FORCE_DEBUG=False,
+        )
+    )

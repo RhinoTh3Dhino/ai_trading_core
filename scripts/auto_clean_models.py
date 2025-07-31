@@ -14,6 +14,7 @@ KEEP_FILES = [
     "lightgbm_features.json",
 ]
 
+
 def auto_clean_models(model_dir=MODEL_DIR, keep_files=KEEP_FILES, dry_run=False):
     """Sletter alle filer i model_dir undtagen dem i keep_files."""
     deleted = []
@@ -30,6 +31,7 @@ def auto_clean_models(model_dir=MODEL_DIR, keep_files=KEEP_FILES, dry_run=False)
     print(f"\n✅ Beholder: {', '.join(kept)}")
     print(f"🗑️ Slettet: {', '.join(deleted)}")
     return deleted, kept
+
 
 if __name__ == "__main__":
     auto_clean_models()

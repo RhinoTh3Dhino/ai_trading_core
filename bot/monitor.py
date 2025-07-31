@@ -5,9 +5,20 @@ import threading
 
 
 from utils.project_path import PROJECT_ROOT
+
+
 class ResourceMonitor:
-    def __init__(self, ram_max=90, cpu_max=90, gpu_max=90, gpu_temp_max=85, check_interval=10, 
-                 action="pause", log_file=None, verbose=True):
+    def __init__(
+        self,
+        ram_max=90,
+        cpu_max=90,
+        gpu_max=90,
+        gpu_temp_max=85,
+        check_interval=10,
+        action="pause",
+        log_file=None,
+        verbose=True,
+    ):
         """
         :param ram_max: Maksimal RAM-forbrug i %
         :param cpu_max: Maksimal CPU-forbrug i %
@@ -28,7 +39,7 @@ class ResourceMonitor:
         self.verbose = verbose
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._monitor, daemon=True)
-        
+
     def start(self):
         self._thread.start()
         if self.verbose:
@@ -43,7 +54,7 @@ class ResourceMonitor:
         while not self._stop_event.is_set():
             ram = psutil.virtual_memory().percent
             cpu = psutil.cpu_percent(interval=1)
-            
+
             gpus = GPUtil.getGPUs()
             if gpus:
                 gpu = gpus[0]  # Hvis flere GPUer, brug den første
@@ -52,9 +63,11 @@ class ResourceMonitor:
             else:
                 gpu_load, gpu_temp = 0, 0
 
-            msg = (f"[Monitor] RAM: {ram:.1f}% | CPU: {cpu:.1f}% | "
-                   f"GPU: {gpu_load:.1f}% | GPU-temp: {gpu_temp:.1f}C")
-            
+            msg = (
+                f"[Monitor] RAM: {ram:.1f}% | CPU: {cpu:.1f}% | "
+                f"GPU: {gpu_load:.1f}% | GPU-temp: {gpu_temp:.1f}C"
+            )
+
             if self.verbose:
                 print(msg)
 
@@ -64,10 +77,17 @@ class ResourceMonitor:
                 if log_dir and not os.path.exists(log_dir):
                     os.makedirs(log_dir, exist_ok=True)
                 with open(self.log_file, "a") as f:
-                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')},{ram},{cpu},{gpu_load},{gpu_temp}\n")
+                    f.write(
+                        f"{time.strftime('%Y-%m-%d %H:%M:%S')},{ram},{cpu},{gpu_load},{gpu_temp}\n"
+                    )
 
             # ACTIONS VED OVERLOAD
-            if ram > self.ram_max or cpu > self.cpu_max or gpu_load > self.gpu_max or gpu_temp > self.gpu_temp_max:
+            if (
+                ram > self.ram_max
+                or cpu > self.cpu_max
+                or gpu_load > self.gpu_max
+                or gpu_temp > self.gpu_temp_max
+            ):
                 overload_reason = []
                 if ram > self.ram_max:
                     overload_reason.append("RAM")
@@ -91,6 +111,7 @@ class ResourceMonitor:
                     print("[Monitor] Ukendt action – fortsætter.")
             time.sleep(self.check_interval)
 
+
 # Eksempel på brug
 if __name__ == "__main__":
     monitor = ResourceMonitor(
@@ -100,8 +121,8 @@ if __name__ == "__main__":
         gpu_temp_max=80,
         check_interval=10,
         action="pause",  # Kan også være "kill" eller "warn"
-# AUTO PATH CONVERTED
-        log_file=PROJECT_ROOT / "outputs" / "debug/resource_log.csv"
+        # AUTO PATH CONVERTED
+        log_file=PROJECT_ROOT / "outputs" / "debug/resource_log.csv",
     )
     monitor.start()
     # Din træningskode her – monitoren kører i baggrunden

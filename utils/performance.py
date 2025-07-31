@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 
+
 def calculate_sharpe_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=252):
     returns = pd.Series(equity_curve).pct_change().dropna()
     if returns.std() == 0 or len(returns) < 2:
@@ -9,6 +10,7 @@ def calculate_sharpe_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=25
     excess = returns - (risk_free_rate / periods_per_year)
     sharpe = excess.mean() / (returns.std() + 1e-9) * np.sqrt(periods_per_year)
     return sharpe if np.isfinite(sharpe) else 0.0
+
 
 def calculate_sortino_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=252):
     returns = pd.Series(equity_curve).pct_change().dropna()
@@ -20,6 +22,7 @@ def calculate_sortino_ratio(equity_curve, risk_free_rate=0.0, periods_per_year=2
     sortino = excess / (downside + 1e-9) * np.sqrt(periods_per_year)
     return sortino if np.isfinite(sortino) else 0.0
 
+
 def calculate_max_drawdown(equity_curve):
     equity = np.array(equity_curve)
     if len(equity) == 0:
@@ -28,10 +31,12 @@ def calculate_max_drawdown(equity_curve):
     drawdown = (equity - roll_max) / (roll_max + 1e-9)
     return drawdown.min() if len(drawdown) > 0 else 0.0
 
+
 def calculate_volatility(equity_curve, periods_per_year=252):
     returns = pd.Series(equity_curve).pct_change().dropna()
     volatility = returns.std() * np.sqrt(periods_per_year) if len(returns) > 1 else 0.0
     return volatility if np.isfinite(volatility) else 0.0
+
 
 def calculate_calmar_ratio(equity_curve, periods_per_year=252):
     returns = pd.Series(equity_curve).pct_change().dropna()
@@ -44,38 +49,43 @@ def calculate_calmar_ratio(equity_curve, periods_per_year=252):
     calmar = annual_return / max_dd
     return calmar if np.isfinite(calmar) else 0.0
 
+
 def calculate_winrate(trades_df):
-    if 'pnl_%' not in trades_df or len(trades_df) == 0:
+    if "pnl_%" not in trades_df or len(trades_df) == 0:
         return 0.0
-    wins = trades_df['pnl_%'] > 0
+    wins = trades_df["pnl_%"] > 0
     return wins.sum() / len(trades_df) * 100
 
+
 def calculate_profit_factor(trades_df):
-    if 'pnl_%' not in trades_df or len(trades_df) == 0:
+    if "pnl_%" not in trades_df or len(trades_df) == 0:
         return 0.0
-    profits = trades_df[trades_df['pnl_%'] > 0]['pnl_%'].sum()
-    losses = -trades_df[trades_df['pnl_%'] < 0]['pnl_%'].sum()
+    profits = trades_df[trades_df["pnl_%"] > 0]["pnl_%"].sum()
+    losses = -trades_df[trades_df["pnl_%"] < 0]["pnl_%"].sum()
     pf = profits / losses if losses > 0 else 0.0
     return pf if np.isfinite(pf) else 0.0
 
+
 def calculate_expectancy(trades_df):
-    if 'pnl_%' not in trades_df or len(trades_df) == 0:
+    if "pnl_%" not in trades_df or len(trades_df) == 0:
         return 0.0
-    exp = trades_df['pnl_%'].mean()
+    exp = trades_df["pnl_%"].mean()
     return exp if np.isfinite(exp) else 0.0
 
+
 def calculate_kelly_criterion(trades_df):
-    if 'pnl_%' not in trades_df or len(trades_df) == 0:
+    if "pnl_%" not in trades_df or len(trades_df) == 0:
         return 0.0
     win_rate = calculate_winrate(trades_df) / 100
     loss_rate = 1 - win_rate
-    avg_win = trades_df[trades_df['pnl_%'] > 0]['pnl_%'].mean()
-    avg_loss = abs(trades_df[trades_df['pnl_%'] < 0]['pnl_%'].mean())
+    avg_win = trades_df[trades_df["pnl_%"] > 0]["pnl_%"].mean()
+    avg_loss = abs(trades_df[trades_df["pnl_%"] < 0]["pnl_%"].mean())
     if avg_loss == 0 or np.isnan(avg_win) or np.isnan(avg_loss):
         return 0.0
     b = avg_win / avg_loss
     kelly = win_rate - (loss_rate / b) if b != 0 else 0.0
     return kelly if np.isfinite(kelly) else 0.0
+
 
 def calculate_profit(equity_curve):
     if hasattr(equity_curve, "iloc"):
@@ -92,20 +102,23 @@ def calculate_profit(equity_curve):
     pct_profit = (end / start - 1) * 100 if start != 0 else 0.0
     return abs_profit, pct_profit
 
+
 def calculate_rolling_sharpe(equity_curve, window=50):
     returns = pd.Series(equity_curve).pct_change().dropna()
     if len(returns) < window:
         return 0.0
     rolling_sharpe = (
-        returns.rolling(window).mean() /
-        (returns.rolling(window).std() + 1e-9) * np.sqrt(252)
+        returns.rolling(window).mean()
+        / (returns.rolling(window).std() + 1e-9)
+        * np.sqrt(252)
     )
     return rolling_sharpe.iloc[-1] if not rolling_sharpe.empty else 0.0
 
+
 def calculate_trade_duration(trades_df):
-    if 'entry_time' in trades_df and 'exit_time' in trades_df and len(trades_df) > 0:
-        entry = pd.to_datetime(trades_df['entry_time'])
-        exit = pd.to_datetime(trades_df['exit_time'])
+    if "entry_time" in trades_df and "exit_time" in trades_df and len(trades_df) > 0:
+        entry = pd.to_datetime(trades_df["entry_time"])
+        exit = pd.to_datetime(trades_df["exit_time"])
         durations = (exit - entry).dt.total_seconds() / 3600  # Timer
         return {
             "mean_trade_duration": durations.mean() if not durations.empty else 0.0,
@@ -119,15 +132,17 @@ def calculate_trade_duration(trades_df):
             "max_trade_duration": 0.0,
         }
 
+
 def calculate_regime_drawdown(trades_df):
     # Forudsætter en 'regime'-kolonne i trades_df (fx "bull", "bear", "neutral") + balance
-    if 'regime' not in trades_df or 'balance' not in trades_df:
+    if "regime" not in trades_df or "balance" not in trades_df:
         return {}
     regime_stats = {}
-    for regime, group in trades_df.groupby('regime'):
-        dd = calculate_max_drawdown(group['balance'])
+    for regime, group in trades_df.groupby("regime"):
+        dd = calculate_max_drawdown(group["balance"])
         regime_stats[f"drawdown_{regime}"] = dd
     return regime_stats
+
 
 def calculate_trade_stats(trades_df):
     stats = {
@@ -136,12 +151,36 @@ def calculate_trade_stats(trades_df):
         "expectancy": calculate_expectancy(trades_df),
         "profit_factor": calculate_profit_factor(trades_df),
         "kelly_criterion": calculate_kelly_criterion(trades_df),
-        "avg_pnl": trades_df['pnl_%'].mean() if 'pnl_%' in trades_df and len(trades_df) > 0 else 0.0,
-        "best_trade": trades_df['pnl_%'].max() if 'pnl_%' in trades_df and len(trades_df) > 0 else 0.0,
-        "worst_trade": trades_df['pnl_%'].min() if 'pnl_%' in trades_df and len(trades_df) > 0 else 0.0,
-        "median_pnl": trades_df['pnl_%'].median() if 'pnl_%' in trades_df and len(trades_df) > 0 else 0.0,
-        "num_wins": (trades_df['pnl_%'] > 0).sum() if 'pnl_%' in trades_df and len(trades_df) > 0 else 0.0,
-        "num_losses": (trades_df['pnl_%'] < 0).sum() if 'pnl_%' in trades_df and len(trades_df) > 0 else 0.0,
+        "avg_pnl": (
+            trades_df["pnl_%"].mean()
+            if "pnl_%" in trades_df and len(trades_df) > 0
+            else 0.0
+        ),
+        "best_trade": (
+            trades_df["pnl_%"].max()
+            if "pnl_%" in trades_df and len(trades_df) > 0
+            else 0.0
+        ),
+        "worst_trade": (
+            trades_df["pnl_%"].min()
+            if "pnl_%" in trades_df and len(trades_df) > 0
+            else 0.0
+        ),
+        "median_pnl": (
+            trades_df["pnl_%"].median()
+            if "pnl_%" in trades_df and len(trades_df) > 0
+            else 0.0
+        ),
+        "num_wins": (
+            (trades_df["pnl_%"] > 0).sum()
+            if "pnl_%" in trades_df and len(trades_df) > 0
+            else 0.0
+        ),
+        "num_losses": (
+            (trades_df["pnl_%"] < 0).sum()
+            if "pnl_%" in trades_df and len(trades_df) > 0
+            else 0.0
+        ),
     }
     # Trade duration (mean/median/max)
     durations = calculate_trade_duration(trades_df)
@@ -151,6 +190,7 @@ def calculate_trade_stats(trades_df):
         if isinstance(v, float) and (np.isnan(v) or not np.isfinite(v)):
             stats[k] = 0.0
     return stats
+
 
 def print_performance_report(equity_curve, trades_df):
     sharpe = calculate_sharpe_ratio(equity_curve)
@@ -182,6 +222,7 @@ def print_performance_report(equity_curve, trades_df):
     for regime, dd in regime_dd.items():
         print(f"Drawdown ({regime}): {dd:.2%}")
     print("==============================")
+
 
 def calculate_performance_metrics(equity_curve, trades_df):
     sharpe = calculate_sharpe_ratio(equity_curve)

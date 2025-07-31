@@ -12,6 +12,7 @@ from pathlib import Path
 # Automatisk fastlæg projektroden som Path-objekt
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
+
 def ensure_project_root(verbose: bool = False):
     """
     Sikrer at projektets rodmappe er tilføjet til sys.path (til imports).

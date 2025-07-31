@@ -10,6 +10,7 @@ try:
 except ImportError:
     torch = None
 
+
 def log_to_file(line, prefix="[INFO] ", log_path="logs/bot.log"):
     """Log en linje til fil, sikrer at mappen eksisterer."""
     try:
@@ -19,13 +20,20 @@ def log_to_file(line, prefix="[INFO] ", log_path="logs/bot.log"):
     except Exception as e:
         print(f"[ADVARSEL] Kunne ikke skrive til log-fil: {e}")
 
+
 def get_git_commit():
     """Hent aktivt git-commit hash, eller returner 'unknown'."""
     try:
         import subprocess
-        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
+
+        return (
+            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+            .decode()
+            .strip()
+        )
     except Exception:
         return "unknown"
+
 
 def get_env_info():
     """Hent brugernavn og hostname (fail-safe for cloud/server)."""
@@ -36,13 +44,14 @@ def get_env_info():
     hostname = socket.gethostname()
     return user, hostname
 
+
 def log_device_status(
     context="pipeline",
     extra=None,
     botstatus_path="BotStatus.md",
     log_path="logs/bot.log",
     telegram_func=None,
-    print_console=True
+    print_console=True,
 ):
     """Logger system-status til BotStatus.md, logfil og evt. Telegram."""
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -58,7 +67,9 @@ def log_device_status(
         if torch.cuda.is_available():
             device_name = torch.cuda.get_device_name(0)
             cuda_mem_alloc = torch.cuda.memory_allocated() // (1024**2)
-            cuda_mem_total = torch.cuda.get_device_properties(0).total_memory // (1024**2)
+            cuda_mem_total = torch.cuda.get_device_properties(0).total_memory // (
+                1024**2
+            )
             mem_str = f"{cuda_mem_alloc}/{cuda_mem_total}MB"
         else:
             device_name = "CPU"
@@ -124,6 +135,7 @@ def log_device_status(
         "context": context,
         "status_line": status_line.strip(),
     }
+
 
 # Eksempel/test
 if __name__ == "__main__":

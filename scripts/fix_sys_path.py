@@ -13,6 +13,7 @@ patterns = [
     (r"(sys\.path\.append\(\s*)(PROJECT_ROOT)(\))", r"\1str(\2)\3"),
 ]
 
+
 def fix_sys_path_in_file(filepath):
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
@@ -25,7 +26,9 @@ def fix_sys_path_in_file(filepath):
             if re.search(pattern, line):
                 line_fixed = re.sub(pattern, replacement, line)
                 if line_fixed != line:
-                    print(f"[RETTER] {filepath} (linje {i+1}): {orig.strip()} → {line_fixed.strip()}")
+                    print(
+                        f"[RETTER] {filepath} (linje {i+1}): {orig.strip()} → {line_fixed.strip()}"
+                    )
                     changed = True
                     line = line_fixed
         new_lines.append(line)
@@ -35,10 +38,13 @@ def fix_sys_path_in_file(filepath):
             f.writelines(new_lines)
     return changed
 
+
 def main():
     n_fixed = 0
     for root, dirs, files in os.walk("."):
-        if any(skip in root for skip in [".venv", "__pycache__", "backups", "env", ".git"]):
+        if any(
+            skip in root for skip in [".venv", "__pycache__", "backups", "env", ".git"]
+        ):
             continue
         for fname in files:
             if fname.endswith(".py"):
@@ -46,6 +52,7 @@ def main():
                 if fix_sys_path_in_file(path):
                     n_fixed += 1
     print(f"\n[FÆRDIG] Antal filer rettet: {n_fixed}")
+
 
 if __name__ == "__main__":
     print("[SCAN & FIX] Scanner for sys.path-problemer og autokorrigerer...")

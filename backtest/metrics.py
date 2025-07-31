@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from backtest.backtest import run_backtest, calc_backtest_metrics
 
+
 def calculate_sharpe(returns, risk_free_rate=0.0):
     """Beregner Sharpe ratio ud fra returns."""
     returns = np.array(returns)
@@ -11,6 +12,7 @@ def calculate_sharpe(returns, risk_free_rate=0.0):
         return 0.0
     sharpe = (returns.mean() - risk_free_rate) / returns.std()
     return float(sharpe)
+
 
 def calculate_drawdown(balance):
     """Beregner maksimal drawdown som procent (negativt tal)."""
@@ -21,12 +23,14 @@ def calculate_drawdown(balance):
     drawdown = (balance - peak) / peak
     return float(drawdown.min() if len(drawdown) > 0 else 0.0)
 
+
 def run_and_score(df, signals):
     """Kør backtest og returner standard-metrics dict."""
     trades_df, balance_df = run_backtest(df.copy(), signals=signals)
     metrics = calc_backtest_metrics(trades_df, balance_df)
     metrics["num_trades"] = len(trades_df)
     return metrics
+
 
 def regime_performance(trades_df, regime_col="regime"):
     """
@@ -36,11 +40,20 @@ def regime_performance(trades_df, regime_col="regime"):
     """
     regime_map = {0: "bull", 1: "bear", 2: "neutral"}
     if regime_col not in trades_df.columns:
-        print(f"❌ Regime-kolonne '{regime_col}' ikke fundet i trades_df! Kan ikke lave regime-analyse.")
+        print(
+            f"❌ Regime-kolonne '{regime_col}' ikke fundet i trades_df! Kan ikke lave regime-analyse."
+        )
         return {}
     # Håndter evt. numeriske regime-værdier efter merge
-    if trades_df[regime_col].dropna().apply(lambda x: isinstance(x, (int, float))).any():
-        trades_df[regime_col] = trades_df[regime_col].map(regime_map).fillna(trades_df[regime_col])
+    if (
+        trades_df[regime_col]
+        .dropna()
+        .apply(lambda x: isinstance(x, (int, float)))
+        .any()
+    ):
+        trades_df[regime_col] = (
+            trades_df[regime_col].map(regime_map).fillna(trades_df[regime_col])
+        )
     if trades_df[regime_col].dropna().empty:
         print(f"❌ Ingen regime-values i trades_df! Ingen regime-analyse mulig.")
         return {}
@@ -52,13 +65,20 @@ def regime_performance(trades_df, regime_col="regime"):
         sl_count = np.sum(trade_types == "SL")
         win_rate = tp_count / (tp_count + sl_count) if (tp_count + sl_count) > 0 else 0
         num_trades = len(sub)
-        profit_pct = (sub["balance"].iloc[-1] - sub["balance"].iloc[0]) / sub["balance"].iloc[0] * 100 if num_trades > 1 else 0
+        profit_pct = (
+            (sub["balance"].iloc[-1] - sub["balance"].iloc[0])
+            / sub["balance"].iloc[0]
+            * 100
+            if num_trades > 1
+            else 0
+        )
         stats[str(regime)] = {
             "num_trades": num_trades,
             "win_rate": round(win_rate, 4),
-            "profit_pct": round(profit_pct, 2)
+            "profit_pct": round(profit_pct, 2),
         }
     return stats
+
 
 def evaluate_strategies(
     df,
@@ -67,7 +87,7 @@ def evaluate_strategies(
     macd_signals,
     ensemble_signals,
     trades_df=None,
-    balance_df=None
+    balance_df=None,
 ):
     """
     Evaluer ML, RSI, MACD og ensemble. Robust regime-analyse via asof-merge.
@@ -94,9 +114,13 @@ def evaluate_strategies(
         )
         if do_regime:
             trades_df_regime = trades_df.copy()
-            trades_df_regime["timestamp"] = pd.to_datetime(trades_df_regime["timestamp"], errors="coerce")
+            trades_df_regime["timestamp"] = pd.to_datetime(
+                trades_df_regime["timestamp"], errors="coerce"
+            )
             regime_lookup = df[["timestamp", "regime"]].copy()
-            regime_lookup["timestamp"] = pd.to_datetime(regime_lookup["timestamp"], errors="coerce")
+            regime_lookup["timestamp"] = pd.to_datetime(
+                regime_lookup["timestamp"], errors="coerce"
+            )
 
             # merge_asof matcher nærmeste timestamp med tolerance
             trades_df_regime = pd.merge_asof(
@@ -104,8 +128,8 @@ def evaluate_strategies(
                 regime_lookup.sort_values("timestamp"),
                 on="timestamp",
                 direction="nearest",
-                tolerance=pd.Timedelta('1h'),
-                suffixes=('', '_feat')
+                tolerance=pd.Timedelta("1h"),
+                suffixes=("", "_feat"),
             )
             # Håndter evt. flere regime-kolonner (fx regime_feat efter merge)
             if "regime_feat" in trades_df_regime.columns:
@@ -113,16 +137,23 @@ def evaluate_strategies(
                 trades_df_regime.drop(columns=["regime_feat"], inplace=True)
             n_na = trades_df_regime["regime"].isna().sum()
             if n_na > 0:
-                print(f"⚠️ Regime-merge: {n_na} handler havde ikke match og sættes til 'ukendt'.")
+                print(
+                    f"⚠️ Regime-merge: {n_na} handler havde ikke match og sættes til 'ukendt'."
+                )
                 trades_df_regime["regime"].fillna("ukendt", inplace=True)
-            if "regime" not in trades_df_regime.columns or trades_df_regime["regime"].dropna().empty:
+            if (
+                "regime" not in trades_df_regime.columns
+                or trades_df_regime["regime"].dropna().empty
+            ):
                 print("⚠️ Efter merge stadig ingen regime – ingen regime-analyse.")
                 ensemble_metrics["regime_stats"] = {}
             else:
                 regime_stats = regime_performance(trades_df_regime)
                 ensemble_metrics["regime_stats"] = regime_stats
         else:
-            print("⚠️ trades_df mangler 'timestamp' eller df mangler 'regime' – springer regime-analyse over.")
+            print(
+                "⚠️ trades_df mangler 'timestamp' eller df mangler 'regime' – springer regime-analyse over."
+            )
             ensemble_metrics["regime_stats"] = {}
     except Exception as e:
         print(f"⚠️ Fejl under regime-analyse: {e}")
@@ -135,8 +166,9 @@ def evaluate_strategies(
         "ML": ml_metrics,
         "RSI": rsi_metrics,
         "MACD": macd_metrics,
-        "ENSEMBLE": ensemble_metrics
+        "ENSEMBLE": ensemble_metrics,
     }
+
 
 # Eksempel på brug i engine.py:
 # strat_scores = evaluate_strategies(df, ml_signals, rsi_signals, macd_signals, ensemble_signals, trades_df, balance_df)

@@ -1,4 +1,5 @@
 from utils.project_path import PROJECT_ROOT
+
 # config/monitoring_config.py
 """
 Konfiguration af overvågning, alarmer og monitoring-regler for AI trading bot.
@@ -6,33 +7,33 @@ Konfiguration af overvågning, alarmer og monitoring-regler for AI trading bot.
 """
 
 # === Overordnede aktiveringer ===
-ENABLE_MONITORING = True      # Slå alt monitoring til/fra globalt
+ENABLE_MONITORING = True  # Slå alt monitoring til/fra globalt
 
 # === Thresholds/grænser for alarmer (kan redigeres) ===
 ALARM_THRESHOLDS = {
-    "winrate": 25,       # Minimum win-rate i % (fx 25 = 25%) før alarm
-    "drawdown": -20,     # Maks drawdown i % (fx -20 betyder alarm ved -20%)
-    "profit": -10,       # Maks negativ profit i % (fx -10 = -10%)
+    "winrate": 25,  # Minimum win-rate i % (fx 25 = 25%) før alarm
+    "drawdown": -20,  # Maks drawdown i % (fx -20 betyder alarm ved -20%)
+    "profit": -10,  # Maks negativ profit i % (fx -10 = -10%)
 }
 
 # === Individuel alarm-aktivering ===
-ALERT_ON_WINRATE = True       # Telegram-alarm hvis win-rate < threshold
-ALERT_ON_DRAWNDOWN = True     # Telegram-alarm hvis drawdown < threshold
-ALERT_ON_PROFIT = True        # Telegram-alarm hvis profit < threshold
+ALERT_ON_WINRATE = True  # Telegram-alarm hvis win-rate < threshold
+ALERT_ON_DRAWNDOWN = True  # Telegram-alarm hvis drawdown < threshold
+ALERT_ON_PROFIT = True  # Telegram-alarm hvis profit < threshold
 
 # === Ekstra alarmer og betingelser ===
-ALERT_ON_CONSEC_LOSSES = False     # Alarm ved X tab i træk
-CONSEC_LOSSES_THRESHOLD = 8        # Fx alarm ved >8 tab i træk
+ALERT_ON_CONSEC_LOSSES = False  # Alarm ved X tab i træk
+CONSEC_LOSSES_THRESHOLD = 8  # Fx alarm ved >8 tab i træk
 
 # === Telegram-format og præcision ===
-TELEGRAM_METRIC_PRECISION = 2      # Antal decimaler i Telegram-metrics
+TELEGRAM_METRIC_PRECISION = 2  # Antal decimaler i Telegram-metrics
 
 # === Notifikation og status-frekvens ===
-NOTIFY_FREQUENCY_MINUTES = 60      # Send status/max én gang pr. time
+NOTIFY_FREQUENCY_MINUTES = 60  # Send status/max én gang pr. time
 
 # === Multi-symbol/multi-timeframe settings ===
-ENABLED_SYMBOLS = None             # Fx ["BTCUSDT", "ETHUSDT"] eller None for alle
-ENABLED_TIMEFRAMES = None          # Fx ["1h", "4h"] eller None for alle
+ENABLED_SYMBOLS = None  # Fx ["BTCUSDT", "ETHUSDT"] eller None for alle
+ENABLED_TIMEFRAMES = None  # Fx ["1h", "4h"] eller None for alle
 
 # === Monitoring paths og default-parametre for live-simulering ===
 # AUTO PATH CONVERTED

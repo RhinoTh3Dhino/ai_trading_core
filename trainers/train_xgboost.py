@@ -20,6 +20,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 try:
     import mlflow
     import mlflow.xgboost
+
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
@@ -27,6 +28,7 @@ except ImportError:
 # --- Importer MLflow-utilities hvis muligt ---
 try:
     from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+
     MLUTILS_AVAILABLE = True
 except ImportError:
     MLUTILS_AVAILABLE = False
@@ -45,15 +47,18 @@ FEATURES_PATH = os.path.join(MODEL_DIR, "best_xgboost_features.json")
 LOG_PATH = os.path.join(MODEL_DIR, "train_log_xgboost.txt")
 EARLYSTOP_ROUNDS = 10
 
+
 def ensure_mlflow_run_closed():
     if MLFLOW_AVAILABLE and mlflow.active_run() is not None:
         print("[MLflow] Aktivt run fundet, lukker...")
         mlflow.end_run()
 
+
 def log_to_file(line, prefix="[INFO] "):
     os.makedirs("logs", exist_ok=True)
     with open("logs/bot.log", "a", encoding="utf-8") as logf:
         logf.write(prefix + line)
+
 
 def load_csv_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
@@ -63,6 +68,7 @@ def load_csv_auto(file_path):
         return pd.read_csv(file_path, skiprows=1)
     else:
         return pd.read_csv(file_path)
+
 
 def train_xgboost_model(
     data_path,
@@ -78,7 +84,7 @@ def train_xgboost_model(
     verbose=True,
     save_model=True,
     use_mlflow=False,
-    mlflow_exp="trading_ai"
+    mlflow_exp="trading_ai",
 ):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[INFO] Træning af XGBoost-model ({now})")
@@ -114,8 +120,18 @@ def train_xgboost_model(
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
 
     print(f"[INFO] Train: {len(X_train)}, Val: {len(X_val)}")
-    print("[INFO] Train slutter:", df.iloc[split_idx-1]["timestamp"] if "timestamp" in df.columns else split_idx-1)
-    print("[INFO] Val starter:", df.iloc[split_idx]["timestamp"] if "timestamp" in df.columns else split_idx)
+    print(
+        "[INFO] Train slutter:",
+        (
+            df.iloc[split_idx - 1]["timestamp"]
+            if "timestamp" in df.columns
+            else split_idx - 1
+        ),
+    )
+    print(
+        "[INFO] Val starter:",
+        df.iloc[split_idx]["timestamp"] if "timestamp" in df.columns else split_idx,
+    )
     print(f"[INFO] Unikke targets: {sorted(y.unique())}")
 
     # MLflow experiment tracking
@@ -127,16 +143,18 @@ def train_xgboost_model(
         else:
             mlflow.set_experiment(mlflow_exp)
             mlflow.start_run(run_name=f"xgb_{now.replace(':','_')}")
-        mlflow.log_params({
-            "max_depth": max_depth,
-            "n_estimators": n_estimators,
-            "learning_rate": learning_rate,
-            "subsample": subsample,
-            "colsample_bytree": colsample_bytree,
-            "test_size": test_size,
-            "random_state": random_state,
-            "early_stopping_rounds": early_stopping_rounds,
-        })
+        mlflow.log_params(
+            {
+                "max_depth": max_depth,
+                "n_estimators": n_estimators,
+                "learning_rate": learning_rate,
+                "subsample": subsample,
+                "colsample_bytree": colsample_bytree,
+                "test_size": test_size,
+                "random_state": random_state,
+                "early_stopping_rounds": early_stopping_rounds,
+            }
+        )
 
     # Model (eval_metric KUN i constructor!)
     model = xgb.XGBClassifier(
@@ -148,14 +166,15 @@ def train_xgboost_model(
         random_state=random_state,
         verbosity=0,
         use_label_encoder=False,
-        eval_metric="logloss"  # KUN HER!
+        eval_metric="logloss",  # KUN HER!
     )
     eval_set = [(X_train, y_train), (X_val, y_val)]
     model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         eval_set=eval_set,
         early_stopping_rounds=early_stopping_rounds,
-        verbose=verbose
+        verbose=verbose,
     )
 
     # Evaluer
@@ -172,7 +191,13 @@ def train_xgboost_model(
     # MLflow metrics
     if use_mlflow and MLFLOW_AVAILABLE:
         mlflow.log_metric("val_acc", acc)
-        mlflow.log_metrics({f"f1_{k}": v["f1-score"] for k, v in report.items() if isinstance(v, dict) and "f1-score" in v})
+        mlflow.log_metrics(
+            {
+                f"f1_{k}": v["f1-score"]
+                for k, v in report.items()
+                if isinstance(v, dict) and "f1-score" in v
+            }
+        )
         mlflow.log_param("best_iteration", getattr(model, "best_iteration", None))
 
     # Gem model (checkpoint)
@@ -186,10 +211,12 @@ def train_xgboost_model(
             print(f"[ADVARSEL] Kunne ikke gemme model: {e}")
 
     # Log til fil
-    log_str = f"\n== XGBoost-træningslog {now} ==\n" \
-              f"Model: {MODEL_PATH}\nVal_acc: {acc:.3f}\nBest_iteration: {getattr(model, 'best_iteration', None)}\n" \
-              f"Features: {list(X.columns)}\n\n" \
-              f"Report:\n{classification_report(y_val, y_pred, zero_division=0)}\nConfusion:\n{conf}\n"
+    log_str = (
+        f"\n== XGBoost-træningslog {now} ==\n"
+        f"Model: {MODEL_PATH}\nVal_acc: {acc:.3f}\nBest_iteration: {getattr(model, 'best_iteration', None)}\n"
+        f"Features: {list(X.columns)}\n\n"
+        f"Report:\n{classification_report(y_val, y_pred, zero_division=0)}\nConfusion:\n{conf}\n"
+    )
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(log_str)
     print(f"[INFO] Træningslog gemt til: {LOG_PATH}")
@@ -208,20 +235,42 @@ def train_xgboost_model(
 
     return acc
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Træn XGBoost-model til trading + MLflow logging + Early stopping")
-    parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
-    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
+    parser = argparse.ArgumentParser(
+        description="Træn XGBoost-model til trading + MLflow logging + Early stopping"
+    )
+    parser.add_argument(
+        "--data", type=str, required=True, help="Sti til features-data (.csv)"
+    )
+    parser.add_argument(
+        "--target", type=str, default="target", help="Navn på target-kolonne"
+    )
     parser.add_argument("--test_size", type=float, default=0.2, help="Test split")
     parser.add_argument("--max_depth", type=int, default=6, help="Max tree depth")
-    parser.add_argument("--n_estimators", type=int, default=100, help="Antal træer (estimators)")
-    parser.add_argument("--learning_rate", type=float, default=0.1, help="Learning rate")
+    parser.add_argument(
+        "--n_estimators", type=int, default=100, help="Antal træer (estimators)"
+    )
+    parser.add_argument(
+        "--learning_rate", type=float, default=0.1, help="Learning rate"
+    )
     parser.add_argument("--subsample", type=float, default=1.0, help="Subsample ratio")
-    parser.add_argument("--colsample_bytree", type=float, default=1.0, help="Colsample bytree")
-    parser.add_argument("--early_stopping_rounds", type=int, default=EARLYSTOP_ROUNDS, help="Early stopping rounds")
+    parser.add_argument(
+        "--colsample_bytree", type=float, default=1.0, help="Colsample bytree"
+    )
+    parser.add_argument(
+        "--early_stopping_rounds",
+        type=int,
+        default=EARLYSTOP_ROUNDS,
+        help="Early stopping rounds",
+    )
     parser.add_argument("--no_save", action="store_true", help="Gem ikke model")
-    parser.add_argument("--mlflow", action="store_true", help="Log til MLflow (experiment tracking)")
-    parser.add_argument("--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name")
+    parser.add_argument(
+        "--mlflow", action="store_true", help="Log til MLflow (experiment tracking)"
+    )
+    parser.add_argument(
+        "--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name"
+    )
     args = parser.parse_args()
 
     train_xgboost_model(

@@ -1,12 +1,7 @@
 import numpy as np
 
-def rsi_rule_based_signals(
-    df, 
-    rsi_col="rsi_14", 
-    low=30, 
-    high=70, 
-    allow_short=True
-):
+
+def rsi_rule_based_signals(df, rsi_col="rsi_14", low=30, high=70, allow_short=True):
     """
     Returnerer signaler baseret på RSI:
     -1 (SELL), 0 (HOLD), 1 (BUY)

@@ -1,12 +1,17 @@
 from utils.project_path import PROJECT_ROOT
+
 # visualization/plot_metrics.py
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
+
 # AUTO PATH CONVERTED
-def plot_metrics_over_time(csv_path=PROJECT_ROOT / "data" / "model_eval.csv", out_path=PROJECT_ROOT / "data" / "metrics_over_time.png"):
+def plot_metrics_over_time(
+    csv_path=PROJECT_ROOT / "data" / "model_eval.csv",
+    out_path=PROJECT_ROOT / "data" / "metrics_over_time.png",
+):
     # Tjek om filen findes
     if not os.path.exists(csv_path):
         print(f"❌ Filen {csv_path} findes ikke!")
@@ -20,9 +25,9 @@ def plot_metrics_over_time(csv_path=PROJECT_ROOT / "data" / "model_eval.csv", ou
         return
 
     # Plot metrics
-    plt.figure(figsize=(10,5))
-    plt.plot(df["timestamp"], df["accuracy"], marker='o', label="Accuracy")
-    plt.plot(df["timestamp"], df["f1"], marker='x', label="F1-score")
+    plt.figure(figsize=(10, 5))
+    plt.plot(df["timestamp"], df["accuracy"], marker="o", label="Accuracy")
+    plt.plot(df["timestamp"], df["f1"], marker="x", label="F1-score")
     plt.title("Accuracy og F1-score over tid")
     plt.xlabel("Træningstidspunkt")
     plt.ylabel("Score")
@@ -32,6 +37,7 @@ def plot_metrics_over_time(csv_path=PROJECT_ROOT / "data" / "model_eval.csv", ou
     plt.savefig(out_path)
     plt.close()
     print(f"✅ Graf over metrics gemt: {out_path}")
+
 
 if __name__ == "__main__":
     plot_metrics_over_time()

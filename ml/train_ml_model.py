@@ -1,4 +1,5 @@
 from utils.project_path import PROJECT_ROOT
+
 # ml/train_ml_model.py
 
 import os
@@ -10,16 +11,31 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from datetime import datetime
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Træn ML-model (RandomForest) på feature-CSV og gem til disk.")
+    parser = argparse.ArgumentParser(
+        description="Træn ML-model (RandomForest) på feature-CSV og gem til disk."
+    )
     parser.add_argument("--data", type=str, required=True, help="Sti til feature-CSV")
-    parser.add_argument("--target", type=str, default="target", help="Target-kolonne (fx 'target')")
-# AUTO PATH CONVERTED
-    parser.add_argument("--model_out", type=str, default=PROJECT_ROOT / "models" / "best_ml_model.pkl")
-# AUTO PATH CONVERTED
-    parser.add_argument("--features_out", type=str, default=PROJECT_ROOT / "models" / "best_ml_features.json")
+    parser.add_argument(
+        "--target", type=str, default="target", help="Target-kolonne (fx 'target')"
+    )
+    # AUTO PATH CONVERTED
+    parser.add_argument(
+        "--model_out", type=str, default=PROJECT_ROOT / "models" / "best_ml_model.pkl"
+    )
+    # AUTO PATH CONVERTED
+    parser.add_argument(
+        "--features_out",
+        type=str,
+        default=PROJECT_ROOT / "models" / "best_ml_features.json",
+    )
     parser.add_argument("--n_estimators", type=int, default=100)
-    parser.add_argument("--backup", action="store_true", help="Gem backup/versioneret kopi af model og features")
+    parser.add_argument(
+        "--backup",
+        action="store_true",
+        help="Gem backup/versioneret kopi af model og features",
+    )
     args = parser.parse_args()
 
     os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
@@ -38,12 +54,14 @@ def main():
         return
 
     df = df.dropna(subset=[args.target])
-    num_cols = df.select_dtypes(include='number').columns.tolist()
+    num_cols = df.select_dtypes(include="number").columns.tolist()
     feature_cols = [c for c in num_cols if c not in [args.target, "future_return"]]
     # Ekstra: advarsel hvis nogen kolonner mangler fra tidligere feature set
     missing = [col for col in feature_cols if col not in df.columns]
     if missing:
-        print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
+        print(
+            f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}"
+        )
         for col in missing:
             df[col] = 0.0
 
@@ -59,7 +77,9 @@ def main():
     X_train, X_val, X_test = X[:train_end], X[train_end:val_end], X[val_end:]
     y_train, y_val, y_test = y[:train_end], y[train_end:val_end], y[val_end:]
 
-    clf = RandomForestClassifier(n_estimators=args.n_estimators, random_state=42, n_jobs=-1)
+    clf = RandomForestClassifier(
+        n_estimators=args.n_estimators, random_state=42, n_jobs=-1
+    )
     clf.fit(X_train, y_train)
     val_preds = clf.predict(X_val)
     print("\nVal Accuracy:", accuracy_score(y_val, val_preds))
@@ -76,7 +96,9 @@ def main():
         pickle.dump(clf, f)
     with open(args.features_out, "w") as f:
         json.dump(feature_cols, f)
-    print(f"[INFO] ML-model og feature-liste gemt til '{args.model_out}', '{args.features_out}'")
+    print(
+        f"[INFO] ML-model og feature-liste gemt til '{args.model_out}', '{args.features_out}'"
+    )
 
     # Backup/versionering hvis ønsket
     if args.backup:
@@ -94,6 +116,7 @@ def main():
         loaded_model = pickle.load(f)
     assert hasattr(loaded_model, "predict"), "❌ Model har ikke predict()-metode!"
     print("✅ Test-load af ML-model: OK")
+
 
 if __name__ == "__main__":
     main()

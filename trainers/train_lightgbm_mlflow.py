@@ -6,6 +6,7 @@ Bruges til eksperiment-tracking og model versionering.
 """
 
 from utils.project_path import ensure_project_root
+
 ensure_project_root()
 
 import os
@@ -21,15 +22,23 @@ import mlflow.lightgbm
 
 from utils.telegram_utils import send_message
 
+
 def train_with_mlflow(data_path, target_col, n_estimators, learning_rate, experiment):
     df = pd.read_csv(data_path)
     assert target_col in df.columns, "Target kolonne mangler"
 
-    X = df.drop(columns=[target_col, "timestamp"], errors="ignore").select_dtypes(include=[np.number])
+    X = df.drop(columns=[target_col, "timestamp"], errors="ignore").select_dtypes(
+        include=[np.number]
+    )
     y = df[target_col]
 
     split_idx = int(0.8 * len(df))
-    X_train, X_val, y_train, y_val = X.iloc[:split_idx], X.iloc[split_idx:], y.iloc[:split_idx], y.iloc[split_idx:]
+    X_train, X_val, y_train, y_val = (
+        X.iloc[:split_idx],
+        X.iloc[split_idx:],
+        y.iloc[:split_idx],
+        y.iloc[split_idx:],
+    )
 
     mlflow.set_experiment(experiment)
     with mlflow.start_run():
@@ -39,7 +48,7 @@ def train_with_mlflow(data_path, target_col, n_estimators, learning_rate, experi
         model = lgb.LGBMClassifier(
             n_estimators=n_estimators,
             learning_rate=learning_rate,
-            class_weight="balanced"
+            class_weight="balanced",
         )
         model.fit(X_train, y_train)
 
@@ -55,6 +64,7 @@ def train_with_mlflow(data_path, target_col, n_estimators, learning_rate, experi
         except Exception as e:
             print(f"[ADVARSEL] Telegram fejl: {e}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, required=True)
@@ -64,4 +74,6 @@ if __name__ == "__main__":
     parser.add_argument("--experiment", type=str, default="lightgbm_exp")
     args = parser.parse_args()
 
-    train_with_mlflow(args.data, args.target, args.n_estimators, args.learning_rate, args.experiment)
+    train_with_mlflow(
+        args.data, args.target, args.n_estimators, args.learning_rate, args.experiment
+    )

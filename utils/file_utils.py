@@ -1,4 +1,5 @@
 from utils.project_path import PROJECT_ROOT
+
 # utils/file_utils.py
 
 import os
@@ -6,13 +7,19 @@ import datetime
 import subprocess
 import pandas as pd
 
+
 def get_git_hash():
     """Hent aktiv git commit hash – eller 'unknown' hvis fejl."""
     try:
-        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
+        return (
+            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+            .decode()
+            .strip()
+        )
     except Exception as e:
         print(f"[ADVARSEL] Kunne ikke hente git-hash: {e}")
         return "unknown"
+
 
 def save_with_metadata(df, out_path, version="v1.0.0", extra_metadata=None):
     """
@@ -23,11 +30,7 @@ def save_with_metadata(df, out_path, version="v1.0.0", extra_metadata=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     git_hash = get_git_hash()
 
-    meta_cols = {
-        "log_timestamp": timestamp,
-        "git_hash": git_hash,
-        "version": version
-    }
+    meta_cols = {"log_timestamp": timestamp, "git_hash": git_hash, "version": version}
     if extra_metadata and isinstance(extra_metadata, dict):
         meta_cols.update(extra_metadata)
 
@@ -46,8 +49,14 @@ def save_with_metadata(df, out_path, version="v1.0.0", extra_metadata=None):
     print(f"Fil gemt med metadata: {out_path} (v={version}, git={git_hash})")
     return out_path
 
+
 # Eksempel/test
 if __name__ == "__main__":
     test_df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-# AUTO PATH CONVERTED
-    save_with_metadata(test_df, PROJECT_ROOT / "outputs" / "test_out.csv", version="v1.2.3", extra_metadata={"source": "unittest"})
+    # AUTO PATH CONVERTED
+    save_with_metadata(
+        test_df,
+        PROJECT_ROOT / "outputs" / "test_out.csv",
+        version="v1.2.3",
+        extra_metadata={"source": "unittest"},
+    )

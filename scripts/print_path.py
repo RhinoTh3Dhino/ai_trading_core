@@ -1,2 +1,3 @@
 import os
-print("PATH:", os.environ['PATH'])
+
+print("PATH:", os.environ["PATH"])

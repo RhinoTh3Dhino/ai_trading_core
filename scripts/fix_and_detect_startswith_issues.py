@@ -2,16 +2,27 @@ import os
 import re
 
 # Typiske variable du bruger på kolonner, paths, filer osv.
-TYPICAL_VAR_NAMES = ['col', 'c', 'file', 'fname', 'filename', 'path', 'first_line', 'd', 'f']
+TYPICAL_VAR_NAMES = [
+    "col",
+    "c",
+    "file",
+    "fname",
+    "filename",
+    "path",
+    "first_line",
+    "d",
+    "f",
+]
 
 # Problematiske/ubrugelige auto-rettelser eller fejlmønstre
 ERROR_PATTERNS = [
-    r"str\(str\([^)]+\)\)\.(startswith|endswith)\(",      # Dobbelt str(str(...)).startswith
-    r"str\([^)]+\.name\)\.(startswith|endswith)\(",        # str(col.name).startswith(...)
-    r"str\([^)]+\.columns\)\.(startswith|endswith)\(",     # str(df.columns).startswith(...)
-    r"\.name\.name\.",                                     # dobbelt .name
-    r"\.name\.columns\.",                                  # .name.columns
+    r"str\(str\([^)]+\)\)\.(startswith|endswith)\(",  # Dobbelt str(str(...)).startswith
+    r"str\([^)]+\.name\)\.(startswith|endswith)\(",  # str(col.name).startswith(...)
+    r"str\([^)]+\.columns\)\.(startswith|endswith)\(",  # str(df.columns).startswith(...)
+    r"\.name\.name\.",  # dobbelt .name
+    r"\.name\.columns\.",  # .name.columns
 ]
+
 
 def auto_fix_startswith_in_file(filepath):
     with open(filepath, encoding="utf-8") as f:
@@ -19,7 +30,9 @@ def auto_fix_startswith_in_file(filepath):
 
     changed = False
     new_lines = []
-    fix_pattern = re.compile(r'(\b(?:' + '|'.join(TYPICAL_VAR_NAMES) + r')\b)\.(startswith|endswith)\(')
+    fix_pattern = re.compile(
+        r"(\b(?:" + "|".join(TYPICAL_VAR_NAMES) + r")\b)\.(startswith|endswith)\("
+    )
 
     for i, line in enumerate(lines):
         # --- Fix phase ---
@@ -29,13 +42,11 @@ def auto_fix_startswith_in_file(filepath):
             for m in reversed(matches):
                 varname = m.group(1)
                 start, end = m.span(1)
-                new_line = (
-                    new_line[:start] +
-                    f"str({varname})" +
-                    new_line[end:]
-                )
+                new_line = new_line[:start] + f"str({varname})" + new_line[end:]
             if new_line != line:
-                print(f"[RETTER] {filepath} ({i+1}): {line.strip()} → {new_line.strip()}")
+                print(
+                    f"[RETTER] {filepath} ({i+1}): {line.strip()} → {new_line.strip()}"
+                )
                 changed = True
             new_lines.append(new_line)
         else:
@@ -46,13 +57,14 @@ def auto_fix_startswith_in_file(filepath):
     for i, line in enumerate(new_lines):
         for pat in ERROR_PATTERNS:
             if re.search(pat, line):
-                problems.append((i+1, line.strip(), pat))
+                problems.append((i + 1, line.strip(), pat))
 
     if changed:
         with open(filepath, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
 
     return changed, problems
+
 
 def main():
     n_fixed = 0
@@ -69,7 +81,9 @@ def main():
                     n_fixed += 1
                 if problems:
                     n_problems += len(problems)
-                    print(f"\n[ADVARSEL] Potentielt UGYLDIG eller MISTÆNKELIG kode i {fpath}:")
+                    print(
+                        f"\n[ADVARSEL] Potentielt UGYLDIG eller MISTÆNKELIG kode i {fpath}:"
+                    )
                     for lineno, snippet, pattern in problems:
                         print(f"  Linje {lineno}: {snippet}")
                         print(f"    ↳ Matcher mønster: {pattern}")
@@ -77,6 +91,7 @@ def main():
     print(f"\n[FÆRDIG] Antal filer autokorrigeret: {n_fixed}")
     print(f"[INFO] Antal linjer med mistænkelig/ubrugelig kode: {n_problems}")
     print("Gennemgå ADVARSLER manuelt for at sikre korrekthed!")
+
 
 if __name__ == "__main__":
     main()

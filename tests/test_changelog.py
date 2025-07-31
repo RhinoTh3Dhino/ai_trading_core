@@ -1,12 +1,14 @@
 import sys
 import os
 from pathlib import Path
+
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
 import unittest
 import os
 from utils.changelog import append_to_changelog
+
 
 class TestChangelog(unittest.TestCase):
     TEST_FILE = "test_CHANGELOG.md"
@@ -37,6 +39,7 @@ class TestChangelog(unittest.TestCase):
             content = f.read()
         self.assertIn(entry1, content)
         self.assertIn(entry2, content)
+
 
 if __name__ == "__main__":
     unittest.main()

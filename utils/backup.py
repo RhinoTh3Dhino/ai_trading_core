@@ -2,12 +2,13 @@ import os
 import shutil
 from datetime import datetime
 
+
 def make_backup(
     backup_folders=None,
     backup_dir="backups",
     keep_days=7,
     keep_per_day=10,
-    create_dummy_if_empty=True
+    create_dummy_if_empty=True,
 ):
     """
     Laver backup af valgte mapper/filer med timestamp i dato-undermappe og sletter gamle backups.
@@ -15,8 +16,12 @@ def make_backup(
     """
     if backup_folders is None:
         backup_folders = [
-            "models", "logs", "tuner_cache", "data",
-            "BotStatus.md", "CHANGELOG.md",
+            "models",
+            "logs",
+            "tuner_cache",
+            "data",
+            "BotStatus.md",
+            "CHANGELOG.md",
         ]
     print(f"📦 Forsøger at tage backup af: {backup_folders}")
 
@@ -65,6 +70,7 @@ def make_backup(
 
     return backup_path
 
+
 def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
     """
     Sletter gamle backups:
@@ -78,10 +84,7 @@ def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
     for datedir in os.listdir(backup_dir):
         day_path = os.path.join(backup_dir, datedir)
         if os.path.isdir(day_path):
-            backups = [
-                d for d in os.listdir(day_path)
-                if str(d).startswith("backup_")
-            ]
+            backups = [d for d in os.listdir(day_path) if str(d).startswith("backup_")]
             backups.sort(reverse=True)  # nyeste først
             for b in backups[keep_per_day:]:
                 full_path = os.path.join(day_path, b)
@@ -93,8 +96,7 @@ def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
 
     # Ryd op i dato-mapper (hvis der er mere end keep_days)
     days = [
-        d for d in os.listdir(backup_dir)
-        if os.path.isdir(os.path.join(backup_dir, d))
+        d for d in os.listdir(backup_dir) if os.path.isdir(os.path.join(backup_dir, d))
     ]
     days.sort(reverse=True)
     for day_to_remove in days[keep_days:]:
@@ -104,6 +106,7 @@ def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
             print(f"🗑️ Slettet gammel backup-dag: {full_path}")
         except Exception as e:
             print(f"❌ Kunne ikke slette dag: {full_path}: {e}")
+
 
 # Test direkte hvis filen køres solo
 if __name__ == "__main__":

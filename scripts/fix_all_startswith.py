@@ -4,6 +4,7 @@ import re
 # Variabelnavne der sandsynligvis er Path/filer
 PATH_LIKE = {"f", "file", "fname", "filepath", "path", "p", "fp"}
 
+
 def fix_startswith_in_file(filepath):
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
@@ -21,12 +22,16 @@ def fix_startswith_in_file(filepath):
             # Path-lignende variabler
             if var in PATH_LIKE:
                 # Skift til var.str(name).startswith(
-                line = re.sub(rf"\b{var}\.startswith\(", f"{var}.str(name).startswith(", line)
+                line = re.sub(
+                    rf"\b{var}\.startswith\(", f"{var}.str(name).startswith(", line
+                )
                 print(f"[RETTER] {filepath} ({i+1}): {orig.strip()} --> {line.strip()}")
                 changed = True
             else:
                 # Skift til str(var).startswith(
-                line = re.sub(rf"\b{var}\.startswith\(", f"str({var}).startswith(", line)
+                line = re.sub(
+                    rf"\b{var}\.startswith\(", f"str({var}).startswith(", line
+                )
                 print(f"[RETTER] {filepath} ({i+1}): {orig.strip()} --> {line.strip()}")
                 changed = True
         new_lines.append(line)
@@ -35,6 +40,7 @@ def fix_startswith_in_file(filepath):
         with open(filepath, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
     return changed
+
 
 def main():
     n_fixed = 0
@@ -48,6 +54,7 @@ def main():
                 if fix_startswith_in_file(fpath):
                     n_fixed += 1
     print(f"\n[FÆRDIG] Antal filer rettet: {n_fixed}")
+
 
 if __name__ == "__main__":
     main()

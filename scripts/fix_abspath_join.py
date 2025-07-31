@@ -1,6 +1,7 @@
 import os
 import re
 
+
 def fix_abspath_join_in_file(filepath):
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
@@ -18,7 +19,9 @@ def fix_abspath_join_in_file(filepath):
         if pattern.search(line):
             line_fixed = pattern.sub(replacement, line)
             if line != line_fixed:
-                print(f"[RETTER] {filepath} (linje {i+1}): {line.strip()} → {line_fixed.strip()}")
+                print(
+                    f"[RETTER] {filepath} (linje {i+1}): {line.strip()} → {line_fixed.strip()}"
+                )
                 changed = True
             new_lines.append(line_fixed)
         else:
@@ -28,6 +31,7 @@ def fix_abspath_join_in_file(filepath):
         with open(filepath, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
     return changed
+
 
 def main():
     n_fixed = 0
@@ -41,6 +45,9 @@ def main():
                     n_fixed += 1
     print(f"\n[FÆRDIG] Antal filer rettet: {n_fixed}")
 
+
 if __name__ == "__main__":
-    print("[SCAN & FIX] Scanner for forkert brug af os.path.abspath(os.path.join(...)), '..') og retter automatisk...")
+    print(
+        "[SCAN & FIX] Scanner for forkert brug af os.path.abspath(os.path.join(...)), '..') og retter automatisk..."
+    )
     main()

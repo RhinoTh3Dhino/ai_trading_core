@@ -1,8 +1,8 @@
-
 import pandas as pd
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
@@ -18,15 +18,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+
 # --- Regime-funktioner (brug fra din backtest eller her) ---
 def compute_regime(df, ema_col="ema_200", price_col="close"):
     if "regime" in df.columns:
         return df
     df["regime"] = np.where(
-        df[price_col] > df[ema_col], "bull",
-        np.where(df[price_col] < df[ema_col], "bear", "neutral")
+        df[price_col] > df[ema_col],
+        "bull",
+        np.where(df[price_col] < df[ema_col], "bear", "neutral"),
     )
     return df
+
 
 def regime_performance(trades_df, regime_col="regime"):
     if regime_col not in trades_df.columns:
@@ -35,16 +38,19 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (group['profit'] > 0).mean() if n > 0 and 'profit' in group.columns else 0
-        profit_pct = group['profit'].sum() if 'profit' in group.columns else 0
-        drawdown_pct = group['drawdown'].min() if 'drawdown' in group.columns else None
+        win_rate = (
+            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
+        )
+        profit_pct = group["profit"].sum() if "profit" in group.columns else 0
+        drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {
             "num_trades": n,
             "win_rate": win_rate,
             "profit_pct": profit_pct,
-            "drawdown_pct": drawdown_pct
+            "drawdown_pct": drawdown_pct,
         }
     return results
+
 
 def run_backtest(df, signals):
     # Minimal backtest – indsæt din fulde backtest hvis ønsket!
@@ -61,16 +67,35 @@ def run_backtest(df, signals):
         if position is None and signal == 1:
             position = "long"
             entry_price = price
-            trades.append({"timestamp": row["timestamp"], "type": "BUY", "price": price, "regime": regime, "profit": 0, "drawdown": None})
+            trades.append(
+                {
+                    "timestamp": row["timestamp"],
+                    "type": "BUY",
+                    "price": price,
+                    "regime": regime,
+                    "profit": 0,
+                    "drawdown": None,
+                }
+            )
         elif position == "long" and (signal == -1 or i == df.index[-1]):
             profit = price - entry_price if entry_price else 0
-            trades.append({"timestamp": row["timestamp"], "type": "SELL", "price": price, "regime": regime, "profit": profit, "drawdown": None})
+            trades.append(
+                {
+                    "timestamp": row["timestamp"],
+                    "type": "SELL",
+                    "price": price,
+                    "regime": regime,
+                    "profit": profit,
+                    "drawdown": None,
+                }
+            )
             position = None
             entry_price = None
     trades_df = pd.DataFrame(trades)
     # Dummy-drawdown
     trades_df["drawdown"] = np.random.uniform(-5, 0, size=len(trades_df))
     return trades_df
+
 
 def plot_regime_performance(perf_dict, strategy_name, run_id, output_dir=OUTPUT_DIR):
     regimes = list(perf_dict.keys())
@@ -79,10 +104,10 @@ def plot_regime_performance(perf_dict, strategy_name, run_id, output_dir=OUTPUT_
     n_trades = [perf_dict[reg]["num_trades"] for reg in regimes]
     x = np.arange(len(regimes))
 
-    fig, ax1 = plt.subplots(figsize=(8,5))
-    ax1.bar(x-0.2, win_rates, width=0.4, label="Win-rate")
+    fig, ax1 = plt.subplots(figsize=(8, 5))
+    ax1.bar(x - 0.2, win_rates, width=0.4, label="Win-rate")
     ax2 = ax1.twinx()
-    ax2.bar(x+0.2, profits, width=0.4, color="orange", label="Profit pct")
+    ax2.bar(x + 0.2, profits, width=0.4, color="orange", label="Profit pct")
     ax1.set_xticks(x)
     ax1.set_xticklabels(regimes)
     ax1.set_ylabel("Win-rate")
@@ -95,6 +120,7 @@ def plot_regime_performance(perf_dict, strategy_name, run_id, output_dir=OUTPUT_
     plt.close()
     return png_path
 
+
 def save_regime_report(strategy_stats, run_id, output_dir=OUTPUT_DIR):
     md_path = os.path.join(output_dir, f"regime_report_{run_id}.md")
     with open(md_path, "w", encoding="utf-8") as f:
@@ -103,9 +129,12 @@ def save_regime_report(strategy_stats, run_id, output_dir=OUTPUT_DIR):
             f.write(f"## {strat}\n")
             f.write(f"![{strat}]({os.path.basename(plot_path)})\n\n")
             for regime, perf in stats.items():
-                f.write(f"- {regime}: win-rate={perf['win_rate']:.2%}, profit={perf['profit_pct']:.2f}, trades={perf['num_trades']}\n")
+                f.write(
+                    f"- {regime}: win-rate={perf['win_rate']:.2%}, profit={perf['profit_pct']:.2f}, trades={perf['num_trades']}\n"
+                )
             f.write("\n")
     print(f"Regime rapport gemt: {md_path}")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -139,6 +168,7 @@ def main():
 
     save_regime_report(strategy_stats, run_id)
     print(f"Regime-analyse gennemført. Se rapport og grafer i: {OUTPUT_DIR}")
+
 
 if __name__ == "__main__":
     main()

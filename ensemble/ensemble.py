@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def majority_vote_ensemble(*signals):
     """
     Majority voting for vilkårligt antal signal-lister/arrays.

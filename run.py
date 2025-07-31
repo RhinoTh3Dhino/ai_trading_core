@@ -10,17 +10,18 @@ import sys
 import argparse
 import subprocess
 
+
 def main():
     parser = argparse.ArgumentParser(description="Universal runner til AI trading bot")
     parser.add_argument(
         "script",
         type=str,
-        help="Script-sti relativt til projektroden (fx tests/test_features_pipeline.py)"
+        help="Script-sti relativt til projektroden (fx tests/test_features_pipeline.py)",
     )
     parser.add_argument(
         "script_args",
         nargs=argparse.REMAINDER,
-        help="Ekstra argumenter til scriptet (brug -- for at skille runner fra script)"
+        help="Ekstra argumenter til scriptet (brug -- for at skille runner fra script)",
     )
     args = parser.parse_args()
 
@@ -32,7 +33,9 @@ def main():
     # Tilføj projektroden til sys.path (for barneprocesser også)
     pythonpath = os.environ.get("PYTHONPATH", "")
     if project_root not in pythonpath.split(os.pathsep):
-        pythonpath = os.pathsep.join([project_root, pythonpath]) if pythonpath else project_root
+        pythonpath = (
+            os.pathsep.join([project_root, pythonpath]) if pythonpath else project_root
+        )
         os.environ["PYTHONPATH"] = pythonpath
     if project_root not in sys.path:
         sys.path.insert(0, str(project_root))
@@ -56,6 +59,7 @@ def main():
     except Exception as e:
         print(f"[FEJL] Uventet fejl: {e}")
         sys.exit(99)
+
 
 if __name__ == "__main__":
     main()

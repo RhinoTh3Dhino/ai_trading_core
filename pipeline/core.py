@@ -25,6 +25,7 @@ GRAPH_DIR = "graphs/"
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]  # [ML, DL, Rule]
 
+
 class TradingNet(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=2):
         super().__init__()
@@ -35,17 +36,22 @@ class TradingNet(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(hidden_dim, output_dim),
         )
+
     def forward(self, x):
         return self.net(x)
 
+
 def load_trained_feature_list():
     if not os.path.exists(PYTORCH_FEATURES_PATH):
-        print(f"[ADVARSEL] Kunne ikke finde {PYTORCH_FEATURES_PATH} – bruger alle numeriske features fra input.")
+        print(
+            f"[ADVARSEL] Kunne ikke finde {PYTORCH_FEATURES_PATH} – bruger alle numeriske features fra input."
+        )
         return None
     with open(PYTORCH_FEATURES_PATH, "r") as f:
         features = json.load(f)
     print(f"[INFO] Loader feature-liste fra model: {features}")
     return features
+
 
 def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device="cpu"):
     if not os.path.exists(model_path):
@@ -58,6 +64,7 @@ def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device="cpu")
     print(f"✅ PyTorch-model indlæst fra {model_path} på {device}")
     return model
 
+
 def pytorch_predict(model, X, device="cpu"):
     with torch.no_grad():
         X_tensor = torch.tensor(X.values, dtype=torch.float32).to(device)
@@ -65,6 +72,7 @@ def pytorch_predict(model, X, device="cpu"):
         probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()
         preds = np.argmax(probs, axis=1)
     return preds, probs
+
 
 def read_features_auto(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
@@ -75,6 +83,7 @@ def read_features_auto(file_path):
     else:
         df = pd.read_csv(file_path)
     return df
+
 
 def run_pipeline(
     features_path,
@@ -107,14 +116,20 @@ def run_pipeline(
             "symbol": symbol,
             "interval": interval,
             "model_type": "multi_compare",
-            **(extra_pipeline_info or {})
+            **(extra_pipeline_info or {}),
         },
         telegram_func=send_message if send_telegram else None,
-        print_console=verbose
+        print_console=verbose,
     )
 
     # TensorBoard-writer (én run pr. kald)
-    writer = SummaryWriter(log_dir=f"{tensorboard_dir}/core_{symbol}_{interval}_{datetime.now().strftime('%Y%m%d_%H%M%S')}") if log_to_tb else None
+    writer = (
+        SummaryWriter(
+            log_dir=f"{tensorboard_dir}/core_{symbol}_{interval}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        )
+        if log_to_tb
+        else None
+    )
 
     # Indlæs features/data
     print(f"\n🔄 Indlæser features: {features_path}")
@@ -131,7 +146,11 @@ def run_pipeline(
             raise RuntimeError("Feature-mismatch! Træn modellen forfra.")
         X_dl = df[trained_features]
     else:
-        fallback_cols = [col for col in df.select_dtypes(include=[np.number]).columns if col not in ("timestamp", "target", "regime", "signal")]
+        fallback_cols = [
+            col
+            for col in df.select_dtypes(include=[np.number]).columns
+            if col not in ("timestamp", "target", "regime", "signal")
+        ]
         X_dl = df[fallback_cols]
         print(f"[ADVARSEL] Kører med fallback-features: {fallback_cols}")
 
@@ -168,7 +187,7 @@ def run_pipeline(
         rule_preds=rsi_signals,
         weights=weights,
         voting="majority",
-        debug=True
+        debug=True,
     )
     df["signal_ensemble"] = ensemble_signals
     trades_ens, balance_ens = run_backtest(df, signals=ensemble_signals)
@@ -192,17 +211,40 @@ def run_pipeline(
     # --- Visualisering og grafer ---
     if plot_graphs or save_graphs:
         os.makedirs(GRAPH_DIR, exist_ok=True)
-        plot_performance(balance_ml, trades_ml, model_name="ML", save_path=f"{GRAPH_DIR}/performance_ml.png")
-        plot_performance(balance_dl, trades_dl, model_name="DL", save_path=f"{GRAPH_DIR}/performance_dl.png")
-        plot_performance(balance_ens, trades_ens, model_name="Ensemble", save_path=f"{GRAPH_DIR}/performance_ensemble.png")
+        plot_performance(
+            balance_ml,
+            trades_ml,
+            model_name="ML",
+            save_path=f"{GRAPH_DIR}/performance_ml.png",
+        )
+        plot_performance(
+            balance_dl,
+            trades_dl,
+            model_name="DL",
+            save_path=f"{GRAPH_DIR}/performance_dl.png",
+        )
+        plot_performance(
+            balance_ens,
+            trades_ens,
+            model_name="Ensemble",
+            save_path=f"{GRAPH_DIR}/performance_ensemble.png",
+        )
         metric_keys = ["profit_pct", "win_rate", "drawdown_pct", "num_trades"]
-        plot_comparison(metrics_dict, metric_keys=metric_keys, save_path=f"{GRAPH_DIR}/model_comparison.png")
+        plot_comparison(
+            metrics_dict,
+            metric_keys=metric_keys,
+            save_path=f"{GRAPH_DIR}/model_comparison.png",
+        )
         print(f"[INFO] Grafer gemt til {GRAPH_DIR}")
 
     # --- Telegram-support ---
     if send_telegram:
         try:
-            send_image(f"{GRAPH_DIR}/model_comparison.png", caption=telegram_caption or f"{symbol} {interval} | ML vs. DL vs. ENSEMBLE performance")
+            send_image(
+                f"{GRAPH_DIR}/model_comparison.png",
+                caption=telegram_caption
+                or f"{symbol} {interval} | ML vs. DL vs. ENSEMBLE performance",
+            )
         except Exception as e:
             print(f"[ADVARSEL] Telegram-graf kunne ikke sendes: {e}")
 

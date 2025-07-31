@@ -1,4 +1,5 @@
 from utils.project_path import PROJECT_ROOT
+
 # features/feature_engineering.py
 
 import pandas as pd
@@ -11,26 +12,36 @@ from datetime import datetime
 # --- Versionsinfo fra versions.py ---
 try:
     from versions import (
-        PIPELINE_VERSION, PIPELINE_COMMIT,
-        FEATURE_VERSION, ENGINE_VERSION, ENGINE_COMMIT, MODEL_VERSION, LABEL_STRATEGY
+        PIPELINE_VERSION,
+        PIPELINE_COMMIT,
+        FEATURE_VERSION,
+        ENGINE_VERSION,
+        ENGINE_COMMIT,
+        MODEL_VERSION,
+        LABEL_STRATEGY,
     )
 except ImportError:
-    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = MODEL_VERSION = LABEL_STRATEGY = "unknown"
+    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = (
+        ENGINE_COMMIT
+    ) = MODEL_VERSION = LABEL_STRATEGY = "unknown"
 
 # === Hvis der findes en features-liste fra tidligere model, loades denne ===
 # AUTO PATH CONVERTED
 LSTM_FEATURES_PATH = PROJECT_ROOT / "models" / "lstm_features.csv"
 
+
 def feature_hash(df: pd.DataFrame) -> str:
     """Returnerer hash af DataFrame for versionering."""
     return hashlib.md5(pd.util.hash_pandas_object(df, index=True).values).hexdigest()
 
+
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     import ta
+
     df = df.copy()
     # Sikrer korrekte datatyper for alle kernekolonner
-    for col in ['open', 'high', 'low', 'close', 'volume']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
     # --- Klassiske tekniske indikatorer ---
     df["rsi_14"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
@@ -41,7 +52,9 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     macd = ta.trend.MACD(df["close"])
     df["macd"] = macd.macd()
     df["macd_signal"] = macd.macd_signal()
-    df["atr_14"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
+    df["atr_14"] = ta.volatility.AverageTrueRange(
+        df["high"], df["low"], df["close"], window=14
+    ).average_true_range()
 
     # --- Ekstra: glidende gennemsnit, volatilitet, returns ---
     df["sma_50"] = ta.trend.SMAIndicator(df["close"], window=50).sma_indicator()
@@ -61,8 +74,17 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- Drop rækker med NaN i kritiske kolonner ---
     critical_cols = [
-        "close", "ema_200", "rsi_14", "ema_9", "ema_21", "ema_50",
-        "macd", "macd_signal", "atr_14", "regime", "target"
+        "close",
+        "ema_200",
+        "rsi_14",
+        "ema_9",
+        "ema_21",
+        "ema_50",
+        "macd",
+        "macd_signal",
+        "atr_14",
+        "regime",
+        "target",
     ]
     before = len(df)
     df = df.dropna(subset=critical_cols)
@@ -75,32 +97,64 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
         lstm_features = pd.read_csv(LSTM_FEATURES_PATH, header=None)[0].tolist()
         missing = [col for col in lstm_features if col not in df.columns]
         if missing:
-            print(f"‼️ ADVARSEL: Følgende features mangler og bliver fyldt med 0: {missing}")
+            print(
+                f"‼️ ADVARSEL: Følgende features mangler og bliver fyldt med 0: {missing}"
+            )
             for col in missing:
-                df[col] = 0.0  # Udfyld manglende features med 0 (alternativ: np.nan eller fill f.eks. med mean)
+                df[col] = (
+                    0.0  # Udfyld manglende features med 0 (alternativ: np.nan eller fill f.eks. med mean)
+                )
         # Sortér kolonner så rækkefølge matcher lstm_features
-        df = df[[col for col in lstm_features if col in df.columns] + [c for c in df.columns if c not in lstm_features]]
+        df = df[
+            [col for col in lstm_features if col in df.columns]
+            + [c for c in df.columns if c not in lstm_features]
+        ]
     return df
 
+
 # AUTO PATH CONVERTED
-def find_latest_datafile(pattern: str = PROJECT_ROOT / "data" / "BTCUSDT_1h_*.csv") -> str:
+def find_latest_datafile(
+    pattern: str = PROJECT_ROOT / "data" / "BTCUSDT_1h_*.csv",
+) -> str:
     files = sorted(glob.glob(pattern), key=os.path.getmtime)
     if not files:
-# AUTO PATH CONVERTED
+        # AUTO PATH CONVERTED
         files = sorted(glob.glob(PROJECT_ROOT / "data" / "*.csv"), key=os.path.getmtime)
-    files = [f for f in files if all(x not in os.path.basename(f).lower() for x in ['feature', 'history', 'importance', 'result'])]
+    files = [
+        f
+        for f in files
+        if all(
+            x not in os.path.basename(f).lower()
+            for x in ["feature", "history", "importance", "result"]
+        )
+    ]
     return files[-1] if files else None
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, required=False, help="Input-CSV med rå data (finder selv nyeste hvis ikke angivet)")
-    parser.add_argument("--output", type=str, required=True, help="Output-CSV med features")
-    parser.add_argument("--version", type=str, default="v1.0.0", help="Feature-version (logges i meta og header)")
+    parser.add_argument(
+        "--input",
+        type=str,
+        required=False,
+        help="Input-CSV med rå data (finder selv nyeste hvis ikke angivet)",
+    )
+    parser.add_argument(
+        "--output", type=str, required=True, help="Output-CSV med features"
+    )
+    parser.add_argument(
+        "--version",
+        type=str,
+        default="v1.0.0",
+        help="Feature-version (logges i meta og header)",
+    )
     args = parser.parse_args()
 
     input_path = args.input
     if not input_path or not os.path.exists(input_path):
-        print(f"⚠️ Inputfil ikke angivet eller ikke fundet. Søger efter nyeste datafil i 'data/'...")
+        print(
+            f"⚠️ Inputfil ikke angivet eller ikke fundet. Søger efter nyeste datafil i 'data/'..."
+        )
         latest = find_latest_datafile()
         if latest:
             print(f"➡️  Bruger nyeste datafil: {latest}")
@@ -112,7 +166,9 @@ def main():
     df = pd.read_csv(input_path)
     print("🔎 Kolonner i rå data:", list(df.columns))
     if "close" not in df.columns:
-        print(f"❌ Inputfilen '{input_path}' mangler kolonnen 'close'. Tjek din rå data!")
+        print(
+            f"❌ Inputfilen '{input_path}' mangler kolonnen 'close'. Tjek din rå data!"
+        )
         return
 
     df_feat = add_features(df)
@@ -153,6 +209,7 @@ def main():
         f.write(f"label_strategy: {LABEL_STRATEGY}\n")
 
     print(f"✅ Features gemt til: {args.output} (hash: {hash_val})")
+
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,7 @@ from lightgbm import LGBMClassifier
 
 from utils.project_path import PROJECT_ROOT
 
+
 def balance_df(df, target, method="undersample", random_state=42, verbose=True):
     counts = df[target].value_counts()
     classes = counts.index.tolist()
@@ -32,14 +33,24 @@ def balance_df(df, target, method="undersample", random_state=42, verbose=True):
         n = min_class
         for c in classes:
             dfs.append(df[df[target] == c].sample(n=n, random_state=random_state))
-        balanced = pd.concat(dfs).sample(frac=1, random_state=random_state).reset_index(drop=True)
+        balanced = (
+            pd.concat(dfs)
+            .sample(frac=1, random_state=random_state)
+            .reset_index(drop=True)
+        )
         if verbose:
             print(f"Undersamplet alle klasser til: {n}")
     elif method == "oversample":
         n = max_class
         for c in classes:
-            dfs.append(df[df[target] == c].sample(n=n, replace=True, random_state=random_state))
-        balanced = pd.concat(dfs).sample(frac=1, random_state=random_state).reset_index(drop=True)
+            dfs.append(
+                df[df[target] == c].sample(n=n, replace=True, random_state=random_state)
+            )
+        balanced = (
+            pd.concat(dfs)
+            .sample(frac=1, random_state=random_state)
+            .reset_index(drop=True)
+        )
         if verbose:
             print(f"Oversamplet alle klasser til: {n}")
     else:
@@ -48,13 +59,31 @@ def balance_df(df, target, method="undersample", random_state=42, verbose=True):
     print(f"Efter balancering: {dict(after_counts)}")
     return balanced
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Feature importance-analyse for LightGBM trading-modeller.")
+    parser = argparse.ArgumentParser(
+        description="Feature importance-analyse for LightGBM trading-modeller."
+    )
     parser.add_argument("--input", type=str, required=True, help="Sti til feature-CSV.")
-    parser.add_argument("--target", type=str, required=True, help="Target-kolonne (fx 'target_regime_adapt').")
-    parser.add_argument("--features", type=str, required=True, help="Kommasepareret feature-liste.")
-    parser.add_argument("--balance", type=str, default=None, choices=[None, "undersample", "oversample"], help="Balancér targets (valgfri).")
-    parser.add_argument("--top_n", type=int, default=20, help="Vis kun top N features (default: 20)")
+    parser.add_argument(
+        "--target",
+        type=str,
+        required=True,
+        help="Target-kolonne (fx 'target_regime_adapt').",
+    )
+    parser.add_argument(
+        "--features", type=str, required=True, help="Kommasepareret feature-liste."
+    )
+    parser.add_argument(
+        "--balance",
+        type=str,
+        default=None,
+        choices=[None, "undersample", "oversample"],
+        help="Balancér targets (valgfri).",
+    )
+    parser.add_argument(
+        "--top_n", type=int, default=20, help="Vis kun top N features (default: 20)"
+    )
     args = parser.parse_args()
 
     df = pd.read_csv(args.input)
@@ -73,15 +102,16 @@ def main():
     X = df[features]
     y = df[args.target].astype(int)
 
-    print(f"[INFO] Træner LightGBM model på {len(df)} rækker, {len(features)} features...")
+    print(
+        f"[INFO] Træner LightGBM model på {len(df)} rækker, {len(features)} features..."
+    )
     model = LGBMClassifier(n_estimators=300, random_state=42)
     model.fit(X, y)
 
     importances = model.feature_importances_
-    feat_imp = pd.DataFrame({
-        "feature": features,
-        "importance": importances
-    }).sort_values(by="importance", ascending=False)
+    feat_imp = pd.DataFrame(
+        {"feature": features, "importance": importances}
+    ).sort_values(by="importance", ascending=False)
 
     print("\n=== TOP FEATURE IMPORTANCE ===")
     print(feat_imp.head(args.top_n))
@@ -101,6 +131,7 @@ def main():
     plt.title("Top feature importance (LightGBM)")
     plt.tight_layout()
     plt.show()
+
 
 if __name__ == "__main__":
     main()

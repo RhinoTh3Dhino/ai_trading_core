@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import os
 from utils.project_path import PROJECT_ROOT
 
+
 def analyze_target_distribution(df, target_col, output_dir=None, show_plot=True):
     # Tæl target-klasser
     value_counts = df[target_col].value_counts(dropna=False).sort_index()
@@ -20,7 +21,7 @@ def analyze_target_distribution(df, target_col, output_dir=None, show_plot=True)
     print(value_counts)
     print("\nProcentvis fordeling:")
     print((value_counts / len(df) * 100).round(2).astype(str) + "%")
-    
+
     # Simple stats
     n_total = len(df)
     n_1 = value_counts[1] if 1 in value_counts.index else 0
@@ -37,8 +38,14 @@ def analyze_target_distribution(df, target_col, output_dir=None, show_plot=True)
 
     # Plot (valgfri)
     if show_plot:
-        plt.figure(figsize=(6,4))
-        value_counts.plot(kind="bar", color=["#388e3c" if i==1 else "#1976d2" if i==0 else "#b71c1c" for i in value_counts.index])
+        plt.figure(figsize=(6, 4))
+        value_counts.plot(
+            kind="bar",
+            color=[
+                "#388e3c" if i == 1 else "#1976d2" if i == 0 else "#b71c1c"
+                for i in value_counts.index
+            ],
+        )
         plt.title(f"Target-fordeling: {target_col}")
         plt.xlabel("Klasse")
         plt.ylabel("Antal")
@@ -46,26 +53,36 @@ def analyze_target_distribution(df, target_col, output_dir=None, show_plot=True)
         plt.tight_layout()
         plt.show()
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Analysér target-fordeling i feature-fil.")
+    parser = argparse.ArgumentParser(
+        description="Analysér target-fordeling i feature-fil."
+    )
     parser.add_argument("--input", type=str, required=True, help="Sti til feature-CSV")
-    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
-    parser.add_argument("--output_dir", type=str, default=None, help="Mappe til eksport af CSV")
+    parser.add_argument(
+        "--target", type=str, default="target", help="Navn på target-kolonne"
+    )
+    parser.add_argument(
+        "--output_dir", type=str, default=None, help="Mappe til eksport af CSV"
+    )
     parser.add_argument("--no_plot", action="store_true", help="Skjul plot")
     args = parser.parse_args()
 
     print(f"[INFO] Indlæser data: {args.input}")
     df = pd.read_csv(args.input)
     if args.target not in df.columns:
-        print(f"❌ FEJL: Target '{args.target}' findes ikke i data! Kolonner: {list(df.columns)}")
+        print(
+            f"❌ FEJL: Target '{args.target}' findes ikke i data! Kolonner: {list(df.columns)}"
+        )
         return
 
     analyze_target_distribution(
         df,
         target_col=args.target,
         output_dir=args.output_dir,
-        show_plot=not args.no_plot
+        show_plot=not args.no_plot,
     )
+
 
 if __name__ == "__main__":
     main()

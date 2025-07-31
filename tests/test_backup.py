@@ -2,12 +2,14 @@
 import sys
 import os
 from pathlib import Path
+
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
 import unittest
 from utils.backup import make_backup
 import os
+
 
 class TestBackup(unittest.TestCase):
     def test_make_backup_creates_folder(self):
@@ -22,6 +24,7 @@ class TestBackup(unittest.TestCase):
         # Her tjekker vi både om path eksisterer og er en mappe
         self.assertTrue(os.path.exists(path), f"Path does not exist: {path}")
         self.assertTrue(os.path.isdir(path), f"Path is not a directory: {path}")
+
 
 if __name__ == "__main__":
     unittest.main()

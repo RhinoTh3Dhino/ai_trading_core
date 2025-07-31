@@ -3,10 +3,9 @@
 ## brug: kør    python scripts/clean_pycache.py
 
 
-
-
 import os
 import shutil
+
 
 def clean_pycache(root="."):
     n_pycache = 0
@@ -32,6 +31,7 @@ def clean_pycache(root="."):
                 except Exception as e:
                     print(f"[FEJL] Kunne ikke slette {pyc_path}: {e}")
     print(f"\nFærdig! Slettede {n_pycache} __pycache__ mapper og {n_pyc} .pyc filer.")
+
 
 if __name__ == "__main__":
     clean_pycache(".")

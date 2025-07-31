@@ -10,8 +10,9 @@ os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     filename="logs/errors.log",
     level=logging.ERROR,
-    format="%(asctime)s %(levelname)s: %(message)s"
+    format="%(asctime)s %(levelname)s: %(message)s",
 )
+
 
 def safe_run(func, *args, **kwargs):
     """
@@ -22,10 +23,7 @@ def safe_run(func, *args, **kwargs):
         return func(*args, **kwargs)
     except Exception as e:
         tb_str = traceback.format_exc()
-        msg = (
-            f"❌ Fejl i {func.__name__}: {e}\n"
-            f"Traceback:\n{tb_str}"
-        )
+        msg = f"❌ Fejl i {func.__name__}: {e}\n" f"Traceback:\n{tb_str}"
         # Telegram beskeder må max være 4096 tegn
         send_telegram_message(msg[:4000])
         logging.error(msg)

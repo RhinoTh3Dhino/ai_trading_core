@@ -33,6 +33,31 @@ Dette projekt er fundamentet for en avanceret, robust og modulær AI trading bot
 
 ---
 
+## 📦 **Dependency Management & protobuf version**
+
+Dette projekt bruger avancerede AI/ML-biblioteker (TensorFlow, PyTorch, MLflow, Streamlit m.fl.), som kræver specifikke versioner af kernepakker for at sikre stabilitet, især for protobuf.
+
+**NB!**
+Du vil ofte se følgende pip-advarsel under installation af requirements:
+
+`ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+googleapis-common-protos 1.70.0 requires protobuf!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0,>=3.20.2, but you have protobuf 3.19.6 which is incompatible.`
+
+**Dette er normalt i ML/AI-projekter!**
+protobuf==3.19.6 er valgt for at sikre maksimal kompatibilitet med TensorFlow 2.10.x, MLflow og Streamlit.
+Nyere versioner af protobuf kan give problemer med visse ML-workflows.
+
+- Hvis du ikke bruger Google Cloud APIs (BigQuery, Vertex AI, etc.), kan du ignorere denne advarsel.
+
+- Hvis du får fejl med Google-tjenester, kan det være nødvendigt at oprette et separat miljø med nyere protobuf-version – eller kontakt projektets maintainer.
+  
+**Kort sagt:**
+Projektet kører stabilt med denne opsætning, og du kan ignorere pip-advarslen så længe alt fungerer som forventet.
+
+
+
+
+
 ## 🚀 **Kørsel af scripts og tests – run.py som universal script-runner**
 
    **Dette projekt bruger en central runner-fil run.py som entrypoint til alle scripts og tests.**

@@ -7,7 +7,9 @@ import sys
 try:
     from utils.telegram_utils import send_message
 except ImportError:
-    print("❌ Kunne ikke importere send_message fra utils/telegram_utils.py – CI-notifikation springes over.")
+    print(
+        "❌ Kunne ikke importere send_message fra utils/telegram_utils.py – CI-notifikation springes over."
+    )
     sys.exit(0)
 
 # Hent CI-info fra miljøvariabler (GitHub Actions sætter disse automatisk)

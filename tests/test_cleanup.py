@@ -1,6 +1,7 @@
 import sys
 import os
 from pathlib import Path
+
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
@@ -8,6 +9,7 @@ import unittest
 import os
 import shutil
 from utils.backup import cleanup_old_backups
+
 
 class TestCleanupBackups(unittest.TestCase):
     def setUp(self):
@@ -33,6 +35,7 @@ class TestCleanupBackups(unittest.TestCase):
         for day in days:
             backups = [b for b in os.listdir(os.path.join(self.backup_dir, day))]
             self.assertLessEqual(len(backups), 2)  # Max 2 backups pr. dag
+
 
 if __name__ == "__main__":
     unittest.main()

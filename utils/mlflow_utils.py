@@ -3,6 +3,7 @@
 import mlflow
 import os
 
+
 def ensure_no_active_run(print_status=True):
     """
     Lukker eventuelle aktive MLflow-runs, så vi undgår run-fejl.
@@ -13,12 +14,13 @@ def ensure_no_active_run(print_status=True):
         if print_status:
             print(f"[MLflow] Afsluttede tidligere aktivt run: {run_id}")
 
+
 def setup_mlflow(
     experiment_name="default",
     tracking_uri=None,
     artifact_location=None,
     create=True,
-    print_status=True
+    print_status=True,
 ):
     """
     Initialiserer MLflow-tracking. Sætter tracking URI, eksperiment og artefakt-sti.
@@ -33,19 +35,23 @@ def setup_mlflow(
         exp = mlflow.get_experiment_by_name(experiment_name)
         if exp is None:
             exp_id = mlflow.create_experiment(
-                experiment_name,
-                artifact_location=artifact_location
+                experiment_name, artifact_location=artifact_location
             )
             if print_status:
-                print(f"[MLflow] Oprettede nyt experiment: {experiment_name} (ID: {exp_id})")
+                print(
+                    f"[MLflow] Oprettede nyt experiment: {experiment_name} (ID: {exp_id})"
+                )
         else:
             exp_id = exp.experiment_id
             if print_status:
-                print(f"[MLflow] Bruger eksisterende experiment: {experiment_name} (ID: {exp_id})")
+                print(
+                    f"[MLflow] Bruger eksisterende experiment: {experiment_name} (ID: {exp_id})"
+                )
         mlflow.set_experiment(experiment_name)
     else:
         mlflow.set_experiment(experiment_name)
     return mlflow.get_experiment_by_name(experiment_name)
+
 
 def start_mlflow_run(run_name=None, tags=None, print_status=True, ensure_clean=True):
     """
@@ -58,12 +64,14 @@ def start_mlflow_run(run_name=None, tags=None, print_status=True, ensure_clean=T
         print(f"[MLflow] Startet run: {run.info.run_id} | Navn: {run_name}")
     return run
 
+
 def log_params(params):
     """
     Logger hyperparametre til MLflow. Params skal være dict.
     """
     mlflow.log_params(params)
     print(f"[MLflow] Loggede params: {params}")
+
 
 def log_metrics(metrics, step=None):
     """
@@ -76,6 +84,7 @@ def log_metrics(metrics, step=None):
         mlflow.log_metrics(metrics)
     print(f"[MLflow] Loggede metrics: {metrics}")
 
+
 def log_artifact(path, artifact_path=None):
     """
     Logger en fil eller mappe som MLflow artefakt.
@@ -85,6 +94,7 @@ def log_artifact(path, artifact_path=None):
     else:
         mlflow.log_artifact(path)
     print(f"[MLflow] Loggede artefakt: {path}")
+
 
 def log_artefacts_in_dir(directory, artifact_path=None, filetypes=None):
     """
@@ -100,6 +110,7 @@ def log_artefacts_in_dir(directory, artifact_path=None, filetypes=None):
         if os.path.isfile(file_path):
             log_artifact(file_path, artifact_path=artifact_path)
 
+
 def end_mlflow_run(print_status=True):
     """
     Afslutter det aktive MLflow-run.
@@ -111,6 +122,7 @@ def end_mlflow_run(print_status=True):
     else:
         if print_status:
             print(f"[MLflow] Ingen aktivt run at afslutte.")
+
 
 def get_current_run_id():
     """

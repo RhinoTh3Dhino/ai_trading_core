@@ -1,4 +1,3 @@
-
 import os
 import json
 from datetime import datetime
@@ -16,10 +15,12 @@ from strategies.macd_strategy import macd_cross_signals
 from ensemble.majority_vote_ensemble import weighted_vote_ensemble
 
 from utils.project_path import PROJECT_ROOT
+
 # === Load miljøvariabler fra .env ===
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
 
 def telegram_enabled():
     """Returnerer True hvis Telegram er korrekt konfigureret (og ikke dummy i CI)."""
@@ -29,10 +30,12 @@ def telegram_enabled():
         return False
     return True
 
+
 def send_telegram_message(message):
     if telegram_enabled():
         try:
             from telegram import Bot
+
             bot = Bot(token=TELEGRAM_TOKEN)
             bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         except Exception as e:
@@ -41,9 +44,12 @@ def send_telegram_message(message):
     else:
         print(f"🔕 [CI/test] Ville have sendt Telegram-besked: {message}")
 
+
 # === Konstanter til tuning ===
 # AUTO PATH CONVERTED
-DATA_PATH = PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"
+DATA_PATH = (
+    PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"
+)
 SYMBOL = "BTC"
 TUNER_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(TUNER_DIR, "tuning_log.txt")
@@ -57,16 +63,18 @@ if not os.path.exists(TUNER_DIR):
 print(f"[INFO] Logfil skrives til: {LOG_PATH}")
 print(f"[INFO] Resultatfil skrives til: {RESULTS_PATH}")
 
+
 # === Logger-setup ===
 def get_tuning_logger():
     logger = logging.getLogger("tuning_logger")
     logger.setLevel(logging.INFO)
     if not logger.handlers:
-        file_handler = logging.FileHandler(LOG_PATH, mode='w')
-        formatter = logging.Formatter('%(message)s')
+        file_handler = logging.FileHandler(LOG_PATH, mode="w")
+        formatter = logging.Formatter("%(message)s")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     return logger
+
 
 # === OPTUNA-OBJECTIVE: Tune threshold OG weights ===
 def objective(trial):
@@ -87,7 +95,9 @@ def objective(trial):
 
     rsi_signals = rsi_rule_based_signals(df, low=30, high=70)
     macd_signals = macd_cross_signals(df)
-    ensemble_signals = weighted_vote_ensemble(ml_signals, rsi_signals, macd_signals, weights=weights)
+    ensemble_signals = weighted_vote_ensemble(
+        ml_signals, rsi_signals, macd_signals, weights=weights
+    )
     df["signal"] = ensemble_signals
     trades_df, balance_df = run_backtest(df, signals=ensemble_signals)
     metrics = calc_backtest_metrics(trades_df, balance_df)
@@ -103,15 +113,18 @@ def objective(trial):
     )
     return metrics["profit_pct"]
 
+
 def tune_threshold():
-    send_telegram_message("🔄 Starter automatisk tuning af threshold og weights (Optuna)...")
+    send_telegram_message(
+        "🔄 Starter automatisk tuning af threshold og weights (Optuna)..."
+    )
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=25)
     best_threshold = study.best_params["threshold"]
     best_weights = [
         study.best_params["weight_ml"],
         study.best_params["weight_rsi"],
-        study.best_params["weight_macd"]
+        study.best_params["weight_macd"],
     ]
     best_value = study.best_value
     summary = (
@@ -132,13 +145,16 @@ def tune_threshold():
     snapshot = {
         "threshold": float(best_threshold),
         "weights": [float(w) for w in best_weights],
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
     with open(SNAPSHOT_PATH, "w") as f:
         json.dump(snapshot, f, indent=2)
     print(f"[INFO] Snapshot gemt: {SNAPSHOT_PATH}")
-    send_telegram_message(f"💾 Ensemble-snapshot gemt: {SNAPSHOT_PATH} \nThreshold: {best_threshold:.3f}\nWeights: {best_weights}")
+    send_telegram_message(
+        f"💾 Ensemble-snapshot gemt: {SNAPSHOT_PATH} \nThreshold: {best_threshold:.3f}\nWeights: {best_weights}"
+    )
     return best_threshold, best_weights
+
 
 if __name__ == "__main__":
     tune_threshold()

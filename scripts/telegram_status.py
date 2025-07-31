@@ -1,4 +1,5 @@
 from utils.project_path import PROJECT_ROOT
+
 # bot/telegram_status.py
 
 from telegram import Update
@@ -7,13 +8,17 @@ from utils.report_utils import build_telegram_summary
 
 TOKEN = "DIN_BOT_TOKEN"
 
+
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = build_telegram_summary(
-        run_id="PROD", 
-# AUTO PATH CONVERTED
-        portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"
+        run_id="PROD",
+        # AUTO PATH CONVERTED
+        portfolio_metrics_path=PROJECT_ROOT
+        / "outputs"
+        / "portfolio_metrics_latest.csv",
     )
-    await update.message.reply_text(msg, parse_mode='HTML')
+    await update.message.reply_text(msg, parse_mode="HTML")
+
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(TOKEN).build()

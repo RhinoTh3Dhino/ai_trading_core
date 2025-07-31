@@ -1,5 +1,6 @@
 from pathlib import Path
 from utils.project_path import PROJECT_ROOT
+
 """
 models/optuna_tuner.py
 
@@ -37,6 +38,7 @@ OPTUNA_LOG_PATH = PROJECT_ROOT / "models" / "optuna_trials.csv"
 # AUTO PATH CONVERTED
 MODEL_PATH = PROJECT_ROOT / "models" / "best_pytorch_model.pt"
 
+
 def optuna_objective(trial, data_path, target, test_size):
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
     learning_rate = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
@@ -64,9 +66,14 @@ def optuna_objective(trial, data_path, target, test_size):
         f.write(line)
     return acc
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Optuna-tuner til PyTorch trading-model")
-    parser.add_argument("--data", type=str, required=True, help="Path til feature-data (CSV)")
+    parser = argparse.ArgumentParser(
+        description="Optuna-tuner til PyTorch trading-model"
+    )
+    parser.add_argument(
+        "--data", type=str, required=True, help="Path til feature-data (CSV)"
+    )
     parser.add_argument("--target", type=str, default="target", help="Target-kolonne")
     parser.add_argument("--trials", type=int, default=20, help="Antal trials")
     parser.add_argument("--test_size", type=float, default=0.2, help="Test split")
@@ -75,7 +82,9 @@ def main():
     # Log header til CSV
     if not os.path.exists(OPTUNA_LOG_PATH):
         with open(OPTUNA_LOG_PATH, "w", encoding="utf-8") as f:
-            f.write("datetime,batch_size,learning_rate,hidden_dim,n_layers,dropout,epochs,val_acc\n")
+            f.write(
+                "datetime,batch_size,learning_rate,hidden_dim,n_layers,dropout,epochs,val_acc\n"
+            )
 
     study = optuna.create_study(direction="maximize")
     print(f"🔍 Starter Optuna-tuning ({args.trials} trials) på {args.data}")
@@ -89,7 +98,9 @@ def main():
     print("\n=== Optuna tuning færdig! ===")
     print("Bedste params:", study.best_trial.params)
     print("Bedste accuracy:", study.best_trial.value)
-    send_message(f"🏆 Optuna tuning færdig! Bedste acc: {study.best_trial.value:.4f}\nParams: {study.best_trial.params}")
+    send_message(
+        f"🏆 Optuna tuning færdig! Bedste acc: {study.best_trial.value:.4f}\nParams: {study.best_trial.params}"
+    )
 
     # Træn bedste model én gang med save_model=True
     best = study.best_trial.params
@@ -107,7 +118,10 @@ def main():
         save_model=True,
     )
     print(f"✅ Bedste model trænet og gemt til: {MODEL_PATH} (val_acc={final_acc:.4f})")
-    send_message(f"✅ Bedste model trænet og gemt til {MODEL_PATH}\nVal_acc={final_acc:.4f}")
+    send_message(
+        f"✅ Bedste model trænet og gemt til {MODEL_PATH}\nVal_acc={final_acc:.4f}"
+    )
+
 
 if __name__ == "__main__":
     main()

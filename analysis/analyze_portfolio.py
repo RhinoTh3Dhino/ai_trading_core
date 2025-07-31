@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 import matplotlib
 from utils.project_path import PROJECT_ROOT
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from datetime import datetime
-
 
 
 # === LÆS COINS FRA config/coins.json (fallback til default) ===
@@ -39,14 +39,17 @@ from ensemble.majority_vote_ensemble import majority_vote_ensemble
 from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
 
+
 def compute_regime(df, ema_col="ema_200", price_col="close"):
     if "regime" in df.columns:
         return df
     df["regime"] = np.where(
-        df[price_col] > df[ema_col], "bull",
-        np.where(df[price_col] < df[ema_col], "bear", "neutral")
+        df[price_col] > df[ema_col],
+        "bull",
+        np.where(df[price_col] < df[ema_col], "bear", "neutral"),
     )
     return df
+
 
 def run_backtest(df, signals):
     df = df.copy()
@@ -62,15 +65,34 @@ def run_backtest(df, signals):
         if position is None and signal == 1:
             position = "long"
             entry_price = price
-            trades.append({"timestamp": row["timestamp"], "type": "BUY", "price": price, "regime": regime, "profit": 0, "drawdown": None})
+            trades.append(
+                {
+                    "timestamp": row["timestamp"],
+                    "type": "BUY",
+                    "price": price,
+                    "regime": regime,
+                    "profit": 0,
+                    "drawdown": None,
+                }
+            )
         elif position == "long" and (signal == -1 or i == df.index[-1]):
             profit = price - entry_price if entry_price else 0
-            trades.append({"timestamp": row["timestamp"], "type": "SELL", "price": price, "regime": regime, "profit": profit, "drawdown": None})
+            trades.append(
+                {
+                    "timestamp": row["timestamp"],
+                    "type": "SELL",
+                    "price": price,
+                    "regime": regime,
+                    "profit": profit,
+                    "drawdown": None,
+                }
+            )
             position = None
             entry_price = None
     trades_df = pd.DataFrame(trades)
     trades_df["drawdown"] = np.random.uniform(-5, 0, size=len(trades_df))
     return trades_df
+
 
 def regime_performance(trades_df, regime_col="regime"):
     if regime_col not in trades_df.columns:
@@ -79,16 +101,19 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (group['profit'] > 0).mean() if n > 0 and 'profit' in group.columns else 0
-        profit_pct = group['profit'].sum() if 'profit' in group.columns else 0
-        drawdown_pct = group['drawdown'].min() if 'drawdown' in group.columns else None
+        win_rate = (
+            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
+        )
+        profit_pct = group["profit"].sum() if "profit" in group.columns else 0
+        drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {
             "num_trades": n,
             "win_rate": float(win_rate) if pd.notnull(win_rate) else 0.0,
             "profit_pct": float(profit_pct) if pd.notnull(profit_pct) else 0.0,
-            "drawdown_pct": float(drawdown_pct) if pd.notnull(drawdown_pct) else 0.0
+            "drawdown_pct": float(drawdown_pct) if pd.notnull(drawdown_pct) else 0.0,
         }
     return results
+
 
 def aggregate_coin_metrics(coin, regime_stats_dict):
     data = {"Coin": coin}
@@ -102,10 +127,14 @@ def aggregate_coin_metrics(coin, regime_stats_dict):
             data[key2] = float(profit) if profit is not None else 0.0
     return data
 
+
 def plot_portfolio_heatmap(df, run_id, output_dir=OUTPUT_DIR):
-    heatmap_df = df.set_index("Coin")[[c for c in df.columns if str(c).endswith("_win")]]
-    heatmap_df = heatmap_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+    heatmap_df = df.set_index("Coin")[
+        [c for c in df.columns if str(c).endswith("_win")]
+    ]
+    heatmap_df = heatmap_df.apply(pd.to_numeric, errors="coerce").fillna(0)
     import seaborn as sns
+
     plt.figure(figsize=(10, 6))
     sns.heatmap(heatmap_df, annot=True, cmap="YlGnBu", fmt=".2f")
     plt.title(f"Portfolio win-rate heatmap ({run_id})")
@@ -116,6 +145,7 @@ def plot_portfolio_heatmap(df, run_id, output_dir=OUTPUT_DIR):
     print(f"Portfolio heatmap gemt: {png_path}")
     return png_path
 
+
 def save_portfolio_report(df, run_id, heatmap_path, output_dir=OUTPUT_DIR):
     md_path = os.path.join(output_dir, f"portfolio_report_{run_id}.md")
     with open(md_path, "w", encoding="utf-8") as f:
@@ -123,6 +153,7 @@ def save_portfolio_report(df, run_id, heatmap_path, output_dir=OUTPUT_DIR):
         f.write(f"![Portfolio heatmap]({os.path.basename(heatmap_path)})\n\n")
         f.write(df.to_markdown(index=False))
     print(f"Portfolio rapport gemt: {md_path}")
+
 
 def main():
     coin_results = []
@@ -144,12 +175,16 @@ def main():
             print(f"[DEBUG] DataFrame for {coin} er TOM! Tjek input-data.")
             continue
 
-        print(f"[DEBUG] DataFrame for {coin}: Kolonner={list(df.columns)} | Første rækker:\n{df.head(3)}")
+        print(
+            f"[DEBUG] DataFrame for {coin}: Kolonner={list(df.columns)} | Første rækker:\n{df.head(3)}"
+        )
 
         # Ekstra check for nødvendige kolonner
         for col in ["close", "ema_200"]:
             if col not in df.columns:
-                print(f"[ADVARSEL] Kolonnen '{col}' mangler i feature-fil for {coin} ({feature_path})")
+                print(
+                    f"[ADVARSEL] Kolonnen '{col}' mangler i feature-fil for {coin} ({feature_path})"
+                )
         if "datetime" in df.columns:
             df.rename(columns={"datetime": "timestamp"}, inplace=True)
         df = compute_regime(df)
@@ -177,6 +212,7 @@ def main():
     heatmap_path = plot_portfolio_heatmap(df, RUN_ID)
     save_portfolio_report(df, RUN_ID, heatmap_path)
     print(f"\nMulti-coin batch-analyse færdig! Se rapport og heatmap i: {OUTPUT_DIR}")
+
 
 if __name__ == "__main__":
     main()

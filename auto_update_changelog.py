@@ -5,6 +5,7 @@ import re
 
 CHANGELOG_PATH = "CHANGELOG.md"
 
+
 def get_last_version():
     if not os.path.exists(CHANGELOG_PATH):
         return "0.0.0"
@@ -14,6 +15,7 @@ def get_last_version():
             if match:
                 return match.group(1)
     return "0.0.0"
+
 
 def bump_version(version, level="patch"):
     major, minor, patch = [int(x) for x in version.split(".")]
@@ -27,12 +29,14 @@ def bump_version(version, level="patch"):
         patch += 1
     return f"{major}.{minor}.{patch}"
 
+
 def get_latest_commits(since_tag=None, max_count=10):
     args = ["git", "log", "--pretty=format:%h %an %ad %s", "--date=short"]
     if since_tag:
         args += [f"{since_tag}..HEAD"]
     output = subprocess.check_output(args, encoding="utf-8")
     return output.strip().split("\n")[:max_count]
+
 
 def make_changelog_entry(version, commits):
     today = datetime.date.today().isoformat()
@@ -43,6 +47,7 @@ def make_changelog_entry(version, commits):
     entry += "\n---\n\n"
     return entry
 
+
 def prepend_changelog(entry):
     if os.path.exists(CHANGELOG_PATH):
         with open(CHANGELOG_PATH, "r", encoding="utf-8") as f:
@@ -51,6 +56,7 @@ def prepend_changelog(entry):
         old = ""
     with open(CHANGELOG_PATH, "w", encoding="utf-8") as f:
         f.write(entry + old)
+
 
 if __name__ == "__main__":
     # 1. Find sidste version i CHANGELOG.md

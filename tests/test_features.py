@@ -21,14 +21,16 @@ if not CSV_PATH.exists():
     print("⚠️  CSV ikke fundet, opretter dummy testdata...")
     CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
     n = 500
-    df = pd.DataFrame({
-        "timestamp": pd.date_range("2023-01-01", periods=n, freq="H"),
-        "open": np.random.uniform(25000, 35000, n),
-        "high": np.random.uniform(25500, 35500, n),
-        "low": np.random.uniform(24500, 34500, n),
-        "close": np.random.uniform(25000, 35000, n),
-        "volume": np.random.uniform(10, 1000, n)
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2023-01-01", periods=n, freq="H"),
+            "open": np.random.uniform(25000, 35000, n),
+            "high": np.random.uniform(25500, 35500, n),
+            "low": np.random.uniform(24500, 34500, n),
+            "close": np.random.uniform(25000, 35000, n),
+            "volume": np.random.uniform(10, 1000, n),
+        }
+    )
     # Brug altid decimal="." (det er standard!)
     df.to_csv(str(CSV_PATH), index=False, sep=";", decimal=".")
     print(f"Dummydata gemt som {CSV_PATH}")
@@ -42,19 +44,19 @@ if "datetime" in df.columns and "timestamp" not in df.columns:
     df = df.rename(columns={"datetime": "timestamp"})
 
 # ---------- TJEK FOR NØDVENDIGE KOLONNER ----------
-expected = {'open', 'high', 'low', 'close', 'volume', 'timestamp'}
+expected = {"open", "high", "low", "close", "volume", "timestamp"}
 if not expected.issubset(set(df.columns)):
     print("🚨 Mangler én eller flere af følgende kolonner:", expected)
     print("Fandt kolonner:", df.columns)
     sys.exit(1)
 
 # ---------- KONVERTER TIL NUMERIC ----------
-for col in ['open', 'high', 'low', 'close', 'volume']:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+for col in ["open", "high", "low", "close", "volume"]:
+    df[col] = pd.to_numeric(df[col], errors="coerce")
 
 # ---------- KONVERTER TIL DATETIME & SÆT SOM INDEX ----------
-df['timestamp'] = pd.to_datetime(df['timestamp'])
-df = df.set_index('timestamp')
+df["timestamp"] = pd.to_datetime(df["timestamp"])
+df = df.set_index("timestamp")
 
 # ---------- KØR FEATURES-PIPELINE ----------
 features_df = add_ta_indicators(df)
@@ -65,9 +67,9 @@ print("NaN per kolonne:\n", features_df.isna().sum())
 print("Inf per kolonne:\n", np.isinf(features_df).sum())
 
 # ---------- PLOT EKSEMPEL ----------
-if 'ema_21' in features_df.columns and 'ema_200' in features_df.columns:
-    features_df[['close', 'ema_21', 'ema_200']].plot(figsize=(12,5))
-    plt.title('Pris med EMA21 og EMA200')
+if "ema_21" in features_df.columns and "ema_200" in features_df.columns:
+    features_df[["close", "ema_21", "ema_200"]].plot(figsize=(12, 5))
+    plt.title("Pris med EMA21 og EMA200")
     plt.show()
 else:
     print("En eller flere EMA-kolonner mangler til plot.")

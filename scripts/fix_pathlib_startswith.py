@@ -4,6 +4,7 @@ import re
 # Typiske variable-navne for kolonner – udvid listen hvis du bruger flere aliaser
 COLUMN_VAR_NAMES = ["col", "c", "column"]
 
+
 def fix_pathlib_startswith_in_file(filepath):
     with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
@@ -33,13 +34,16 @@ def fix_pathlib_startswith_in_file(filepath):
                     changed = True
 
         if original_line != line:
-            print(f"[RETTER] {filepath} ({i+1}): {original_line.strip()} --> {line.strip()}")
+            print(
+                f"[RETTER] {filepath} ({i+1}): {original_line.strip()} --> {line.strip()}"
+            )
         new_lines.append(line)
 
     if changed:
         with open(filepath, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
     return changed
+
 
 def main():
     n_fixed = 0
@@ -52,6 +56,7 @@ def main():
                 if fix_pathlib_startswith_in_file(fpath):
                     n_fixed += 1
     print(f"\n[FÆRDIG] Antal filer rettet: {n_fixed}")
+
 
 if __name__ == "__main__":
     main()

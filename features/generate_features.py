@@ -8,21 +8,39 @@ import sys
 from utils.project_path import PROJECT_ROOT
 from features.features_pipeline import generate_features, save_features
 
+
 def auto_detect_sep(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         header = f.readline()
         if ";" in header and not "," in header:
             return ";"
         return ","
 
+
 def main():
     parser = argparse.ArgumentParser(description="Generér features fra rå OHLCV-data.")
-    parser.add_argument("--input", type=str, required=True, help="Sti til rå OHLCV-data (CSV)")
-    parser.add_argument("--output", type=str, default=None, help="Sti til output-CSV (fx data/BTCUSDT_1h_features.csv)")
-    parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Symbol (fx BTCUSDT)")
-    parser.add_argument("--timeframe", type=str, default="1h", help="Timeframe (fx 1h, 4h)")
+    parser.add_argument(
+        "--input", type=str, required=True, help="Sti til rå OHLCV-data (CSV)"
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Sti til output-CSV (fx data/BTCUSDT_1h_features.csv)",
+    )
+    parser.add_argument(
+        "--symbol", type=str, default="BTCUSDT", help="Symbol (fx BTCUSDT)"
+    )
+    parser.add_argument(
+        "--timeframe", type=str, default="1h", help="Timeframe (fx 1h, 4h)"
+    )
     parser.add_argument("--version", type=str, default="v1", help="Feature-version")
-    parser.add_argument("--sep", type=str, default=None, help="Separator i input-CSV (auto-detect hvis tom)")
+    parser.add_argument(
+        "--sep",
+        type=str,
+        default=None,
+        help="Separator i input-CSV (auto-detect hvis tom)",
+    )
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
@@ -59,7 +77,10 @@ def main():
 
     # Tjek at timestamp nu findes – ellers vis kolonnerne!
     if "timestamp" not in raw_df.columns:
-        print("❌ FEJL: Ingen 'timestamp' kolonne! Kolonner i rådata:", list(raw_df.columns))
+        print(
+            "❌ FEJL: Ingen 'timestamp' kolonne! Kolonner i rådata:",
+            list(raw_df.columns),
+        )
         sys.exit(1)
 
     print("Rækker før generate_features():", len(raw_df))
@@ -74,7 +95,9 @@ def main():
 
     print("Rækker efter generate_features():", len(features))
     if len(features) == 0:
-        print("❌ FEJL: Ingen rækker efter feature-pipeline! Tjek input og rolling windows.")
+        print(
+            "❌ FEJL: Ingen rækker efter feature-pipeline! Tjek input og rolling windows."
+        )
         print("Eksempel på input-data til pipeline:\n", raw_df.head())
         sys.exit(1)
     else:
@@ -85,6 +108,7 @@ def main():
         else:
             path = save_features(features, args.symbol, args.timeframe, args.version)
             print(f"✅ Features gemt: {path}")
+
 
 if __name__ == "__main__":
     main()

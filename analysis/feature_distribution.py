@@ -21,12 +21,24 @@ import seaborn as sns
 
 from utils.project_path import PROJECT_ROOT
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Feature-distributionsanalyse for trading/ML datasets.")
+    parser = argparse.ArgumentParser(
+        description="Feature-distributionsanalyse for trading/ML datasets."
+    )
     parser.add_argument("--input", type=str, required=True, help="Sti til feature-CSV.")
-    parser.add_argument("--features", type=str, default=None, help="Kommasepareret liste af features (default: alle numeriske)")
-    parser.add_argument("--bins", type=int, default=50, help="Antal bins i histogrammer (default: 50)")
-    parser.add_argument("--out_dir", type=str, default=None, help="Output-mappe for plots")
+    parser.add_argument(
+        "--features",
+        type=str,
+        default=None,
+        help="Kommasepareret liste af features (default: alle numeriske)",
+    )
+    parser.add_argument(
+        "--bins", type=int, default=50, help="Antal bins i histogrammer (default: 50)"
+    )
+    parser.add_argument(
+        "--out_dir", type=str, default=None, help="Output-mappe for plots"
+    )
     args = parser.parse_args()
 
     df = pd.read_csv(args.input)
@@ -35,7 +47,11 @@ def main():
         features = [col.strip() for col in args.features.split(",")]
     else:
         # Default: alle numeriske kolonner (ekskl. timestamp og targets)
-        features = [c for c in df.select_dtypes(include='number').columns if not str(c).startswith("target") and c != "timestamp"]
+        features = [
+            c
+            for c in df.select_dtypes(include="number").columns
+            if not str(c).startswith("target") and c != "timestamp"
+        ]
 
     if len(features) == 0:
         print("[FEJL] Ingen features fundet.")
@@ -48,7 +64,13 @@ def main():
     print(f"[INFO] Plotter og gemmer distributioner for {len(features)} features:")
     for feature in features:
         plt.figure(figsize=(10, 4))
-        sns.histplot(df[feature].dropna(), bins=args.bins, kde=True, color='dodgerblue', edgecolor='black')
+        sns.histplot(
+            df[feature].dropna(),
+            bins=args.bins,
+            kde=True,
+            color="dodgerblue",
+            edgecolor="black",
+        )
         plt.title(f"Distribution – {feature}")
         plt.xlabel(feature)
         plt.ylabel("Antal")
@@ -72,6 +94,7 @@ def main():
         print(f"[OK] Pairplot gemt i: {pairplot_path}")
     else:
         print("[INFO] Skipper pairplot (for mange features).")
+
 
 if __name__ == "__main__":
     main()

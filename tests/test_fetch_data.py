@@ -1,6 +1,7 @@
 import sys
 import os
 from pathlib import Path
+
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
@@ -10,6 +11,7 @@ import pandas as pd
 from unittest.mock import patch, MagicMock
 
 from data.fetch_data import hent_binance_data
+
 
 class TestFetchData(unittest.TestCase):
     @patch("data.fetch_data.ccxt.binance")
@@ -38,6 +40,7 @@ class TestFetchData(unittest.TestCase):
 
         # Oprydning
         os.remove(testfile)
+
 
 if __name__ == "__main__":
     unittest.main()

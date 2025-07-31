@@ -3,6 +3,8 @@ from datetime import datetime
 import pandas as pd
 
 from utils.project_path import PROJECT_ROOT
+
+
 def update_bot_status(
     md_path,
     run_id,
@@ -10,10 +12,12 @@ def update_bot_status(
     version="v1.0.0",
     notes="",
     plot_path=None,
-    trade_journal_path=None
+    trade_journal_path=None,
 ):
     if not os.path.exists(portfolio_metrics_path):
-        print(f"[WARN] Filen {portfolio_metrics_path} findes ikke, springer BotStatus.md over.")
+        print(
+            f"[WARN] Filen {portfolio_metrics_path} findes ikke, springer BotStatus.md over."
+        )
         return
     with open(portfolio_metrics_path, "r", encoding="utf-8") as f:
         metrics_csv = f.read()
@@ -26,14 +30,18 @@ def update_bot_status(
         f.write(md_content)
     print(f"[INFO] BotStatus.md opdateret: {md_path}")
 
+
 def log_to_changelog(run_id, version, notes, changelog_path="CHANGELOG.md"):
     entry = f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M')} - v{version} - {run_id}\n- {notes}\n"
     with open(changelog_path, "a", encoding="utf-8") as f:
         f.write(entry)
     print(f"[INFO] CHANGELOG.md opdateret: {changelog_path}")
 
+
 # AUTO PATH CONVERTED
-def print_status(portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"):
+def print_status(
+    portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv",
+):
     if not os.path.exists(portfolio_metrics_path):
         print("Ingen portefølje-metrics fundet.")
         return
@@ -41,7 +49,10 @@ def print_status(portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_me
     print("=== Portfolio Status ===")
     print(df.to_markdown(index=False))
 
-def build_telegram_summary(run_id, portfolio_metrics_path, version="v1.0.0", extra_msg=None):
+
+def build_telegram_summary(
+    run_id, portfolio_metrics_path, version="v1.0.0", extra_msg=None
+):
     if not os.path.exists(portfolio_metrics_path):
         return "Ingen status tilgængelig."
     df = pd.read_csv(portfolio_metrics_path)
@@ -54,6 +65,7 @@ def build_telegram_summary(run_id, portfolio_metrics_path, version="v1.0.0", ext
     msg += "\nSe mere i BotStatus.md og outputs/"
     return msg
 
+
 def backup_file(file_path, backup_dir="backups"):
     if os.path.exists(file_path):
         os.makedirs(backup_dir, exist_ok=True)
@@ -64,12 +76,17 @@ def backup_file(file_path, backup_dir="backups"):
             dst.write(src.read())
         print(f"[INFO] Backup oprettet: {backup_path}")
 
+
 def export_trade_journal(trades_df, output_path):
     trades_df.to_csv(output_path, index=False, encoding="utf-8")
     print(f"[INFO] Trade journal eksporteret: {output_path}")
 
+
 # AUTO PATH CONVERTED
-def log_performance_to_history(portfolio_metrics_path, history_path=PROJECT_ROOT / "outputs" / "performance_history.csv"):
+def log_performance_to_history(
+    portfolio_metrics_path,
+    history_path=PROJECT_ROOT / "outputs" / "performance_history.csv",
+):
     """
     Logger altid til performance_history.csv – opretter fil med default-header hvis der ikke er data.
     """
@@ -77,24 +94,34 @@ def log_performance_to_history(portfolio_metrics_path, history_path=PROJECT_ROOT
 
     # Hvis der ikke findes portfolio_metrics_path, lav tom default
     if not os.path.exists(portfolio_metrics_path):
-        print(f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv")
+        print(
+            f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv"
+        )
         cols = ["timestamp", "Navn", "Balance"]
-        df = pd.DataFrame([{
-            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            "Navn": "Ingen data",
-            "Balance": 0
-        }])
+        df = pd.DataFrame(
+            [
+                {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Navn": "Ingen data",
+                    "Balance": 0,
+                }
+            ]
+        )
     else:
         df = pd.read_csv(portfolio_metrics_path)
         # Sikrer at der er timestamp-kolonne
-        df['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Hvis df er tom eller mangler relevante kolonner
         if df.empty or not all(c in df.columns for c in ["Navn", "Balance"]):
-            df = pd.DataFrame([{
-                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                "Navn": "Ingen data",
-                "Balance": 0
-            }])
+            df = pd.DataFrame(
+                [
+                    {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Navn": "Ingen data",
+                        "Balance": 0,
+                    }
+                ]
+            )
 
     # Tilføj til historik, eller opret ny fil med header
     if os.path.exists(history_path):

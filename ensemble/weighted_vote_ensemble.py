@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def weighted_vote_ensemble(*signals_list, weights=None, threshold=0.5):
     """
     Ensemble-signal baseret på vægtet sum af valgfrit antal strategier/signaler.
@@ -24,16 +25,20 @@ def weighted_vote_ensemble(*signals_list, weights=None, threshold=0.5):
     else:
         weights = np.asarray(weights, dtype=float)
         if len(weights) != n_strat:
-            raise ValueError(f"Antal weights ({len(weights)}) matcher ikke antal signal-lister ({n_strat})")
+            raise ValueError(
+                f"Antal weights ({len(weights)}) matcher ikke antal signal-lister ({n_strat})"
+            )
 
     # Stack signals (shape: (n_strat, n))
     signals = np.vstack(arrs)
     # Vægtet sum pr. bar (axis=0)
     weighted_sum = np.sum(signals * weights.reshape(-1, 1), axis=0)
     # Voting logik
-    ensemble_signal = np.where(weighted_sum > threshold, 1,
-                        np.where(weighted_sum < -threshold, -1, 0)).astype(np.int8)
+    ensemble_signal = np.where(
+        weighted_sum > threshold, 1, np.where(weighted_sum < -threshold, -1, 0)
+    ).astype(np.int8)
     return ensemble_signal
+
 
 # --- Hurtigtest direkte fra terminal ---
 if __name__ == "__main__":
@@ -41,7 +46,13 @@ if __name__ == "__main__":
     rsi = [1, 0, -1, 0, 1]
     macd = [0, 0, 1, -1, -1]
     print("Default weights:", weighted_vote_ensemble(ml, rsi, macd))
-    print("Custom weights:", weighted_vote_ensemble(ml, rsi, macd, weights=[2, 1, 1], threshold=1.0))
+    print(
+        "Custom weights:",
+        weighted_vote_ensemble(ml, rsi, macd, weights=[2, 1, 1], threshold=1.0),
+    )
     # Test med fire strategier
     ema = [1, 1, 0, -1, -1]
-    print("Fire strategier:", weighted_vote_ensemble(ml, rsi, macd, ema, weights=[2, 1, 1, 1]))
+    print(
+        "Fire strategier:",
+        weighted_vote_ensemble(ml, rsi, macd, ema, weights=[2, 1, 1, 1]),
+    )

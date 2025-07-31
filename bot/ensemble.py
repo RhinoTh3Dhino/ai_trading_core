@@ -1,5 +1,6 @@
 # bot/ensemble.py
 
+
 def ensemble_predict(predictions):
     """
     Returnerer majoritetssignalet fra en liste af forudsigelser.
@@ -25,6 +26,7 @@ def ensemble_predict(predictions):
     # Hvis tie (fx [1, -1] eller [1, 0, -1]), returnér 0 (HOLD)
     return 0
 
+
 # (Valgfrit) Udvid med vægtet voting – eksempel:
 def weighted_ensemble_predict(predictions, weights):
     """
@@ -44,13 +46,14 @@ def weighted_ensemble_predict(predictions, weights):
         return majorities[0]
     return 0
 
+
 # Eksempel på brug
 if __name__ == "__main__":
-    print(ensemble_predict([1, 1, 0, 1, 0]))     # -> 1
-    print(ensemble_predict([0, 0, 1, -1, 0]))    # -> 0
+    print(ensemble_predict([1, 1, 0, 1, 0]))  # -> 1
+    print(ensemble_predict([0, 0, 1, -1, 0]))  # -> 0
     print(ensemble_predict([-1, -1, 0, -1, 1]))  # -> -1
-    print(ensemble_predict([1, -1, 1, -1]))      # -> 0 (tie)
-    print(ensemble_predict([]))                  # -> 0 (empty)
+    print(ensemble_predict([1, -1, 1, -1]))  # -> 0 (tie)
+    print(ensemble_predict([]))  # -> 0 (empty)
 
     # Vægtet voting-eksempel
     print(weighted_ensemble_predict([1, -1, 1], [0.7, 0.2, 0.5]))  # -> 1
