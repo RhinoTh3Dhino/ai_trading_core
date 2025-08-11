@@ -6,7 +6,7 @@ env/
 .venv_*/
 venv_*/
 .venv_tf_gpu/
-# (IGNORER ALLE Python virtual environments!)
+# Ignorer ALLE Python virtual environments
 
 # === Backups, logs og cache ===
 backups/
@@ -20,16 +20,16 @@ outputs/
 !outputs/README.md
 !outputs/.gitkeep
 
-# === Feature data og resultater (IGNORER ALT UNDTAGEN TEMPLATES og .md) ===
+# Feature data (tillad kun templates og .md)
 outputs/feature_data/
 !outputs/feature_data/README.md
 !outputs/feature_data/.gitkeep
 
-# === Grafer og billeder (IGNORER ALT, TILLAD .md) ===
+# Grafer og billeder (tillad kun .md)
 graphs/
 !graphs/*.md
 
-# === Data og modeller (IGNORER ALT, TILLAD templates, eval og eksempler) ===
+# === Data og modeller ===
 data/*
 models/*
 !data/*.md
@@ -41,11 +41,13 @@ models/*
 !data/README.md
 !data/.gitkeep
 
-# === TESTDATA: TILLAD test_data/*.csv til CI og tests ===
+# TESTDATA (tillad CSV til CI/tests)
 !test_data/
 !test_data/*.csv
+!data/test_data/
+!data/test_data/*.csv
 
-# === Model- og ML-filer (IGNORER ALT TUNGE/MIDLERITIDIGE) ===
+# === Model- og ML-filer ===
 *.h5
 *.keras
 *.pth
@@ -54,7 +56,7 @@ models/*
 *.npz
 *.joblib
 
-# === Trade journals og store output-filer ===
+# === Store outputfiler / Trade journals ===
 *.xlsx
 *.xls
 *.parquet
@@ -68,7 +70,7 @@ secrets/
 config/*.json
 config/client_secret_*.json
 
-# === MLflow, TensorBoard og eksperiment artefakter ===
+# === MLflow, TensorBoard og eksperimentartefakter ===
 mlruns/
 mlruns.*
 runs/
@@ -114,17 +116,21 @@ checkpoints/
 *.csv
 !data/model_eval.csv
 !data/*.example
-!test_data/
 !test_data/*.csv
-!data/test_data/
 !data/test_data/*.csv
 
-# === Tuning og Optuna logs/results (IGNORER ALT UNDTAGEN TEMPLATES OG .md) ===
+# === Tuning og Optuna logs/results ===
 tuning/*.txt
 !tuning/README.md
 !tuning/.gitkeep
 
-# === Tillad specifikke templates/guides (hvis nødvendigt) ===
+# === Coverage og pytest-cache ===
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# === Tillad altid Markdown ===
 !*.md
 
 # === Mac & Linux systemfiler ===
@@ -141,13 +147,7 @@ desktop.ini
 # === Pyright type-checking artefakter ===
 typings/
 
-# === Diverse midlertidige, cache og ekstra eksperiment-artefakter ===
+# === Diverse midlertidige og eksperiment-artefakter ===
 *.tmp
 *.temp
-.cache/
-.cache/*
 .experiment/
-.DS_Store
-*.bak
-*.swp
-*.swo
