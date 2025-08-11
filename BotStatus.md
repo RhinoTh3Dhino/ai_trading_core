@@ -1,9 +1,9 @@
 # BotStatus
 
-**Seneste kørsel:** 2025-07-31 21:37:55  
+**Seneste kørsel:** 2025-08-11 22:44:20  
 **Status:** Test  
 **Sidste backup:** dummy_path  
 **Fejl:** Ingen  
 
 ---
-2025-07-31 21:37:58 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | VRAM: 0/16375MB | Host: DhinosPc | User: reno_ | Git: a5bf88d | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+2025-08-11 22:44:21 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: fc576ab | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123

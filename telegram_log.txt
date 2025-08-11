@@ -8165,3 +8165,27 @@ n_1: 2831, n_0: 2572 (Test: 5403)
 [2025-07-31 21:37:58] Sender besked: 💓 Botten kører stadig! (21:37:58)
 [2025-07-31 21:37:58] [TESTMODE] Besked ikke sendt – Telegram inaktiv
 [2025-07-31 21:37:58] Heartbeat sendt.
+[2025-08-11 22:14:27] Sender besked: Bot-status:
+2025-08-11 22:14:27 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: fc576ab | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-11 22:14:28] Besked sendt OK.
+[2025-08-11 22:14:29] Sender besked: Testbesked fra test
+[2025-08-11 22:14:29] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-11 22:14:29] Sender besked: 💓 Botten kører stadig! (22:14:29)
+[2025-08-11 22:14:29] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-11 22:14:29] Heartbeat sendt.
+[2025-08-11 22:40:12] Sender besked: Bot-status:
+2025-08-11 22:40:12 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: fc576ab | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-11 22:40:12] Besked sendt OK.
+[2025-08-11 22:40:12] Sender besked: Testbesked fra test
+[2025-08-11 22:40:12] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-11 22:40:12] Sender besked: 💓 Botten kører stadig! (22:40:12)
+[2025-08-11 22:40:12] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-11 22:40:12] Heartbeat sendt.
+[2025-08-11 22:44:21] Sender besked: Bot-status:
+2025-08-11 22:44:21 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: fc576ab | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-11 22:44:21] Besked sendt OK.
+[2025-08-11 22:44:21] Sender besked: Testbesked fra test
+[2025-08-11 22:44:21] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-11 22:44:21] Sender besked: 💓 Botten kører stadig! (22:44:21)
+[2025-08-11 22:44:21] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-11 22:44:21] Heartbeat sendt.

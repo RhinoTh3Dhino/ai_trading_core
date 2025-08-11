@@ -1,5 +1,9 @@
 import pandas as pd
 import pandas_ta as ta
+import numpy as np
+
+# Sikrer kompatibilitet med nyere NumPy-versioner
+npNaN = np.nan
 
 
 def add_ta_indicators(df: pd.DataFrame) -> pd.DataFrame:
@@ -40,16 +44,14 @@ def add_ta_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df["adx_14"] = ta.adx(df["high"], df["low"], df["close"], length=14)["ADX_14"]
 
     # Z-score
-    df["zscore_20"] = (df["close"] - df["close"].rolling(20).mean()) / df[
-        "close"
-    ].rolling(20).std()
+    df["zscore_20"] = (df["close"] - df["close"].rolling(20).mean()) / df["close"].rolling(20).std()
 
     # Supertrend (hvis du har pandas_ta >= 0.3.14)
     try:
         st = ta.supertrend(df["high"], df["low"], df["close"])
         df["supertrend"] = st["SUPERT_7_3.0"]
     except Exception:
-        pass
+        df["supertrend"] = npNaN
 
     # Volume spike
     df["volume_spike"] = df["volume"] > df["volume"].rolling(20).mean() * 1.5
