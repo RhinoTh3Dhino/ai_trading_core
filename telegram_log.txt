@@ -8189,3 +8189,75 @@ n_1: 2831, n_0: 2572 (Test: 5403)
 [2025-08-11 22:44:21] Sender besked: 💓 Botten kører stadig! (22:44:21)
 [2025-08-11 22:44:21] [TESTMODE] Besked ikke sendt – Telegram inaktiv
 [2025-08-11 22:44:21] Heartbeat sendt.
+[2025-08-12 21:04:47] Sender besked: Bot-status:
+2025-08-12 21:04:47 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-12 21:04:47] Besked sendt OK.
+[2025-08-12 21:04:47] Sender besked: Testbesked fra test
+[2025-08-12 21:04:47] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:04:47] Sender besked: 💓 Botten kører stadig! (21:04:47)
+[2025-08-12 21:04:47] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:04:47] Heartbeat sendt.
+[2025-08-12 21:31:16] Sender besked: Bot-status:
+2025-08-12 21:31:16 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-12 21:31:17] Besked sendt OK.
+[2025-08-12 21:31:17] Sender besked: Testbesked fra test
+[2025-08-12 21:31:17] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:31:17] Sender besked: 💓 Botten kører stadig! (21:31:17)
+[2025-08-12 21:31:17] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:31:17] Heartbeat sendt.
+[2025-08-12 21:48:44] Sender besked: Bot-status:
+2025-08-12 21:48:44 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-12 21:48:44] Besked sendt OK.
+[2025-08-12 21:48:45] Sender besked: Testbesked fra test
+[2025-08-12 21:48:45] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:48:45] Sender besked: 💓 Botten kører stadig! (21:48:45)
+[2025-08-12 21:48:45] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:48:45] Heartbeat sendt.
+[2025-08-12 21:54:56] Sender besked: Bot-status:
+2025-08-12 21:54:56 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-12 21:54:57] Besked sendt OK.
+[2025-08-12 21:54:57] Sender besked: Testbesked fra test
+[2025-08-12 21:54:57] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:54:57] Sender besked: 💓 Botten kører stadig! (21:54:57)
+[2025-08-12 21:54:57] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-12 21:54:57] Heartbeat sendt.
+[2025-08-17 21:42:42] Sender besked: Bot-status:
+2025-08-17 21:42:42 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-17 21:42:42] Besked sendt OK.
+[2025-08-17 21:42:42] Sender besked: Testbesked fra test
+[2025-08-17 21:42:42] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 21:42:42] Sender besked: 💓 Botten kører stadig! (21:42:42)
+[2025-08-17 21:42:42] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 21:42:42] Heartbeat sendt.
+[2025-08-17 21:49:14] Sender besked: Bot-status:
+2025-08-17 21:49:14 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-17 21:49:14] Besked sendt OK.
+[2025-08-17 21:49:15] Sender besked: Testbesked fra test
+[2025-08-17 21:49:15] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 21:49:15] Sender besked: 💓 Botten kører stadig! (21:49:15)
+[2025-08-17 21:49:15] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 21:49:15] Heartbeat sendt.
+[2025-08-17 22:22:08] Sender besked: Bot-status:
+2025-08-17 22:22:08 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-17 22:22:08] Besked sendt OK.
+[2025-08-17 22:22:08] Sender besked: Testbesked fra test
+[2025-08-17 22:22:08] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 22:22:08] Sender besked: 💓 Botten kører stadig! (22:22:08)
+[2025-08-17 22:22:08] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 22:22:08] Heartbeat sendt.
+[2025-08-17 22:51:02] Sender besked: Bot-status:
+2025-08-17 22:51:02 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-17 22:51:02] Besked sendt OK.
+[2025-08-17 22:51:03] Sender besked: Testbesked fra test
+[2025-08-17 22:51:03] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 22:51:03] Sender besked: 💓 Botten kører stadig! (22:51:03)
+[2025-08-17 22:51:03] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 22:51:03] Heartbeat sendt.
+[2025-08-17 22:56:54] Sender besked: Bot-status:
+2025-08-17 22:56:54 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 93734f6 | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-17 22:56:54] Besked sendt OK.
+[2025-08-17 22:56:54] Sender besked: Testbesked fra test
+[2025-08-17 22:56:54] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 22:56:54] Sender besked: 💓 Botten kører stadig! (22:56:54)
+[2025-08-17 22:56:54] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-17 22:56:54] Heartbeat sendt.

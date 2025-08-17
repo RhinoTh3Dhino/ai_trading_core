@@ -1026,3 +1026,9 @@ Feature names unseen at fit time:
 ## [2025-07-30]
 - Step 5: Automatisk changelog test
 
+
+### 2025-08-12 21:04 - vvTEST - TEST001
+- Første changelog-test.
+
+### 2025-08-12 21:06 - vvTEST - TEST001
+- Første changelog-test.

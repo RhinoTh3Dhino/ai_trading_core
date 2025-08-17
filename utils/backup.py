@@ -9,6 +9,7 @@ def make_backup(
     keep_days=7,
     keep_per_day=10,
     create_dummy_if_empty=True,
+    force_dummy=False,
 ):
     """
     Laver backup af valgte mapper/filer med timestamp i dato-undermappe og sletter gamle backups.
@@ -23,6 +24,10 @@ def make_backup(
             "BotStatus.md",
             "CHANGELOG.md",
         ]
+
+    if keep_days < 0 or keep_per_day < 0:
+        raise ValueError("keep_days og keep_per_day skal være >= 0")
+
     print(f"📦 Forsøger at tage backup af: {backup_folders}")
 
     # Lav undermappe til dagens dato
@@ -40,14 +45,13 @@ def make_backup(
     found_any = False
     for item in backup_folders:
         print(f"🔍 Tjekker om {item} findes: {os.path.exists(item)}")
-        if os.path.exists(item):
+        if os.path.exists(item) and not force_dummy:
             try:
-                # Brug shutil.copytree hvis mappe, ellers copy2 hvis fil
-                dst = os.path.join(backup_path, item)
+                dst = os.path.join(backup_path, os.path.basename(item))
                 if os.path.isdir(item):
                     shutil.copytree(item, dst)
                 else:
-                    shutil.copy2(item, backup_path)
+                    shutil.copy2(item, dst)
                 print(f"✅ Backed up: {item}")
                 found_any = True
             except Exception as e:
@@ -55,14 +59,14 @@ def make_backup(
         else:
             print(f"⚠️ Advarsel: {item} findes ikke og blev ikke backet op.")
 
-    # Hvis ingen filer/mapper blev backet op, lav en dummy-fil (så artifact upload virker)
-    if not found_any and create_dummy_if_empty:
+    # Dummy-fil hvis nødvendigt
+    if (not found_any and create_dummy_if_empty) or force_dummy:
         dummy_path = os.path.join(backup_path, "dummy_backup.txt")
         with open(dummy_path, "w") as f:
             f.write("Ingen af de forventede filer/mapper fandtes - dummy backup.\n")
         print(f"🟡 Oprettede dummy-fil: {dummy_path}")
 
-    # Slet gamle backups pr. dag og gamle dato-mapper
+    # Ryd op i gamle backups
     try:
         cleanup_old_backups(backup_dir, keep_days, keep_per_day)
     except Exception as e:
@@ -74,11 +78,17 @@ def make_backup(
 def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
     """
     Sletter gamle backups:
-    - Gem kun keep_days dage tilbage.
+    - Gem kun keep_days dage tilbage (minimum 1 dag).
     - Gem max keep_per_day backups pr. dag.
+    Returnerer liste over slettede filer/mapper for testformål.
     """
+    deleted_items = []
+
     if not os.path.exists(backup_dir):
-        return
+        return deleted_items
+
+    # Altid behold mindst én dags backups
+    keep_days = max(1, keep_days)
 
     # Ryd op i backups pr. dag
     for datedir in os.listdir(backup_dir):
@@ -90,11 +100,12 @@ def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
                 full_path = os.path.join(day_path, b)
                 try:
                     shutil.rmtree(full_path)
+                    deleted_items.append(full_path)
                     print(f"🗑️ Slettet gammel backup: {full_path}")
                 except Exception as e:
                     print(f"❌ Kunne ikke slette: {full_path}: {e}")
 
-    # Ryd op i dato-mapper (hvis der er mere end keep_days)
+    # Ryd op i dato-mapper, men aldrig den nyeste dag
     days = [
         d for d in os.listdir(backup_dir) if os.path.isdir(os.path.join(backup_dir, d))
     ]
@@ -103,11 +114,18 @@ def cleanup_old_backups(backup_dir, keep_days=7, keep_per_day=10):
         full_path = os.path.join(backup_dir, day_to_remove)
         try:
             shutil.rmtree(full_path)
+            deleted_items.append(full_path)
             print(f"🗑️ Slettet gammel backup-dag: {full_path}")
         except Exception as e:
             print(f"❌ Kunne ikke slette dag: {full_path}: {e}")
 
+    return deleted_items
 
-# Test direkte hvis filen køres solo
+
 if __name__ == "__main__":
-    make_backup()
+    # CLI/direkte test
+    try:
+        path = make_backup(force_dummy=True)
+        print(f"Test-backup oprettet i: {path}")
+    except Exception as e:
+        print(f"Fejl ved test-backup: {e}")

@@ -1,145 +1,283 @@
-# tests/test_features_pipeline.py
+"""
+tests/test_features_pipeline.py
 
-from utils.project_path import PROJECT_ROOT
-from pathlib import Path
-import os
+Dækker features/features_pipeline.py med dummy DataFrames (hurtige, deterministic).
+Fokus: branch coverage + kerne-API (generate_features, save_features, load_features).
+"""
+
 import sys
-import argparse
-import pandas as pd
+from pathlib import Path
 from datetime import datetime
 
-print("=== TEST: START af NY version af test_features_pipeline.py ===")
+import numpy as np
+import pandas as pd
+import pytest
 
-# Sørg for at working dir er projektroden (så relative paths virker!)
-os.chdir(str(PROJECT_ROOT))
+# Sørg for at projektroden er i sys.path
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(str(PROJECT_ROOT)))
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-# Import features pipeline
-try:
-    from features.features_pipeline import (
-        generate_features,
-        save_features,
-        load_features,
-    )
-except Exception as e:
-    print("[FEJL] Kunne ikke importere features_pipeline:", e)
-    sys.exit(1)
-
-# Path-objekter overalt!
-DEFAULT_DATA_PATH = Path(PROJECT_ROOT) / "data" / "test_data" / "BTCUSDT_1h_test.csv"
-DEFAULT_SYMBOL = "BTC"
-DEFAULT_TIMEFRAME = "1h"
-DEFAULT_VERSION = "test"
+from features.features_pipeline import (
+    generate_features,
+    save_features,
+    load_features,
+)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Test features pipeline")
-    parser.add_argument(
-        "--data_path",
-        type=str,
-        default=str(DEFAULT_DATA_PATH),
-        help="Path til testdata (CSV)",
-    )
-    parser.add_argument(
-        "--symbol", type=str, default=DEFAULT_SYMBOL, help="Symbol, fx BTC"
-    )
-    parser.add_argument(
-        "--timeframe", type=str, default=DEFAULT_TIMEFRAME, help="Timeframe, fx 1h"
-    )
-    parser.add_argument(
-        "--version", type=str, default=DEFAULT_VERSION, help="Version-label, fx test"
-    )
-    return parser.parse_args()
-
-
-def make_version_with_timestamp(version):
+# ---------------------------------------------------------------------
+# Hjælpere
+# ---------------------------------------------------------------------
+def make_version_with_timestamp(version: str) -> str:
     ts = datetime.now().strftime("%Y%m%d")
     return f"{version}_{ts}"
 
 
-def ensure_dir_exists(path):
-    Path(path).mkdir(parents=True, exist_ok=True)
+def ensure_dir_exists(path: Path):
+    path.mkdir(parents=True, exist_ok=True)
 
 
-class DummyArgs:
-    data_path = str(DEFAULT_DATA_PATH)
-    symbol = DEFAULT_SYMBOL
-    timeframe = DEFAULT_TIMEFRAME
-    version = DEFAULT_VERSION
+def make_dummy_df(rows: int = 60) -> pd.DataFrame:
+    """Opret et deterministisk dummy-DF med OHLCV + timestamp."""
+    return pd.DataFrame({
+        "timestamp": pd.date_range("2024-01-01", periods=rows, freq="h"),
+        "open": np.linspace(100, 100 + rows - 1, rows),
+        "high": np.linspace(101, 101 + rows - 1, rows),
+        "low": np.linspace(99, 99 + rows - 1, rows),
+        "close": np.linspace(100, 100 + rows - 1, rows),
+        "volume": np.arange(1000, 1000 + rows),
+    })
 
 
-def test_generate_features_pipeline():
-    args = DummyArgs()
-    print(f"[INFO] Kører med data_path={args.data_path}")
+# ---------------------------------------------------------------------
+# Kerne-test: pipeline + save/load (uden patterns for determinisme)
+# ---------------------------------------------------------------------
+def test_generate_features_pipeline_and_save_load(tmp_path, monkeypatch):
+    """
+    End-to-end: DF -> generate_features -> save_features -> load_features.
+    Vi deaktiverer patterns for at undgå eksterne afhængigheder i kerne-testen.
+    """
+    raw_df = make_dummy_df(60)
+    assert len(raw_df) > 0
 
-    # Opret output-folder med Path (robust til både str og Path)
-    ensure_dir_exists(Path(PROJECT_ROOT) / "outputs" / "feature_data")
-
-    assert Path(args.data_path).exists(), f"Testdata mangler: {args.data_path}"
-    raw_df = pd.read_csv(args.data_path, sep=";")
-    assert len(raw_df) > 0, "Rådata er tom"
-
-    # Robust kolonne-mapping
-    if "datetime" in raw_df.columns and "timestamp" not in raw_df.columns:
-        raw_df.rename(columns={"datetime": "timestamp"}, inplace=True)
-    if "Timestamp" in raw_df.columns and "timestamp" not in raw_df.columns:
-        raw_df.rename(columns={"Timestamp": "timestamp"}, inplace=True)
-
-    for col in ["open", "high", "low", "close", "volume"]:
-        if col in raw_df.columns:
-            raw_df[col] = (
-                raw_df[col].astype(str).str.replace(",", ".", regex=False).astype(float)
-            )
-
-    min_cols = ["timestamp", "open", "high", "low", "close", "volume"]
-    for col in min_cols:
-        assert col in raw_df.columns, f"Kolonne mangler: {col}"
-
-    features_df = generate_features(raw_df)
+    # Kør featuregenerering – patterns disabled for deterministisk output
+    features_df = generate_features(raw_df, feature_config={
+        "patterns_enabled": False,
+        "coerce_timestamps": True,
+        "dropna": True,
+        "target_mode": "direction",
+        "horizon": 1,
+    })
     assert not features_df.isnull().values.any(), "Features indeholder NaN!"
 
-    expected_cols = [
-        "rsi_14",
-        "rsi_28",
-        "macd",
-        "macd_signal",
-        "ema_9",
-        "ema_21",
-        "ema_50",
-        "atr_14",
-        "vwap",
-        "bb_upper",
-        "bb_lower",
-        "return",
-        "pv_ratio",
-        "volume_spike",
-        "regime",
+    expected_cols_core = [
+        "rsi_14", "rsi_28",
+        "macd", "macd_signal",
+        "ema_9", "ema_21", "ema_50",
+        "atr_14", "vwap",
+        "bb_upper", "bb_lower",
+        "return", "pv_ratio", "regime"
     ]
-    for col in expected_cols:
+    for col in expected_cols_core:
         assert col in features_df.columns, f"Feature mangler: {col}"
 
+    # Hvis target findes, må den ikke have NaN
     if "target" in features_df.columns:
-        assert not features_df["target"].isnull().any(), "Target indeholder NaN!"
-    else:
-        print("[INFO] Ingen target-kolonne fundet (ikke nødvendigt for denne test)")
+        assert not features_df["target"].isnull().any()
 
-    version_ts = make_version_with_timestamp(args.version)
-    path = save_features(features_df, args.symbol, args.timeframe, version_ts)
-    assert Path(path).exists(), f"Featurefil blev ikke gemt: {path}"
+    # Gem i projektets outputs/feature_data (samme sti som load_features forventer)
+    ensure_dir_exists(PROJECT_ROOT / "outputs" / "feature_data")
+    version_ts = make_version_with_timestamp("test")
+    feature_path = save_features(features_df, "BTC", "1h", version_ts)
+    assert Path(feature_path).exists(), f"Featurefil blev ikke gemt: {feature_path}"
 
-    loaded_df = load_features(args.symbol, args.timeframe, version_prefix=version_ts)
+    # Load og valider (samme kolonner som før)
+    loaded_df = load_features("BTC", "1h", version_prefix=version_ts)
     assert len(loaded_df) > 0, "Indlæst features er tom"
-    for col in expected_cols:
-        assert col in loaded_df.columns, f"[LOAD] Feature mangler i indlæst fil: {col}"
+    for col in expected_cols_core:
+        assert col in loaded_df.columns, f"[LOAD] Feature mangler: {col}"
 
-    print("✅ Alle feature-tests bestået!")
+
+# ---------------------------------------------------------------------
+# Kolonnekrav og fejlscenarier
+# ---------------------------------------------------------------------
+def test_generate_features_with_missing_columns_raises():
+    """Tester at generate_features kaster fejl ved manglende kolonner (fx volume)."""
+    df = pd.DataFrame({
+        "timestamp": pd.date_range("2024-01-01", periods=5, freq="h"),
+        "open": range(100, 105),
+        "high": range(101, 106),
+        "low": range(99, 104),
+        "close": range(100, 105),
+        # volume mangler med vilje
+    })
+
+    with pytest.raises(Exception) as ei:
+        _ = generate_features(df)
+    assert "Mangler kolonner" in str(ei.value) or "Mangler" in str(ei.value)
+
+
+def test_generate_features_empty_df_raises():
+    df = pd.DataFrame()
+    with pytest.raises(ValueError):
+        generate_features(df)
+
+
+# ---------------------------------------------------------------------
+# Timestamp mapping & coercion
+# ---------------------------------------------------------------------
+def test_timestamp_mapping_accepts_datetime_aliases():
+    df = make_dummy_df(10).rename(columns={"timestamp": "datetime"})
+    out = generate_features(df, feature_config={"patterns_enabled": False})
+    assert "ema_9" in out.columns
+
+
+def test_timestamp_invalid_values_raise_even_with_coerce():
+    df = make_dummy_df(5)
+    df.loc[2, "timestamp"] = "INVALID"
+    with pytest.raises(ValueError):
+        generate_features(df, feature_config={"coerce_timestamps": True, "patterns_enabled": False})
+
+
+# ---------------------------------------------------------------------
+# Include/Exclude + dropna + normalize
+# ---------------------------------------------------------------------
+def test_include_exclude_and_keep_labels():
+    df = make_dummy_df(30)
+    out = generate_features(df, feature_config={
+        "patterns_enabled": False,
+        "include": ["ema_9", "ema_21", "pv_ratio", "non_existing"],
+        "exclude": ["pv_ratio"],  # skal fjernes igen
+        "target_mode": "direction",
+        "dropna": True,
+    })
+    # Kun ema_9, ema_21 (og target/regime hvis de findes)
+    for must in ["ema_9", "ema_21"]:
+        assert must in out.columns
+    assert "pv_ratio" not in out.columns
+    # target/regime bør bevares hvis de eksisterer
+    assert "regime" in out.columns
+    # target er kun til stede hvis ikke tidligere sat og mode != none
+    # (her er den sat af pipelinen i direction-mode)
+    assert "target" in out.columns
+
+
+def test_dropna_removes_rows_when_nan_present():
+    df = make_dummy_df(10)
+    df.loc[0, "close"] = np.nan  # fremprovokér NaN i features
+    out = generate_features(df, feature_config={"patterns_enabled": False, "dropna": True})
+    assert len(out) < len(df), "dropna=True burde reducere antal rækker ved NaN"
+
+
+def test_normalize_scales_numeric_0_1_and_skips_labels():
+    df = make_dummy_df(25)
+    out = generate_features(df, feature_config={
+        "patterns_enabled": False,
+        "normalize": True,
+        "target_mode": "direction",
+    })
+    # target og regime må ikke normaliseres
+    assert set(["target", "regime"]).issubset(out.columns)
+    # Tjek at nogle numeriske kolonner er inden for [0,1]
+    for col in ["ema_9", "ema_21", "ema_50", "vwap", "pv_ratio"]:
+        assert col in out.columns
+        colmin, colmax = out[col].min(), out[col].max()
+        assert 0.0 - 1e-9 <= colmin <= 1.0 + 1e-9
+        assert 0.0 - 1e-9 <= colmax <= 1.0 + 1e-9
+
+
+# ---------------------------------------------------------------------
+# Target modes
+# ---------------------------------------------------------------------
+@pytest.mark.parametrize("mode", ["direction", "regression", "none"])
+def test_target_modes(mode):
+    df = make_dummy_df(40)
+    out = generate_features(df, feature_config={
+        "patterns_enabled": False,
+        "target_mode": mode,
+        "horizon": 2,
+        "dropna": True,
+    })
+    if mode == "none":
+        # Pipeline sætter ikke target, hvis ikke allerede til stede
+        assert "target" not in out.columns
+    elif mode == "direction":
+        assert "target" in out.columns
+        assert set(out["target"].unique()).issubset({0, 1})
+    else:  # regression
+        assert "target" in out.columns
+        # Ingen NaN efter fillna(0.0)
+        assert not out["target"].isna().any()
+
+
+def test_invalid_target_mode_raises():
+    df = make_dummy_df(20)
+    with pytest.raises(ValueError):
+        generate_features(df, feature_config={"patterns_enabled": False, "target_mode": "weird"})
+
+
+# ---------------------------------------------------------------------
+# Feature match validering + vol_spike rename
+# ---------------------------------------------------------------------
+def test_expected_features_ok_and_fail():
+    df = make_dummy_df(30)
+    out = generate_features(df, feature_config={"patterns_enabled": False})
+    # OK: kræv et subset der eksisterer
+    ok_subset = ["ema_9", "ema_21", "macd"]
+    out2 = generate_features(df, feature_config={
+        "patterns_enabled": False,
+        "expected_features": ok_subset
+    })
+    assert set(ok_subset).issubset(out2.columns)
+
+    # FAIL: kræv en feature der ikke findes
+    with pytest.raises(ValueError):
+        _ = generate_features(df, feature_config={
+            "patterns_enabled": False,
+            "expected_features": ["totally_unknown_feature"]
+        })
+
+
+def test_vol_spike_is_renamed_to_volume_spike_when_present():
+    # Tilføj manuelt 'vol_spike' i input – patterns disabled, så renaming sker kun pga. input
+    df = make_dummy_df(15)
+    df["vol_spike"] = 0
+    out = generate_features(df, feature_config={"patterns_enabled": False})
+    assert "volume_spike" in out.columns
+    assert "vol_spike" not in out.columns
+
+
+# ---------------------------------------------------------------------
+# Valgfri sanity med patterns_enabled=True (ikke-strikt på kolonner)
+# ---------------------------------------------------------------------
+def test_pipeline_with_patterns_enabled_does_not_crash(capsys):
+    df = make_dummy_df(30)
+    _ = generate_features(df, feature_config={
+        "patterns_enabled": True,  # må ikke kaste, selv hvis patterns ikke tilføjer noget
+        "dropna": True
+    })
+    # Hvis add_all_patterns fejler, logger pipelinen en WARN via print – det er ok
+    captured = capsys.readouterr()
+    # ingen stram assert – blot at kørsel når hertil uden exception
+
+
+# ---------------------------------------------------------------------
+# Ekstra: Integration via CSV (valgfri, hurtig)
+# ---------------------------------------------------------------------
+def test_generate_features_from_csv_like_flow(tmp_path):
+    """
+    Simuler CSV-flow (uden at bruge semikolon-format) for at sikre
+    at DataFrame-vej virker end-to-end.
+    """
+    data_path = tmp_path / "BTCUSDT_1h_test.csv"
+    raw_df = make_dummy_df(32)
+    raw_df.to_csv(data_path, index=False)
+
+    df_loaded = pd.read_csv(data_path)
+    features_df = generate_features(df_loaded, feature_config={"patterns_enabled": False})
+    assert "ema_9" in features_df.columns
+    assert not features_df.isna().any().any()
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    DummyArgs.data_path = args.data_path
-    DummyArgs.symbol = args.symbol
-    DummyArgs.timeframe = args.timeframe
-    DummyArgs.version = args.version
-    test_generate_features_pipeline()
+    pytest.main([__file__, "-vv", "--cov=features/features_pipeline.py", "--cov-report=term-missing"])

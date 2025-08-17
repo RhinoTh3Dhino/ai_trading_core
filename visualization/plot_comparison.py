@@ -1,6 +1,10 @@
 # visualization/plot_comparison.py
 
 import os
+# Brug Agg backend for at undgå GUI-afhængighed (headless til test/CI)
+import matplotlib
+matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -63,9 +67,9 @@ def plot_comparison(
     if save_path is None:
         os.makedirs("graphs", exist_ok=True)
         import datetime
-
         dt_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         save_path = f"graphs/model_comparison_{dt_str}.png"
+
     plt.savefig(save_path)
     plt.close()
     print(f"[Plot] Model comparison gemt til: {save_path}")
