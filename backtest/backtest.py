@@ -1,13 +1,12 @@
+# backtest/backtest.py
 from utils.project_path import PROJECT_ROOT
 
-# backtest/backtest.py
-
+import os
 import pandas as pd
 import numpy as np
 import datetime
 import subprocess
 import argparse
-
 
 from utils.file_utils import save_with_metadata
 from utils.robust_utils import safe_run
@@ -75,14 +74,27 @@ def walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_tr
 def compute_regime(
     df: pd.DataFrame, ema_col: str = "ema_200", price_col: str = "close"
 ) -> pd.DataFrame:
-    if "regime" in df.columns:
-        return df
-    df["regime"] = np.where(
-        df[price_col] > df[ema_col],
+    """Tilføj/returnér 'regime' kolonne (bull/bear/neutral) med fallback hvis ema_200 mangler."""
+    out = df.copy()
+    if "regime" in out.columns:
+        return out
+
+    local_ema_col = ema_col
+    if local_ema_col not in out.columns:
+        # Fallbacks for robusthed i tests/data, men samme semantik (langt EMA som trendfilter)
+        if "ema_50" in out.columns:
+            local_ema_col = "ema_50"
+        else:
+            # Beregn en glidende EMA(200) hvis intet andet – sikrer stabil regime
+            out[ema_col] = out[price_col].ewm(span=200, adjust=False).mean()
+            local_ema_col = ema_col
+
+    out["regime"] = np.where(
+        out[price_col] > out[local_ema_col],
         "bull",
-        np.where(df[price_col] < df[ema_col], "bear", "neutral"),
+        np.where(out[price_col] < out[local_ema_col], "bear", "neutral"),
     )
-    return df
+    return out
 
 
 def regime_filter(signals, regime_col, active_regimes=["bull"]):
@@ -339,10 +351,9 @@ def run_backtest(
         if col not in balance_df.columns:
             balance_df[col] = None
 
+    # === Dummy-trades til test/debug (robusthed B: genberegn drawdown bagefter) ===
     if FORCE_DUMMY_TRADES and (trades_df.empty or trades_df.shape[0] < 2):
-        print(
-            "‼️ FORCE DEBUG: Ingen rigtige handler fundet – genererer dummy trades for test!"
-        )
+        print("‼️ FORCE DEBUG: Ingen rigtige handler fundet – genererer dummy trades for test!")
         trades_df = pd.DataFrame(
             [
                 {
@@ -396,6 +407,19 @@ def run_backtest(
                 },
             ]
         )
+        # Genberegn drawdown og interpolér ind i trades_df (Løsning B)
+        try:
+            peak = balance_df["balance"].cummax()
+            dd = (balance_df["balance"] - peak) / peak
+            balance_df["drawdown"] = dd * 100
+            trades_df["drawdown"] = np.interp(
+                pd.to_datetime(trades_df["timestamp"]).astype("int64"),
+                pd.to_datetime(balance_df["timestamp"]).astype("int64"),
+                balance_df["drawdown"].values,
+            )
+        except Exception as e:
+            print(f"[WARN] Dummy drawdown-beregning fejlede: {e}")
+
     print("TRADES DF:\n", trades_df)
     print("BALANCE DF:\n", balance_df)
     if len(trades_df) < 2:
@@ -419,7 +443,6 @@ def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
     return out
 
 
-# AUTO PATH CONVERTED
 def save_backtest_results(
     metrics, version="v1", csv_path=PROJECT_ROOT / "data" / "backtest_results.csv"
 ):
@@ -437,25 +460,19 @@ def save_backtest_results(
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # AUTO PATH CONVERTED
     parser.add_argument(
         "--feature_path",
         type=str,
-        default=PROJECT_ROOT
-        / "outputs"
-        / "feature_data/btc_1h_features_v_test_20250610.csv",
+        default=PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv",
     )
-    # AUTO PATH CONVERTED
     parser.add_argument(
         "--results_path",
         type=str,
         default=PROJECT_ROOT / "data" / "backtest_results.csv",
     )
-    # AUTO PATH CONVERTED
     parser.add_argument(
         "--balance_path", type=str, default=PROJECT_ROOT / "data" / "balance.csv"
     )
-    # AUTO PATH CONVERTED
     parser.add_argument(
         "--trades_path", type=str, default=PROJECT_ROOT / "data" / "trades.csv"
     )
@@ -521,7 +538,6 @@ def main():
             ema_slow_grid=[21, 30, 34, 55],
             regime_only=False,
             top_n=10,
-            # AUTO PATH CONVERTED
             log_path=PROJECT_ROOT / "outputs" / "gridsearch/ema_gridsearch_results.csv",
         )
         print(results_df.head(10))
@@ -561,9 +577,7 @@ def main():
             trades_df, balance_df = run_backtest(df_test, signals=signals)
             metrics = calc_backtest_metrics(trades_df, balance_df)
             all_metrics.append(metrics)
-            summary = f"Walk-forward vindue {i+1}:\n" + "\n".join(
-                [f"{k}: {v}" for k, v in metrics.items()]
-            )
+            summary = f"Walk-forward vindue {i+1}:\n" + "\n".join([f"{k}: {v}" for k, v in metrics.items()])
             if trades_df.empty:
                 send_message(f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}")
             else:
@@ -582,6 +596,8 @@ def main():
                 )
         metrics_df = pd.DataFrame(all_metrics)
         try:
+            import matplotlib
+            matplotlib.use("Agg")  # headless i tests/CI
             import matplotlib.pyplot as plt
 
             os.makedirs("outputs", exist_ok=True)
@@ -591,13 +607,9 @@ def main():
             plt.xlabel("Vindue")
             plt.grid(True)
             plt.tight_layout()
-            # AUTO PATH CONVERTED
-            plt.savefig(PROJECT_ROOT / "outputs" / "walkforward_performance.png")
-            # AUTO PATH CONVERTED
-            send_image(
-                PROJECT_ROOT / "outputs" / "walkforward_performance.png",
-                caption="📈 Walk-forward analyse",
-            )
+            out_path = PROJECT_ROOT / "outputs" / "walkforward_performance.png"
+            plt.savefig(out_path)
+            send_image(out_path, caption="📈 Walk-forward analyse")
         except Exception as e:
             print(f"❌ Plot-fejl: {e}")
         return

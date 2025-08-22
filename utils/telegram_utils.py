@@ -51,19 +51,44 @@ def send_message(msg, chat_id=None, parse_mode=None, silent=False):
             print(f"[TESTMODE] Ville have sendt Telegram-besked: {msg}")
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
         return None
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {"chat_id": _chat_id, "text": msg}
+    payload = {"chat_id": _chat_id, "text": msg}
     if parse_mode:
-        data["parse_mode"] = parse_mode
+        payload["parse_mode"] = parse_mode
+
     try:
-        resp = requests.post(url, data=data, timeout=10)
-        if resp.ok:
+        # LØSNING A: brug JSON payload (matcher testen)
+        resp = requests.post(url, json=payload, timeout=10)
+
+        # Robust 'ok'-detektion uden at bruge resp.ok (som ikke findes i mock)
+        resp_json = None
+        try:
+            resp_json = resp.json() if hasattr(resp, "json") else None
+        except Exception:
+            resp_json = None
+
+        if isinstance(resp_json, dict) and "ok" in resp_json:
+            ok_flag = bool(resp_json.get("ok", False))
+        else:
+            status = getattr(resp, "status_code", None)
+            ok_flag = status is not None and 200 <= int(status) < 300
+
+        if ok_flag:
             print("[OK] Telegram-besked sendt!")
             log_telegram("Besked sendt OK.")
         else:
-            print(f"[FEJL] Telegram-fejl: {resp.text}")
-            log_telegram(f"FEJL ved sendMessage: {resp.text}")
-        return resp
+            status = getattr(resp, "status_code", "?")
+            # Tekst: brug json() indhold hvis dict, ellers resp.text
+            text_detail = (
+                str(resp_json) if isinstance(resp_json, dict) else getattr(resp, "text", "")
+            )
+            print(f"[FEJL] Telegram API {status}: {text_detail}")
+            log_telegram(f"FEJL ved sendMessage: {text_detail}")
+
+        # Returnér noget testvenligt: json-dict hvis muligt, ellers True/None
+        return resp_json if isinstance(resp_json, dict) else (True if ok_flag else None)
+
     except Exception as e:
         print(f"[FEJL] Telegram exception: {e}")
         log_telegram(f"EXCEPTION ved sendMessage: {e}")
@@ -90,12 +115,18 @@ def send_image(photo_path, caption="", chat_id=None, silent=False):
         with open(photo_path, "rb") as photo:
             files = {"photo": photo}
             resp = requests.post(url, data=data, files=files, timeout=20)
-        if resp.ok:
+
+        # Brug status_code fremfor resp.ok
+        status = getattr(resp, "status_code", None)
+        ok_flag = status is not None and 200 <= int(status) < 300
+
+        if ok_flag:
             print("[OK] Telegram-billede sendt!")
             log_telegram("Billede sendt OK.")
         else:
-            print(f"[FEJL] Telegram-fejl (billede): {resp.text}")
-            log_telegram(f"FEJL ved sendPhoto: {resp.text}")
+            detail = getattr(resp, "text", "")
+            print(f"[FEJL] Telegram-fejl (billede): {detail}")
+            log_telegram(f"FEJL ved sendPhoto: {detail}")
         return resp
     except Exception as e:
         print(f"[FEJL] Telegram exception (billede): {e}")
@@ -120,12 +151,17 @@ def send_document(doc_path, caption="", chat_id=None, silent=False):
         with open(doc_path, "rb") as doc:
             files = {"document": doc}
             resp = requests.post(url, data=data, files=files, timeout=20)
-        if resp.ok:
+
+        status = getattr(resp, "status_code", None)
+        ok_flag = status is not None and 200 <= int(status) < 300
+
+        if ok_flag:
             print("[OK] Telegram-dokument sendt!")
             log_telegram("Dokument sendt OK.")
         else:
-            print(f"[FEJL] Telegram-fejl (dokument): {resp.text}")
-            log_telegram(f"FEJL ved sendDocument: {resp.text}")
+            detail = getattr(resp, "text", "")
+            print(f"[FEJL] Telegram-fejl (dokument): {detail}")
+            log_telegram(f"FEJL ved sendDocument: {detail}")
         return resp
     except Exception as e:
         print(f"[FEJL] Telegram exception (dokument): {e}")
