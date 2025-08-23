@@ -8512,3 +8512,163 @@ n_1: 2831, n_0: 2572 (Test: 5403)
 [2025-08-22 23:14:30] 🚨 ADVARSEL: Max drawdown under -20%! (-30.00%)
 [2025-08-22 23:14:30] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
 [2025-08-22 23:14:30] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
+[2025-08-23 15:48:38] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-08-23 15:48:38] Besked sendt OK.
+[2025-08-23 15:48:39] Sender besked: Bot-status:
+2025-08-23 15:48:39 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 222986e | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-23 15:48:39] Besked sendt OK.
+[2025-08-23 15:54:30] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-08-23 15:54:31] Besked sendt OK.
+[2025-08-23 15:54:31] Sender besked: Bot-status:
+2025-08-23 15:54:31 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 222986e | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-23 15:54:31] Besked sendt OK.
+[2025-08-23 15:54:32] Sender besked: Testbesked fra test
+[2025-08-23 15:54:32] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 15:54:32] Sender besked: hej verden
+[2025-08-23 15:54:32] Besked sendt OK.
+[2025-08-23 15:54:32] Sender besked: fail please
+[2025-08-23 15:54:32] FEJL ved sendMessage: {'ok': False, 'error': 'oops'}
+[2025-08-23 15:54:32] Sender besked: 💓 Botten kører stadig! (15:54:32)
+[2025-08-23 15:54:32] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 15:54:32] Heartbeat sendt.
+[2025-08-23 15:54:32] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-38\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 15:54:32] Billede sendt OK.
+[2025-08-23 15:54:32] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-38\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 15:54:32] Dokument sendt OK.
+[2025-08-23 15:54:32] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-38\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 15:54:32] FEJL ved sendPhoto: fail
+[2025-08-23 15:54:32] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-38\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 15:54:32] FEJL ved sendDocument: fail
+[2025-08-23 15:54:32] 🚨 ADVARSEL: Max drawdown under -20%! (-30.00%)
+[2025-08-23 15:54:32] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
+[2025-08-23 15:54:32] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
+[2025-08-23 16:14:21] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-08-23 16:14:22] Besked sendt OK.
+[2025-08-23 16:14:22] Sender besked: Bot-status:
+2025-08-23 16:14:22 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 222986e | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-23 16:14:22] Besked sendt OK.
+[2025-08-23 16:14:23] Sender besked: Testbesked fra test
+[2025-08-23 16:14:23] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:14:23] Sender besked: hej verden
+[2025-08-23 16:14:23] Besked sendt OK.
+[2025-08-23 16:14:23] Sender besked: fail please
+[2025-08-23 16:14:23] FEJL ved sendMessage: {'ok': False, 'error': 'oops'}
+[2025-08-23 16:14:23] Sender besked: 💓 Botten kører stadig! (16:14:23)
+[2025-08-23 16:14:23] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:14:23] Heartbeat sendt.
+[2025-08-23 16:14:23] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-40\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:14:23] Billede sendt OK.
+[2025-08-23 16:14:23] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-40\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:14:23] Dokument sendt OK.
+[2025-08-23 16:14:23] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-40\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:14:23] FEJL ved sendPhoto: fail
+[2025-08-23 16:14:23] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-40\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:14:23] FEJL ved sendDocument: fail
+[2025-08-23 16:14:23] 🚨 ADVARSEL: Max drawdown under -20%! (-30.00%)
+[2025-08-23 16:14:23] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
+[2025-08-23 16:14:23] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
+[2025-08-23 16:18:23] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-08-23 16:18:23] Besked sendt OK.
+[2025-08-23 16:18:23] Sender besked: Bot-status:
+2025-08-23 16:18:23 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 222986e | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-23 16:18:24] Besked sendt OK.
+[2025-08-23 16:18:24] Sender besked: Testbesked fra test
+[2025-08-23 16:18:24] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:18:24] Sender besked: hej verden
+[2025-08-23 16:18:24] Besked sendt OK.
+[2025-08-23 16:18:24] Sender besked: fail please
+[2025-08-23 16:18:24] FEJL ved sendMessage: {'ok': False, 'error': 'oops'}
+[2025-08-23 16:18:24] Sender besked: 💓 Botten kører stadig! (16:18:24)
+[2025-08-23 16:18:24] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:18:24] Heartbeat sendt.
+[2025-08-23 16:18:24] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-41\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:18:24] Billede sendt OK.
+[2025-08-23 16:18:24] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-41\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:18:24] Dokument sendt OK.
+[2025-08-23 16:18:24] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-41\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:18:24] FEJL ved sendPhoto: fail
+[2025-08-23 16:18:24] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-41\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:18:24] FEJL ved sendDocument: fail
+[2025-08-23 16:18:24] 🚨 ADVARSEL: Max drawdown under -20%! (-30.00%)
+[2025-08-23 16:18:24] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
+[2025-08-23 16:18:24] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
+[2025-08-23 16:26:45] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-08-23 16:26:46] Besked sendt OK.
+[2025-08-23 16:26:46] Sender besked: Bot-status:
+2025-08-23 16:26:46 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 222986e | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-23 16:26:46] Besked sendt OK.
+[2025-08-23 16:26:47] Sender besked: Testbesked fra test
+[2025-08-23 16:26:47] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:26:47] Sender besked: hej verden
+[2025-08-23 16:26:47] Besked sendt OK.
+[2025-08-23 16:26:47] Sender besked: fail please
+[2025-08-23 16:26:47] FEJL ved sendMessage: {'ok': False, 'error': 'oops'}
+[2025-08-23 16:26:47] Sender besked: 💓 Botten kører stadig! (16:26:47)
+[2025-08-23 16:26:47] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:26:47] Heartbeat sendt.
+[2025-08-23 16:26:47] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-43\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:26:47] Billede sendt OK.
+[2025-08-23 16:26:47] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-43\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:26:47] Dokument sendt OK.
+[2025-08-23 16:26:47] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-43\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:26:47] FEJL ved sendPhoto: fail
+[2025-08-23 16:26:47] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-43\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:26:47] FEJL ved sendDocument: fail
+[2025-08-23 16:26:47] 🚨 ADVARSEL: Max drawdown under -20%! (-30.00%)
+[2025-08-23 16:26:47] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
+[2025-08-23 16:26:47] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
+[2025-08-23 16:52:47] Sender besked: 📊 Gridsearch (targets) – Bedste:
+target_regime_adapt
+Accuracy: 57.91%
+Winrate: 60.20%
+Sharpe: 0.05
+n_1: 2831, n_0: 2572 (Test: 5403)
+[2025-08-23 16:52:47] Besked sendt OK.
+[2025-08-23 16:52:47] Sender besked: Bot-status:
+2025-08-23 16:52:47 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: 222986e | Context: test_log_utils | strategy: ensemble | feature_file: dummy.csv | param: 123
+[2025-08-23 16:52:48] Besked sendt OK.
+[2025-08-23 16:52:48] Sender besked: Testbesked fra test
+[2025-08-23 16:52:48] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:52:48] Sender besked: hej verden
+[2025-08-23 16:52:48] Besked sendt OK.
+[2025-08-23 16:52:48] Sender besked: fail please
+[2025-08-23 16:52:48] FEJL ved sendMessage: {'ok': False, 'error': 'oops'}
+[2025-08-23 16:52:48] Sender besked: 💓 Botten kører stadig! (16:52:48)
+[2025-08-23 16:52:48] [TESTMODE] Besked ikke sendt – Telegram inaktiv
+[2025-08-23 16:52:48] Heartbeat sendt.
+[2025-08-23 16:52:48] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-44\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:52:48] Billede sendt OK.
+[2025-08-23 16:52:48] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-44\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:52:48] Dokument sendt OK.
+[2025-08-23 16:52:48] Sender billede: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-44\test_send_image_and_document_s0\x.png (caption: cap)
+[2025-08-23 16:52:48] FEJL ved sendPhoto: fail
+[2025-08-23 16:52:48] Sender dokument: C:\Users\reno_\AppData\Local\Temp\pytest-of-reno_\pytest-44\test_send_image_and_document_s0\x.csv (caption: doc)
+[2025-08-23 16:52:48] FEJL ved sendDocument: fail
+[2025-08-23 16:52:48] 🚨 ADVARSEL: Max drawdown under -20%! (-30.00%)
+[2025-08-23 16:52:48] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
+[2025-08-23 16:52:48] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
