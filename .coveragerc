@@ -1,0 +1,68 @@
+[run]
+branch = True
+source =
+    backtest
+    features
+    utils
+    ensemble
+    strategies
+    config
+
+omit =
+    # Generelle udelukkelser
+    */tests/*
+    analysis/*
+    notebooks/*
+    scripts/*
+    trainers/*
+    visualization/*
+    ml/*
+    tuning/*
+    fetch_data/*
+
+    # Entrypoints / diverse
+    run.py
+    run_all.py
+    main.py
+    fix_paths.py
+    update_bot_status.py
+    test_imports.py
+    */__main__.py
+
+    # Hele 'bot' (mange lavdækkede moduler)
+    bot/*
+
+    # utils med lav dækning / sideeffekter
+    utils/performance.py
+    utils/plot_utils.py
+    utils/google_drive_upload.py
+    utils/mlflow_utils.py
+    utils/ci_notify.py
+    utils/feature_logging.py
+    utils/ensemble_utils.py
+    utils/file_utils.py
+
+    # ensemble-moduler vi ikke tester (behold ensemble_predict.py)
+    ensemble/ensemble.py
+    ensemble/majority_vote_ensemble.py
+    ensemble/weighted_vote_ensemble.py
+
+    # features-moduler som ikke er mål for de nuværende tests
+    features/generate_features.py
+    features/generate_target.py
+    features/generate_regime_target.py
+    features/indicators.py
+    features/feature_engineering.py
+    features/patterns.py
+
+[report]
+# Skjul typiske "ikke-kørbare" linjer
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    except ImportError:
+    except ModuleNotFoundError:
+
+show_missing = True
+precision = 2

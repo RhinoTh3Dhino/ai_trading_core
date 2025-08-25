@@ -186,6 +186,17 @@ Eksempler på tilføjede/ændrede filer:
 **Step 6 er nu afsluttet og klar til Step 7!**
 
 
+## [Unreleased] 22-08-2025
+### Added
+- Streamlit-GUI til enkel backtest og visualisering (RSI/EMA/MACD/Ensemble) med tunings og filtre.
+- Artefakt-eksport (CSV/JSON/PNG) pr. kørsel under `outputs/gui/<timestamp>`.
+
+### Changed
+- Pytest konfig: hurtigere, tydelige rapporter, coverage gates.
+- VS Code settings for stabil lokal venv.
+
+
+
 
 
 

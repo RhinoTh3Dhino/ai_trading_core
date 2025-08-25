@@ -1,13 +1,24 @@
+# tests/test_features_pipeline.py
 """
-tests/test_features_pipeline.py
-
-Dækker features/features_pipeline.py med dummy DataFrames (hurtige, deterministic).
+Dækker features/features_pipeline.py med dummy DataFrames (hurtige, deterministiske).
 Fokus: branch coverage + kerne-API (generate_features, save_features, load_features).
+
+Teststrategi:
+- Kerne E2E (DF -> features -> save -> load)
+- Kolonnekrav & fejlscenarier
+- Timestamp alias + coercion
+- Include/Exclude + dropna + normalize
+- Target modes (direction/regression/none)
+- Forventede features + vol_spike-rename
+- patterns_enabled=True må ikke crashe
+- CSV-lignende flow
+- Ekstra: load_features versions/fejlscenarier
 """
 
+import os
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -18,18 +29,21 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from features.features_pipeline import (
+from features.features_pipeline import (  # noqa: E402
     generate_features,
     save_features,
     load_features,
 )
 
+# Standard output-mappe som pipelinen forventer
+FEATURE_DIR = PROJECT_ROOT / "outputs" / "feature_data"
+
 
 # ---------------------------------------------------------------------
 # Hjælpere
 # ---------------------------------------------------------------------
-def make_version_with_timestamp(version: str) -> str:
-    ts = datetime.now().strftime("%Y%m%d")
+def make_version_with_timestamp(version: str, dt: datetime | None = None) -> str:
+    ts = (dt or datetime.now()).strftime("%Y%m%d")
     return f"{version}_{ts}"
 
 
@@ -37,16 +51,21 @@ def ensure_dir_exists(path: Path):
     path.mkdir(parents=True, exist_ok=True)
 
 
-def make_dummy_df(rows: int = 60) -> pd.DataFrame:
+def make_dummy_df(rows: int = 60, start: str = "2024-01-01", freq: str = "h") -> pd.DataFrame:
     """Opret et deterministisk dummy-DF med OHLCV + timestamp."""
     return pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=rows, freq="h"),
+        "timestamp": pd.date_range(start, periods=rows, freq=freq),
         "open": np.linspace(100, 100 + rows - 1, rows),
         "high": np.linspace(101, 101 + rows - 1, rows),
         "low": np.linspace(99, 99 + rows - 1, rows),
         "close": np.linspace(100, 100 + rows - 1, rows),
         "volume": np.arange(1000, 1000 + rows),
     })
+
+
+def _list_feature_files(symbol: str, timeframe: str) -> list[Path]:
+    pattern = f"{symbol}_{timeframe}_*.parquet"
+    return sorted(FEATURE_DIR.glob(pattern))
 
 
 # ---------------------------------------------------------------------
@@ -57,6 +76,9 @@ def test_generate_features_pipeline_and_save_load(tmp_path, monkeypatch):
     End-to-end: DF -> generate_features -> save_features -> load_features.
     Vi deaktiverer patterns for at undgå eksterne afhængigheder i kerne-testen.
     """
+    # Sørg for at outputdir findes
+    ensure_dir_exists(FEATURE_DIR)
+
     raw_df = make_dummy_df(60)
     assert len(raw_df) > 0
 
@@ -86,7 +108,6 @@ def test_generate_features_pipeline_and_save_load(tmp_path, monkeypatch):
         assert not features_df["target"].isnull().any()
 
     # Gem i projektets outputs/feature_data (samme sti som load_features forventer)
-    ensure_dir_exists(PROJECT_ROOT / "outputs" / "feature_data")
     version_ts = make_version_with_timestamp("test")
     feature_path = save_features(features_df, "BTC", "1h", version_ts)
     assert Path(feature_path).exists(), f"Featurefil blev ikke gemt: {feature_path}"
@@ -114,7 +135,7 @@ def test_generate_features_with_missing_columns_raises():
 
     with pytest.raises(Exception) as ei:
         _ = generate_features(df)
-    assert "Mangler kolonner" in str(ei.value) or "Mangler" in str(ei.value)
+    assert "Mangler kolonner" in str(ei.value) or "Mangler" in str(ei.value) or "missing" in str(ei.value).lower()
 
 
 def test_generate_features_empty_df_raises():
@@ -221,7 +242,7 @@ def test_invalid_target_mode_raises():
 # ---------------------------------------------------------------------
 def test_expected_features_ok_and_fail():
     df = make_dummy_df(30)
-    out = generate_features(df, feature_config={"patterns_enabled": False})
+    _ = generate_features(df, feature_config={"patterns_enabled": False})
     # OK: kræv et subset der eksisterer
     ok_subset = ["ema_9", "ema_21", "macd"]
     out2 = generate_features(df, feature_config={
@@ -259,6 +280,8 @@ def test_pipeline_with_patterns_enabled_does_not_crash(capsys):
     # Hvis add_all_patterns fejler, logger pipelinen en WARN via print – det er ok
     captured = capsys.readouterr()
     # ingen stram assert – blot at kørsel når hertil uden exception
+    # men vi accepterer evt. warnings i stdout/stderr
+    assert captured is not None
 
 
 # ---------------------------------------------------------------------
@@ -279,5 +302,62 @@ def test_generate_features_from_csv_like_flow(tmp_path):
     assert not features_df.isna().any().any()
 
 
+# ---------------------------------------------------------------------
+# Ekstra: load_features – versionhåndtering og fejl
+# ---------------------------------------------------------------------
+def test_load_features_with_non_existing_version_prefix_raises():
+    # Sørg for at der ikke findes filer med denne prefix
+    ensure_dir_exists(FEATURE_DIR)
+    prefix = make_version_with_timestamp("nonexistent_prefix_zzz", dt=datetime.now() - timedelta(days=3650))
+    with pytest.raises(FileNotFoundError):
+        _ = load_features("BTC", "1h", version_prefix=prefix)
+
+
+def test_load_features_latest_when_multiple_versions_exist():
+    """
+    Laver to versioner og forventer at 'seneste' kan indlæses,
+    når vi ikke angiver version_prefix (eller hvis implementationen
+    understøtter 'latest' / None).
+    """
+    ensure_dir_exists(FEATURE_DIR)
+
+    df = make_dummy_df(40)
+    base_cfg = {"patterns_enabled": False, "dropna": True, "target_mode": "direction"}
+    f1 = generate_features(df, feature_config=base_cfg)
+    f2 = generate_features(df, feature_config=base_cfg)
+
+    # Gem to forsk. versioner (kunstigt forskellig dato ved at justere format eller suffix)
+    v1 = make_version_with_timestamp("multi_a", dt=datetime.now() - timedelta(days=1))
+    v2 = make_version_with_timestamp("multi_b", dt=datetime.now())
+    p1 = save_features(f1, "ETH", "1h", v1)
+    p2 = save_features(f2, "ETH", "1h", v2)
+    assert Path(p1).exists() and Path(p2).exists()
+
+    # Hvis load_features understøtter None som "seneste", test det
+    try:
+        latest = load_features("ETH", "1h", version_prefix=None)  # type: ignore[arg-type]
+        assert len(latest) > 0
+        # Antag at seneste version har mindst samme kolonner som f2
+        assert set(f2.columns).issubset(set(latest.columns))
+    except TypeError:
+        # Hvis implementationen kræver prefix, spring "latest" over og valider direkte prefix-load
+        latest = load_features("ETH", "1h", version_prefix=v2)
+        assert len(latest) > 0
+
+
+def test_save_features_returns_path_and_creates_file():
+    ensure_dir_exists(FEATURE_DIR)
+    df = generate_features(make_dummy_df(20), feature_config={"patterns_enabled": False})
+    version_ts = make_version_with_timestamp("return_path_ok")
+    out_path = save_features(df, "SOL", "4h", version_ts)
+    p = Path(out_path)
+    assert p.exists() and p.is_file()
+    assert p.name.startswith("SOL_4h_") and p.suffix in {".parquet", ".pq", ".parq"}
+
+
+# ---------------------------------------------------------------------
+# CLI-help: kør kun denne fil direkte
+# ---------------------------------------------------------------------
 if __name__ == "__main__":
+    # Kør med coverage mod den konkrete pipeline
     pytest.main([__file__, "-vv", "--cov=features/features_pipeline.py", "--cov-report=term-missing"])

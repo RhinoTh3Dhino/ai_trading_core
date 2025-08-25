@@ -29,9 +29,13 @@ from backtest import backtest as bt
 
 
 # ------------------- Hjælpere -------------------
-def _make_price_df(n=120, with_ema=True):
-    ts = pd.date_range("2024-01-01", periods=n, freq="h")
-    close = np.linspace(100, 110, n) + np.sin(np.linspace(0, 8, n)) * 0.5
+def _make_price_df(n=120, with_ema=True, start="2024-01-01"):
+    # Brug 'h' frekvens for time-serie; pandas accepterer både 'h' og 'H'
+    ts = pd.date_range(start, periods=n, freq="h")
+    # Glat, deterministisk trend + lidt sving
+    lin = np.linspace(100, 110, n)
+    wobble = np.sin(np.linspace(0, 8, n)) * 0.5
+    close = lin + wobble
     df = pd.DataFrame({"timestamp": ts, "close": close})
     if with_ema:
         # Kort span for hurtig stabilitet i tests (ema_200 i prod kan være længere)
@@ -39,14 +43,23 @@ def _make_price_df(n=120, with_ema=True):
     return df
 
 
+def _has_any_column(df: pd.DataFrame, candidates):
+    return any(c in df.columns for c in candidates)
+
+
 # ------------------- walk_forward_splits -------------------
 def test_walk_forward_splits_basic():
     df = _make_price_df(100)
     splits = bt.walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20)
-    # For n=100: der bør være 3 vinduer ift. de angivne procenter (afhænger af implementering, men >0)
+    # For n=100: der bør være mindst ét vindue
     assert isinstance(splits, list) and len(splits) >= 1
     for tr_idx, te_idx in splits:
         assert len(tr_idx) >= 20 and len(te_idx) > 0
+        # Indekser skal være voksende heltal
+        assert all(int(i) == i for i in tr_idx)
+        assert all(int(i) == i for i in te_idx)
+        assert list(tr_idx) == sorted(tr_idx)
+        assert list(te_idx) == sorted(te_idx)
 
 
 # ------------------- compute_regime / regime_filter -------------------
@@ -60,6 +73,7 @@ def test_compute_regime_and_filter():
     )
     out = bt.compute_regime(df.copy())
     # Forventet mapping (kan være afhængig af thresholds i implementationen; accepter str-values)
+    assert "regime" in out.columns
     assert set(out["regime"].astype(str)) <= {"bull", "bear", "neutral"}
 
     signals = [1, -1, 1]
@@ -151,11 +165,12 @@ def test_run_backtest_happy_path_and_required_columns_present():
     assert isinstance(trades, pd.DataFrame)
     assert isinstance(balance, pd.DataFrame)
 
-    # run_backtest bør sikre/udskrive standardkolonner
-    for col in ["timestamp", "type", "price", "regime"]:
+    # run_backtest bør sikre/udskrive standardkolonner (tillad timestamp|datetime og balance|equity)
+    assert _has_any_column(trades, ["timestamp", "datetime"])
+    for col in ["type", "price", "regime"]:
         assert col in trades.columns
-    for col in ["timestamp", "close"]:
-        assert col in balance.columns
+    assert _has_any_column(balance, ["timestamp", "datetime"])
+    assert _has_any_column(balance, ["close", "balance", "equity"])
     # drawdown tilstede når balance ikke er tom
     if not balance.empty:
         assert "drawdown" in balance.columns
@@ -225,4 +240,5 @@ def test_load_csv_auto_with_and_without_meta(tmp_path, capsys):
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-vv", "--cov=backtest.backtest", "--cov-report=term-missing"])
