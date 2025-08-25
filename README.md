@@ -381,3 +381,121 @@ Har du spørgsmål, idéer eller vil bidrage? Skriv i Issues eller kontakt via T
 
 ---
 
+
+## 📅 Dag 3 – Integrationstest & GUI-skelet
+
+Denne sprint tilføjer en første, stabil GUI oven på den eksisterende backtest-pipeline samt strammer vores test/coverage setup op.
+
+## Hvad er nyt?
+
+- Streamlit-GUI (gui/app.py)
+
+- Indlæs features-CSV (upload eller automatisk “latest” fra outputs/feature_data/).
+
+- Alternativt: Generér features fra rå OHLCV-CSV via features.generate_features.
+
+- Kør simple strategier: RSI, EMA Cross, MACD og en lille Ensemble (majority af de tre).
+
+- Backtest via backtest.run_backtest og vis metrics fra utils.metrics_utils.advanced_performance_metrics.
+
+- Equity-kurve + datavisning (trades, balance) i appen.
+
+- Artefakter gemmes pr. kørsel under outputs/gui/<tag>/:
+
+- trades.csv, balance.csv, metrics.json (+ PNG hvis CLI).
+
+- Robust rerun: cache af “latest” features, session_state så data/resultater bevares, og stille logning (undertrykker støj fra prints).
+
+## CLI-fallback
+Samme app kan køres uden Streamlit:
+
+python gui/app.py --strategy macd
+
+
+Gemmer artefakter og en equity.png i samme output-mappe.
+
+- Test & coverage
+Opdateret pytest.ini og .coveragerc for hurtigere, mere stabil kørsel og klare rapporter. Lokal kørsel giver ca. 70% samlet coverage (gate sat til 40% i denne sprint).
+
+## Dev-kvalitet
+
+- .vscode/settings.json peger altid på lokal venv og giver rene imports i VS Code.
+
+- gui/app.py bootstrapper PYTHONPATH så imports virker, selv når appen køres fra gui/.
+
+## Quickstart
+1) Kør GUI
+# fra projektroden – aktiver venv først
+streamlit run gui/app.py
+
+
+- Tip: GUI’en kan automatisk indlæse seneste features for et symbol/timeframe fra outputs/feature_data/…. Alternativt kan du uploade en CSV eller generere features fra rå OHLCV (kræver mindst kolonnerne: timestamp, open, high, low, close, volume).
+
+2) Kør CLI (uden Streamlit)
+python gui/app.py --strategy ensemble
+# Tving CLI selvom Streamlit er installeret:
+FORCE_CLI=1 python gui/app.py
+
+3) Kør tests
+pytest -q         # hurtig kørsel med coverage, rapporter i terminal + htmlcov/
+pytest -q --cov   # eksplicit coverage-output
+
+## Output & artefakter
+
+Når du kører en backtest via GUI/CLI oprettes en mappe:
+
+outputs/gui/<SYMBOL>_<TIMEFRAME>_<strategi>_<YYYYMMDD_HHMMSS>/
+  ├─ trades.csv
+  ├─ balance.csv
+  └─ metrics.json
+
+
+(I CLI gemmes også equity.png.)
+
+## Kendte begrænsninger (bevidst)
+
+- Strategierne (RSI/EMA/MACD/Ensemble) er simple demo-regler uden tunede parametre—de er ment som smoke-tests/end-to-end-check. Det er normalt, at performance kan være middel til dårlig på rå markedsdata.
+
+- “Rigtige” filtre (regime/volatilitet/cooldown/risiko) og hyperparametrisk tuning lander i en senere sprint.
+
+## Fejlfinding
+
+- ModuleNotFoundError: utils i GUI
+Sørg for at starte appen fra projektroden. gui/app.py bootstrapper selv PYTHONPATH, men kørsel fra andre mapper kan skabe rod.
+
+- ImportError: cannot import name 'builder' from google.protobuf.internal ved Streamlit
+Pin protobuf til en kompatibel version:
+
+pip install "protobuf==3.20.*"
+
+
+(Genstart herefter din venv/terminal.)
+
+## VS Code bruger forkert Python
+Sørg for at .vscode/settings.json peger på din lokale venv:
+
+"python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe"
+
+## Filstruktur (uddrag)
+ai_trading_core/
+├─ backtest/
+├─ features/
+├─ gui/
+│  └─ app.py        # Streamlit/CLI app (denne sprint)
+├─ outputs/
+│  └─ feature_data/ # gemte features-CSV'er (latest auto-load)
+├─ tests/
+├─ .vscode/settings.json
+├─ .coveragerc
+└─ pytest.ini
+
+## Roadmap (næste skridt)
+
+- Strategi-filtre (regime, ATR-baserede stop, cooldown, min. trend/volatilitet).
+
+- Bruger-tunbare parametre i GUI (sliders/selects).
+
+- Bedre rapportering: flere grafer (drawdown, positions), samt eksport af en samlet HTML/PDF.
+
+- Let grid-tuning i GUI (små jobs, ikke fuld AutoML).
+
