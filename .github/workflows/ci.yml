@@ -2,18 +2,25 @@ name: CI
 
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
   pull_request:
-    branches: ["*"]
+    branches: ["**"]
   workflow_dispatch:
+  schedule:
+    - cron: "5 1 * * *" # 01:05 UTC ≈ 03:05 Europe/Copenhagen (sommertid)
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      MPLBACKEND: Agg            # headless plotting
+      MPLBACKEND: Agg          # headless plotting
       PYTHONUNBUFFERED: "1"
-
+      CI: "true"
     steps:
       - name: Checkout kode
         uses: actions/checkout@v4
@@ -21,7 +28,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"  # TensorFlow 2.10.x kompatibel
+          python-version: "3.10"
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -37,27 +44,27 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
           # Sikkerhedsnet hvis dev-filen mangler i en branch:
-          pip install pytest-cov pytest-timeout || true
-          # Force CPU-wheel til PyTorch (hvis nødvendigt i tests)
+          pip install pytest pytest-cov pytest-timeout || true
+          # Force CPU-wheel til PyTorch (kun hvis noget kræver det i tests)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
           python -V
           pip -V
-          python -c "import pytest, sys; print('pytest', pytest.__version__)"
+
+      - name: Opret reports-mappe (hvis ikke findes)
+        run: mkdir -p reports
 
       - name: Kør pytest
         run: |
-          pytest -vv
-        # Pytest læser coverage/timeout mv. fra pytest.ini (addopts)
+          pytest -q
+        # pytest.ini bør styre coverage/junit (som i dine logs)
 
-      - name: Kør main.py (kun én cyklus i CI)
-        env:
-          CI: "true"
+      - name: Kør main.py (smoke, må ikke vælte CI)
         run: |
-          python main.py || true  # fortsæt selv hvis main.py fejler i CI
+          python main.py || true
 
-      - name: Opret dummy outputfiler hvis de mangler (fail-safe)
+      - name: Fail-safe artefakter (garantér at de findes)
         run: |
-          mkdir -p outputs
+          mkdir -p outputs graphs logs
           : > BotStatus.md
           : > CHANGELOG.md
           touch outputs/performance_history.csv
@@ -66,7 +73,7 @@ jobs:
             echo "timestamp,Navn,Balance" > outputs/performance_history.csv
           fi
 
-      - name: Tjek at alle centrale outputfiler findes
+      - name: Tjek at centrale outputfiler findes
         run: |
           test -f outputs/performance_history.csv
           test -f outputs/balance_trend.png
@@ -74,24 +81,23 @@ jobs:
           test -f CHANGELOG.md
           echo "✅ Alle vigtige outputfiler findes!"
 
-      - name: Upload artifacts (outputs, tests, logs, grafer, coverage)
+      - name: Upload artifacts (outputs, logs, grafer, coverage/htmlcov, junit)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: outputs-and-tests
+          name: build-${{ github.run_id }}
           path: |
             outputs/
             logs/
             graphs/
-            tests/
             htmlcov/
+            reports/
+            BotStatus.md
+            CHANGELOG.md
             !**/*.pyc
             !**/__pycache__/
 
-      - name: Check struktur og dependencies
-        run: echo "✅ Struktur og artifacts OK"
-
-      - name: Send Telegram notification (CI-status)
+      - name: Telegram notification (CI-status)
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -109,3 +115,48 @@ jobs:
           CI_STATUS: ${{ job.status }}
         run: |
           python utils/ci_notify.py || true
+
+  nightly-backup-verify:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Installer minimale afhængigheder
+        run: |
+          python -m pip install -U pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Sikre pytest-miljø hvis backup værktøjet importerer test-afhængigheder
+          pip install pytest || true
+
+      - name: Opret dummy data + ZIP-backup
+        run: |
+          python - << 'PY'
+          from pathlib import Path
+          from bot.utils.backup import create_backup
+          root = Path("tmp_src"); root.mkdir(exist_ok=True)
+          (root/"file.txt").write_text("ok", encoding="utf-8")
+          backups = Path("backups"); backups.mkdir(exist_ok=True)
+          zp = create_backup(str(root), str(backups))
+          print("ZIP:", zp)
+          PY
+
+      - name: Verify (dry-run) og log til BotStatus.md
+        run: |
+          python -m bot.tools.backup_verify --backups backups --botstatus BotStatus.md --pattern "*.zip" --dry-run
+
+      - name: Upload BotStatus.md (nightly)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BotStatus-nightly-${{ github.run_id }}
+          path: BotStatus.md

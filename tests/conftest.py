@@ -1,4 +1,4 @@
-# tests/conftest.py
+# -*- coding: utf-8 -*-
 import os
 import sys
 import re
@@ -33,6 +33,19 @@ def _set_global_seed() -> int:
     except Exception:
         pass
     return seed
+
+
+@pytest.fixture
+def sample_config():
+    """
+    Minimal gyldig config til config-valideringstests.
+    Matcher kravene i utils/config_utils.validate_config.
+    """
+    return {
+        "strategies": ["mean_reversion"],
+        "data": {"paths": {"raw": "/data/raw", "processed": "/data/processed"}},
+        "trading": {"risk": {"max_position": 0.2}},
+    }
 
 
 @pytest.fixture
@@ -79,12 +92,12 @@ def dummy_features_df():
 
 @pytest.fixture
 def dummy_preds():
-    """Preds til ensemble‑voting-tests (deterministisk)."""
+    """Preds til ensemble-voting-tests (deterministisk)."""
     return [1, 0, 1, -1, 0, 1]
 
 
 # ============================================
-# Dag 3: Integrationstest- & GUI-hjælpefixtures
+# Integrationstest- & GUI-hjælpefixtures
 # ============================================
 
 @pytest.fixture(scope="session")
@@ -100,6 +113,7 @@ def dummy_csv_path(tmp_path_factory) -> str:
     periods = 50
     ts = pd.date_range("2025-01-01", periods=periods, freq="H")
     base = 100.0
+
     # Simpel prisbane med små variationer
     close = base + np.cumsum(np.random.normal(0, 0.2, size=periods)).round(2)
     high = (close + np.abs(np.random.normal(0.2, 0.05, size=periods))).round(2)
