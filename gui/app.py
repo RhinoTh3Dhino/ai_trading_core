@@ -1,18 +1,22 @@
 # gui/app.py
 """
-Letvægts GUI til:
-  1) Indlæse *features*-CSV (eller generere features fra rå OHLCV)
-  2) Køre simple strategier (RSI / EMA-cross / MACD / Ensemble)
-  3) Backteste og vise metrics + equity-kurve
-  4) Gemme artefakter under outputs/gui/<timestamp>/
+AI Trading GUI – Live Monitor + Backtest (Dag 6–8)
 
-Extras:
-- Session State (stabil GUI over reruns)
-- Caching + "stille" indlæsning (ingen spam i terminal)
-- Strategi-tunings (RSI/EMA/MACD)
-- Globale filtre: position mode, regime (EMA200), ATR%-minimum, debounce/cooldown
+NYT (Dag 6–8):
+- Fanen “Live Monitor”: henter status/metrics/equity fra API (fallback: CSV/JSON),
+  viser statuskort (seneste kørsel, win-rate 7d, drawdown), equity-kurve og live-signaler.
+- API-base kan sættes via ENV: API_BASE_URL eller i UI.
+- Auto-refresh via st_autorefresh (valgfri pakke) – fallback hvis ikke tilgængelig.
 
-Kan køre med Streamlit (anbefalet) eller CLI-fallback uden Streamlit.
+BEVARER (fra tidligere version):
+- Backtest-fanen: indlæs/generér features, kør RSI/EMA/MACD/Ensemble, globale filtre,
+  metrics, equity-plot og artefakt-eksport til outputs/gui/<timestamp>/.
+- Session State, caching, CLI-fallback.
+
+WHY (teknisk/strategisk):
+- Tabs adskiller tydeligt driftsovervågning (paper/live) fra forsknings-backtests.
+- API→GUI med CSV-fallback giver robusthed og hurtig SaaS-parathed.
+- Ingen breaking changes i core-funktioner; kun UI-omlægning for klarere brugerrejse.
 """
 from __future__ import annotations
 
@@ -24,7 +28,7 @@ import argparse
 import contextlib
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 # Robust backend for plots når vi ikke har display
 os.environ.setdefault("MPLBACKEND", "Agg")
@@ -38,6 +42,23 @@ if str(PROJECT_ROOT_DIR) not in sys.path:
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+# Ekstra: requests er valgfrit (GUI falder tilbage til lokale filer hvis ikke installeret)
+try:  # pragma: no cover
+    import requests
+    _HAS_REQ = True
+except Exception:  # pragma: no cover
+    requests = None
+    _HAS_REQ = False
+
+# Auto-refresh: brug ekstern helper hvis den findes; ellers no-op fallback
+try:  # pragma: no cover
+    # pip install streamlit-autorefresh
+    from streamlit_autorefresh import st_autorefresh
+except Exception:  # pragma: no cover
+    def st_autorefresh(*_, **__):
+        # Fallback: gør ingenting; brugeren kan opdatere manuelt
+        return 0
 
 # Projekt-imports
 from utils.project_path import PROJECT_ROOT
@@ -73,6 +94,10 @@ except Exception:  # pragma: no cover
 # -------------------------
 # Små hjælpefunktioner
 # -------------------------
+ROOT = Path(PROJECT_ROOT)
+LOGS = ROOT / "logs"
+API_DIR = ROOT / "api"
+
 def _ensure_ts(df: pd.DataFrame) -> pd.DataFrame:
     """Sørg for en 'timestamp' kolonne og sorter."""
     out = df.copy()
@@ -334,7 +359,71 @@ def _save_artifacts(trades: pd.DataFrame, balance: pd.DataFrame, metrics: Dict, 
 
 
 # -------------------------
-# Streamlit helpers (cache)
+# Live Monitor helpers (API + fallback) – cache
+# -------------------------
+if _HAS_ST:  # pragma: no cover
+    @st.cache_data(ttl=2.0, show_spinner=False)
+    def _http_get_json(url: str):
+        if not _HAS_REQ:
+            return None, "requests ikke installeret"
+        try:
+            r = requests.get(url, timeout=2.0)
+            if r.ok:
+                return r.json(), None
+            return None, f"HTTP {r.status_code}"
+        except Exception as e:
+            return None, str(e)
+
+    @st.cache_data(ttl=2.0, show_spinner=False)
+    def lm_load_status(api_base: str) -> Tuple[Dict, Optional[str]]:
+        data, err = _http_get_json(f"{api_base}/status")
+        if data is not None:
+            return data, None
+        # fallback – minimal status
+        return {"last_run_ts": datetime.utcnow().isoformat(), "mode": "paper", "win_rate_7d": 0.0, "drawdown_pct": 0.0}, err
+
+    @st.cache_data(ttl=2.0, show_spinner=False)
+    def lm_load_equity(api_base: str) -> Tuple[pd.DataFrame, Optional[str]]:
+        data, err = _http_get_json(f"{api_base}/equity")
+        if data is not None:
+            return pd.DataFrame(data), None
+        p = LOGS / "equity.csv"
+        if p.exists():
+            return pd.read_csv(p)[["date", "equity"]], f"API fejl: {err}. Viser CSV."
+        return pd.DataFrame(columns=["date", "equity"]), "Ingen equity-data."
+
+    @st.cache_data(ttl=2.0, show_spinner=False)
+    def lm_load_metrics(api_base: str, limit: int = 30) -> Tuple[pd.DataFrame, Optional[str]]:
+        data, err = _http_get_json(f"{api_base}/metrics/daily?limit={limit}")
+        if data is not None:
+            return pd.DataFrame(data), None
+        p = LOGS / "daily_metrics.csv"
+        if p.exists():
+            return pd.read_csv(p).tail(limit), f"API fejl: {err}. Viser CSV."
+        return pd.DataFrame(), "Ingen metrikker."
+
+    @st.cache_data(ttl=2.0, show_spinner=False)
+    def lm_load_signals(api_base: str) -> Tuple[List[Dict], Optional[str]]:
+        data, err = _http_get_json(f"{api_base}/signals/latest")
+        if data:
+            # API kan returnere et objekt (seneste) eller en liste; normalisér til liste
+            if isinstance(data, dict):
+                return [data], None
+            if isinstance(data, list):
+                return data[-20:], None
+        # fallback: lokal mock
+        p = API_DIR / "sim_signals.json"
+        if p.exists():
+            try:
+                arr = json.loads(p.read_text(encoding="utf-8"))
+                return arr[-20:], "API utilgængelig — viser lokale mock-signaler."
+            except Exception as e:
+                return [], f"Kan ikke læse mock-signaler: {e}"
+        return [], "Ingen signaler."
+
+
+# -------------------------
+# Streamlit helpers (cache) – backtest
 # -------------------------
 if _HAS_ST:  # pragma: no cover
     @st.cache_data(show_spinner=False)
@@ -343,54 +432,136 @@ if _HAS_ST:  # pragma: no cover
 
 
 # -------------------------
-# Streamlit GUI (rerun-robust)
+# Streamlit GUI
 # -------------------------
-def run_streamlit():  # pragma: no cover
-    st.set_page_config(page_title="AI Trading – GUI", page_icon="📈", layout="wide")
-    st.title("📈 AI Trading – GUI")
+def _render_live_monitor():  # pragma: no cover
+    st.subheader("📡 Live Monitor (Paper Trading)")
+    api_default = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+    api_base = st.text_input("API base URL", value=st.session_state.get("api_base", api_default))
+    st.session_state["api_base"] = api_base
+    interval = st.slider("Auto-refresh (sek.)", 1, 10, 3, 1)
+    st_autorefresh(interval=interval * 1000, key="live_refresh")
 
+    # Statuskort
+    status, status_err = lm_load_status(api_base)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Seneste kørsel (UTC)", value=str(status.get("last_run_ts", "")).replace("T", " ").split(".")[0])
+    with c2:
+        st.metric("Win-rate (7d)", f'{float(status.get("win_rate_7d", 0.0)):.2f}%')
+    with c3:
+        st.metric("Drawdown", f'{float(status.get("drawdown_pct", 0.0)):.2f}%')
+    if status_err:
+        st.info(f"Status fra fallback: {status_err}")
+
+    # Live signaler
+    st.markdown("### Live signaler")
+    sigs, sig_err = lm_load_signals(api_base)
+    if sig_err:
+        st.info(sig_err)
+    if sigs:
+        df_sig = pd.DataFrame(sigs).copy()
+        if "timestamp" in df_sig.columns:
+            df_sig["ts"] = pd.to_datetime(df_sig["timestamp"], unit="s", errors="coerce")
+            order_cols = [c for c in ["ts", "symbol", "side", "confidence", "price", "regime"] if c in df_sig.columns]
+        else:
+            order_cols = [c for c in ["symbol", "side", "confidence", "price", "regime"] if c in df_sig.columns]
+        st.dataframe(df_sig[order_cols].sort_values(order_cols[0], ascending=False) if order_cols else df_sig, use_container_width=True)
+    else:
+        st.warning("Ingen signaler.")
+
+    # Equity-kurve
+    st.markdown("### Equity-kurve")
+    df_eq, eq_err = lm_load_equity(api_base)
+    if eq_err:
+        st.info(eq_err)
+    if not df_eq.empty:
+        fig, ax = plt.subplots()
+        ax.plot(pd.to_datetime(df_eq["date"]), df_eq["equity"])
+        ax.set_xlabel("Dato"); ax.set_ylabel("Equity")
+        ax.grid(True, alpha=0.3)
+        st.pyplot(fig, clear_figure=True)
+    else:
+        st.warning("Ingen equity-data.")
+
+    # Daglige metrikker
+    st.markdown("### Daglige metrikker (seneste 30 dage)")
+    df_m, m_err = lm_load_metrics(api_base, 30)
+    if m_err:
+        st.info(m_err)
+    if not df_m.empty:
+        st.dataframe(df_m, use_container_width=True)
+    else:
+        st.warning("Ingen metrikker.")
+
+
+def _render_backtest():  # pragma: no cover
+    st.subheader("🧪 Backtest")
     # Init session_state (persist over reruns)
     st.session_state.setdefault("df_features", None)      # seneste feature-DF
     st.session_state.setdefault("last_results", None)     # (trades, balance, metrics, outdir)
 
-    # --- Sidebar i en FORM, så klik bevares over reruns ---
-    with st.sidebar.form("controls"):
-        st.header("⚙️ Inputs")
-        mode = st.radio("Datakilde", ["Indlæs features (anbefalet)", "Generér fra rå OHLCV"])
-        symbol = st.text_input("Symbol", "BTCUSDT")
-        timeframe = st.text_input("Timeframe", "1h")
-        strategy = st.selectbox("Strategi", ["RSI", "EMA Cross", "MACD", "Ensemble"])
+    # --- Kontrolpanel i en FORM i hovedområdet (ikke sidebar) ---
+    with st.form("controls"):
+        st.markdown("#### ⚙️ Inputs")
+        mode = st.radio("Datakilde", ["Indlæs features (anbefalet)", "Generér fra rå OHLCV"], horizontal=True)
+        cols = st.columns(3)
+        with cols[0]:
+            symbol = st.text_input("Symbol", "BTCUSDT")
+        with cols[1]:
+            timeframe = st.text_input("Timeframe", "1h")
+        with cols[2]:
+            strategy = st.selectbox("Strategi", ["RSI", "EMA Cross", "MACD", "Ensemble"])
 
-        st.subheader("🎛️ Strategi-parametre")
+        st.markdown("#### 🎛️ Strategi-parametre")
         if strategy == "RSI":
-            rsi_len = st.slider("RSI længde", 5, 50, 14, 1)
-            rsi_low = st.slider("RSI low (contrarian købsbånd)", 0, 60, 45, 1)
-            rsi_high = st.slider("RSI high (contrarian salgsbånd)", 40, 100, 55, 1)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                rsi_len = st.slider("RSI længde", 5, 50, 14, 1)
+            with col2:
+                rsi_low = st.slider("RSI low (contrarian købsbånd)", 0, 60, 45, 1)
+            with col3:
+                rsi_high = st.slider("RSI high (contrarian salgsbånd)", 40, 100, 55, 1)
         elif strategy == "EMA Cross":
-            ema_fast = st.slider("EMA (hurtig)", 2, 60, 9, 1)
-            ema_slow = st.slider("EMA (langsom)", 5, 200, 21, 1)
+            col1, col2 = st.columns(2)
+            with col1:
+                ema_fast = st.slider("EMA (hurtig)", 2, 60, 9, 1)
+            with col2:
+                ema_slow = st.slider("EMA (langsom)", 5, 200, 21, 1)
         elif strategy == "MACD":
-            macd_fast = st.slider("MACD fast", 2, 48, 12, 1)
-            macd_slow = st.slider("MACD slow", 5, 96, 26, 1)
-            macd_signal = st.slider("MACD signal", 2, 30, 9, 1)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                macd_fast = st.slider("MACD fast", 2, 48, 12, 1)
+            with col2:
+                macd_slow = st.slider("MACD slow", 5, 96, 26, 1)
+            with col3:
+                macd_signal = st.slider("MACD signal", 2, 30, 9, 1)
         else:
-            rsi_len = st.slider("RSI længde", 5, 50, 14, 1)
-            rsi_low = st.slider("RSI low", 0, 60, 45, 1)
-            rsi_high = st.slider("RSI high", 40, 100, 55, 1)
-            ema_fast = st.slider("EMA (hurtig)", 2, 60, 9, 1)
-            ema_slow = st.slider("EMA (langsom)", 5, 200, 21, 1)
-            macd_fast = st.slider("MACD fast", 2, 48, 12, 1)
-            macd_slow = st.slider("MACD slow", 5, 96, 26, 1)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                rsi_len = st.slider("RSI længde", 5, 50, 14, 1)
+                ema_fast = st.slider("EMA (hurtig)", 2, 60, 9, 1)
+            with col2:
+                rsi_low = st.slider("RSI low", 0, 60, 45, 1)
+                macd_fast = st.slider("MACD fast", 2, 48, 12, 1)
+            with col3:
+                rsi_high = st.slider("RSI high", 40, 100, 55, 1)
+                macd_slow = st.slider("MACD slow", 5, 96, 26, 1)
             macd_signal = st.slider("MACD signal", 2, 30, 9, 1)
 
-        st.subheader("🧠 Globale filtre")
-        position_mode = st.selectbox("Positionstype", ["Long & Short", "Kun Long", "Kun Short"])
-        regime = st.selectbox("Regime-filter", ["Ingen", "Pris vs EMA200", "EMA200-slope"])
-        cooldown = st.slider("Vent N bar efter flip (debounce)", 0, 10, 2, 1)
-        min_atr_pct = st.slider("Min ATR% ved entry (0 = slukket)", 0.0, 5.0, 0.0, 0.1,
-                                help="ATR14 / Close * 100. Fx 0.5% på 1h kan skære meget støj fra.")
+        st.markdown("#### 🧠 Globale filtre")
+        colf1, colf2, colf3, colf4 = st.columns(4)
+        with colf1:
+            position_mode = st.selectbox("Positionstype", ["Long & Short", "Kun Long", "Kun Short"])
+        with colf2:
+            regime = st.selectbox("Regime-filter", ["Ingen", "Pris vs EMA200", "EMA200-slope"])
+        with colf3:
+            cooldown = st.slider("Vent N bar efter flip (debounce)", 0, 10, 2, 1)
+        with colf4:
+            min_atr_pct = st.slider("Min ATR% ved entry (0 = slukket)", 0.0, 5.0, 0.0, 0.1,
+                                    help="ATR14 / Close * 100. Fx 0.5% på 1h kan skære meget støj fra.")
 
-        run_from_sidebar = st.form_submit_button("Kør backtest", use_container_width=True)
+        run_from_form = st.form_submit_button("Kør backtest", use_container_width=True)
 
     # map UI strings til interne værdier
     position_map = {"Long & Short": "both", "Kun Long": "long_only", "Kun Short": "short_only"}
@@ -447,7 +618,7 @@ def run_streamlit():  # pragma: no cover
     if df_features is None and st.session_state.df_features is not None:
         df_features = st.session_state.df_features
 
-    # Vis data + ekstra "Kør backtest"-knap i hovedområdet
+    # Vis data + ekstra "Kør backtest"-knap
     run_from_main = False
     if df_features is not None:
         df_features = _ensure_ts(df_features)
@@ -457,10 +628,10 @@ def run_streamlit():  # pragma: no cover
         with st.expander("👀 Se data (øverste rækker)", expanded=True):
             st.dataframe(df_features.head(50), use_container_width=True)
 
-        run_from_main = st.button("Kør backtest", key="run_main", use_container_width=True)
+        run_from_main = st.button("Kør backtest (hurtig)", key="run_main", use_container_width=True)
 
     # Kør backtest hvis nogen af knapperne blev trykket
-    if df_features is not None and (run_from_sidebar or run_from_main):
+    if df_features is not None and (run_from_form or run_from_main):
         try:
             with st.spinner("Kører backtest…"):
                 if strategy == "RSI":
@@ -520,7 +691,7 @@ def run_streamlit():  # pragma: no cover
             fig = _plot_equity(balance, title="Equity")
             st.pyplot(fig, use_container_width=True)
         with right:
-            st.subheader("📊 Metrics")
+            st.markdown("#### 📊 Metrics")
             st.json(metrics)
             st.caption(f"Artefakter gemt i: `{outdir}`")
 
@@ -530,7 +701,18 @@ def run_streamlit():  # pragma: no cover
             st.dataframe(balance.head(200), use_container_width=True)
 
     if df_features is None and st.session_state.last_results is None:
-        st.info("Upload/indlæs data i venstre side for at komme i gang.")
+        st.info("Upload/indlæs data ovenfor for at komme i gang.")
+
+
+def run_streamlit():  # pragma: no cover
+    st.set_page_config(page_title="AI Trading – Live & Backtest", page_icon="📈", layout="wide")
+    st.title("📈 AI Trading – Live Monitor & Backtest")
+
+    tabs = st.tabs(["Live Monitor", "Backtest"])
+    with tabs[0]:
+        _render_live_monitor()
+    with tabs[1]:
+        _render_backtest()
 
 
 # -------------------------
