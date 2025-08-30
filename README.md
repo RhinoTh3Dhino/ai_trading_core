@@ -499,3 +499,36 @@ ai_trading_core/
 
 - Let grid-tuning i GUI (små jobs, ikke fuld AutoML).
 
+## Drift & Vedligehold — Log-rotation
+
+Formål:
+- Holde GUI’en (Streamlit) snappy ved at trimme CSV-logs (`fills.csv`, `signals.csv`, `equity.csv`) til de sidste N rækker.
+- Holde tekstlog (`logs/bot.log`) under kontrol ved at bevare de sidste N linjer.
+
+### CLI (kør fra projektroden)
+**CSV-logs**:
+```bash
+# Trim én fil
+python -m utils.logs_utils --file logs/fills.csv --keep 50000
+# Trim flere filer
+python -m utils.logs_utils --file logs/fills.csv logs/signals.csv --keep 50000
+# Brug glob / mappe-scan
+python -m utils.logs_utils --glob "logs/*.csv" --keep 50000
+python -m utils.logs_utils --dir logs --recursive --keep 50000
+
+Tekstlog:
+
+python -m utils.log_utils --rotate logs/bot.log --keep 200000
+# Se de sidste 200 linjer
+python -m utils.log_utils --tail logs/bot.log --n 200
+# Log et status-snapshot (til BotStatus.md + logs/bot.log)
+python -m utils.log_utils --status
+
+
+Windows (Task Scheduler)
+
+Opret planlagt opgave (hourly):
+
+schtasks /Create /SC HOURLY /TN "RotateCSV"      /TR "\"%CD%\.venv\Scripts\python.exe\" -m utils.logs_utils --glob \"%CD%\logs\*.csv\" --keep 50000" /F
+schtasks /Create /SC HOURLY /TN "RotateTextLog"  /TR "\"%CD%\.venv\Scripts\python.exe\" -m utils.log_utils --rotate \"%CD%\logs\bot.log\" --keep 200000" /F
+

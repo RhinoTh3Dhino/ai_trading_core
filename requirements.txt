@@ -13,8 +13,6 @@ packaging==23.2
 # VIGTIGT: dine .pkl er trænet på scikit-learn 1.6.1.
 scikit-learn==1.6.1
 joblib==1.4.2
-
-# Tree/GBM libs (brug kun dem du reelt bruger)
 xgboost==2.0.3
 lightgbm==4.3.0
 catboost==1.2.5
@@ -70,13 +68,13 @@ ccxt==4.1.98
 python-telegram-bot==20.7
 
 # =========================
-# MLflow / TRACKING / DASH (valgfrit)
-# (kræver packaging < 24 og protobuf 3.x)
+# GUI / TRACKING
+# (Protobuf 3.20.x kræves for kompatibilitet med Streamlit og MLflow 2.3)
 # =========================
+streamlit==1.28.2
 mlflow==2.3.0
-streamlit==1.16.0
 wandb==0.17.0
-protobuf==3.19.6
+protobuf==3.20.3
 
 # =========================
 # DEV / TEST / NOTEBOOKS (valgfrit)
