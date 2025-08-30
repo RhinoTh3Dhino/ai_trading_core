@@ -206,6 +206,75 @@ def test_telegram_utils_chunk_and_fallback(tmp_path: Path | None = None):
         _restore_requests_post(real_post)
 
 
+def test_tg_dedupe_and_cooldown_and_lowprio_batch():
+    # Aktivér Telegram (mocket) og nulstil gates
+    os.environ["TELEGRAM_TOKEN"] = "X"
+    os.environ["TELEGRAM_CHAT_ID"] = "Y"
+    os.environ["TELEGRAM_VERBOSE"] = "0"
+
+    sent, real_post = _install_requests_post_mock()
+
+    # Reset af interne tilstande + parametre
+    tg._last_sent_global_ts = 0.0
+    tg._last_sent_by_symbol.clear()
+    tg._dedupe_store.clear()
+    tg._lowprio_buffer.clear()
+    tg._last_batch_flush_ts = 0.0
+
+    tg.DEDUPE_TTL_SEC = 120
+    tg.COOLDOWN_GLOBAL_SEC = 5
+    tg.COOLDOWN_PER_SYMBOL_SEC = 15
+    tg.BATCH_LOWPRIO_EVERY_SEC = 10
+    tg.BATCH_MAX_ITEMS = 20
+
+    # Kontrollér tiden
+    clk = DummyClock(1_000_000.0)
+    real_now = tg._now_ts
+    tg._now_ts = clk.now
+
+    try:
+        # 1) Første high-prio -> sendes
+        r1 = tg.send_signal_message("HELLO", symbol="BTCUSDT", priority="high", silent=True)
+        assert r1 is not None
+
+        # 2) Samme tekst/key inden TTL -> duplicate suppress
+        r2 = tg.send_signal_message("HELLO", symbol="BTCUSDT", priority="high", silent=True)
+        assert isinstance(r2, dict) and r2.get("suppressed") and r2["reason"] == "duplicate"
+
+        # 3) Ny tekst men inden global cooldown -> cooldown suppress
+        r3 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
+        assert r3.get("suppressed") and r3["reason"] == "cooldown"
+
+        # 4) Efter cooldown -> send igen OK
+        clk.sleep(tg.COOLDOWN_GLOBAL_SEC + 0.01)
+        r4 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
+        assert not (isinstance(r4, dict) and r4.get("suppressed"))
+
+        # 5) Low-prio: bufferes og flusher først efter ventetid
+        sent.clear()
+        tg._lowprio_buffer.clear()
+        tg._last_batch_flush_ts = clk.now()
+
+        tg.send_signal_message("L1", symbol="X", priority="low", silent=True)
+        tg.send_signal_message("L2", symbol="X", priority="low", silent=True)
+
+        # For tidlig flush -> False
+        flushed_early = tg.maybe_flush_lowprio_batch()
+        assert flushed_early is False
+
+        # Efter ventetid -> True og besked med overskrift
+        clk.sleep(tg.BATCH_LOWPRIO_EVERY_SEC + 1)
+        flushed = tg.maybe_flush_lowprio_batch()
+        assert flushed is True
+
+        msg_payloads = [p for kind, p in sent if kind == "msg"]
+        assert msg_payloads and any("Lav-prio opsummering" in (m.get("text", "") or "") for m in msg_payloads)
+
+    finally:
+        tg._now_ts = real_now
+        _restore_requests_post(real_post)
+
+
 # ---------- simple runner ----------
 def main():
     fails = 0
@@ -219,6 +288,11 @@ def main():
         print("OK - Telegram utils (chunking + fallback)")
     except AssertionError as e:
         print("FAIL - Telegram utils:", e); fails += 1
+    try:
+        test_tg_dedupe_and_cooldown_and_lowprio_batch()
+        print("OK - Telegram utils (dedupe/cooldown/lowprio)")
+    except AssertionError as e:
+        print("FAIL - Telegram utils gates:", e); fails += 1
     if fails == 0:
         print("\n✅ Alerts/Router/Telegram-tests bestået.")
     else:

@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-AI Trading Engine – robust, failsafe og nu med PAPER TRADING mode.
+AI Trading Engine – robust, failsafe og nu med PAPER TRADING mode + Milepæl C integration.
 
-NYT:
-- --mode paper: PaperBroker integration, bar-for-bar handel, equity/fills CSV, daglig metrics-logging.
-- Daglig aggregering → logs/daily_metrics.csv (win-rate, signal_count, trades, gross/net PnL, max_dd, sharpe_d approx).
-- Valgfri Telegram daglig rapport.
-- AUTO features: --features auto (default) genererer/loader {SYMBOL}_{TF}_latest.csv uden hårdkodning.
-- ✅ Robust udlæsning af aktuel position (qty) så SELL/close virker, uanset brokerens datastruktur.
+NYT i denne version:
+- Central konfig via config/env_loader (LOG_DIR, ENGINE_*, TELEGRAM_*, ALERT_*).
+- AlertManager med cooldown (DD/winrate/profit) evalueres løbende.
+- Konsekvent brug af LOG_DIR fra .env → GUI/engine peger samme sted.
+- Telegram-støj reduceret:
+  - TELEGRAM_DAILY_REPORT = none|daily|last  (default: last)
+  - TELEGRAM_VERBOSITY   = none|alerts|trade|status|bar  (default: trade)
+  - TELEGRAM_MIN_SECONDS_BETWEEN_MSG respekteres for ikke-alerts
 
 Bevarer:
-- Analyse/backtest-flow (ML/DL/Ensemble) og al tidligere robusthed.
+- Analyze/paper-flow, ensemble, daily metrics, Telegram-rapport ved dagsafslutning.
 """
 from __future__ import annotations
 
@@ -18,6 +20,7 @@ import os
 import csv
 import json
 import math
+import time
 import pickle
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
@@ -32,19 +35,50 @@ try:
 except Exception:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-# --- .env (vigtigt: load fra projektroden) ---
+# --- .env (load tidligt) ---
 try:
     from dotenv import load_dotenv  # type: ignore
     load_dotenv(PROJECT_ROOT / ".env")
 except Exception:
     pass
 
-LOGS_DIR = Path(PROJECT_ROOT) / "logs"
+# --- Konfig (Milepæl C) ---
+CFG = None
+try:
+    from config.env_loader import load_config  # type: ignore
+    CFG = load_config()
+except Exception:
+    class _FallbackTelegram:
+        token = os.getenv("TELEGRAM_TOKEN", "")
+        chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
+        verbosity = os.getenv("TELEGRAM_VERBOSITY", "trade").lower()
+        min_gap_s = float(os.getenv("TELEGRAM_MIN_SECONDS_BETWEEN_MSG", "10") or 10.0)
+
+    class _FallbackAlerts:
+        allow_alerts = (os.getenv("ALLOW_ALERTS", "true").lower() in {"1", "true", "yes", "on"})
+        dd_pct = float(os.getenv("ALERT_DD_PCT", "10") or 10.0)
+        winrate_min = float(os.getenv("ALERT_WINRATE_MIN", "45") or 45.0)
+        profit_pct = float(os.getenv("ALERT_PROFIT_PCT", "20") or 20.0)
+        cooldown_s = float(os.getenv("ALERT_COOLDOWN_SEC", "1800") or 1800.0)
+
+    class _FallbackCfg:
+        from pathlib import Path as _P
+        log_dir = _P(os.getenv("LOG_DIR", "logs"))
+        alloc_pct = float(os.getenv("ENGINE_ALLOC_PCT", "0.10") or 0.10)
+        commission_bp = float(os.getenv("ENGINE_COMMISSION_BP", "2") or 2.0)
+        slippage_bp = float(os.getenv("ENGINE_SLIPPAGE_BP", "1") or 1.0)
+        daily_loss_limit_pct = float(os.getenv("ENGINE_DAILY_LOSS_LIMIT_PCT", "5") or 5.0)
+        telegram = _FallbackTelegram()
+        alerts = _FallbackAlerts()
+    CFG = _FallbackCfg()
+
+# --- LOG STIER (fra CFG) ---
+LOGS_DIR = Path(CFG.log_dir)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 DAILY_METRICS_CSV = LOGS_DIR / "daily_metrics.csv"
 EQUITY_CSV = LOGS_DIR / "equity.csv"
 FILLS_CSV = LOGS_DIR / "fills.csv"
-SIGNALS_CSV = LOGS_DIR / "signals.csv"  # NY: bar-for-bar signal logging
+SIGNALS_CSV = LOGS_DIR / "signals.csv"
 
 # --- Telegram (failsafe) ---
 try:
@@ -56,6 +90,31 @@ except Exception:
         return None
     def send_live_metrics(*args, **kwargs):
         return None
+
+# --- Telegram wrapper: verbosity + rate-limit ---
+_VERBOSITY_LEVELS = {"none": 0, "alerts": 1, "trade": 2, "status": 3, "bar": 4}
+_KIND_LEVEL = {"alert": 1, "trade": 2, "status": 3, "bar": 4, "fill": 2}
+_TELEGRAM_VERBOSITY = getattr(CFG.telegram, "verbosity", "trade").lower()
+_TELEGRAM_MIN_GAP = float(getattr(CFG.telegram, "min_gap_s", 10.0) or 10.0)
+_last_send_ts: float = 0.0
+
+def _allowed_by_verbosity(kind: str) -> bool:
+    lvl = _KIND_LEVEL.get(kind, 2)
+    return _VERBOSITY_LEVELS.get(_TELEGRAM_VERBOSITY, 2) >= lvl
+
+def _send(kind: str, text: str, **kw):
+    """Rate-limit (ikke for alerts) + verbosity-filter. Fallback til print ved fejl."""
+    global _last_send_ts
+    if not _allowed_by_verbosity(kind):
+        return
+    now = time.time()
+    if kind != "alert" and (now - _last_send_ts) < _TELEGRAM_MIN_GAP:
+        return
+    try:
+        send_message(f"[{kind.upper()}] {text}", **kw)
+    except Exception:
+        print(f"[{kind.upper()}] {text}")
+    _last_send_ts = now
 
 # --- Device logging (failsafe) ---
 try:
@@ -83,21 +142,55 @@ except Exception:
         def start(self): pass
         def stop(self): pass
 
-# --- Konfig (failsafe) ---
+# --- Alerts (Milepæl C) ---
 try:
-    from config.monitoring_config import (  # type: ignore
-        ALARM_THRESHOLDS,
-        ALERT_ON_DRAWNDOWN,
-        ALERT_ON_WINRATE,
-        ALERT_ON_PROFIT,
-        ENABLE_MONITORING,
+    from utils.alerts import AlertManager, AlertThresholds  # type: ignore
+    ALERTS = AlertManager(
+        AlertThresholds(
+            dd_pct=CFG.alerts.dd_pct,
+            winrate_min=CFG.alerts.winrate_min,
+            profit_pct=CFG.alerts.profit_pct,
+            cooldown_s=CFG.alerts.cooldown_s,
+        ),
+        allow_alerts=CFG.alerts.allow_alerts,
     )
 except Exception:
-    ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 0.20, "profit": -10}
-    ALERT_ON_DRAWNDOWN = True
-    ALERT_ON_WINRATE = True
-    ALERT_ON_PROFIT = True
-    ENABLE_MONITORING = True
+    class _DummyAlerts:
+        def on_fill(self, pnl_value=None): pass
+        def on_equity(self, eq_value: float): pass
+        def evaluate_and_notify(self, send_fn): pass
+    ALERTS = _DummyAlerts()
+
+# --- Konfig (failsafe gamle flags bevaret) ---
+DEFAULT_THRESHOLD = 0.7
+DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    v = os.getenv(name)
+    if v is None:
+        return default
+    return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, default))
+    except Exception:
+        return default
+
+def _env_str(name: str, default: str) -> str:
+    return os.getenv(name, default)
+
+ENV_SYMBOL = _env_str("SYMBOL", "BTCUSDT")
+ENV_INTERVAL = _env_str("TIMEFRAME", "1h")
+ENV_MODE = _env_str("MODE", "analyze")  # analyze|paper
+ENV_FEATURES = _env_str("FEATURES", "auto")
+ENV_DEVICE = os.getenv("PYTORCH_DEVICE")  # None => auto
+ENV_ALLOC_PCT = _env_float("ALLOC_PCT", CFG.alloc_pct)
+ENV_COMMISSION_BP = _env_float("COMMISSION_BP", CFG.commission_bp)
+ENV_SLIPPAGE_BP = _env_float("SLIPPAGE_BP", CFG.slippage_bp)
+ENV_DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", CFG.daily_loss_limit_pct)
+
+_TELEGRAM_DAILY_REPORT = os.getenv("TELEGRAM_DAILY_REPORT", "last").lower()  # none|daily|last
 
 # --- Versions (failsafe) ---
 try:
@@ -165,7 +258,7 @@ except Exception:
         out = (scores >= thr).astype(int)
         return out
 
-# --- Strategier (failsafe RSI) ---
+# --- Strategier (failsafe RSI/MACD/EMA) ---
 try:
     from strategies.rsi_strategy import rsi_rule_based_signals  # type: ignore
 except Exception:
@@ -189,7 +282,7 @@ except Exception:
 try:
     from bot.brokers.paper_broker import PaperBroker  # type: ignore
 except Exception:
-    class PaperBroker:  # minimal stub – anbefalet at bruge den rigtige fil
+    class PaperBroker:  # minimal stub
         def __init__(self, **k):
             self.cash = float(k.get("starting_cash", 100000))
             self.positions = {}
@@ -235,7 +328,6 @@ except Exception:
 try:
     from features.auto_features import ensure_latest  # type: ignore
 except Exception:
-    # Fallback: find {symbol}_{tf}_latest.csv i outputs/feature_data eller tag nyeste CSV i mappen
     def ensure_latest(symbol: str = "BTCUSDT", timeframe: str = "1h", min_rows: int = 200):
         outdir = Path(PROJECT_ROOT) / "outputs" / "feature_data"
         outdir.mkdir(parents=True, exist_ok=True)
@@ -248,11 +340,6 @@ except Exception:
         raise FileNotFoundError("ensure_latest fallback: ingen features-CSV fundet i outputs/feature_data/")
 
 def _resolve_features_path(features_path: Optional[str], symbol: str, interval: str, *, min_rows: int = 200) -> str:
-    """
-    Returnér endelig sti til features CSV:
-    - Hvis 'auto' eller ikke eksisterende → ensure_latest(symbol, interval)
-    - Ellers returnér angivet sti uændret
-    """
     if not features_path or str(features_path).lower() == "auto" or not os.path.exists(str(features_path)):
         path = ensure_latest(symbol=symbol, timeframe=interval, min_rows=min_rows)
         print(f"🧩 AUTO features valgt → {path}")
@@ -273,39 +360,9 @@ ML_MODEL_PATH = os.path.join(MODEL_DIR, "best_ml_model.pkl")
 ML_FEATURES_PATH = os.path.join(MODEL_DIR, "best_ml_features.json")
 
 GRAPH_DIR = "graphs"
-DEFAULT_THRESHOLD = 0.7
-DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]
 
 # =========================
-# ENV-HELPERS (defaults fra .env)
-# =========================
-def _env_bool(name: str, default: bool = False) -> bool:
-    v = os.getenv(name)
-    if v is None:
-        return default
-    return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
-
-def _env_float(name: str, default: float) -> float:
-    try:
-        return float(os.getenv(name, default))
-    except Exception:
-        return default
-
-def _env_str(name: str, default: str) -> str:
-    return os.getenv(name, default)
-
-ENV_SYMBOL = _env_str("SYMBOL", "BTCUSDT")
-ENV_INTERVAL = _env_str("TIMEFRAME", "1h")
-ENV_MODE = _env_str("MODE", "analyze")  # analyze|paper
-ENV_FEATURES = _env_str("FEATURES", "auto")
-ENV_DEVICE = os.getenv("PYTORCH_DEVICE")  # None => auto
-ENV_ALLOC_PCT = _env_float("ALLOC_PCT", 0.10)
-ENV_COMMISSION_BP = _env_float("COMMISSION_BP", 2.0)
-ENV_SLIPPAGE_BP = _env_float("SLIPPAGE_BP", 1.0)
-ENV_DAILY_LOSS_LIMIT_PCT = _env_float("DAILY_LOSS_LIMIT_PCT", 0.0)
-
-# =========================
-# HJÆLPEFUNKTIONER (fælles)
+# Hjælpefunktioner (features/models)
 # =========================
 def load_trained_feature_list() -> Optional[List[str]]:
     if os.path.exists(PYTORCH_FEATURES_PATH):
@@ -321,7 +378,6 @@ def load_trained_feature_list() -> Optional[List[str]]:
         print("[ADVARSEL] Ingen feature-liste fundet – bruger alle numeriske features fra input.")
         return None
 
-
 def load_ml_model():
     if os.path.exists(ML_MODEL_PATH) and os.path.exists(ML_FEATURES_PATH):
         with open(ML_MODEL_PATH, "rb") as f:
@@ -334,7 +390,6 @@ def load_ml_model():
         print("[ADVARSEL] Ingen trænet ML-model fundet – bruger random baseline.")
         return None, None
 
-
 def reconcile_features(df: pd.DataFrame, feature_list: List[str]) -> pd.DataFrame:
     missing = [col for col in feature_list if col not in df.columns]
     if missing:
@@ -342,7 +397,6 @@ def reconcile_features(df: pd.DataFrame, feature_list: List[str]) -> pd.DataFram
         for col in missing:
             df[col] = 0.0
     return df[feature_list]
-
 
 def load_pytorch_model(feature_dim: int, model_path: str = PYTORCH_MODEL_PATH, device_str: str = "cpu"):
     if torch is None:
@@ -372,7 +426,6 @@ def load_pytorch_model(feature_dim: int, model_path: str = PYTORCH_MODEL_PATH, d
     print(f"✅ PyTorch-model indlæst fra {model_path} på {device_str}")
     return model
 
-
 def pytorch_predict(model, X: pd.DataFrame, device_str: str = "cpu"):
     X_ = X.copy()
     if "regime" in X_.columns and not np.issubdtype(X_["regime"].dtype, np.number):
@@ -385,7 +438,6 @@ def pytorch_predict(model, X: pd.DataFrame, device_str: str = "cpu"):
         probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()  # type: ignore
         preds = np.argmax(probs, axis=1)
     return preds, probs
-
 
 def keras_lstm_predict(df: pd.DataFrame, feature_cols: List[str], seq_length: int = 48, model_path: str = LSTM_MODEL_PATH):
     try:
@@ -418,7 +470,6 @@ def keras_lstm_predict(df: pd.DataFrame, feature_cols: List[str], seq_length: in
     preds_full[seq_length:] = preds
     return preds_full
 
-
 def read_features_auto(file_path: str) -> pd.DataFrame:
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
@@ -429,23 +480,20 @@ def read_features_auto(file_path: str) -> pd.DataFrame:
         df = pd.read_csv(file_path)
     return df
 
-
 def _ensure_datetime(series: pd.Series) -> pd.Series:
     s = series.copy()
     if np.issubdtype(s.dtype, np.number):
         return pd.to_datetime(s, unit="s", errors="coerce")
     return pd.to_datetime(s, errors="coerce")
 
-
 def _simple_signals(df: pd.DataFrame) -> np.ndarray:
     ema = df["close"].ewm(span=10, adjust=False).mean()
     return (df["close"] > ema).astype(int).to_numpy()
 
 # -------------------------------------------------------------
-# Position-helpers (NY): robust udlæsning af nuværende qty
+# Position-helpers (robust qty-udlæsning)
 # -------------------------------------------------------------
 def _extract_numeric(obj, keys):
-    """Prøv at hive et numerisk felt ud fra dict/obj via en liste af kandidatfelter."""
     for k in keys:
         try:
             if isinstance(obj, dict) and k in obj and obj[k] is not None:
@@ -454,7 +502,6 @@ def _extract_numeric(obj, keys):
                 return float(getattr(obj, k))
         except Exception:
             pass
-    # én nesting ned hvis dict (fx {"BTCUSDT": {"position": {"qty": 0.1}}})
     if isinstance(obj, dict):
         for v in obj.values():
             if isinstance(v, dict):
@@ -464,7 +511,6 @@ def _extract_numeric(obj, keys):
     return None
 
 def _get_current_qty(broker, symbol: str) -> float:
-    """Returnér nuværende position-qty for symbol uanset brokerens datastruktur."""
     pos_container = getattr(broker, "positions", None)
     if pos_container is None:
         return 0.0
@@ -554,15 +600,11 @@ def _ensure_daily_metrics_headers() -> None:
             w.writerow(["date", "signal_count", "trades", "win_rate", "gross_pnl", "net_pnl", "max_dd", "sharpe_d"])
 
 def _calc_daily_metrics_for_date(date_str: str) -> Dict[str, float]:
-    """Læs fills/equity/signals for en bestemt dag og beregn metrikker.
-    Fallback: hvis ingen lukkede handler (pnl_realized), brug equity-diff og 1->0 flips.
-    """
     gross = 0.0
     wins = 0
     closed = 0
     commissions = 0.0
 
-    # --- 1) Forsøg at læse realiseret PnL fra fills ---
     if FILLS_CSV.exists():
         df_f = pd.read_csv(FILLS_CSV)
         if "ts" in df_f.columns:
@@ -577,7 +619,6 @@ def _calc_daily_metrics_for_date(date_str: str) -> Dict[str, float]:
                 if "commission" in d.columns:
                     commissions = float(pd.to_numeric(d["commission"], errors="coerce").fillna(0.0).sum())
 
-    # --- 2) Equity-drevet fallback, hvis ingen lukkede handler ---
     if closed == 0 and EQUITY_CSV.exists():
         df_e = pd.read_csv(EQUITY_CSV)
         if {"date","equity"}.issubset(df_e.columns):
@@ -585,24 +626,21 @@ def _calc_daily_metrics_for_date(date_str: str) -> Dict[str, float]:
             if not day.empty:
                 e = pd.to_numeric(day["equity"], errors="coerce").dropna().values
                 if e.size >= 2:
-                    gross = float(e[-1] - e[0])  # PnL ~ dagens equity-forskel
-                    # trades ≈ antal 1->0 flips i signals (lukke-signaler)
+                    gross = float(e[-1] - e[0])
                     if SIGNALS_CSV.exists():
                         try:
                             s = pd.read_csv(SIGNALS_CSV)
                             if {"ts","signal"}.issubset(s.columns):
                                 s["date"] = s["ts"].astype(str).str[:10]
-                                d = s[s["date"] == date_str].copy()
-                                d = d.sort_values("ts")
+                                d = s[s["date"] == date_str].copy().sort_values("ts")
                                 sig = pd.to_numeric(d["signal"], errors="coerce").fillna(0).astype(int).to_numpy()
                                 closed = int(((sig[:-1] == 1) & (sig[1:] == 0)).sum())
                         except Exception:
                             pass
-                    wins = 0  # kan ikke kendes uden trade-PnL
+                    wins = 0
 
     net = gross - commissions
 
-    # --- 3) Max intradag drawdown & "Sharpe_d" fra equity ---
     max_dd = 0.0
     sharpe_d = 0.0
     if EQUITY_CSV.exists():
@@ -622,7 +660,6 @@ def _calc_daily_metrics_for_date(date_str: str) -> Dict[str, float]:
                     if rets.size > 1 and np.std(rets) > 1e-12:
                         sharpe_d = float(np.mean(rets) / np.std(rets))
 
-    # --- 4) signal_count (skrives separat under løb) ---
     signal_count = 0
     if DAILY_METRICS_CSV.exists():
         dm = pd.read_csv(DAILY_METRICS_CSV)
@@ -645,7 +682,6 @@ def _calc_daily_metrics_for_date(date_str: str) -> Dict[str, float]:
     }
 
 def _upsert_daily_metrics(date_str: str, updates: Dict[str, float]) -> None:
-    """Idempotent opdatering/indsættelse af en dags række."""
     _ensure_daily_metrics_headers()
     rows = []
     found = False
@@ -678,13 +714,12 @@ def _send_daily_report_telegram(date_str: str, m: Dict[str, float]) -> None:
             f"- Max DD: {m['max_dd']:.2f}%\n"
             f"- Sharpe_d: {m['sharpe_d']:.2f}\n"
         )
-        # Robust i telegram_utils: MarkdownV2 escapes + fallback
+        # Daglig rapport sendes via den rå Telegram-funktion (markdownv2)
         send_message(msg, parse_mode="MarkdownV2")
     except Exception as e:
         print(f"[INFO] Telegram ikke konfigureret/fejlede: {e}")
 
 def _append_signals_rows(rows: List[Dict[str, str | int]]) -> None:
-    """Append liste af {'ts': ISO, 'signal': int} til logs/signals.csv med header ved behov."""
     SIGNALS_CSV.parent.mkdir(parents=True, exist_ok=True)
     write_header = not SIGNALS_CSV.exists()
     with SIGNALS_CSV.open("a", newline="", encoding="utf-8") as f:
@@ -698,7 +733,6 @@ def _append_signals_rows(rows: List[Dict[str, str | int]]) -> None:
 # PAPER TRADING – hovedløb
 # ============================================================
 def _generate_ensemble_signals_for_df(df: pd.DataFrame, threshold: float, device_str: str, use_lstm: bool) -> np.ndarray:
-    """Genbrug eksisterende model-loading for at producere ensemble-signaler for hele DF."""
     # ML
     ml_model, ml_features = load_ml_model()
     if ml_model is not None and ml_features is not None:
@@ -720,7 +754,6 @@ def _generate_ensemble_signals_for_df(df: pd.DataFrame, threshold: float, device
         X_dl = df[fallback_cols]
         print(f"[ADVARSEL] DL fallback-features: {fallback_cols}")
 
-    # LSTM → PyTorch → Random, men: hvis --use_lstm og filer mangler, neutraliser DL (0)
     lstm_ok = bool(use_lstm) and all(
         os.path.exists(p) for p in (LSTM_MODEL_PATH, LSTM_SCALER_MEAN_PATH, LSTM_SCALER_SCALE_PATH)
     )
@@ -740,12 +773,11 @@ def _generate_ensemble_signals_for_df(df: pd.DataFrame, threshold: float, device
             print("❌ Ingen DL-model – random signaler.")
             dl_signals = np.random.choice([0, 1], size=len(df))
 
-    # Rule (binariser >0 -> 1, ellers 0)
+    # Rule
     rsi_signals_raw = rsi_rule_based_signals(df, low=45, high=55)
     rsi_signals = np.where(rsi_signals_raw > 0, 1, 0)
 
-    # Ensemble
-    ens = ensemble_predict(ml_signals, dl_signals, rsi_signals, weights=DEFAULT_WEIGHTS, voting="majority", debug=False)
+    ens = ensemble_predict(ml_signals, dl_signals, rsi_signals, weights=[1.0, 1.0, 0.7], voting="majority", debug=False)
     return ens.astype(int)
 
 def run_paper_trading(
@@ -763,10 +795,9 @@ def run_paper_trading(
     alloc_pct: float,
 ) -> None:
     """
-    Paper trading: går bar-for-bar gennem features-CSV, genererer ensemble-signal og
-    eksekverer ordre for at matche regime: signal=1 -> long, signal=0 -> flat (long-only).
+    Bar-for-bar paper trading. signal=1 -> long eksponering; 0 -> flat (long-only).
+    Alerts evalueres løbende (DD/profit) og ved fills (winrate når muligt).
     """
-    # AUTO features (ingen hårdkodning)
     features_path = _resolve_features_path(features_path, symbol, interval, min_rows=200)
 
     print(f"🔄 Indlæser features til paper: {features_path}")
@@ -777,15 +808,12 @@ def run_paper_trading(
         raise ValueError("Features skal have 'timestamp' eller 'datetime' kolonne.")
     df["timestamp"] = _ensure_datetime(df["timestamp"])
     df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
-
     if "close" not in df.columns:
         raise ValueError("Features skal have 'close' kolonne.")
 
-    # generér alle signaler på forhånd (samme som analyse-mode)
     ens_signals = _generate_ensemble_signals_for_df(df.copy(), threshold, device_str, use_lstm)
     df["signal_ens"] = ens_signals
 
-    # init broker
     broker = PaperBroker(
         starting_cash=100_000.0,
         commission_bp=commission_bp,
@@ -796,12 +824,9 @@ def run_paper_trading(
         fills_log_path=FILLS_CSV,
     )
 
-    # daglige tællere
     current_day = None
     daily_signal_count = 0
     prev_sig = 0
-
-    # buffer til signals.csv (bar-for-bar)
     signal_rows: List[Dict[str, str | int]] = []
 
     print("🚀 Starter bar-for-bar loop…")
@@ -810,40 +835,41 @@ def run_paper_trading(
         price = float(df["close"].iat[i])
         sig = int(df["signal_ens"].iat[i])
 
-        # log signal til buffer (brugt af aggregator til signal_count via flips)
         signal_rows.append({"ts": ts.isoformat(), "signal": sig})
 
-        # dato
         dstr = ts.strftime("%Y-%m-%d")
         if current_day is None:
             current_day = dstr
 
-        # mark-to-market (opdater equity + fyld evt. åbne limitordrer)
+        # mark-to-market → equity opdateres
         broker.mark_to_market({symbol: price}, ts=ts)
+        snap = broker.pnl_snapshot({symbol: price})
+        equity = float(snap.get("equity", 0.0))
 
-        # dagsskifte → opdater daglige metrikker (inkl. signal_count)
+        # Alerts på equity (DD/profit)
+        ALERTS.on_equity(equity)
+        ALERTS.evaluate_and_notify(_send)
+
+        # dagsskifte → skriv og evt. send rapport
         if dstr != current_day:
             _upsert_daily_metrics(current_day, {"signal_count": int(daily_signal_count)})
             m = _calc_daily_metrics_for_date(current_day)
             _upsert_daily_metrics(current_day, m)
-            _send_daily_report_telegram(current_day, m)
+            _send("status", f"Dag {current_day} lukket. Net PnL: {m['net_pnl']:.2f}, Win-rate: {m['win_rate']:.2f}%")
+            if _TELEGRAM_DAILY_REPORT == "daily":
+                _send_daily_report_telegram(current_day, m)
             daily_signal_count = 0
             current_day = dstr
 
-        # signalflip tælling (kun 0→1 tælles som "entry-signal")
         if sig == 1 and prev_sig == 0:
             daily_signal_count += 1
         prev_sig = sig
 
-        # eksekver strategi: målposition = long 100% af allokeret kapital ved sig=1, ellers flat
-        snap = broker.pnl_snapshot({symbol: price})
-        equity = float(snap.get("equity", 0.0))
+        # målposition
         target_notional = equity * (alloc_pct if sig == 1 else 0.0)
         target_qty = round(target_notional / max(price, 1e-9), 8)
 
-        # ✅ ROBUST: find nuværende qty
         cur_qty = _get_current_qty(broker, symbol)
-
         delta = target_qty - cur_qty
         if abs(delta) > 1e-8 and not getattr(broker, "trading_halted", False):
             side = "BUY" if delta > 0 else "SELL"
@@ -855,19 +881,21 @@ def run_paper_trading(
                     if hasattr(broker, "close_position"):
                         broker.close_position(symbol, ts=ts)
                     else:
-                        # simple fallback – modhandlen
                         broker.submit_order(symbol, "SELL" if cur_qty > 0 else "BUY", abs(cur_qty), order_type="market", ts=ts)
+            # informer alerts om fill (for winrate/trade counting)
+            ALERTS.on_fill(pnl_value=None)
+            ALERTS.evaluate_and_notify(_send)
 
-    # flush signaler til logs/signals.csv
     if signal_rows:
         _append_signals_rows(signal_rows)
 
-    # efter sidste bar → afslut dag
     if current_day is not None:
         _upsert_daily_metrics(current_day, {"signal_count": int(daily_signal_count)})
         m = _calc_daily_metrics_for_date(current_day)
         _upsert_daily_metrics(current_day, m)
-        _send_daily_report_telegram(current_day, m)
+        _send("status", f"Dag {current_day} lukket. Net PnL: {m['net_pnl']:.2f}, Win-rate: {m['win_rate']:.2f}%")
+        if _TELEGRAM_DAILY_REPORT in {"daily", "last"}:
+            _send_daily_report_telegram(current_day, m)
 
     print("✅ Paper trading gennemløb færdigt.")
     print(f"- Fills: {FILLS_CSV}")
@@ -883,7 +911,7 @@ def main(
     symbol: str = ENV_SYMBOL,
     interval: str = ENV_INTERVAL,
     threshold: float = DEFAULT_THRESHOLD,
-    weights: List[float] = DEFAULT_WEIGHTS,
+    weights: List[float] = [1.0, 1.0, 0.7],
     device_str: Optional[str] = ENV_DEVICE,
     use_lstm: bool = False,
     FORCE_DEBUG: bool = False,
@@ -892,19 +920,19 @@ def main(
     slippage_bp: float = ENV_SLIPPAGE_BP,
     daily_loss_limit_pct: float = ENV_DAILY_LOSS_LIMIT_PCT,
     allow_short: bool = False,
-    alloc_pct: float = ENV_ALLOC_PCT,  # andel af equity pr. entry
+    alloc_pct: float = ENV_ALLOC_PCT,
 ) -> None:
     device_str = device_str or ("cuda" if (torch and torch.cuda.is_available()) else "cpu")
     _ = log_device_status(
         context="engine",
         extra={"symbol": symbol, "interval": interval, "model_type": "multi_compare", "mode": mode},
-        telegram_func=send_message,
+        telegram_func=lambda msg: _send("status", msg),
         print_console=True,
     )
 
     if mode.lower() == "paper":
         run_paper_trading(
-            features_path=features_path,  # resolve sker inde i run_paper_trading
+            features_path=features_path,
             symbol=symbol,
             interval=interval,
             threshold=threshold,
@@ -955,7 +983,7 @@ def main(
             metrics_ml = {"profit_pct": 0.0, "max_drawdown": 0.0, "sharpe": 0.0, "sortino": 0.0}
         metrics_dict: Dict[str, Dict[str, float]] = {"ML": metrics_ml}
 
-        # ---- DL (PyTorch eller LSTM) ----
+        # ---- DL ----
         trained_features = load_trained_feature_list()
         if trained_features is not None:
             X_dl = reconcile_features(df, trained_features)
@@ -1008,7 +1036,7 @@ def main(
             ml_preds=ml_signals,
             dl_preds=dl_signals,
             rule_preds=rsi_signals,
-            weights=DEFAULT_WEIGHTS,
+            weights=[1.0, 1.0, 0.7],
             voting="majority",
             debug=True,
         )
@@ -1032,17 +1060,19 @@ def main(
         for model, metrics in metrics_dict.items():
             print(f"{model}: {metrics}")
 
-        # === Live monitoring/alerting ===
-        if ENABLE_MONITORING:
+        # Live metrics til Telegram (failsafe)
+        try:
             send_live_metrics(
                 trades_ens,
                 balance_ens,
                 symbol=symbol,
                 timeframe=interval,
-                thresholds=ALARM_THRESHOLDS,
+                thresholds={"drawdown": -CFG.alerts.dd_pct, "winrate": CFG.alerts.winrate_min, "profit": CFG.alerts.profit_pct},
             )
+        except Exception:
+            pass
 
-        # Logging til TensorBoard
+        # TensorBoard logging
         for model_name, metrics in metrics_dict.items():
             for metric_key, value in metrics.items():
                 try:
@@ -1051,7 +1081,7 @@ def main(
                     pass
         writer.flush()
 
-        # --- Visualisering (failsafe no-op hvis modul mangler) ---
+        # Visualisering (failsafe)
         try:
             from visualization.plot_performance import plot_performance  # type: ignore
             os.makedirs(GRAPH_DIR, exist_ok=True)
@@ -1098,7 +1128,7 @@ if __name__ == "__main__":
     parser.add_argument("--interval", type=str, default=ENV_INTERVAL, help="Tidsinterval (fx 1h, 4h)")
     parser.add_argument("--device", type=str, default=ENV_DEVICE, help="PyTorch device ('cuda'/'cpu'), auto hvis None")
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="Threshold for DL-signal")
-    parser.add_argument("--weights", type=float, nargs=3, default=DEFAULT_WEIGHTS, help="Voting weights ML DL Rule")
+    parser.add_argument("--weights", type=float, nargs=3, default=[1.0, 1.0, 0.7], help="Voting weights ML DL Rule")
     parser.add_argument("--use_lstm", action="store_true", help="Brug Keras LSTM-model i stedet for PyTorch (DL)")
 
     # Paper-mode
@@ -1117,7 +1147,7 @@ if __name__ == "__main__":
             symbol=args.symbol,
             interval=args.interval,
             threshold=args.threshold,
-            weights=list(args.weights) if isinstance(args.weights, (list, tuple)) else DEFAULT_WEIGHTS,
+            weights=list(args.weights) if isinstance(args.weights, (list, tuple)) else [1.0, 1.0, 0.7],
             device_str=args.device,
             use_lstm=args.use_lstm,
             FORCE_DEBUG=False,

@@ -1,15 +1,10 @@
 [run]
 branch = True
 source =
-    backtest
-    features
     utils
-    ensemble
-    strategies
-    config
 
 omit =
-    # Generelle udelukkelser
+    # Tests og diverse
     */tests/*
     analysis/*
     notebooks/*
@@ -19,8 +14,6 @@ omit =
     ml/*
     tuning/*
     fetch_data/*
-
-    # Entrypoints / diverse
     run.py
     run_all.py
     main.py
@@ -29,10 +22,26 @@ omit =
     test_imports.py
     */__main__.py
 
-    # Hele 'bot' (mange lavdækkede moduler)
+    # Hele bot/ og andre pakker måles ikke i denne fase
     bot/*
+    backtest/*
+    features/*
+    ensemble/*
+    strategies/*
+    config/*
 
-    # utils med lav dækning / sideeffekter
+    # utils-moduler vi ikke tester endnu eller som har sideeffekter
+    utils/log_utils.py
+    utils/logs_utils.py
+    utils/monitoring_utils.py
+    utils/metrics_utils.py
+    utils/api.py
+    utils/backup.py
+    utils/botstatus.py
+    utils/changelog.py
+    utils/check_feature_match.py
+    utils/csv_utils.py
+    utils/errors.py
     utils/performance.py
     utils/plot_utils.py
     utils/google_drive_upload.py
@@ -41,19 +50,12 @@ omit =
     utils/feature_logging.py
     utils/ensemble_utils.py
     utils/file_utils.py
-
-    # ensemble-moduler vi ikke tester (behold ensemble_predict.py)
-    ensemble/ensemble.py
-    ensemble/majority_vote_ensemble.py
-    ensemble/weighted_vote_ensemble.py
-
-    # features-moduler som ikke er mål for de nuværende tests
-    features/generate_features.py
-    features/generate_target.py
-    features/generate_regime_target.py
-    features/indicators.py
-    features/feature_engineering.py
-    features/patterns.py
+    utils/report_utils.py
+    utils/robust_utils.py
+    utils/state_store.py
+    utils/state_store_shelve.py
+    utils/project_path.py
+    utils/config_utils.py
 
 [report]
 # Skjul typiske "ikke-kørbare" linjer

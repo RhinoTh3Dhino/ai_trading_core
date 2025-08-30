@@ -14651,3 +14651,1098 @@ n_1: 2831, n_0: 2572 (Test: 5403)
 [2025-08-30 02:19:41] 🚨 ADVARSEL: Win-rate under 20%! (10.0%)
 [2025-08-30 02:19:41] [DECISION] 2025-08-30 02:19:41 | NOTIFY | sent | symbol=X  (bypass_cooldown)
 [2025-08-30 02:19:41] 🚨 ADVARSEL: Profit under -10%! (-50.00%)
+[2025-08-30 13:06:13] Sender besked: Bot-status:
+2025-08-30 13:06:13 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: a4da996 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare | mode: paper
+[2025-08-30 13:06:14] Besked sendt OK.
+[2025-08-30 13:06:17] Sender besked: [STATUS] Dag 2025-06-19 lukket. Net PnL: 280.94, Win-rate: 84.62%
+[2025-08-30 13:06:17] Besked sendt OK.
+[2025-08-30 13:06:17] Sender besked: 📊 *Daglig rapport* 2025-06-19
+- Win-rate: 84.62%
+- Signal count: 2
+- Trades (closed legs): 13
+- Gross PnL: 294.96
+- Net PnL: 280.94
+- Max DD: -0.17%
+- Sharpe_d: 0.03
+
+[2025-08-30 13:06:18] Besked sendt OK.
+[2025-08-30 13:06:18] Sender besked: [ALERT] ⚠️ Win-rate 0.0% under 45.0% (trades=10)
+[2025-08-30 13:06:18] Besked sendt OK.
+[2025-08-30 13:06:18] Sender besked: [STATUS] Dag 2025-06-20 lukket. Net PnL: 790.94, Win-rate: 100.00%
+[2025-08-30 13:06:19] Besked sendt OK.
+[2025-08-30 13:06:19] Sender besked: 📊 *Daglig rapport* 2025-06-20
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 14
+- Gross PnL: 819.00
+- Net PnL: 790.94
+- Max DD: -0.67%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:06:19] Besked sendt OK.
+[2025-08-30 13:06:19] Sender besked: [STATUS] Dag 2025-06-21 lukket. Net PnL: 1298.54, Win-rate: 100.00%
+[2025-08-30 13:06:20] Besked sendt OK.
+[2025-08-30 13:06:20] Sender besked: 📊 *Daglig rapport* 2025-06-21
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 17
+- Gross PnL: 1320.64
+- Net PnL: 1298.54
+- Max DD: -1.39%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:06:20] Besked sendt OK.
+[2025-08-30 13:06:20] Sender besked: [STATUS] Dag 2025-06-22 lukket. Net PnL: 2812.45, Win-rate: 100.00%
+[2025-08-30 13:06:21] Besked sendt OK.
+[2025-08-30 13:06:21] Sender besked: 📊 *Daglig rapport* 2025-06-22
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 23
+- Gross PnL: 2854.80
+- Net PnL: 2812.45
+- Max DD: -3.50%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:06:22] Besked sendt OK.
+[2025-08-30 13:06:22] Sender besked: [STATUS] Dag 2025-06-23 lukket. Net PnL: 1548.17, Win-rate: 100.00%
+[2025-08-30 13:06:22] Besked sendt OK.
+[2025-08-30 13:06:22] Sender besked: 📊 *Daglig rapport* 2025-06-23
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 6
+- Gross PnL: 1560.34
+- Net PnL: 1548.17
+- Max DD: -4.18%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:23] Besked sendt OK.
+[2025-08-30 13:06:23] Sender besked: [STATUS] Dag 2025-06-24 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:06:23] Besked sendt OK.
+[2025-08-30 13:06:23] Sender besked: 📊 *Daglig rapport* 2025-06-24
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -3.98%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:24] Besked sendt OK.
+[2025-08-30 13:06:24] Sender besked: [STATUS] Dag 2025-06-25 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:06:24] Besked sendt OK.
+[2025-08-30 13:06:24] Sender besked: 📊 *Daglig rapport* 2025-06-25
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -3.98%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:25] Besked sendt OK.
+[2025-08-30 13:06:25] Sender besked: [STATUS] Dag 2025-06-26 lukket. Net PnL: 819.68, Win-rate: 100.00%
+[2025-08-30 13:06:25] Besked sendt OK.
+[2025-08-30 13:06:25] Sender besked: 📊 *Daglig rapport* 2025-06-26
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 14
+- Gross PnL: 847.98
+- Net PnL: 819.68
+- Max DD: -4.38%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:26] Besked sendt OK.
+[2025-08-30 13:06:26] Sender besked: [STATUS] Dag 2025-06-27 lukket. Net PnL: 482.06, Win-rate: 100.00%
+[2025-08-30 13:06:26] Besked sendt OK.
+[2025-08-30 13:06:26] Sender besked: 📊 *Daglig rapport* 2025-06-27
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 15
+- Gross PnL: 506.34
+- Net PnL: 482.06
+- Max DD: -4.85%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:26] Besked sendt OK.
+[2025-08-30 13:06:26] Sender besked: [STATUS] Dag 2025-06-28 lukket. Net PnL: 98.52, Win-rate: 100.00%
+[2025-08-30 13:06:27] Besked sendt OK.
+[2025-08-30 13:06:27] Sender besked: 📊 *Daglig rapport* 2025-06-28
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 3
+- Gross PnL: 106.61
+- Net PnL: 98.52
+- Max DD: -4.84%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:27] Besked sendt OK.
+[2025-08-30 13:06:27] Sender besked: [STATUS] Dag 2025-06-29 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:06:28] Besked sendt OK.
+[2025-08-30 13:06:28] Sender besked: 📊 *Daglig rapport* 2025-06-29
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -4.83%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:28] Besked sendt OK.
+[2025-08-30 13:06:28] Sender besked: [STATUS] Dag 2025-06-30 lukket. Net PnL: 878.99, Win-rate: 100.00%
+[2025-08-30 13:06:28] Besked sendt OK.
+[2025-08-30 13:06:28] Sender besked: 📊 *Daglig rapport* 2025-06-30
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 12
+- Gross PnL: 903.31
+- Net PnL: 878.99
+- Max DD: -5.42%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:29] Besked sendt OK.
+[2025-08-30 13:06:29] Sender besked: [STATUS] Dag 2025-07-01 lukket. Net PnL: 1165.04, Win-rate: 100.00%
+[2025-08-30 13:06:29] Besked sendt OK.
+[2025-08-30 13:06:29] Sender besked: 📊 *Daglig rapport* 2025-07-01
+- Win-rate: 100.00%
+- Signal count: 7
+- Trades (closed legs): 29
+- Gross PnL: 1223.82
+- Net PnL: 1165.04
+- Max DD: -6.12%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:30] Besked sendt OK.
+[2025-08-30 13:06:30] Sender besked: [STATUS] Dag 2025-07-02 lukket. Net PnL: 686.83, Win-rate: 100.00%
+[2025-08-30 13:06:30] Besked sendt OK.
+[2025-08-30 13:06:30] Sender besked: 📊 *Daglig rapport* 2025-07-02
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 9
+- Gross PnL: 690.90
+- Net PnL: 686.83
+- Max DD: -6.44%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:31] Besked sendt OK.
+[2025-08-30 13:06:31] Sender besked: [STATUS] Dag 2025-07-03 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:06:31] Besked sendt OK.
+[2025-08-30 13:06:31] Sender besked: 📊 *Daglig rapport* 2025-07-03
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -6.36%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:32] Besked sendt OK.
+[2025-08-30 13:06:32] Sender besked: [STATUS] Dag 2025-07-04 lukket. Net PnL: 1045.24, Win-rate: 100.00%
+[2025-08-30 13:06:33] Besked sendt OK.
+[2025-08-30 13:06:33] Sender besked: 📊 *Daglig rapport* 2025-07-04
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 26
+- Gross PnL: 1085.87
+- Net PnL: 1045.24
+- Max DD: -6.97%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:33] Besked sendt OK.
+[2025-08-30 13:06:33] Sender besked: [STATUS] Dag 2025-07-05 lukket. Net PnL: 191.35, Win-rate: 100.00%
+[2025-08-30 13:06:34] Besked sendt OK.
+[2025-08-30 13:06:34] Sender besked: 📊 *Daglig rapport* 2025-07-05
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 9
+- Gross PnL: 203.54
+- Net PnL: 191.35
+- Max DD: -7.08%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:34] Besked sendt OK.
+[2025-08-30 13:06:34] Sender besked: [STATUS] Dag 2025-07-06 lukket. Net PnL: 142.47, Win-rate: 77.78%
+[2025-08-30 13:06:35] Besked sendt OK.
+[2025-08-30 13:06:35] Sender besked: 📊 *Daglig rapport* 2025-07-06
+- Win-rate: 77.78%
+- Signal count: 2
+- Trades (closed legs): 9
+- Gross PnL: 158.72
+- Net PnL: 142.47
+- Max DD: -7.17%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:35] Besked sendt OK.
+[2025-08-30 13:06:35] Sender besked: [STATUS] Dag 2025-07-07 lukket. Net PnL: 563.57, Win-rate: 100.00%
+[2025-08-30 13:06:36] Besked sendt OK.
+[2025-08-30 13:06:36] Sender besked: 📊 *Daglig rapport* 2025-07-07
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 20
+- Gross PnL: 604.22
+- Net PnL: 563.57
+- Max DD: -7.54%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:36] Besked sendt OK.
+[2025-08-30 13:06:36] Sender besked: [STATUS] Dag 2025-07-08 lukket. Net PnL: 211.23, Win-rate: 100.00%
+[2025-08-30 13:06:37] Besked sendt OK.
+[2025-08-30 13:06:37] Sender besked: 📊 *Daglig rapport* 2025-07-08
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 9
+- Gross PnL: 215.30
+- Net PnL: 211.23
+- Max DD: -7.64%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:37] Besked sendt OK.
+[2025-08-30 13:06:37] Sender besked: [STATUS] Dag 2025-07-09 lukket. Net PnL: 174.51, Win-rate: 100.00%
+[2025-08-30 13:06:38] Besked sendt OK.
+[2025-08-30 13:06:38] Sender besked: 📊 *Daglig rapport* 2025-07-09
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 6
+- Gross PnL: 190.78
+- Net PnL: 174.51
+- Max DD: -7.74%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:38] Besked sendt OK.
+[2025-08-30 13:06:38] Sender besked: [STATUS] Dag 2025-07-10 lukket. Net PnL: 301.07, Win-rate: 77.78%
+[2025-08-30 13:06:39] Besked sendt OK.
+[2025-08-30 13:06:39] Sender besked: 📊 *Daglig rapport* 2025-07-10
+- Win-rate: 77.78%
+- Signal count: 3
+- Trades (closed legs): 9
+- Gross PnL: 325.48
+- Net PnL: 301.07
+- Max DD: -7.93%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:39] Besked sendt OK.
+[2025-08-30 13:06:39] Sender besked: [STATUS] Dag 2025-07-11 lukket. Net PnL: 774.79, Win-rate: 100.00%
+[2025-08-30 13:06:40] Besked sendt OK.
+[2025-08-30 13:06:40] Sender besked: 📊 *Daglig rapport* 2025-07-11
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 14
+- Gross PnL: 797.21
+- Net PnL: 774.79
+- Max DD: -8.36%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:40] Besked sendt OK.
+[2025-08-30 13:06:40] Sender besked: [STATUS] Dag 2025-07-12 lukket. Net PnL: 1045.52, Win-rate: 100.00%
+[2025-08-30 13:06:41] Besked sendt OK.
+[2025-08-30 13:06:41] Sender besked: 📊 *Daglig rapport* 2025-07-12
+- Win-rate: 100.00%
+- Signal count: 6
+- Trades (closed legs): 35
+- Gross PnL: 1090.37
+- Net PnL: 1045.52
+- Max DD: -9.02%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:41] Besked sendt OK.
+[2025-08-30 13:06:41] Sender besked: [STATUS] Dag 2025-07-13 lukket. Net PnL: 1817.47, Win-rate: 95.45%
+[2025-08-30 13:06:42] Besked sendt OK.
+[2025-08-30 13:06:42] Sender besked: 📊 *Daglig rapport* 2025-07-13
+- Win-rate: 95.45%
+- Signal count: 5
+- Trades (closed legs): 44
+- Gross PnL: 1864.48
+- Net PnL: 1817.47
+- Max DD: -10.01%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:42] Besked sendt OK.
+[2025-08-30 13:06:42] Sender besked: [STATUS] Dag 2025-07-14 lukket. Net PnL: 3066.54, Win-rate: 100.00%
+[2025-08-30 13:06:43] Besked sendt OK.
+[2025-08-30 13:06:43] Sender besked: 📊 *Daglig rapport* 2025-07-14
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 30
+- Gross PnL: 3099.52
+- Net PnL: 3066.54
+- Max DD: -11.70%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:44] Besked sendt OK.
+[2025-08-30 13:06:44] Sender besked: [STATUS] Dag 2025-07-15 lukket. Net PnL: -730.35, Win-rate: 21.05%
+[2025-08-30 13:06:44] Besked sendt OK.
+[2025-08-30 13:06:44] Sender besked: 📊 *Daglig rapport* 2025-07-15
+- Win-rate: 21.05%
+- Signal count: 2
+- Trades (closed legs): 38
+- Gross PnL: -711.66
+- Net PnL: -730.35
+- Max DD: -11.41%
+- Sharpe_d: -0.00
+
+[2025-08-30 13:06:45] Besked sendt OK.
+[2025-08-30 13:06:45] Sender besked: [STATUS] Dag 2025-07-16 lukket. Net PnL: 140.43, Win-rate: 100.00%
+[2025-08-30 13:06:46] Besked sendt OK.
+[2025-08-30 13:06:46] Sender besked: 📊 *Daglig rapport* 2025-07-16
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 2
+- Gross PnL: 148.62
+- Net PnL: 140.43
+- Max DD: -10.97%
+- Sharpe_d: -0.00
+
+[2025-08-30 13:06:46] Besked sendt OK.
+[2025-08-30 13:06:46] Sender besked: [STATUS] Dag 2025-07-17 lukket. Net PnL: 955.18, Win-rate: 88.89%
+[2025-08-30 13:06:47] Besked sendt OK.
+[2025-08-30 13:06:47] Sender besked: 📊 *Daglig rapport* 2025-07-17
+- Win-rate: 88.89%
+- Signal count: 4
+- Trades (closed legs): 18
+- Gross PnL: 983.91
+- Net PnL: 955.18
+- Max DD: -11.63%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:47] Besked sendt OK.
+[2025-08-30 13:06:47] Sender besked: [STATUS] Dag 2025-07-18 lukket. Net PnL: 357.34, Win-rate: 100.00%
+[2025-08-30 13:06:48] Besked sendt OK.
+[2025-08-30 13:06:48] Sender besked: 📊 *Daglig rapport* 2025-07-18
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 12
+- Gross PnL: 390.17
+- Net PnL: 357.34
+- Max DD: -11.76%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:06:49] Besked sendt OK.
+[2025-08-30 13:07:16] Sender besked: Bot-status:
+2025-08-30 13:07:16 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: a4da996 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare | mode: paper
+[2025-08-30 13:07:16] Besked sendt OK.
+[2025-08-30 13:07:16] Sender besked: [STATUS] Dag 2025-06-19 lukket. Net PnL: 313.53, Win-rate: 83.33%
+[2025-08-30 13:07:16] Besked sendt OK.
+[2025-08-30 13:07:16] Sender besked: 📊 *Daglig rapport* 2025-06-19
+- Win-rate: 83.33%
+- Signal count: 2
+- Trades (closed legs): 18
+- Gross PnL: 335.56
+- Net PnL: 313.53
+- Max DD: -0.17%
+- Sharpe_d: 0.03
+
+[2025-08-30 13:07:16] Besked sendt OK.
+[2025-08-30 13:07:16] Sender besked: [ALERT] ⚠️ Win-rate 0.0% under 45.0% (trades=10)
+[2025-08-30 13:07:17] Besked sendt OK.
+[2025-08-30 13:07:17] Sender besked: [STATUS] Dag 2025-06-20 lukket. Net PnL: 889.25, Win-rate: 100.00%
+[2025-08-30 13:07:17] Besked sendt OK.
+[2025-08-30 13:07:17] Sender besked: 📊 *Daglig rapport* 2025-06-20
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 19
+- Gross PnL: 933.35
+- Net PnL: 889.25
+- Max DD: -0.67%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:07:17] Besked sendt OK.
+[2025-08-30 13:07:17] Sender besked: [STATUS] Dag 2025-06-21 lukket. Net PnL: 1488.60, Win-rate: 100.00%
+[2025-08-30 13:07:17] Besked sendt OK.
+[2025-08-30 13:07:17] Sender besked: 📊 *Daglig rapport* 2025-06-21
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 23
+- Gross PnL: 1522.76
+- Net PnL: 1488.60
+- Max DD: -1.39%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:07:18] Besked sendt OK.
+[2025-08-30 13:07:18] Sender besked: [STATUS] Dag 2025-06-22 lukket. Net PnL: 3184.64, Win-rate: 100.00%
+[2025-08-30 13:07:18] Besked sendt OK.
+[2025-08-30 13:07:18] Sender besked: 📊 *Daglig rapport* 2025-06-22
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 31
+- Gross PnL: 3249.17
+- Net PnL: 3184.64
+- Max DD: -3.50%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:07:18] Besked sendt OK.
+[2025-08-30 13:07:18] Sender besked: [STATUS] Dag 2025-06-23 lukket. Net PnL: 1756.81, Win-rate: 100.00%
+[2025-08-30 13:07:18] Besked sendt OK.
+[2025-08-30 13:07:18] Sender besked: 📊 *Daglig rapport* 2025-06-23
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 8
+- Gross PnL: 1775.06
+- Net PnL: 1756.81
+- Max DD: -4.18%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:18] Besked sendt OK.
+[2025-08-30 13:07:18] Sender besked: [STATUS] Dag 2025-06-24 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:07:19] Besked sendt OK.
+[2025-08-30 13:07:19] Sender besked: 📊 *Daglig rapport* 2025-06-24
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -3.98%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:19] Besked sendt OK.
+[2025-08-30 13:07:19] Sender besked: [STATUS] Dag 2025-06-25 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:07:19] Besked sendt OK.
+[2025-08-30 13:07:19] Sender besked: 📊 *Daglig rapport* 2025-06-25
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -3.98%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:19] Besked sendt OK.
+[2025-08-30 13:07:19] Sender besked: [STATUS] Dag 2025-06-26 lukket. Net PnL: 920.74, Win-rate: 100.00%
+[2025-08-30 13:07:19] Besked sendt OK.
+[2025-08-30 13:07:19] Sender besked: 📊 *Daglig rapport* 2025-06-26
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 19
+- Gross PnL: 965.21
+- Net PnL: 920.74
+- Max DD: -4.38%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:19] Besked sendt OK.
+[2025-08-30 13:07:19] Sender besked: [STATUS] Dag 2025-06-27 lukket. Net PnL: 535.47, Win-rate: 100.00%
+[2025-08-30 13:07:20] Besked sendt OK.
+[2025-08-30 13:07:20] Sender besked: 📊 *Daglig rapport* 2025-06-27
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 20
+- Gross PnL: 571.88
+- Net PnL: 535.47
+- Max DD: -4.85%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:20] Besked sendt OK.
+[2025-08-30 13:07:20] Sender besked: [STATUS] Dag 2025-06-28 lukket. Net PnL: 107.72, Win-rate: 100.00%
+[2025-08-30 13:07:20] Besked sendt OK.
+[2025-08-30 13:07:20] Sender besked: 📊 *Daglig rapport* 2025-06-28
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 4
+- Gross PnL: 119.85
+- Net PnL: 107.72
+- Max DD: -4.84%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:20] Besked sendt OK.
+[2025-08-30 13:07:20] Sender besked: [STATUS] Dag 2025-06-29 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:07:20] Besked sendt OK.
+[2025-08-30 13:07:21] Sender besked: 📊 *Daglig rapport* 2025-06-29
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -4.83%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:21] Besked sendt OK.
+[2025-08-30 13:07:21] Sender besked: [STATUS] Dag 2025-06-30 lukket. Net PnL: 986.84, Win-rate: 100.00%
+[2025-08-30 13:07:21] Besked sendt OK.
+[2025-08-30 13:07:21] Sender besked: 📊 *Daglig rapport* 2025-06-30
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 16
+- Gross PnL: 1023.32
+- Net PnL: 986.84
+- Max DD: -5.42%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:21] Besked sendt OK.
+[2025-08-30 13:07:21] Sender besked: [STATUS] Dag 2025-07-01 lukket. Net PnL: 1292.08, Win-rate: 100.00%
+[2025-08-30 13:07:21] Besked sendt OK.
+[2025-08-30 13:07:21] Sender besked: 📊 *Daglig rapport* 2025-07-01
+- Win-rate: 100.00%
+- Signal count: 7
+- Trades (closed legs): 39
+- Gross PnL: 1381.28
+- Net PnL: 1292.08
+- Max DD: -6.12%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:22] Besked sendt OK.
+[2025-08-30 13:07:22] Sender besked: [STATUS] Dag 2025-07-02 lukket. Net PnL: 777.58, Win-rate: 100.00%
+[2025-08-30 13:07:22] Besked sendt OK.
+[2025-08-30 13:07:22] Sender besked: 📊 *Daglig rapport* 2025-07-02
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 12
+- Gross PnL: 783.70
+- Net PnL: 777.58
+- Max DD: -6.44%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:22] Besked sendt OK.
+[2025-08-30 13:07:22] Sender besked: [STATUS] Dag 2025-07-03 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:07:22] Besked sendt OK.
+[2025-08-30 13:07:22] Sender besked: 📊 *Daglig rapport* 2025-07-03
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -6.36%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:22] Besked sendt OK.
+[2025-08-30 13:07:22] Sender besked: [STATUS] Dag 2025-07-04 lukket. Net PnL: 1165.59, Win-rate: 100.00%
+[2025-08-30 13:07:23] Besked sendt OK.
+[2025-08-30 13:07:23] Sender besked: 📊 *Daglig rapport* 2025-07-04
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 35
+- Gross PnL: 1228.56
+- Net PnL: 1165.59
+- Max DD: -6.97%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:23] Besked sendt OK.
+[2025-08-30 13:07:23] Sender besked: [STATUS] Dag 2025-07-05 lukket. Net PnL: 209.89, Win-rate: 100.00%
+[2025-08-30 13:07:23] Besked sendt OK.
+[2025-08-30 13:07:23] Sender besked: 📊 *Daglig rapport* 2025-07-05
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 12
+- Gross PnL: 228.18
+- Net PnL: 209.89
+- Max DD: -7.08%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:23] Besked sendt OK.
+[2025-08-30 13:07:23] Sender besked: [STATUS] Dag 2025-07-06 lukket. Net PnL: 152.88, Win-rate: 75.00%
+[2025-08-30 13:07:23] Besked sendt OK.
+[2025-08-30 13:07:23] Sender besked: 📊 *Daglig rapport* 2025-07-06
+- Win-rate: 75.00%
+- Signal count: 2
+- Trades (closed legs): 12
+- Gross PnL: 177.26
+- Net PnL: 152.88
+- Max DD: -7.17%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:23] Besked sendt OK.
+[2025-08-30 13:07:23] Sender besked: [STATUS] Dag 2025-07-07 lukket. Net PnL: 618.81, Win-rate: 100.00%
+[2025-08-30 13:07:24] Besked sendt OK.
+[2025-08-30 13:07:24] Sender besked: 📊 *Daglig rapport* 2025-07-07
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 27
+- Gross PnL: 681.82
+- Net PnL: 618.81
+- Max DD: -7.54%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:24] Besked sendt OK.
+[2025-08-30 13:07:24] Sender besked: [STATUS] Dag 2025-07-08 lukket. Net PnL: 236.77, Win-rate: 100.00%
+[2025-08-30 13:07:24] Besked sendt OK.
+[2025-08-30 13:07:24] Sender besked: 📊 *Daglig rapport* 2025-07-08
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 12
+- Gross PnL: 242.88
+- Net PnL: 236.77
+- Max DD: -7.64%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:24] Besked sendt OK.
+[2025-08-30 13:07:24] Sender besked: [STATUS] Dag 2025-07-09 lukket. Net PnL: 189.13, Win-rate: 100.00%
+[2025-08-30 13:07:24] Besked sendt OK.
+[2025-08-30 13:07:24] Sender besked: 📊 *Daglig rapport* 2025-07-09
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 8
+- Gross PnL: 213.54
+- Net PnL: 189.13
+- Max DD: -7.74%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:25] Besked sendt OK.
+[2025-08-30 13:07:25] Sender besked: [STATUS] Dag 2025-07-10 lukket. Net PnL: 328.27, Win-rate: 75.00%
+[2025-08-30 13:07:25] Besked sendt OK.
+[2025-08-30 13:07:25] Sender besked: 📊 *Daglig rapport* 2025-07-10
+- Win-rate: 75.00%
+- Signal count: 3
+- Trades (closed legs): 12
+- Gross PnL: 364.89
+- Net PnL: 328.27
+- Max DD: -7.93%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:25] Besked sendt OK.
+[2025-08-30 13:07:25] Sender besked: [STATUS] Dag 2025-07-11 lukket. Net PnL: 866.37, Win-rate: 100.00%
+[2025-08-30 13:07:25] Besked sendt OK.
+[2025-08-30 13:07:25] Sender besked: 📊 *Daglig rapport* 2025-07-11
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 19
+- Gross PnL: 901.02
+- Net PnL: 866.37
+- Max DD: -8.36%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:25] Besked sendt OK.
+[2025-08-30 13:07:25] Sender besked: [STATUS] Dag 2025-07-12 lukket. Net PnL: 1161.63, Win-rate: 100.00%
+[2025-08-30 13:07:26] Besked sendt OK.
+[2025-08-30 13:07:26] Sender besked: 📊 *Daglig rapport* 2025-07-12
+- Win-rate: 100.00%
+- Signal count: 6
+- Trades (closed legs): 47
+- Gross PnL: 1228.92
+- Net PnL: 1161.63
+- Max DD: -9.02%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:26] Besked sendt OK.
+[2025-08-30 13:07:26] Sender besked: [STATUS] Dag 2025-07-13 lukket. Net PnL: 2032.12, Win-rate: 94.92%
+[2025-08-30 13:07:26] Besked sendt OK.
+[2025-08-30 13:07:26] Sender besked: 📊 *Daglig rapport* 2025-07-13
+- Win-rate: 94.92%
+- Signal count: 5
+- Trades (closed legs): 59
+- Gross PnL: 2103.66
+- Net PnL: 2032.12
+- Max DD: -10.01%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:26] Besked sendt OK.
+[2025-08-30 13:07:26] Sender besked: [STATUS] Dag 2025-07-14 lukket. Net PnL: 3452.81, Win-rate: 100.00%
+[2025-08-30 13:07:26] Besked sendt OK.
+[2025-08-30 13:07:26] Sender besked: 📊 *Daglig rapport* 2025-07-14
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 40
+- Gross PnL: 3502.30
+- Net PnL: 3452.81
+- Max DD: -11.70%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:26] Besked sendt OK.
+[2025-08-30 13:07:26] Sender besked: [STATUS] Dag 2025-07-15 lukket. Net PnL: -833.74, Win-rate: 21.57%
+[2025-08-30 13:07:27] Besked sendt OK.
+[2025-08-30 13:07:27] Sender besked: 📊 *Daglig rapport* 2025-07-15
+- Win-rate: 21.57%
+- Signal count: 2
+- Trades (closed legs): 51
+- Gross PnL: -804.66
+- Net PnL: -833.74
+- Max DD: -11.41%
+- Sharpe_d: -0.00
+
+[2025-08-30 13:07:27] Besked sendt OK.
+[2025-08-30 13:07:27] Sender besked: [STATUS] Dag 2025-07-16 lukket. Net PnL: 155.00, Win-rate: 100.00%
+[2025-08-30 13:07:27] Besked sendt OK.
+[2025-08-30 13:07:27] Sender besked: 📊 *Daglig rapport* 2025-07-16
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 3
+- Gross PnL: 169.34
+- Net PnL: 155.00
+- Max DD: -10.97%
+- Sharpe_d: -0.00
+
+[2025-08-30 13:07:27] Besked sendt OK.
+[2025-08-30 13:07:27] Sender besked: [STATUS] Dag 2025-07-17 lukket. Net PnL: 1063.65, Win-rate: 87.50%
+[2025-08-30 13:07:27] Besked sendt OK.
+[2025-08-30 13:07:27] Sender besked: 📊 *Daglig rapport* 2025-07-17
+- Win-rate: 87.50%
+- Signal count: 4
+- Trades (closed legs): 24
+- Gross PnL: 1106.74
+- Net PnL: 1063.65
+- Max DD: -11.63%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:27] Besked sendt OK.
+[2025-08-30 13:07:27] Sender besked: [STATUS] Dag 2025-07-18 lukket. Net PnL: 385.83, Win-rate: 100.00%
+[2025-08-30 13:07:28] Besked sendt OK.
+[2025-08-30 13:07:28] Sender besked: 📊 *Daglig rapport* 2025-07-18
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 16
+- Gross PnL: 435.07
+- Net PnL: 385.83
+- Max DD: -11.76%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:07:28] Besked sendt OK.
+[2025-08-30 13:10:27] Sender besked: Bot-status:
+2025-08-30 13:10:27 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | VRAM: N/A | Host: DhinosPc | User: reno_ | Git: a4da996 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare | mode: paper
+[2025-08-30 13:10:27] Besked sendt OK.
+[2025-08-30 13:10:27] Sender besked: [STATUS] Dag 2025-06-19 lukket. Net PnL: 346.13, Win-rate: 82.61%
+[2025-08-30 13:10:28] Besked sendt OK.
+[2025-08-30 13:10:28] Sender besked: 📊 *Daglig rapport* 2025-06-19
+- Win-rate: 82.61%
+- Signal count: 2
+- Trades (closed legs): 23
+- Gross PnL: 376.17
+- Net PnL: 346.13
+- Max DD: -0.17%
+- Sharpe_d: 0.02
+
+[2025-08-30 13:10:28] Besked sendt OK.
+[2025-08-30 13:10:28] Sender besked: [ALERT] ⚠️ Win-rate 0.0% under 45.0% (trades=10)
+[2025-08-30 13:10:28] Besked sendt OK.
+[2025-08-30 13:10:28] Sender besked: [STATUS] Dag 2025-06-20 lukket. Net PnL: 987.56, Win-rate: 100.00%
+[2025-08-30 13:10:28] Besked sendt OK.
+[2025-08-30 13:10:28] Sender besked: 📊 *Daglig rapport* 2025-06-20
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 24
+- Gross PnL: 1047.70
+- Net PnL: 987.56
+- Max DD: -0.67%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:10:29] Besked sendt OK.
+[2025-08-30 13:10:29] Sender besked: [STATUS] Dag 2025-06-21 lukket. Net PnL: 1678.65, Win-rate: 100.00%
+[2025-08-30 13:10:29] Besked sendt OK.
+[2025-08-30 13:10:29] Sender besked: 📊 *Daglig rapport* 2025-06-21
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 29
+- Gross PnL: 1724.87
+- Net PnL: 1678.65
+- Max DD: -1.39%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:10:29] Besked sendt OK.
+[2025-08-30 13:10:29] Sender besked: [STATUS] Dag 2025-06-22 lukket. Net PnL: 3556.83, Win-rate: 100.00%
+[2025-08-30 13:10:29] Besked sendt OK.
+[2025-08-30 13:10:29] Sender besked: 📊 *Daglig rapport* 2025-06-22
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 39
+- Gross PnL: 3643.54
+- Net PnL: 3556.83
+- Max DD: -3.50%
+- Sharpe_d: 0.01
+
+[2025-08-30 13:10:29] Besked sendt OK.
+[2025-08-30 13:10:29] Sender besked: [STATUS] Dag 2025-06-23 lukket. Net PnL: 1965.44, Win-rate: 100.00%
+[2025-08-30 13:10:30] Besked sendt OK.
+[2025-08-30 13:10:30] Sender besked: 📊 *Daglig rapport* 2025-06-23
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 10
+- Gross PnL: 1989.77
+- Net PnL: 1965.44
+- Max DD: -4.18%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:30] Besked sendt OK.
+[2025-08-30 13:10:30] Sender besked: [STATUS] Dag 2025-06-24 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:10:30] Besked sendt OK.
+[2025-08-30 13:10:30] Sender besked: 📊 *Daglig rapport* 2025-06-24
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -3.98%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:30] Besked sendt OK.
+[2025-08-30 13:10:30] Sender besked: [STATUS] Dag 2025-06-25 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:10:30] Besked sendt OK.
+[2025-08-30 13:10:30] Sender besked: 📊 *Daglig rapport* 2025-06-25
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -3.98%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:31] Besked sendt OK.
+[2025-08-30 13:10:31] Sender besked: [STATUS] Dag 2025-06-26 lukket. Net PnL: 1021.80, Win-rate: 100.00%
+[2025-08-30 13:10:31] Besked sendt OK.
+[2025-08-30 13:10:31] Sender besked: 📊 *Daglig rapport* 2025-06-26
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 24
+- Gross PnL: 1082.45
+- Net PnL: 1021.80
+- Max DD: -4.38%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:31] Besked sendt OK.
+[2025-08-30 13:10:31] Sender besked: [STATUS] Dag 2025-06-27 lukket. Net PnL: 588.87, Win-rate: 100.00%
+[2025-08-30 13:10:31] Besked sendt OK.
+[2025-08-30 13:10:31] Sender besked: 📊 *Daglig rapport* 2025-06-27
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 25
+- Gross PnL: 637.42
+- Net PnL: 588.87
+- Max DD: -4.85%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:31] Besked sendt OK.
+[2025-08-30 13:10:31] Sender besked: [STATUS] Dag 2025-06-28 lukket. Net PnL: 116.91, Win-rate: 100.00%
+[2025-08-30 13:10:31] Besked sendt OK.
+[2025-08-30 13:10:31] Sender besked: 📊 *Daglig rapport* 2025-06-28
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 5
+- Gross PnL: 133.09
+- Net PnL: 116.91
+- Max DD: -4.84%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:32] Besked sendt OK.
+[2025-08-30 13:10:32] Sender besked: [STATUS] Dag 2025-06-29 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:10:32] Besked sendt OK.
+[2025-08-30 13:10:32] Sender besked: 📊 *Daglig rapport* 2025-06-29
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -4.83%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:32] Besked sendt OK.
+[2025-08-30 13:10:32] Sender besked: [STATUS] Dag 2025-06-30 lukket. Net PnL: 1094.69, Win-rate: 100.00%
+[2025-08-30 13:10:32] Besked sendt OK.
+[2025-08-30 13:10:32] Sender besked: 📊 *Daglig rapport* 2025-06-30
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 20
+- Gross PnL: 1143.33
+- Net PnL: 1094.69
+- Max DD: -5.42%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:32] Besked sendt OK.
+[2025-08-30 13:10:32] Sender besked: [STATUS] Dag 2025-07-01 lukket. Net PnL: 1419.13, Win-rate: 100.00%
+[2025-08-30 13:10:33] Besked sendt OK.
+[2025-08-30 13:10:33] Sender besked: 📊 *Daglig rapport* 2025-07-01
+- Win-rate: 100.00%
+- Signal count: 7
+- Trades (closed legs): 49
+- Gross PnL: 1538.73
+- Net PnL: 1419.13
+- Max DD: -6.12%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:33] Besked sendt OK.
+[2025-08-30 13:10:33] Sender besked: [STATUS] Dag 2025-07-02 lukket. Net PnL: 868.34, Win-rate: 100.00%
+[2025-08-30 13:10:33] Besked sendt OK.
+[2025-08-30 13:10:33] Sender besked: 📊 *Daglig rapport* 2025-07-02
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 15
+- Gross PnL: 876.50
+- Net PnL: 868.34
+- Max DD: -6.44%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:33] Besked sendt OK.
+[2025-08-30 13:10:33] Sender besked: [STATUS] Dag 2025-07-03 lukket. Net PnL: 0.00, Win-rate: 0.00%
+[2025-08-30 13:10:33] Besked sendt OK.
+[2025-08-30 13:10:33] Sender besked: 📊 *Daglig rapport* 2025-07-03
+- Win-rate: 0.00%
+- Signal count: 0
+- Trades (closed legs): 0
+- Gross PnL: 0.00
+- Net PnL: 0.00
+- Max DD: -6.36%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:34] Besked sendt OK.
+[2025-08-30 13:10:34] Sender besked: [STATUS] Dag 2025-07-04 lukket. Net PnL: 1285.93, Win-rate: 100.00%
+[2025-08-30 13:10:34] Besked sendt OK.
+[2025-08-30 13:10:34] Sender besked: 📊 *Daglig rapport* 2025-07-04
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 44
+- Gross PnL: 1371.25
+- Net PnL: 1285.93
+- Max DD: -6.97%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:34] Besked sendt OK.
+[2025-08-30 13:10:34] Sender besked: [STATUS] Dag 2025-07-05 lukket. Net PnL: 228.43, Win-rate: 100.00%
+[2025-08-30 13:10:35] Besked sendt OK.
+[2025-08-30 13:10:35] Sender besked: 📊 *Daglig rapport* 2025-07-05
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 15
+- Gross PnL: 252.82
+- Net PnL: 228.43
+- Max DD: -7.08%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:35] Besked sendt OK.
+[2025-08-30 13:10:35] Sender besked: [STATUS] Dag 2025-07-06 lukket. Net PnL: 163.30, Win-rate: 73.33%
+[2025-08-30 13:10:35] Besked sendt OK.
+[2025-08-30 13:10:35] Sender besked: 📊 *Daglig rapport* 2025-07-06
+- Win-rate: 73.33%
+- Signal count: 2
+- Trades (closed legs): 15
+- Gross PnL: 195.80
+- Net PnL: 163.30
+- Max DD: -7.17%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:35] Besked sendt OK.
+[2025-08-30 13:10:35] Sender besked: [STATUS] Dag 2025-07-07 lukket. Net PnL: 674.04, Win-rate: 100.00%
+[2025-08-30 13:10:35] Besked sendt OK.
+[2025-08-30 13:10:35] Sender besked: 📊 *Daglig rapport* 2025-07-07
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 34
+- Gross PnL: 759.42
+- Net PnL: 674.04
+- Max DD: -7.54%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:35] Besked sendt OK.
+[2025-08-30 13:10:35] Sender besked: [STATUS] Dag 2025-07-08 lukket. Net PnL: 262.31, Win-rate: 100.00%
+[2025-08-30 13:10:36] Besked sendt OK.
+[2025-08-30 13:10:36] Sender besked: 📊 *Daglig rapport* 2025-07-08
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 15
+- Gross PnL: 270.46
+- Net PnL: 262.31
+- Max DD: -7.64%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:36] Besked sendt OK.
+[2025-08-30 13:10:36] Sender besked: [STATUS] Dag 2025-07-09 lukket. Net PnL: 203.76, Win-rate: 100.00%
+[2025-08-30 13:10:36] Besked sendt OK.
+[2025-08-30 13:10:36] Sender besked: 📊 *Daglig rapport* 2025-07-09
+- Win-rate: 100.00%
+- Signal count: 2
+- Trades (closed legs): 10
+- Gross PnL: 236.30
+- Net PnL: 203.76
+- Max DD: -7.74%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:36] Besked sendt OK.
+[2025-08-30 13:10:36] Sender besked: [STATUS] Dag 2025-07-10 lukket. Net PnL: 355.47, Win-rate: 73.33%
+[2025-08-30 13:10:36] Besked sendt OK.
+[2025-08-30 13:10:36] Sender besked: 📊 *Daglig rapport* 2025-07-10
+- Win-rate: 73.33%
+- Signal count: 3
+- Trades (closed legs): 15
+- Gross PnL: 404.30
+- Net PnL: 355.47
+- Max DD: -7.93%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:36] Besked sendt OK.
+[2025-08-30 13:10:36] Sender besked: [STATUS] Dag 2025-07-11 lukket. Net PnL: 957.94, Win-rate: 100.00%
+[2025-08-30 13:10:37] Besked sendt OK.
+[2025-08-30 13:10:37] Sender besked: 📊 *Daglig rapport* 2025-07-11
+- Win-rate: 100.00%
+- Signal count: 3
+- Trades (closed legs): 24
+- Gross PnL: 1004.82
+- Net PnL: 957.94
+- Max DD: -8.36%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:37] Besked sendt OK.
+[2025-08-30 13:10:37] Sender besked: [STATUS] Dag 2025-07-12 lukket. Net PnL: 1277.75, Win-rate: 100.00%
+[2025-08-30 13:10:37] Besked sendt OK.
+[2025-08-30 13:10:37] Sender besked: 📊 *Daglig rapport* 2025-07-12
+- Win-rate: 100.00%
+- Signal count: 6
+- Trades (closed legs): 59
+- Gross PnL: 1367.47
+- Net PnL: 1277.75
+- Max DD: -9.02%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:37] Besked sendt OK.
+[2025-08-30 13:10:37] Sender besked: [STATUS] Dag 2025-07-13 lukket. Net PnL: 2246.77, Win-rate: 94.59%
+[2025-08-30 13:10:37] Besked sendt OK.
+[2025-08-30 13:10:37] Sender besked: 📊 *Daglig rapport* 2025-07-13
+- Win-rate: 94.59%
+- Signal count: 5
+- Trades (closed legs): 74
+- Gross PnL: 2342.83
+- Net PnL: 2246.77
+- Max DD: -10.01%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:37] Besked sendt OK.
+[2025-08-30 13:10:37] Sender besked: [STATUS] Dag 2025-07-14 lukket. Net PnL: 3839.09, Win-rate: 100.00%
+[2025-08-30 13:10:38] Besked sendt OK.
+[2025-08-30 13:10:38] Sender besked: 📊 *Daglig rapport* 2025-07-14
+- Win-rate: 100.00%
+- Signal count: 5
+- Trades (closed legs): 50
+- Gross PnL: 3905.07
+- Net PnL: 3839.09
+- Max DD: -11.70%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:38] Besked sendt OK.
+[2025-08-30 13:10:38] Sender besked: [STATUS] Dag 2025-07-15 lukket. Net PnL: -937.12, Win-rate: 21.88%
+[2025-08-30 13:10:38] Besked sendt OK.
+[2025-08-30 13:10:38] Sender besked: 📊 *Daglig rapport* 2025-07-15
+- Win-rate: 21.88%
+- Signal count: 2
+- Trades (closed legs): 64
+- Gross PnL: -897.67
+- Net PnL: -937.12
+- Max DD: -11.41%
+- Sharpe_d: -0.00
+
+[2025-08-30 13:10:38] Besked sendt OK.
+[2025-08-30 13:10:38] Sender besked: [STATUS] Dag 2025-07-16 lukket. Net PnL: 169.58, Win-rate: 100.00%
+[2025-08-30 13:10:38] Besked sendt OK.
+[2025-08-30 13:10:38] Sender besked: 📊 *Daglig rapport* 2025-07-16
+- Win-rate: 100.00%
+- Signal count: 1
+- Trades (closed legs): 4
+- Gross PnL: 190.07
+- Net PnL: 169.58
+- Max DD: -10.97%
+- Sharpe_d: -0.00
+
+[2025-08-30 13:10:38] Besked sendt OK.
+[2025-08-30 13:10:38] Sender besked: [STATUS] Dag 2025-07-17 lukket. Net PnL: 1172.12, Win-rate: 86.67%
+[2025-08-30 13:10:39] Besked sendt OK.
+[2025-08-30 13:10:39] Sender besked: 📊 *Daglig rapport* 2025-07-17
+- Win-rate: 86.67%
+- Signal count: 4
+- Trades (closed legs): 30
+- Gross PnL: 1229.58
+- Net PnL: 1172.12
+- Max DD: -11.63%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:39] Besked sendt OK.
+[2025-08-30 13:10:39] Sender besked: [STATUS] Dag 2025-07-18 lukket. Net PnL: 414.32, Win-rate: 100.00%
+[2025-08-30 13:10:39] Besked sendt OK.
+[2025-08-30 13:10:39] Sender besked: 📊 *Daglig rapport* 2025-07-18
+- Win-rate: 100.00%
+- Signal count: 4
+- Trades (closed legs): 20
+- Gross PnL: 479.97
+- Net PnL: 414.32
+- Max DD: -11.76%
+- Sharpe_d: 0.00
+
+[2025-08-30 13:10:39] Besked sendt OK.
