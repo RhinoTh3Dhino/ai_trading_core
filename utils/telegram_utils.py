@@ -42,11 +42,13 @@ def _get_int_env(name: str, default: int) -> int:
     except Exception:
         return default
 
+
 def _get_bool_env(name: str, default: bool) -> bool:
     v = os.getenv(name)
     if v is None:
         return default
     return v.strip().lower() in ("1", "true", "yes", "on")
+
 
 DEDUPE_TTL_SEC = _get_int_env("TELEGRAM_DEDUPE_TTL_SEC", 120)           # samme besked-nøgle under ttl => undertrykkes
 COOLDOWN_GLOBAL_SEC = _get_int_env("TELEGRAM_COOLDOWN_GLOBAL_SEC", 5)   # minimum afstand mellem beskeder globalt
@@ -285,11 +287,14 @@ def send_signal_message(
     parse_mode: Optional[str] = None,
     chat_id: Optional[str] = None,
     silent: bool = False,
+    # nye flags for fin kontrol (bruges af send_live_metrics-alarmer)
+    skip_cooldown: bool = False,
+    skip_dedupe: bool = False,
 ):
     """
     Gated Telegram-sender:
-    - Duplikatfilter: samme dedupe_key under TTL → SUPPRESS
-    - Cooldown globalt og pr. symbol → SUPPRESS
+    - Duplikatfilter: samme dedupe_key under TTL → SUPPRESS (kan disables med skip_dedupe=True)
+    - Cooldown globalt og pr. symbol → SUPPRESS (kan bypasses med skip_cooldown=True)
     - priority="low" → lægges i batch-buffer og flushes periodisk
     Returnerer:
       - dict med {"ok": True, "suppressed": True, "reason": "..."} ved suppression
@@ -304,19 +309,20 @@ def send_signal_message(
         maybe_flush_lowprio_batch(chat_id=chat_id)
         return {"ok": True, "suppressed": True, "reason": "queued_lowprio"}
 
-    # high-prio → apply dedupe + cooldown
-    if _is_duplicate(key):
+    # high-prio → apply dedupe + cooldown (med mulighed for bypass)
+    if not skip_dedupe and _is_duplicate(key):
         _decision_log("SUPPRESS", "duplicate", symbol=symbol, extra=f"key={key}")
         return {"ok": True, "suppressed": True, "reason": "duplicate"}
 
-    if _in_cooldown(symbol):
+    if not skip_cooldown and _in_cooldown(symbol):
         _decision_log("SUPPRESS", "cooldown", symbol=symbol)
         return {"ok": True, "suppressed": True, "reason": "cooldown"}
 
     # send
     resp = send_message(text, chat_id=chat_id, parse_mode=parse_mode, silent=silent)
-    _mark_sent(symbol)
-    _decision_log("NOTIFY", "sent", symbol=symbol)
+    if not skip_cooldown:
+        _mark_sent(symbol)
+    _decision_log("NOTIFY", "sent", symbol=symbol, extra=(" (bypass_cooldown)" if skip_cooldown else ""))
     return resp
 
 
@@ -575,6 +581,8 @@ def send_live_metrics(trades_df, balance_df, symbol="", timeframe="", thresholds
     """
     Send live performance-metrics og alarmer til Telegram.
     thresholds: dict, fx {"drawdown": -20, "winrate": 20, "profit": -10}
+    Alarmer sendes som tre uafhængige beskeder, som bypasser cooldown inden for samme batch,
+    så status + alle relevante advarsler når igennem samlet.
     """
     metrics = calculate_live_metrics(trades_df, balance_df)
     # Behold dine <b>-tags, men vi håndterer fallback auto i send_message
@@ -605,8 +613,16 @@ def send_live_metrics(trades_df, balance_df, symbol="", timeframe="", thresholds
             )
     if alarm_msgs:
         for alarm in alarm_msgs:
-            # Alarmer behandles som high-prio men gennem ro-på gating
-            send_signal_message(alarm, symbol=symbol, dedupe_key=f"alarm|{symbol}|{alarm}", priority="high", chat_id=chat_id)
+            # Alarmer: bypass cooldown inden for denne batch, så alle 3 kan sendes efter hinanden
+            send_signal_message(
+                alarm,
+                symbol=symbol,
+                dedupe_key=f"alarm|{symbol}|{alarm}",
+                priority="high",
+                chat_id=chat_id,
+                skip_cooldown=True,   # <- vigtig for CI-testen og for batch-udsendelser
+                skip_dedupe=False,
+            )
             log_telegram(alarm)
 
 
