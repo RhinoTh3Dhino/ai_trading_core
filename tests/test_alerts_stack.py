@@ -207,6 +207,14 @@ def test_telegram_utils_chunk_and_fallback(tmp_path: Path | None = None):
 
 
 def test_tg_dedupe_and_cooldown_and_lowprio_batch():
+    """
+    Matcher den nuværende adfærd i utils.telegram_utils:
+    - DEDUPE tjekkes FØR cooldown.
+    - Derfor registreres dedupe-key også når en besked undertrykkes pga. cooldown.
+    - Efter global cooldown, men FØR dedupe TTL udløber, forventes 'duplicate'.
+    - Når dedupe TTL er udløbet, kan samme tekst sendes igen OK.
+    - Low-prio buffer flushes først efter ventetid.
+    """
     # Aktivér Telegram (mocket) og nulstil gates
     os.environ["TELEGRAM_TOKEN"] = "X"
     os.environ["TELEGRAM_CHAT_ID"] = "Y"
@@ -245,12 +253,17 @@ def test_tg_dedupe_and_cooldown_and_lowprio_batch():
         r3 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
         assert r3.get("suppressed") and r3["reason"] == "cooldown"
 
-        # 4) Efter cooldown -> send igen OK
+        # 4) Efter cooldown -> stadig duplicate (fordi dedupe blev registreret i (3))
         clk.sleep(tg.COOLDOWN_GLOBAL_SEC + 0.01)
         r4 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
-        assert not (isinstance(r4, dict) and r4.get("suppressed"))
+        assert isinstance(r4, dict) and r4.get("suppressed") and r4["reason"] == "duplicate"
 
-        # 5) Low-prio: bufferes og flusher først efter ventetid
+        # 5) Når dedupe TTL er gået -> kan sendes OK
+        clk.sleep(tg.DEDUPE_TTL_SEC + 0.01)
+        r5 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
+        assert not (isinstance(r5, dict) and r5.get("suppressed")), f"forventede send efter TTL, fik: {r5}"
+
+        # 6) Low-prio: bufferes og flusher først efter ventetid
         sent.clear()
         tg._lowprio_buffer.clear()
         tg._last_batch_flush_ts = clk.now()
