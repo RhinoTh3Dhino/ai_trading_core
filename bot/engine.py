@@ -24,7 +24,7 @@ import time
 import pickle
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List, Any
 
 import numpy as np
 import pandas as pd
@@ -113,7 +113,7 @@ def _send(kind: str, text: str, **kw):
     try:
         send_message(f"[{kind.upper()}] {text}", **kw)
     except Exception:
-        print(f"[{kind.upper()}] {text}")
+        print(f"[{kind.UPPER()}] {text}")
     _last_send_ts = now
 
 # --- Device logging (failsafe) ---
@@ -206,10 +206,73 @@ except Exception:
 # --- PyTorch (failsafe) ---
 try:
     import torch  # type: ignore
+    import torch.nn as nn  # type: ignore
+    import torch.nn.functional as F  # type: ignore
 except Exception:
-    torch = None  # noqa: N816
+    torch = None  # type: ignore
+    nn = None     # type: ignore
+    F = None      # type: ignore
 
-# --- Backtest (failsafe stub) ---
+# =========================
+# Top-level model + fabrik
+# =========================
+if torch is not None:
+    class TradingNet(nn.Module):  # type: ignore
+        """
+        Simpel MLP til klassifikation (2 klasser). Brug samme hyperparametre som under træning.
+        """
+        def __init__(self, input_dim: int, hidden: int = 64, output_dim: int = 2, dropout: float = 0.0):
+            super().__init__()
+            self.net = nn.Sequential(
+                nn.Linear(input_dim, hidden),
+                nn.ReLU(),
+                nn.Dropout(dropout) if dropout and dropout > 0 else nn.Identity(),
+                nn.Linear(hidden, hidden),
+                nn.ReLU(),
+                nn.Dropout(dropout) if dropout and dropout > 0 else nn.Identity(),
+                nn.Linear(hidden, output_dim),
+            )
+
+        def forward(self, x):
+            # accepter både (N, F) og evt. (N, T, F) hvor vi flader T hvis givet
+            if x.dim() > 2:
+                x = x.view(x.size(0), -1)
+            return self.net(x)
+else:
+    class TradingNet:  # type: ignore
+        def __init__(self, *a, **k):
+            raise ImportError("PyTorch ikke tilgængelig – kan ikke instantiere TradingNet.")
+
+
+def build_model(**kwargs: Any) -> TradingNet:
+    """
+    Fabriksfunktion, der returnerer en instans af TradingNet.
+    Forventede kwargs:
+      - num_features / input_dim / feature_dim  (int)
+      - hidden / hidden_dim (int, default=64)
+      - dropout (float, default=0.0)
+      - out_dim / output_dim (int, default=2)
+    """
+    if torch is None:
+        raise ImportError("PyTorch ikke tilgængelig – build_model kræver torch.")
+
+    input_dim = (
+        kwargs.pop("num_features", None)
+        or kwargs.pop("input_dim", None)
+        or kwargs.pop("feature_dim", None)
+        or kwargs.pop("n_features", None)
+    )
+    if not input_dim:
+        raise ValueError("build_model kræver num_features/input_dim/feature_dim.")
+
+    hidden = kwargs.pop("hidden", kwargs.pop("hidden_dim", 64))
+    dropout = kwargs.pop("dropout", 0.0)
+    out_dim = kwargs.pop("out_dim", kwargs.pop("output_dim", 2))
+
+    return TradingNet(int(input_dim), int(hidden), int(out_dim), float(dropout))
+
+
+# --- Backtest (failsafe) ---
 try:
     from backtest.backtest import run_backtest  # type: ignore
 except Exception:
@@ -282,35 +345,119 @@ except Exception:
 try:
     from bot.brokers.paper_broker import PaperBroker  # type: ignore
 except Exception:
-    class PaperBroker:  # minimal stub
+    class PaperBroker:  # robust stub med logging + simpel PnL
         def __init__(self, **k):
-            self.cash = float(k.get("starting_cash", 100000))
-            self.positions = {}
-            self.realized_pnl = 0.0
+            self.cash = float(k.get("starting_cash", 100000.0))
+            self.positions: Dict[str, float] = {}
+            self.avg_price: Dict[str, float] = {}  # gennemsnitspris pr. symbol for åben position
             self.trading_halted = False
-            self._last_px = {}
+            self._last_px: Dict[str, float] = {}
             self.equity_log_path = k.get("equity_log_path", None)
             self.fills_log_path = k.get("fills_log_path", None)
+            self.commission_bp = float(k.get("commission_bp", 0.0) or 0.0)
+            self.slippage_bp = float(k.get("slippage_bp", 0.0) or 0.0)
+
+            # sørg for headers
+            if self.equity_log_path:
+                Path(self.equity_log_path).parent.mkdir(parents=True, exist_ok=True)
+                if not os.path.exists(self.equity_log_path):
+                    with open(self.equity_log_path, "w", newline="", encoding="utf-8") as f:
+                        csv.writer(f).writerow(["date", "equity"])
+            if self.fills_log_path:
+                Path(self.fills_log_path).parent.mkdir(parents=True, exist_ok=True)
+                if not os.path.exists(self.fills_log_path):
+                    with open(self.fills_log_path, "w", newline="", encoding="utf-8") as f:
+                        csv.writer(f).writerow(
+                            ["ts", "symbol", "side", "price", "qty", "commission", "pnl_realized"]
+                        )
+
+        def _slip(self, price: float, side: str) -> float:
+            if self.slippage_bp and self.slippage_bp != 0:
+                slip = price * (self.slippage_bp / 10000.0)
+                return price + slip if side == "BUY" else price - slip
+            return price
+
         def mark_to_market(self, prices: Dict[str, float], ts: Optional[datetime] = None):
             self._last_px.update(prices)
-            equity = self.cash + sum(self.positions.get(s, 0)*p for s,p in prices.items())
-            return {"equity": equity, "cash": self.cash, "positions_value": 0.0, "drawdown_pct": 0.0,
-                    "positions": {}, "open_orders": [], "trading_halted": self.trading_halted}
-        def submit_order(self, symbol, side, qty, order_type="market", ts: Optional[datetime]=None, **k):
-            px = self._last_px.get(symbol)
-            if px is None: return {"status":"rejected"}
+            equity = self.cash + sum(self.positions.get(s, 0.0) * p for s, p in prices.items())
+            if self.equity_log_path:
+                with open(self.equity_log_path, "a", newline="", encoding="utf-8") as f:
+                    d = (ts or datetime.utcnow()).strftime("%Y-%m-%d")
+                    csv.writer(f).writerow([d, f"{equity:.6f}"])
+            return {
+                "equity": equity,
+                "cash": self.cash,
+                "positions": self.positions.copy(),
+                "positions_value": 0.0,
+                "drawdown_pct": 0.0,
+                "open_orders": [],
+                "trading_halted": self.trading_halted,
+            }
+
+        def submit_order(self, symbol, side, qty, order_type="market", ts: Optional[datetime] = None, **k):
+            px_raw = self._last_px.get(symbol)
+            if px_raw is None:
+                return {"status": "rejected"}
+            px = self._slip(px_raw, side)
             notional = px * qty
-            if side=="BUY": self.cash -= notional
-            else: self.cash += notional
-            self.positions[symbol] = self.positions.get(symbol, 0.0) + (qty if side=="BUY" else -qty)
-            return {"status":"filled"}
+            commission = notional * (self.commission_bp / 10000.0)
+
+            old_qty = self.positions.get(symbol, 0.0)
+            old_avg = self.avg_price.get(symbol, px)
+            delta = qty if side == "BUY" else -qty
+            new_qty = old_qty + delta
+
+            # realiseret PnL ved lukning af eksisterende position (delvist eller helt)
+            realized = 0.0
+            if old_qty != 0.0 and np.sign(old_qty) != np.sign(new_qty):
+                # fuld luk + evt. flip
+                close_qty = abs(old_qty)
+                realized = (px - old_avg) * close_qty * np.sign(old_qty)
+            elif old_qty != 0.0 and np.sign(old_qty) != np.sign(delta):
+                # delvis luk
+                close_qty = min(abs(old_qty), abs(delta))
+                realized = (px - old_avg) * close_qty * np.sign(old_qty)
+
+            # opdater kontantbeholdning (kommission trækkes altid)
+            if side == "BUY":
+                self.cash -= notional + commission
+            else:
+                self.cash += notional - commission
+
+            # opdater position og gennemsnitspris
+            self.positions[symbol] = new_qty
+            if new_qty == 0.0:
+                self.avg_price[symbol] = px
+            elif np.sign(new_qty) == np.sign(old_qty) or old_qty == 0.0:
+                # samme retning → ny vægtet gennemsnitspris
+                total_abs = abs(old_qty) + abs(delta)
+                self.avg_price[symbol] = (old_avg * abs(old_qty) + px * abs(delta)) / max(total_abs, 1e-9)
+            else:
+                # vi har lukket og evt. åbnet i modsat retning → sæt ny avg til fill-prisen
+                self.avg_price[symbol] = px
+
+            if self.fills_log_path:
+                with open(self.fills_log_path, "a", newline="", encoding="utf-8") as f:
+                    csv.writer(f).writerow([
+                        (ts or datetime.utcnow()).strftime("%Y-%m-%d %H:%M:%S"),
+                        symbol,
+                        side,
+                        f"{px:.6f}",
+                        f"{qty:.8f}",
+                        f"{commission:.6f}",
+                        f"{realized:.6f}",
+                    ])
+
+            return {"status": "filled"}
+
         def pnl_snapshot(self, prices=None):
-            equity = self.cash + sum(self.positions.get(s,0)*p for s,p in (prices or {}).items())
-            return {"realized_pnl":0.0, "unrealized_pnl":0.0, "equity":equity, "cash":self.cash}
-        def close_position(self, symbol: str, ts: Optional[datetime]=None):
+            equity = self.cash + sum(self.positions.get(s, 0.0) * p for s, p in (prices or {}).items())
+            return {"realized_pnl": 0.0, "unrealized_pnl": 0.0, "equity": equity, "cash": self.cash}
+
+        def close_position(self, symbol: str, ts: Optional[datetime] = None):
             qty = self.positions.get(symbol, 0.0)
             if qty != 0:
-                side = "SELL" if qty>0 else "BUY"
+                side = "SELL" if qty > 0 else "BUY"
                 self.submit_order(symbol, side, abs(qty), order_type="market", ts=ts)
 
 # --- Robust utils (failsafe) ---
@@ -399,14 +546,37 @@ def reconcile_features(df: pd.DataFrame, feature_list: List[str]) -> pd.DataFram
     return df[feature_list]
 
 def load_pytorch_model(feature_dim: int, model_path: str = PYTORCH_MODEL_PATH, device_str: str = "cpu"):
+    """
+    Robust model-loader:
+      1) Prøv TorchScript (torch.jit.load) på både model_path og en .ts-sidefil.
+      2) Fald tilbage til klassisk state_dict og en simpel TradingNet-arkitektur.
+      3) Tillad både raw state_dict og wrapper-dicts.
+    """
     if torch is None:
         print("❌ PyTorch ikke tilgængelig – springer DL over.")
         return None
-    if not os.path.exists(model_path):
-        print(f"❌ PyTorch-model ikke fundet: {model_path}")
-        return None
 
-    class TradingNet(torch.nn.Module):  # type: ignore
+    cand = Path(model_path)
+    ts_alt = cand.with_suffix(".ts")
+    if cand.suffix.lower() == ".ts":
+        paths_to_try = [cand, cand.with_suffix(".pt")]
+    else:
+        paths_to_try = [cand, ts_alt]
+
+    # 1) TorchScript
+    for p in paths_to_try:
+        if p.exists():
+            try:
+                m = torch.jit.load(str(p), map_location=device_str)
+                m.eval()
+                m.to(device_str)
+                print(f"✅ PyTorch TorchScript-model indlæst fra {p} på {device_str}")
+                return m
+            except Exception:
+                pass
+
+    # 2) state_dict → brug enkel MLP (strict=False)
+    class _FallbackNet(torch.nn.Module):  # type: ignore
         def __init__(self, input_dim, hidden_dim=64, output_dim=2):
             super().__init__()
             self.net = torch.nn.Sequential(
@@ -417,14 +587,33 @@ def load_pytorch_model(feature_dim: int, model_path: str = PYTORCH_MODEL_PATH, d
                 torch.nn.Linear(hidden_dim, output_dim),
             )
         def forward(self, x):
+            if x.dim() > 2:
+                x = x.view(x.size(0), -1)
             return self.net(x)
 
-    model = TradingNet(input_dim=feature_dim, output_dim=2)
-    model.load_state_dict(torch.load(model_path, map_location=device_str))  # type: ignore
-    model.eval()
-    model.to(device_str)  # type: ignore
-    print(f"✅ PyTorch-model indlæst fra {model_path} på {device_str}")
-    return model
+    for p in paths_to_try:
+        if not p.exists():
+            continue
+        try:
+            sd = torch.load(str(p), map_location=device_str)
+        except Exception as e:
+            print(f"[ADVARSEL] Kunne ikke loade {p}: {e}")
+            continue
+        if hasattr(sd, "state_dict"):
+            sd = sd.state_dict()
+        if not isinstance(sd, dict):
+            continue
+
+        model = _FallbackNet(input_dim=feature_dim, output_dim=2)
+        missing, unexpected = model.load_state_dict(sd, strict=False)
+        if missing:    print(f"[ADVARSEL] Missing keys i state_dict: {list(missing)}")
+        if unexpected: print(f"[ADVARSEL] Unexpected keys i state_dict: {list(unexpected)}")
+        model.to(device_str).eval()
+        print(f"✅ PyTorch state_dict-model indlæst fra {p} på {device_str}")
+        return model
+
+    print(f"❌ Ingen gyldig PyTorch-model fundet i {paths_to_try}")
+    return None
 
 def pytorch_predict(model, X: pd.DataFrame, device_str: str = "cpu"):
     X_ = X.copy()
@@ -827,7 +1016,6 @@ def run_paper_trading(
     current_day = None
     daily_signal_count = 0
     prev_sig = 0
-    signal_rows: List[Dict[str, str | int]] = []
 
     print("🚀 Starter bar-for-bar loop…")
     for i in range(len(df)):
@@ -835,7 +1023,8 @@ def run_paper_trading(
         price = float(df["close"].iat[i])
         sig = int(df["signal_ens"].iat[i])
 
-        signal_rows.append({"ts": ts.isoformat(), "signal": sig})
+        # skriv signal LIVE (GUI'en kan læse med det samme)
+        _append_signals_rows([{"ts": ts.isoformat(), "signal": sig}])
 
         dstr = ts.strftime("%Y-%m-%d")
         if current_day is None:
@@ -886,9 +1075,7 @@ def run_paper_trading(
             ALERTS.on_fill(pnl_value=None)
             ALERTS.evaluate_and_notify(_send)
 
-    if signal_rows:
-        _append_signals_rows(signal_rows)
-
+    # opdater sidste dags metrics + evt. Telegram
     if current_day is not None:
         _upsert_daily_metrics(current_day, {"signal_count": int(daily_signal_count)})
         m = _calc_daily_metrics_for_date(current_day)

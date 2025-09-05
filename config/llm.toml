@@ -1,0 +1,192 @@
+# =====================================================================
+# LLM KONFIGURATION — config/llm.toml
+# Formål: Central styring af LLM-udbydere, modeller, routing, retries,
+#         logging/telemetri og miljøprofiler (dev/stage/prod).
+# NOTE:
+# - API-nøgler sættes KUN via miljøvariabler (ingen secrets i TOML).
+# - Denne fil overlapper ENV; ENV vinder altid (last-one-wins).
+# =====================================================================
+
+schema_version = "1.0"
+updated = "2025-08-30"
+
+# -------------------------------------------------
+# Global standard (kan overskrives per-miljø)
+# -------------------------------------------------
+[llm]
+default_provider = "anthropic"
+# Bruges direkte af evaluation/claude_eval.py via ENV: CLAUDE_MODEL
+default_model    = "claude-3-haiku-20240307"
+# Standard sampling for backend-kald (kan overskrives pr. job)
+temperature      = 0.2
+max_tokens       = 512
+timeout_s        = 20
+# Hvis true: vi logger ikke rå prompts/responses i klartekst, men redigerer/hasher
+redact_logs      = true
+
+# -------------------------------------------------
+# Udbydere
+# -------------------------------------------------
+[providers.anthropic]
+base_url      = "https://api.anthropic.com/v1"
+api_key_env   = "ANTHROPIC_API_KEY"       # Sæt i shell: $env:ANTHROPIC_API_KEY="sk-ant-..."
+api_version   = "2023-06-01"
+default_model = "claude-3-haiku-20240307"
+healthcheck   = true
+
+# Valgfrie model-aliaser (kan bruges i routing)
+[providers.anthropic.models]
+# Let / billig evaluering (smoke / hyppige kald)
+eval_fast     = "claude-3-haiku-20240307"
+# Bedre kvalitet (brug selektivt, fx batch-evalueringer)
+eval_quality  = "claude-3-sonnet-20240229"
+# (Tilpas ovenstående hvis du vil styre nyere versioner via ENV/CI)
+
+# -------------------------------------------------
+# Routing (opgave -> model)
+# -------------------------------------------------
+[routing]
+# Bruges af eval-scripts og CLI wrappers
+default_eval_prompt = "p1"    # p1 eller p2; matcher evaluation/claude_eval.py
+default_task        = "eval"  # semantisk label; fri tekst
+
+# Eksplicit kortlægning af tasks til modelnavne
+[routing.tasks]
+"eval/edge/smoke"   = "anthropic:eval_fast"
+"eval/edge/quality" = "anthropic:eval_quality"
+
+# -------------------------------------------------
+# Prompts (filer i repo’et; kan indlæses dynamisk i andre værktøjer)
+# Merk: evaluation/claude_eval.py har egne inline-templates (p1/p2),
+#       men vi holder stier her til fremtidig konsolidering.
+# -------------------------------------------------
+[prompts]
+dir = "prompts"
+
+[prompts.files]
+p1 = "prompts/eval/p1_edge.json.tmpl"   # valgfri fremtidig kilde
+p2 = "prompts/eval/p2_risk.json.tmpl"   # valgfri fremtidig kilde
+
+# -------------------------------------------------
+# Retrier & Rate limiting
+# -------------------------------------------------
+[retries]
+attempts      = 3
+backoff_s     = 0.5
+multiplier    = 2.0
+jitter        = true
+# HTTP-koder der må retries
+status_codes  = [429, 500, 502, 503, 504]
+# Fejlstrenge (substring match) der må retries
+errors        = ["timeout", "temporarily unavailable", "connection reset"]
+
+[rate_limit]
+# Simple “social contracts”; appen bør selv håndhæve dette
+rpm          = 50   # requests per minute (per process)
+concurrency  = 4    # samtidige kald pr. proces
+burst        = 10   # kort burst, før throttling
+
+# -------------------------------------------------
+# Validering (bruges i evaluering/GUI; ikke hårdt koblet til claude_eval.py)
+# -------------------------------------------------
+[validation]
+required_keys = ["edge_score", "opportunities", "warnings", "action", "confidence"]
+action_enum   = ["hold", "scale_in", "scale_out", "exit"]
+range_fields  = ["edge_score", "confidence"]   # 0..1
+
+# -------------------------------------------------
+# Telemetri & Logging
+# -------------------------------------------------
+[telemetry]
+# NDJSON-log af LLM-kald (1 pr linje). Slås fra hvis tom streng.
+calls_log_path = "logs/llm_calls.ndjson"
+# Hvis true: persist kun metrikker + hashes, ikke rå tekst
+redact_payloads = true
+# Ekstra felter at hash’e i logs (fremtidssikret)
+hash_fields = ["prompt", "system", "context"]
+
+# -------------------------------------------------
+# Cache (enkel on-disk deduplikering – valgfrit)
+# -------------------------------------------------
+[cache]
+enabled   = true
+dir       = "outputs/llm_cache"
+ttl_s     = 86400            # 1 dag
+key_fields = ["model", "system", "prompt_hash"]
+
+# -------------------------------------------------
+# Sikkerhed / Redaction
+# -------------------------------------------------
+[safety]
+# Regex der anonymiserer tokens/PII i logs (kun hvis redact_payloads=true)
+redact_patterns = [
+  "(?i)sk-ant-[A-Za-z0-9_\\-]+",       # Anthropic nøgler
+  "(?i)bearer\\s+[A-Za-z0-9_\\-\\.]+", # generiske tokens
+  "(?i)api[_\\-]?key\\s*[:=]\\s*[^\\s]+"
+]
+# Felter der aldrig må logges i klartekst
+never_log_fields = ["api_key", "Authorization", "x-api-key"]
+
+# -------------------------------------------------
+# CLI defaults (bruges af egne værktøjer og CI)
+# -------------------------------------------------
+[cli]
+default_smoke_n = 3
+default_out     = "outputs/claude_eval_last.json"
+default_prompt  = "p1"
+default_model   = "claude-3-haiku-20240307"
+dry_run_default = true
+
+# -------------------------------------------------
+# evaluation.claude_eval specifikke defaults (spejler scriptets flags)
+# -------------------------------------------------
+[claude_eval]
+prompt        = "p1"     # p1 eller p2
+model         = "claude-3-haiku-20240307"
+smoke_n       = 1
+dry_run       = true
+out_path      = "outputs/claude_eval_last.json"
+# Når true: annotér output med __source = API|MOCK (kan vises i GUI)
+annotate_source = false
+
+# -------------------------------------------------
+# Miljø-overrides (dev/stage/prod)
+# Tip: Brug `APP_ENV` miljøvariabel i din app til at vælge profil.
+# -------------------------------------------------
+[env_overrides.dev]
+llm.default_model      = "claude-3-haiku-20240307"
+llm.temperature        = 0.2
+llm.max_tokens         = 512
+retries.attempts       = 2
+telemetry.redact_payloads = true
+cache.enabled          = true
+claude_eval.dry_run    = true
+routing.default_eval_prompt = "p1"
+
+[env_overrides.stage]
+llm.default_model      = "claude-3-sonnet-20240229"
+llm.temperature        = 0.2
+retries.attempts       = 3
+telemetry.redact_payloads = true
+cache.enabled          = true
+claude_eval.dry_run    = false
+routing.default_eval_prompt = "p2"
+
+[env_overrides.prod]
+llm.default_model      = "claude-3-sonnet-20240229"
+llm.temperature        = 0.0          # deterministisk
+retries.attempts       = 4
+telemetry.redact_payloads = true
+cache.enabled          = false        # undgå lagret prompt/response i prod
+claude_eval.dry_run    = false
+routing.default_eval_prompt = "p2"
+
+# -------------------------------------------------
+# Environment binding (hvilke ENV keys læses hvor)
+# Disse er dokumentation; selve indlæsning sker i kode.
+# -------------------------------------------------
+[env]
+ANTHROPIC_API_KEY = "<påkrævet for live-API>"
+CLAUDE_MODEL      = "<overstyrer modelvalg i evaluation/claude_eval.py>"
+LOG_DIR           = "logs"
+APP_ENV           = "dev|stage|prod"

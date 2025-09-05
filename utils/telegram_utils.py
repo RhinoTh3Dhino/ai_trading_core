@@ -6,7 +6,7 @@ import time
 import html
 import datetime
 from pathlib import Path
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any, Iterable
 
 import requests
 from dotenv import load_dotenv
@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 # ----------------------------------------------------------------------------------------
 try:
     from utils.project_path import PROJECT_ROOT
-except Exception:  # pragma: no cover  - meget stabilt og svært at trigge i tests
+except Exception:  # pragma: no cover
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # ----------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ try:
         check_winrate_alert,
         check_profit_alert,
     )
-except Exception:  # pragma: no cover  - fallback benyttes kun hvis modulet mangler
+except Exception:  # pragma: no cover
     # Minimal fallback hvis monitoring_utils ikke findes
     def calculate_live_metrics(trades_df, balance_df):  # pragma: no cover
         import pandas as pd
@@ -89,7 +89,7 @@ except Exception:  # pragma: no cover  - fallback benyttes kun hvis modulet mang
 # Valgfri plot
 try:
     from utils.plot_utils import generate_trend_graph
-except Exception:  # pragma: no cover  - fallback bruges kun hvis modulet mangler
+except Exception:  # pragma: no cover
     generate_trend_graph = None
 
 # ----------------------------------------------------------------------------------------
@@ -101,7 +101,6 @@ def _to_abs_path(p: Path | str) -> Path:
     p = Path(p)
     return p if p.is_absolute() else (PROJECT_ROOT / p)
 
-# Brug LOG_DIR fra .env så GUI og engine peger samme sted
 LOG_DIR = _to_abs_path(os.getenv("LOG_DIR", "logs"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_PATH = LOG_DIR / "telegram_log.txt"
@@ -159,7 +158,7 @@ def log_telegram(msg: str):
     try:
         with open(LOG_PATH, "a", encoding="utf-8") as f:
             f.write(f"[{stamp}] {msg}\n")
-    except Exception:  # pragma: no cover  - svært at simulere I/O-fejl stabilt i tests
+    except Exception:  # pragma: no cover
         _eprint(f"[ADVARSEL] Telegram-log fejlede: {msg}")
 
 def _decision_log(action: str, reason: str, *, symbol: Optional[str] = None, extra: str = ""):
@@ -174,8 +173,7 @@ def _decision_log(action: str, reason: str, *, symbol: Optional[str] = None, ext
 def telegram_enabled() -> bool:
     token = os.getenv("TELEGRAM_TOKEN") or ""
     chat_id = os.getenv("TELEGRAM_CHAT_ID") or ""
-    # Tillad tvungen enable for test-miljøer der vil ramme netværksgrene uden rigtige creds
-    if os.getenv("TELEGRAM_TESTMODE_ALWAYS_ENABLED", "0") == "1":  # pragma: no cover (bruges ad hoc)
+    if os.getenv("TELEGRAM_TESTMODE_ALWAYS_ENABLED", "0") == "1":  # pragma: no cover
         return True
     return bool(token and chat_id and token.lower() not in ("none", "dummy_token") and chat_id.lower() not in ("none", "dummy_id"))
 
@@ -185,7 +183,7 @@ def telegram_enabled() -> bool:
 _MD2_SPECIALS = set(r'_*[]()~`>#+-=|{}.!')
 
 def _escape_markdown_v2(s: str) -> str:
-    return "".join(("\\" + ch) if ch in _MD2_SPECIALS else ch for ch in s)
+    return "".join(("\\\\" + ch[0]) if ch in _MD2_SPECIALS else ch for ch in s)
 
 def _as_html_pre(s: str) -> str:
     return f"<pre>{html.escape(s)}</pre>"
@@ -199,7 +197,7 @@ def _is_parse_entities_error(resp_json) -> bool:
         pass
     return False
 
-def _resp_ok(resp):
+def _resp_ok(resp: requests.Response) -> Tuple[bool, Any]:
     try:
         js = resp.json()
     except Exception:
@@ -211,36 +209,75 @@ def _resp_ok(resp):
     return ok_flag, js
 
 # ----------------------------------------------------------------------------------------
+# Smart chunking (split på linjer nær Telegram-limit for stabil parsing)
+# ----------------------------------------------------------------------------------------
+def _split_text_preserving_lines(text: str, limit: int) -> Iterable[str]:
+    if len(text) <= limit:
+        yield text
+        return
+    start = 0
+    n = len(text)
+    while start < n:
+        end = min(start + limit, n)
+        nl = text.rfind("\n", start, end)
+        if nl == -1 or nl <= start:
+            chunk = text[start:end]
+            start = end
+        else:
+            chunk = text[start:nl]
+            start = nl + 1
+        if chunk:
+            yield chunk
+
+# ----------------------------------------------------------------------------------------
 # Tekst-beskeder
 # ----------------------------------------------------------------------------------------
-def _send_text_request(token: str, chat_id: str, text: str, parse_mode: Optional[str]):
+def _send_text_request(
+    token: str,
+    chat_id: str,
+    text: str,
+    parse_mode: Optional[str],
+    *,
+    disable_web_page_preview: bool = True,
+    message_thread_id: Optional[int] = None,
+    reply_to_message_id: Optional[int] = None,
+    disable_notification: Optional[bool] = None,
+):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text, "disable_web_page_preview": True}
+    payload: Dict[str, Any] = {
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": disable_web_page_preview,
+    }
     if parse_mode:
         payload["parse_mode"] = parse_mode
+    if message_thread_id is not None:
+        payload["message_thread_id"] = int(message_thread_id)
+    if reply_to_message_id is not None:
+        payload["reply_to_message_id"] = int(reply_to_message_id)
+    if disable_notification is not None:
+        payload["disable_notification"] = bool(disable_notification)
     return requests.post(url, json=payload, timeout=10)
 
-def _send_text_chunked(token: str, chat_id: str, text: str, parse_mode: Optional[str]):
+def _send_text_chunked(token: str, chat_id: str, text: str, parse_mode: Optional[str], **opts):
     # Escape ved Markdown
     if parse_mode and str(parse_mode).upper().startswith("MARKDOWN"):
         text = _escape_markdown_v2(text)
 
     limit = _MAX_TEXT
     last_resp_json = None
-    for chunk_start in range(0, len(text), limit):
-        chunk = text[chunk_start:chunk_start + limit]
-        resp = _send_text_request(token, chat_id, chunk, parse_mode)
+    for chunk in _split_text_preserving_lines(text, limit):
+        resp = _send_text_request(token, chat_id, chunk, parse_mode, **opts)
         ok, resp_json = _resp_ok(resp)
         last_resp_json = resp_json if isinstance(resp_json, dict) else last_resp_json
         if ok:
             continue
         if _is_parse_entities_error(resp_json):
-            # Fallback til HTML <pre>
             safe = _as_html_pre(chunk)
-            resp2 = _send_text_request(token, chat_id, safe, "HTML")
+            resp2 = _send_text_request(token, chat_id, safe, "HTML", **opts)
             ok2, resp2_json = _resp_ok(resp2)
             last_resp_json = resp2_json if isinstance(resp2_json, dict) else last_resp_json
-            if not ok2:  # pragma: no cover  - dobbelt-fejl på fallback er svær at udløse stabilt
+            if not ok2:  # pragma: no cover
                 _eprint(f"[FEJL] Telegram parse & fallback fejlede: {getattr(resp2, 'text', '')}")
                 log_telegram(f"Fallback parse-fejl: {getattr(resp2, 'text', '')}")
         else:
@@ -249,12 +286,23 @@ def _send_text_chunked(token: str, chat_id: str, text: str, parse_mode: Optional
 
     return last_resp_json if isinstance(last_resp_json, dict) else True
 
-def send_message(msg: str, chat_id: Optional[str] = None, parse_mode: Optional[str] = None, silent: bool = False):
+def send_message(
+    msg: str,
+    chat_id: Optional[str] = None,
+    parse_mode: Optional[str] = None,
+    silent: bool = False,
+    *,
+    message_thread_id: Optional[int] = None,
+    reply_to_message_id: Optional[int] = None,
+    disable_notification: Optional[bool] = None,
+    disable_web_page_preview: bool = True,
+):
     """
     Offentlig helper:
-      - chunker automatisk
-      - håndterer MarkdownV2-escaping og fallback til HTML <pre> ved parse-fejl
+      - smart chunking (linje-baseret)
+      - MarkdownV2-escaping + fallback til HTML <pre> ved parse-fejl
       - logger til LOG_DIR/telegram_log.txt
+      - understøtter Telegram forum-tråde (message_thread_id) og reply
     """
     log_telegram(f"Sender besked: {msg}")
     token = os.getenv("TELEGRAM_TOKEN") or ""
@@ -267,9 +315,14 @@ def send_message(msg: str, chat_id: Optional[str] = None, parse_mode: Optional[s
         return None
 
     try:
-        resp_json_or_true = _send_text_chunked(token, _chat_id, msg, parse_mode)
+        resp_json_or_true = _send_text_chunked(
+            token, _chat_id, msg, parse_mode,
+            disable_web_page_preview=disable_web_page_preview,
+            message_thread_id=message_thread_id,
+            reply_to_message_id=reply_to_message_id,
+            disable_notification=disable_notification,
+        )
 
-        # Log kun "[OK]" når Telegram svarer ok:true
         ok_flag = True
         if isinstance(resp_json_or_true, dict):
             ok_flag = bool(resp_json_or_true.get("ok", False))
@@ -329,6 +382,7 @@ def send_signal_message(
     silent: bool = False,
     skip_cooldown: bool = False,
     skip_dedupe: bool = False,
+    message_thread_id: Optional[int] = None,
 ):
     """
     Gated Telegram-sender:
@@ -352,7 +406,13 @@ def send_signal_message(
         _decision_log("SUPPRESS", "cooldown", symbol=symbol)
         return {"ok": True, "suppressed": True, "reason": "cooldown"}
 
-    resp = send_message(text, chat_id=chat_id, parse_mode=parse_mode, silent=silent)
+    resp = send_message(
+        text,
+        chat_id=chat_id,
+        parse_mode=parse_mode,
+        silent=silent,
+        message_thread_id=message_thread_id,
+    )
     if not skip_cooldown:
         _mark_sent(symbol)
     _decision_log("NOTIFY", "sent", symbol=symbol, extra=(" (bypass_cooldown)" if skip_cooldown else ""))
@@ -402,7 +462,15 @@ def _caption_and_mode(caption: str, parse_mode: Optional[str]):
         return caption, "HTML"
     return caption, None
 
-def send_image(photo_path: str, caption: str = "", chat_id: Optional[str] = None, silent: bool = False, parse_mode: Optional[str] = None):
+def send_image(
+    photo_path: str,
+    caption: str = "",
+    chat_id: Optional[str] = None,
+    silent: bool = False,
+    parse_mode: Optional[str] = None,
+    *,
+    message_thread_id: Optional[int] = None,
+):
     log_telegram(f"Sender billede: {photo_path} (caption: {caption})")
     token = os.getenv("TELEGRAM_TOKEN") or ""
     _chat_id = chat_id if chat_id is not None else (os.getenv("TELEGRAM_CHAT_ID") or "")
@@ -424,11 +492,14 @@ def send_image(photo_path: str, caption: str = "", chat_id: Optional[str] = None
 
         with open(photo_path, "rb") as photo:
             files = {"photo": photo}
-            data = {"chat_id": _chat_id}
+            data: Dict[str, Any] = {"chat_id": _chat_id}
             if cap:
                 data["caption"] = cap
             if pmode:
                 data["parse_mode"] = pmode
+            if message_thread_id is not None:
+                data["message_thread_id"] = int(message_thread_id)
+
             resp = _post_multipart(url, data=data, files=files)
 
         ok, js = _resp_ok(resp)
@@ -436,12 +507,13 @@ def send_image(photo_path: str, caption: str = "", chat_id: Optional[str] = None
             _vprint("[OK] Telegram-billede sendt!", silent=silent)
             log_telegram("Billede sendt OK.")
             return resp
-        # parse fallback
         if _is_parse_entities_error(js) and caption:
             safe_cap = _as_html_pre(caption)[:_MAX_CAPTION]
             with open(photo_path, "rb") as photo2:
                 files2 = {"photo": photo2}
-                data2 = {"chat_id": _chat_id, "caption": safe_cap, "parse_mode": "HTML"}
+                data2: Dict[str, Any] = {"chat_id": _chat_id, "caption": safe_cap, "parse_mode": "HTML"}
+                if message_thread_id is not None:
+                    data2["message_thread_id"] = int(message_thread_id)
                 resp2 = _post_multipart(url, data=data2, files=files2)
             ok2, _ = _resp_ok(resp2)
             if ok2:
@@ -456,7 +528,15 @@ def send_image(photo_path: str, caption: str = "", chat_id: Optional[str] = None
         log_telegram(f"EXCEPTION ved sendPhoto: {e}")
         return None
 
-def send_document(doc_path: str, caption: str = "", chat_id: Optional[str] = None, silent: bool = False, parse_mode: Optional[str] = None):
+def send_document(
+    doc_path: str,
+    caption: str = "",
+    chat_id: Optional[str] = None,
+    silent: bool = False,
+    parse_mode: Optional[str] = None,
+    *,
+    message_thread_id: Optional[int] = None,
+):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
     token = os.getenv("TELEGRAM_TOKEN") or ""
     _chat_id = chat_id if chat_id is not None else (os.getenv("TELEGRAM_CHAT_ID") or "")
@@ -478,11 +558,14 @@ def send_document(doc_path: str, caption: str = "", chat_id: Optional[str] = Non
 
         with open(doc_path, "rb") as doc:
             files = {"document": doc}
-            data = {"chat_id": _chat_id}
+            data: Dict[str, Any] = {"chat_id": _chat_id}
             if cap:
                 data["caption"] = cap
             if pmode:
                 data["parse_mode"] = pmode
+            if message_thread_id is not None:
+                data["message_thread_id"] = int(message_thread_id)
+
             resp = _post_multipart(url, data=data, files=files)
 
         ok, js = _resp_ok(resp)
@@ -494,7 +577,9 @@ def send_document(doc_path: str, caption: str = "", chat_id: Optional[str] = Non
             safe_cap = _as_html_pre(caption)[:_MAX_CAPTION]
             with open(doc_path, "rb") as doc2:
                 files2 = {"document": doc2}
-                data2 = {"chat_id": _chat_id, "caption": safe_cap, "parse_mode": "HTML"}
+                data2: Dict[str, Any] = {"chat_id": _chat_id, "caption": safe_cap, "parse_mode": "HTML"}
+                if message_thread_id is not None:
+                    data2["message_thread_id"] = int(message_thread_id)
                 resp2 = _post_multipart(url, data=data2, files=files2)
             ok2, _ = _resp_ok(resp2)
             if ok2:
@@ -530,34 +615,52 @@ def send_strategy_metrics(metrics: Dict, chat_id: Optional[str] = None):
     send_message(msg, chat_id=chat_id)
     log_telegram("Strategi-metrics sendt.")
 
-def send_auto_status_summary(summary_text: str, image_path: Optional[str] = None, doc_path: Optional[str] = None, chat_id: Optional[str] = None):
-    send_message(summary_text, chat_id=chat_id, parse_mode=None)
+def send_auto_status_summary(
+    summary_text: str,
+    image_path: Optional[str] = None,
+    doc_path: Optional[str] = None,
+    chat_id: Optional[str] = None,
+    *,
+    message_thread_id: Optional[int] = None,
+):
+    send_message(summary_text, chat_id=chat_id, parse_mode=None, message_thread_id=message_thread_id)
     if image_path and Path(image_path).exists():
-        send_image(image_path, caption="📈 Equity Curve", chat_id=chat_id)
+        send_image(image_path, caption="📈 Equity Curve", chat_id=chat_id, message_thread_id=message_thread_id)
     if doc_path and Path(doc_path).exists():
-        send_document(doc_path, caption="📊 Trade Journal", chat_id=chat_id)
+        send_document(doc_path, caption="📊 Trade Journal", chat_id=chat_id, message_thread_id=message_thread_id)
 
 def send_trend_graph(
     chat_id: Optional[str] = None,
     history_path: Path = PROJECT_ROOT / "outputs" / "performance_history.csv",
     img_path: Path = PROJECT_ROOT / "outputs" / "balance_trend.png",
     caption: str = "📈 Balanceudvikling",
+    *,
+    message_thread_id: Optional[int] = None,
 ):
     try:
         if generate_trend_graph:
             img_path = Path(generate_trend_graph(history_path=history_path, img_path=img_path))
             if img_path and img_path.exists():
-                send_image(str(img_path), caption=caption, chat_id=chat_id)
+                send_image(str(img_path), caption=caption, chat_id=chat_id, message_thread_id=message_thread_id)
             else:
-                send_message("Kunne ikke generere balance-trend-graf.", chat_id=chat_id)
+                send_message("Kunne ikke generere balance-trend-graf.", chat_id=chat_id, message_thread_id=message_thread_id)
         else:
-            send_message("Plot-utils ikke tilgængelig – trend-graf ikke genereret.", chat_id=chat_id)
-    except Exception as e:  # pragma: no cover  - fejlgren er dækket andetsteds via send_message
+            send_message("Plot-utils ikke tilgængelig – trend-graf ikke genereret.", chat_id=chat_id, message_thread_id=message_thread_id)
+    except Exception as e:  # pragma: no cover
         _eprint(f"[FEJL] Fejl ved trend-graf: {e}")
         log_telegram(f"EXCEPTION ved send_trend_graph: {e}")
-        send_message(f"Fejl ved generering/sending af trend-graf: {e}", chat_id=chat_id)
+        send_message(f"Fejl ved generering/sending af trend-graf: {e}", chat_id=chat_id, message_thread_id=message_thread_id)
 
-def send_live_metrics(trades_df, balance_df, symbol: str = "", timeframe: str = "", thresholds: Optional[Dict] = None, chat_id: Optional[str] = None):
+def send_live_metrics(
+    trades_df,
+    balance_df,
+    symbol: str = "",
+    timeframe: str = "",
+    thresholds: Optional[Dict] = None,
+    chat_id: Optional[str] = None,
+    *,
+    message_thread_id: Optional[int] = None,
+):
     """
     Send live performance-metrics og alarmer til Telegram.
     thresholds: dict, fx {"drawdown": -20, "winrate": 20, "profit": -10}
@@ -573,7 +676,7 @@ def send_live_metrics(trades_df, balance_df, symbol: str = "", timeframe: str = 
         f"Profit factor: <b>{metrics.get('profit_factor', 0)}</b>\n"
         f"Sharpe: <b>{metrics.get('sharpe', 0)}</b>\n"
     )
-    send_message(msg, chat_id=chat_id, parse_mode="HTML")
+    send_message(msg, chat_id=chat_id, parse_mode="HTML", message_thread_id=message_thread_id)
 
     if thresholds:
         alarms: List[str] = []
@@ -593,13 +696,14 @@ def send_live_metrics(trades_df, balance_df, symbol: str = "", timeframe: str = 
                 chat_id=chat_id,
                 skip_cooldown=True,   # så flere alarmer i samme batch kommer igennem
                 skip_dedupe=False,
+                message_thread_id=message_thread_id,
             )
             log_telegram(alarm)
 
 # ----------------------------------------------------------------------------------------
 # Manuel test
 # ----------------------------------------------------------------------------------------
-if __name__ == "__main__":  # pragma: no cover  - manuel kørsel, ikke relevant for tests
+if __name__ == "__main__":  # pragma: no cover
     # Almindelig besked
     send_message("Testbesked fra din AI trading bot!")
 
