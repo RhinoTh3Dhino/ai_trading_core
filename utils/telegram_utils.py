@@ -170,12 +170,37 @@ def _decision_log(action: str, reason: str, *, symbol: Optional[str] = None, ext
 # ----------------------------------------------------------------------------------------
 # Telegram enable check
 # ----------------------------------------------------------------------------------------
+def _env_truthy(val: Optional[str]) -> bool:
+    return bool(val and val.strip().lower() in ("1", "true", "yes", "on", "y"))
+
+def _env_falsy(val: Optional[str]) -> bool:
+    return bool(val and val.strip().lower() in ("0", "false", "no", "off", "n"))
+
+def _looks_like_placeholder(s: str) -> bool:
+    s = s.strip().lower()
+    return (not s) or s in {"none", "null", "dummy", "dummy_token", "dummy_id", "<token>", "<chat_id>"}
+
 def telegram_enabled() -> bool:
-    token = os.getenv("TELEGRAM_TOKEN") or ""
-    chat_id = os.getenv("TELEGRAM_CHAT_ID") or ""
-    if os.getenv("TELEGRAM_TESTMODE_ALWAYS_ENABLED", "0") == "1":  # pragma: no cover
-        return True
-    return bool(token and chat_id and token.lower() not in ("none", "dummy_token") and chat_id.lower() not in ("none", "dummy_id"))
+    """
+    KUN enabled hvis:
+      - TELEGRAM_ENABLED er ikke eksplicit falsy (0/false/off/no), og
+      - både TELEGRAM_TOKEN og TELEGRAM_CHAT_ID er sat til ikke-placeholder værdier.
+    Default uden env: False.
+    Selv ved TELEGRAM_ENABLED=true kræves token+chat_id stadig (for at undgå runtime-fejl).
+    """
+    # Eksplicit disable har højest prioritet
+    if _env_falsy(os.getenv("TELEGRAM_ENABLED")):
+        return False
+
+    token = (os.getenv("TELEGRAM_TOKEN") or "").strip()
+    chat_id = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
+
+    # Eksplicit testmode kan kun enable hvis der også er sat creds (ellers ville runtime-kald fejle).
+    if _env_truthy(os.getenv("TELEGRAM_ENABLED")) or _env_truthy(os.getenv("TELEGRAM_TESTMODE_ALWAYS_ENABLED")):
+        return bool(token) and bool(chat_id) and not _looks_like_placeholder(token) and not _looks_like_placeholder(chat_id)
+
+    # Default gren (ingen flags): kræv creds
+    return bool(token) and bool(chat_id) and not _looks_like_placeholder(token) and not _looks_like_placeholder(chat_id)
 
 # ----------------------------------------------------------------------------------------
 # Markdown/HTML utils
