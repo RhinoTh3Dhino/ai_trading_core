@@ -2,57 +2,96 @@ name: Auto Backup
 
 on:
   push:
-    branches: [ "ai_bot_dev", "ai_bot_test", "ai_bot_pro" ]  # Kør på alle vigtige branches
+    branches: ["ai_bot_dev", "ai_bot_test", "ai_bot_pro"]
   schedule:
-    - cron: "0 3 * * *"   # Kør dagligt kl. 03:00 UTC
-  workflow_dispatch:      # Muliggør manuel kørsel fra GitHub Actions
+    - cron: "0 3 * * *"   # Dagligt kl. 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: backup-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backup:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONUNBUFFERED: "1"
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
+        id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10   # MATCH RESTEN (TensorFlow 2.10.1 support)
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Print Python version
+        run: |
+          python -V
+          pip -V
+
+      # Pre-installer en kompatibel pandas-ta og lav en shim, så "import pandas_ta" virker,
+      # og filtrér pandas-ta/pandas_ta ud af kravfilen før pip install.
+      - name: Forbered dependencies (pandas-ta fix)
+        run: |
+          set -e
+          python -m pip install -U pip wheel
+
+          python - <<'PY'
+          import sys, subprocess, importlib, site, pathlib
+          try:
+              importlib.import_module("pandas_ta")
+              print("pandas_ta already available")
+          except Exception:
+              subprocess.check_call([sys.executable, "-m", "pip", "install", "pandas-ta-openbb==0.4.22"])
+              try:
+                  importlib.import_module("pandas_ta")
+                  print("pandas_ta import OK after pandas-ta-openbb")
+              except Exception:
+                  ss = site.getsitepackages()
+                  target = pathlib.Path(ss[0]) / "pandas_ta.py"
+                  target.write_text("from pandas_ta_openbb import *\n")
+                  print(f"Shim written: {target}")
+          PY
+
+          if [ -f requirements.txt ]; then
+            cp requirements.txt requirements.ci.txt
+            sed -E -i '/^[[:space:]]*(pandas-ta|pandas_ta)([^A-Za-z0-9._-].*)?$/d' requirements.ci.txt || true
+            echo "== requirements.ci.txt =="; cat requirements.ci.txt
+          fi
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.ci.txt ]; then
+            pip install -r requirements.ci.txt
+          fi
 
-      # Backup-step: kør backup.py hvis den findes
       - name: Run backup.py
         run: |
-          if exist backup.py (
+          if [ -f backup.py ]; then
             echo "▶ Kører backup-script..."
             python backup.py
-          ) else (
+          else
             echo "⚠️ backup.py ikke fundet – springer backup-step over."
-          )
-        shell: cmd
+          fi
 
-      # Upload backup som artifact (husk at backup.py skal gemme til fx backups/)
+      - name: Ensure backups dir exists
+        if: ${{ always() }}
+        run: mkdir -p backups
+
       - name: Upload backup artifact
-        if: always()   # Upload artifacts uanset succes eller fejl!
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: backup
+          name: backup-${{ github.run_id }}
           path: backups/
+          retention-days: 14
 
-      # (Ekstra step: log output for overblik)
       - name: Print backup-log summary
-        run: echo "✅ Backup-workflow færdig – tjek artifacts eller logs for detaljer"
-
-      # (Ekstra - Telegram notification, hvis ønsket)
-      # - name: Send Telegram notification
-      #   if: always()
-      #   uses: appleboy/telegram-action@v0.1.1
-      #   with:
-      #     to: ${{ secrets.TELEGRAM_CHAT_ID }}
-      #     token: ${{ secrets.TELEGRAM_TOKEN }}
-      #     message: "✅ Auto-backup er færdig og artifact er uploadet! 🚀"
+        if: ${{ always() }}
+        run: |
+          echo '✅ Auto Backup: workflow færdig – tjek artifacts eller logs for detaljer'
