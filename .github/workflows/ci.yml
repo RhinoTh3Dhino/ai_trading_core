@@ -25,24 +25,63 @@ jobs:
       - name: Checkout kode
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python 3.11 (bedre hjul-kompatibilitet)
+        id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
+          cache: "pip"
 
-      - name: Cache pip
+      - name: Verificér at Python 3.11 er aktiv
+        run: |
+          set -e
+          python -V
+          which python
+          python - << 'PY'
+          import sys
+          print("Running:", sys.version)
+          assert sys.version_info[:2] == (3, 11), "Forkert Python-version i PATH (forventer 3.11)"
+          PY
+
+      - name: Cache pip (ekstra, oveni setup-python cache)
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          key: ${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-pip-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
+            ${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-pip-
             ${{ runner.os }}-pip-
+
+      - name: Forbered CI-kravfiler (fix pandas_ta → pandas-ta)
+        run: |
+          set -e
+          if [ -f requirements.txt ]; then
+            cp requirements.txt requirements.ci.txt
+            sed -E -i 's/^[[:space:]]*pandas_ta/pandas-ta/' requirements.ci.txt || true
+            echo "== requirements.ci.txt =="; cat requirements.ci.txt
+          fi
+          if [ -f requirements-dev.txt ]; then
+            cp requirements-dev.txt requirements-dev.ci.txt
+            sed -E -i 's/^[[:space:]]*pandas_ta/pandas-ta/' requirements-dev.ci.txt || true
+            echo "== requirements-dev.ci.txt =="; cat requirements-dev.ci.txt
+          fi
 
       - name: Installer pip & afhængigheder
         run: |
-          python -m pip install -U pip wheel
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          set -e
+          python -m pip install -U pip wheel setuptools
+          if [ -f requirements.ci.txt ]; then pip install -r requirements.ci.txt; fi
+          if [ -f requirements-dev.ci.txt ]; then pip install -r requirements-dev.ci.txt; fi
+          # Fallback: hvis pandas-ta ikke er installeret via kravfilerne
+          python - << 'PY' || true
+          import importlib, subprocess, sys
+          try:
+              importlib.import_module("pandas_ta")
+              print("pandas_ta import OK")
+          except Exception:
+              print("Installerer pandas-ta fallback …")
+              subprocess.check_call([sys.executable, "-m", "pip", "install", "--pre", "pandas-ta==0.3.14b0"])
+          PY
           # Sikkerhedsnet hvis dev-filen mangler:
           pip install pytest pytest-cov pytest-timeout || true
           # Kun hvis noget kræver torch i tests (ignore fejl hvis ikke muligt):
@@ -144,15 +183,21 @@ jobs:
       - name: Checkout kode
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python 3.11
+        id: setup-python-nightly
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Installer minimale afhængigheder
         run: |
           python -m pip install -U pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements.txt ]; then
+            cp requirements.txt requirements.ci.txt
+            sed -E -i 's/^[[:space:]]*pandas_ta/pandas-ta/' requirements.ci.txt || true
+            pip install -r requirements.ci.txt
+          fi
           pip install pytest || true
 
       - name: Opret dummy data + ZIP-backup
