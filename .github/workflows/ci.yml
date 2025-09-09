@@ -52,45 +52,48 @@ jobs:
             ${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-pip-
             ${{ runner.os }}-pip-
 
-      - name: Forbered CI-kravfiler (fix pandas_ta → pandas-ta>=0.3.14b0)
+      - name: Forbered CI-kravfiler
         run: |
           set -e
           if [ -f requirements.txt ]; then
             cp requirements.txt requirements.ci.txt
-            # erstat pakke-navn og slap version-pin løs til >=0.3.14b0
-            sed -E -i 's/^[[:space:]]*pandas_ta([=<>!].*)?/pandas-ta>=0.3.14b0/' requirements.ci.txt || true
-            sed -E -i 's/^[[:space:]]*pandas-ta([=<>!].*)?/pandas-ta>=0.3.14b0/' requirements.ci.txt || true
+            # Fjern pandas-ta (både underscore og bindestreg) fra kravfilen for at undgå pip-stop
+            sed -E -i '/^[[:space:]]*(pandas_ta|pandas-ta)([=<>!].*)?([[:space:]]*)$/d' requirements.ci.txt || true
             echo "== requirements.ci.txt =="; cat requirements.ci.txt
           fi
           if [ -f requirements-dev.txt ]; then
             cp requirements-dev.txt requirements-dev.ci.txt
-            sed -E -i 's/^[[:space:]]*pandas_ta([=<>!].*)?/pandas-ta>=0.3.14b0/' requirements-dev.ci.txt || true
-            sed -E -i 's/^[[:space:]]*pandas-ta([=<>!].*)?/pandas-ta>=0.3.14b0/' requirements-dev.ci.txt || true
+            sed -E -i '/^[[:space:]]*(pandas_ta|pandas-ta)([=<>!].*)?([[:space:]]*)$/d' requirements-dev.ci.txt || true
             echo "== requirements-dev.ci.txt =="; cat requirements-dev.ci.txt
           fi
 
-      - name: Installer pip & afhængigheder (tillad prereleases)
+      - name: Installer pip & øvrige afhængigheder
         run: |
           set -e
           python -m pip install -U pip wheel setuptools
           if [ -f requirements.ci.txt ]; then pip install --pre -r requirements.ci.txt; fi
           if [ -f requirements-dev.ci.txt ]; then pip install --pre -r requirements-dev.ci.txt; fi
-          # Fallback specifikt for pandas-ta hvis den stadig mangler
-          python - << 'PY' || true
-          import importlib, subprocess, sys
-          try:
-              importlib.import_module("pandas_ta")
-              print("pandas_ta import OK")
-          except Exception:
-              print("Installerer pandas-ta fallback fra GitHub …")
-              subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/twopirllc/pandas-ta@master"])
-          PY
           # Sikkerhedsnet hvis dev-filen mangler:
           pip install pytest pytest-cov pytest-timeout || true
           # Kun hvis noget kræver torch i tests (ignore fejl hvis ikke muligt):
           pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
           python -V
           pip -V
+
+      - name: Installer pandas-ta direkte fra GitHub (stabil CI)
+        run: |
+          set -e
+          python - << 'PY'
+          import importlib, subprocess, sys
+          try:
+              importlib.import_module("pandas_ta")
+              print("pandas_ta import OK (allerede installeret)")
+          except Exception:
+              print("Installerer pandas-ta fra GitHub …")
+              subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/twopirllc/pandas-ta@master#egg=pandas-ta"])
+              importlib.import_module("pandas_ta")
+              print("pandas_ta import OK (GitHub)")
+          PY
 
       - name: Skriv .env til CI (testmode, ingen rigtige netkald)
         run: |
@@ -198,8 +201,7 @@ jobs:
           python -m pip install -U pip
           if [ -f requirements.txt ]; then
             cp requirements.txt requirements.ci.txt
-            sed -E -i 's/^[[:space:]]*pandas_ta([=<>!].*)?/pandas-ta>=0.3.14b0/' requirements.ci.txt || true
-            sed -E -i 's/^[[:space:]]*pandas-ta([=<>!].*)?/pandas-ta>=0.3.14b0/' requirements.ci.txt || true
+            sed -E -i '/^[[:space:]]*(pandas_ta|pandas-ta)([=<>!].*)?([[:space:]]*)$/d' requirements.ci.txt || true
             pip install --pre -r requirements.ci.txt
           fi
           pip install pytest || true
