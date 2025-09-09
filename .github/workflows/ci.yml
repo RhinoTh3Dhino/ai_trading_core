@@ -55,7 +55,6 @@ jobs:
       - name: Forbered CI-krav- og constraints-filer
         run: |
           set -e
-          # Kravfiler: fjern pandas_ta/pandas-ta for at undgå PyPI-udsving
           if [ -f requirements.txt ]; then
             cp requirements.txt requirements.ci.txt
             sed -E -i '/^[[:space:]]*(pandas_ta|pandas-ta)([=<>!].*)?([[:space:]]*)$/d' requirements.ci.txt || true
@@ -66,7 +65,6 @@ jobs:
             sed -E -i '/^[[:space:]]*(pandas_ta|pandas-ta)([=<>!].*)?([[:space:]]*)$/d' requirements-dev.ci.txt || true
             echo "== requirements-dev.ci.txt =="; cat requirements-dev.ci.txt
           fi
-          # Constraints: lås hjul-kompatible versioner til Py3.11
           cat > constraints.ci.txt << 'C'
           numpy==1.26.4
           numba==0.61.0
@@ -77,14 +75,11 @@ jobs:
       - name: Preinstallér binære hjul for numba/llvmlite (+ numpy)
         run: |
           set -e
-          # Tving hjul (ingen sdist kompilering)
           pip install --upgrade pip wheel setuptools
           pip install --only-binary=:all: -c constraints.ci.txt \
             "numpy==1.26.4" "llvmlite==0.44.0" "numba==0.61.0"
           python - << 'PY'
-          import importlib
-          import sys
-          import numpy
+          import importlib, numpy
           print("numpy:", numpy.__version__)
           for m in ("llvmlite","numba"):
               importlib.import_module(m)
@@ -96,26 +91,41 @@ jobs:
           set -e
           if [ -f requirements.ci.txt ]; then pip install --pre -c constraints.ci.txt -r requirements.ci.txt; fi
           if [ -f requirements-dev.ci.txt ]; then pip install --pre -c constraints.ci.txt -r requirements-dev.ci.txt; fi
-          # Sikkerhedsnet hvis dev-filen mangler:
           pip install pytest pytest-cov pytest-timeout || true
-          # Kun hvis noget kræver torch i tests (ignore fejl hvis ikke muligt):
           pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
           python -V
           pip -V
 
-      - name: Installer pandas-ta direkte fra GitHub (stabil CI)
+      - name: Installer pandas-ta uden git (PyPI→codeload→zip)
+        env:
+          PIP_DEFAULT_TIMEOUT: "60"
         run: |
           set -e
           python - << 'PY'
-          import importlib, subprocess, sys
-          try:
-              importlib.import_module("pandas_ta")
-              print("pandas_ta import OK (allerede installeret)")
-          except Exception:
-              print("Installerer pandas-ta fra GitHub …")
-              subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/twopirllc/pandas-ta@master#egg=pandas-ta"])
-              importlib.import_module("pandas_ta")
-              print("pandas_ta import OK (GitHub)")
+          import sys, subprocess, importlib
+          def run(cmd: str) -> bool:
+              print(f"\n-> {cmd}")
+              try:
+                  subprocess.check_call(cmd, shell=True)
+                  return True
+              except subprocess.CalledProcessError as e:
+                  print(f"FAILED ({e.returncode})")
+                  return False
+
+          # 1) Prøv PyPI (tillad prereleases)
+          if run(f"{sys.executable} -m pip install --pre pandas-ta"):
+              pass
+          # 2) Prøv codeload ZIP (kræver ikke git)
+          elif run(f"{sys.executable} -m pip install 'pandas-ta @ https://codeload.github.com/twopirllc/pandas-ta/zip/refs/heads/master'"):
+              pass
+          # 3) Prøv GitHub ZIP-URL
+          elif run(f"{sys.executable} -m pip install 'pandas-ta @ https://github.com/twopirllc/pandas-ta/archive/refs/heads/master.zip'"):
+              pass
+          else:
+              raise SystemExit("Kunne ikke installere pandas-ta fra nogen kilde")
+
+          import pandas_ta
+          print("pandas_ta import OK")
           PY
 
       - name: Skriv .env til CI (testmode, ingen rigtige netkald)
@@ -137,7 +147,6 @@ jobs:
       - name: Kør pytest
         run: |
           pytest -q
-        # pytest.ini styrer coverage/junit/thresholds
 
       - name: Kør main.py (smoke, må ikke vælte CI)
         run: |
