@@ -21,7 +21,7 @@ jobs:
       MPLBACKEND: Agg
       PYTHONUNBUFFERED: "1"
       CI: "true"
-      # Map secrets -> env, så vi kan bruge env.* i if:
+      # Map secrets -> env, sÃ¥ vi kan bruge env.* i if:
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
@@ -63,10 +63,10 @@ jobs:
       - name: Run tests (optional)
         run: |
           if [ -d "tests" ]; then
-            echo "Kører tests (hurtigt)…"
+            echo "KÃ¸rer tests (hurtigt)â€¦"
             pytest -q || true
           else
-            echo "Ingen tests-mappe fundet – springer over."
+            echo "Ingen tests-mappe fundet â€“ springer over."
           fi
 
       - name: Ensure CHANGELOG.md exists
@@ -105,7 +105,7 @@ jobs:
           BRANCH="$(git rev-parse --abbrev-ref HEAD)"
           git add CHANGELOG.md
           if git diff --cached --quiet; then
-            echo "Ingen ændringer at committe."
+            echo "Ingen Ã¦ndringer at committe."
           else
             git commit -m "Auto-update CHANGELOG.md [skip ci]"
             git pull --rebase --autostash origin "$BRANCH" || true
@@ -113,13 +113,13 @@ jobs:
           fi
 
       - name: Send Telegram notification
-        # Brug env.* i stedet for secrets.* i if for at gøre lintern glad
+        # Brug env.* i stedet for secrets.* i if for at gÃ¸re lintern glad
         if: ${{ steps.changelog.outputs.changed == 'true' && env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
         uses: appleboy/telegram-action@v0.1.1
         with:
           to: ${{ env.TELEGRAM_CHAT_ID }}
           token: ${{ env.TELEGRAM_TOKEN }}
-          message: "✅ CHANGELOG.md er automatisk opdateret og committet! 🚀"
+          message: "âœ… CHANGELOG.md er automatisk opdateret og committet! ðŸš€"
 
       - name: Done summary
-        run: echo "✅ Auto Update Changelog gennemført – se artifacts/logs (og Telegram hvis sat op)."
+        run: echo "âœ… Auto Update Changelog gennemfÃ¸rt â€“ se artifacts/logs (og Telegram hvis sat op)."

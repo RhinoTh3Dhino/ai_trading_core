@@ -1,10 +1,11 @@
+---
 name: Auto Backup
 
 on:
   push:
-    branches: ["ai_bot_dev", "ai_bot_test", "ai_bot_pro"]
+    branches: [ "ai_bot_dev", "ai_bot_test", "ai_bot_pro" ]
   schedule:
-    - cron: "0 3 * * *"   # Dagligt kl. 03:00 UTC
+    - cron: "0 3 * * *"   # Daily at 03:00 UTC
   workflow_dispatch:
 
 concurrency:
@@ -29,14 +30,14 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Print Python version
+      - name: Print Python & pip versions
         run: |
           python -V
           pip -V
 
-      # Pre-installer en kompatibel pandas-ta og lav en shim, så "import pandas_ta" virker,
-      # og filtrér pandas-ta/pandas_ta ud af kravfilen før pip install.
-      - name: Forbered dependencies (pandas-ta fix)
+      # Prepare: install compatible pandas-ta, add shim so 'import pandas_ta' works,
+      # and filter pandas-ta/pandas_ta out of requirements before pip install.
+      - name: Prepare dependencies (pandas-ta fix)
         run: |
           set -e
           python -m pip install -U pip wheel
@@ -47,13 +48,14 @@ jobs:
               importlib.import_module("pandas_ta")
               print("pandas_ta already available")
           except Exception:
+              # Try community-maintained fork that still ships wheels
               subprocess.check_call([sys.executable, "-m", "pip", "install", "pandas-ta-openbb==0.4.22"])
               try:
                   importlib.import_module("pandas_ta")
-                  print("pandas_ta import OK after pandas-ta-openbb")
+                  print("pandas_ta import OK after installing pandas-ta-openbb")
               except Exception:
-                  ss = site.getsitepackages()
-                  target = pathlib.Path(ss[0]) / "pandas_ta.py"
+                  # Last resort: create a shim so 'import pandas_ta' resolves
+                  target = pathlib.Path(site.getsitepackages()[0]) / "pandas_ta.py"
                   target.write_text("from pandas_ta_openbb import *\n")
                   print(f"Shim written: {target}")
           PY
@@ -73,10 +75,10 @@ jobs:
       - name: Run backup.py
         run: |
           if [ -f backup.py ]; then
-            echo "▶ Kører backup-script..."
+            echo ">> Running backup script..."
             python backup.py
           else
-            echo "⚠️ backup.py ikke fundet – springer backup-step over."
+            echo "WARNING: backup.py not found - skipping backup step."
           fi
 
       - name: Ensure backups dir exists
@@ -94,4 +96,4 @@ jobs:
       - name: Print backup-log summary
         if: ${{ always() }}
         run: |
-          echo '✅ Auto Backup: workflow færdig – tjek artifacts eller logs for detaljer'
+          echo "Auto Backup: workflow completed - check artifacts or logs for details"

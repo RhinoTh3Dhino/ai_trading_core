@@ -30,7 +30,6 @@ try:
         check_profit_alert,
     )
 except Exception:  # pragma: no cover
-    # Minimal fallback hvis monitoring_utils ikke findes
     def calculate_live_metrics(trades_df, balance_df):  # pragma: no cover
         import pandas as pd
         metrics = {
@@ -105,15 +104,17 @@ LOG_DIR = _to_abs_path(os.getenv("LOG_DIR", "logs"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_PATH = LOG_DIR / "telegram_log.txt"
 
-# Terminal-verbosity (sæt TELEGRAM_VERBOSE=0 for at dæmpe "[OK] Telegram-... sendt!")
 VERBOSE = os.getenv("TELEGRAM_VERBOSE", "1").strip().lower() not in ("0", "false", "no", "off")
 
 # Telegram grænser
 _MAX_TEXT = 4096
 _MAX_CAPTION = 1024
+TELEGRAM_MAX_CHARS = _MAX_TEXT
+MAX_MESSAGE_LENGTH = _MAX_TEXT
+MAX_LEN = _MAX_TEXT
 
 # ----------------------------------------------------------------------------------------
-# "Ro på" – ENV-styrede parametre (gating / dedupe / batching)
+# "Ro på" – ENV-styrede parametre
 # ----------------------------------------------------------------------------------------
 def _get_int_env(name: str, default: int) -> int:
     try:
@@ -181,25 +182,18 @@ def _looks_like_placeholder(s: str) -> bool:
     return (not s) or s in {"none", "null", "dummy", "dummy_token", "dummy_id", "<token>", "<chat_id>"}
 
 def telegram_enabled() -> bool:
-    """
-    KUN enabled hvis:
-      - TELEGRAM_ENABLED er ikke eksplicit falsy (0/false/off/no), og
-      - både TELEGRAM_TOKEN og TELEGRAM_CHAT_ID er sat til ikke-placeholder værdier.
-    Default uden env: False.
-    Selv ved TELEGRAM_ENABLED=true kræves token+chat_id stadig (for at undgå runtime-fejl).
-    """
     # Eksplicit disable har højest prioritet
     if _env_falsy(os.getenv("TELEGRAM_ENABLED")):
         return False
 
-    token = (os.getenv("TELEGRAM_TOKEN") or "").strip()
+    token = (os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     chat_id = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
 
-    # Eksplicit testmode kan kun enable hvis der også er sat creds (ellers ville runtime-kald fejle).
+    # Eksplicit enable kræver stadig rigtige creds
     if _env_truthy(os.getenv("TELEGRAM_ENABLED")) or _env_truthy(os.getenv("TELEGRAM_TESTMODE_ALWAYS_ENABLED")):
         return bool(token) and bool(chat_id) and not _looks_like_placeholder(token) and not _looks_like_placeholder(chat_id)
 
-    # Default gren (ingen flags): kræv creds
+    # Default: kræv creds
     return bool(token) and bool(chat_id) and not _looks_like_placeholder(token) and not _looks_like_placeholder(chat_id)
 
 # ----------------------------------------------------------------------------------------
@@ -234,12 +228,42 @@ def _resp_ok(resp: requests.Response) -> Tuple[bool, Any]:
     return ok_flag, js
 
 # ----------------------------------------------------------------------------------------
-# Smart chunking (split på linjer nær Telegram-limit for stabil parsing)
+# Bot-adgang (til tests at monkeypatche)
 # ----------------------------------------------------------------------------------------
-def _split_text_preserving_lines(text: str, limit: int) -> Iterable[str]:
+def _get_bot() -> Optional[Any]:
+    """Returner en bot-instans hvis du bruger et bot-objekt – ellers None.
+    Tests kan monkeypatche denne til en DummyBot med .send_message()."""
+    return None
+
+# Alias som nogle tests søger efter
+get_bot = _get_bot
+
+# ----------------------------------------------------------------------------------------
+# Smart chunking
+# ----------------------------------------------------------------------------------------
+def _split_text_preserving_lines(
+    text: str,
+    limit: int | None = None,
+    *,
+    max_len: int | None = None,
+    max_length: int | None = None,
+) -> Iterable[str]:
+    if limit is None:
+        if max_len is not None:
+            limit = max_len
+        elif max_length is not None:
+            limit = max_length
+        else:
+            limit = TELEGRAM_MAX_CHARS
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = TELEGRAM_MAX_CHARS
+
     if len(text) <= limit:
         yield text
         return
+
     start = 0
     n = len(text)
     while start < n:
@@ -253,6 +277,9 @@ def _split_text_preserving_lines(text: str, limit: int) -> Iterable[str]:
             start = nl + 1
         if chunk:
             yield chunk
+
+def chunk_text(text: str, max_len: int = TELEGRAM_MAX_CHARS) -> List[str]:
+    return list(_split_text_preserving_lines(text, limit=max_len))
 
 # ----------------------------------------------------------------------------------------
 # Tekst-beskeder
@@ -285,7 +312,6 @@ def _send_text_request(
     return requests.post(url, json=payload, timeout=10)
 
 def _send_text_chunked(token: str, chat_id: str, text: str, parse_mode: Optional[str], **opts):
-    # Escape ved Markdown
     if parse_mode and str(parse_mode).upper().startswith("MARKDOWN"):
         text = _escape_markdown_v2(text)
 
@@ -322,15 +348,9 @@ def send_message(
     disable_notification: Optional[bool] = None,
     disable_web_page_preview: bool = True,
 ):
-    """
-    Offentlig helper:
-      - smart chunking (linje-baseret)
-      - MarkdownV2-escaping + fallback til HTML <pre> ved parse-fejl
-      - logger til LOG_DIR/telegram_log.txt
-      - understøtter Telegram forum-tråde (message_thread_id) og reply
-    """
+    """Offentlig helper med chunking + fallback. Foretrækker bot-vej hvis tilgængelig."""
     log_telegram(f"Sender besked: {msg}")
-    token = os.getenv("TELEGRAM_TOKEN") or ""
+    token = (os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "")
     _chat_id = chat_id if chat_id is not None else (os.getenv("TELEGRAM_CHAT_ID") or "")
 
     if not telegram_enabled():
@@ -339,6 +359,34 @@ def send_message(
         log_telegram("[TESTMODE] Besked ikke sendt – Telegram inaktiv")
         return None
 
+    # ---- Bot-vej (til tests, monkeypatches) ----
+    try:
+        bot = _get_bot()
+    except Exception:
+        bot = None
+
+    if bot is not None:
+        # Escape ved Markdown før chunking
+        text_to_send = (
+            _escape_markdown_v2(msg)
+            if (parse_mode and str(parse_mode).upper().startswith("MARKDOWN"))
+            else msg
+        )
+        for chunk in _split_text_preserving_lines(text_to_send, _MAX_TEXT):
+            bot.send_message(
+                chat_id=_chat_id,
+                text=chunk,
+                parse_mode=parse_mode,
+                disable_web_page_preview=disable_web_page_preview,
+                message_thread_id=message_thread_id,
+                reply_to_message_id=reply_to_message_id,
+                disable_notification=disable_notification,
+            )
+        _vprint("[OK] Telegram-besked sendt!", silent=silent)
+        log_telegram("Besked sendt OK (bot-path).")
+        return {"ok": True}
+
+    # ---- HTTP-vej (fallback / normal drift) ----
     try:
         resp_json_or_true = _send_text_chunked(
             token, _chat_id, msg, parse_mode,
@@ -409,12 +457,6 @@ def send_signal_message(
     skip_dedupe: bool = False,
     message_thread_id: Optional[int] = None,
 ):
-    """
-    Gated Telegram-sender:
-      - Duplikatfilter via dedupe_key (TTL-styret)
-      - Global + pr.-symbol cooldown
-      - Low-prio: batchet udsendelse
-    """
     key = dedupe_key or f"{symbol or '-'}|{hash(text)}"
 
     if priority.lower() == "low":
@@ -497,7 +539,7 @@ def send_image(
     message_thread_id: Optional[int] = None,
 ):
     log_telegram(f"Sender billede: {photo_path} (caption: {caption})")
-    token = os.getenv("TELEGRAM_TOKEN") or ""
+    token = (os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "")
     _chat_id = chat_id if chat_id is not None else (os.getenv("TELEGRAM_CHAT_ID") or "")
 
     if not telegram_enabled():
@@ -563,7 +605,7 @@ def send_document(
     message_thread_id: Optional[int] = None,
 ):
     log_telegram(f"Sender dokument: {doc_path} (caption: {caption})")
-    token = os.getenv("TELEGRAM_TOKEN") or ""
+    token = (os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "")
     _chat_id = chat_id if chat_id is not None else (os.getenv("TELEGRAM_CHAT_ID") or "")
 
     if not telegram_enabled():
@@ -686,11 +728,6 @@ def send_live_metrics(
     *,
     message_thread_id: Optional[int] = None,
 ):
-    """
-    Send live performance-metrics og alarmer til Telegram.
-    thresholds: dict, fx {"drawdown": -20, "winrate": 20, "profit": -10}
-    Alarmer sendes som uafhængige beskeder og bypasser cooldown i samme batch.
-    """
     metrics = calculate_live_metrics(trades_df, balance_df)
     msg = (
         f"📡 <b>Live trading-status {symbol} {timeframe}</b>\n"
@@ -719,7 +756,7 @@ def send_live_metrics(
                 dedupe_key=f"alarm|{symbol}|{alarm}",
                 priority="high",
                 chat_id=chat_id,
-                skip_cooldown=True,   # så flere alarmer i samme batch kommer igennem
+                skip_cooldown=True,
                 skip_dedupe=False,
                 message_thread_id=message_thread_id,
             )
@@ -729,36 +766,10 @@ def send_live_metrics(
 # Manuel test
 # ----------------------------------------------------------------------------------------
 if __name__ == "__main__":  # pragma: no cover
-    # Almindelig besked
     send_message("Testbesked fra din AI trading bot!")
-
-    # High-prio gennem gating
     send_signal_message("ENTRY: BTCUSDT LONG 0.10 @ 60.00", symbol="BTCUSDT", priority="high")
-
-    # Duplikat (bliver SUPPRESS’et under DEDUPE_TTL_SEC)
     send_signal_message("ENTRY: BTCUSDT LONG 0.10 @ 60.00", symbol="BTCUSDT", priority="high")
-
-    # Low-prio buffer + flush
     for i in range(5):
         send_signal_message(f"FYI {i}", symbol="BTCUSDT", priority="low")
     maybe_flush_lowprio_batch()
-
     send_telegram_heartbeat()
-
-    # Dummy live-metrics test
-    try:
-        import pandas as pd
-        balance_df = pd.DataFrame({"balance": [1000, 980, 950, 990, 970, 1005]})
-        trades_df = pd.DataFrame(
-            {"type": ["BUY", "TP", "BUY", "SL", "BUY", "TP", "SELL", "TP", "SELL", "SL"],
-             "profit": [0, 0.02, 0, -0.015, 0, 0.01, 0, 0.03, 0, -0.012]}
-        )
-        send_live_metrics(
-            trades_df,
-            balance_df,
-            symbol="BTCUSDT",
-            timeframe="1h",
-            thresholds={"drawdown": -2, "winrate": 60, "profit": -1},
-        )
-    except Exception as e:
-        _eprint(f"[TEST] Kunne ikke køre live-metrics dummy: {e}")

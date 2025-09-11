@@ -1,0 +1,29 @@
+extends: default
+
+rules:
+  # GitHub Actions bruger "on:" osv. – lad være med at flagge dem
+  truthy: disable
+
+  # Kræv ikke '---' i toppen af filer
+  document-start: disable
+
+  # Ensret til LF (Unix) – konverter filer hvis nødvendigt
+  new-lines:
+    type: unix
+
+  # Kræv 2 mellemrum før kommentarer
+  comments:
+    min-spaces-from-content: 2
+
+  # Gør lange linjer til warnings og hæv grænsen lidt
+  line-length:
+    max: 160
+    allow-non-breakable-words: true
+    level: warning
+
+  # Tillad 1 mellemrum inden i brackets, så f.eks. [ a, b ] er ok
+  brackets:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 1
+    max-spaces-inside-empty: 1

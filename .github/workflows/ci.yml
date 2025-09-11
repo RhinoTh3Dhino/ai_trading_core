@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [ "**" ]
   pull_request:
-    branches: ["**"]
+    branches: [ "**" ]
   workflow_dispatch:
   schedule:
-    - cron: "5 1 * * *" # 01:05 UTC ≈ 03:05 DK (sommertid)
+    - cron: "5 1 * * *"  # 01:05 UTC â‰ˆ 03:05 DK (sommertid)
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -58,23 +58,23 @@ jobs:
             echo "== requirements-dev.ci.txt =="; cat requirements-dev.ci.txt
           fi
 
-      - name: Installer base-værktøjer
+      - name: Installer base-vÃ¦rktÃ¸jer
         run: |
           python -m pip install -U pip wheel setuptools
           python -V
           pip -V
 
-      - name: Installér numeric stack først (hjul)
+      - name: InstallÃ©r numeric stack fÃ¸rst (hjul)
         run: |
-          # Numpy før alt andet, så build-deps kan finde det
+          # Numpy fÃ¸r alt andet, sÃ¥ build-deps kan finde det
           pip install --only-binary=:all: numpy==1.26.4
-          # Undgå at bygge numba/llvmlite fra kilde
+          # UndgÃ¥ at bygge numba/llvmlite fra kilde
           pip install --only-binary=:all: llvmlite==0.42.0 numba==0.59.1
 
-      - name: Installér pandas-ta (OpenBB-fork) + shim til import
+      - name: InstallÃ©r pandas-ta (OpenBB-fork) + shim til import
         run: |
           set -e
-          # 1) Prøv at importere pandas_ta; hvis det fejler, brug OpenBB-forken
+          # 1) PrÃ¸v at importere pandas_ta; hvis det fejler, brug OpenBB-forken
           python - <<'PY'
           import importlib, sys, subprocess, site, pathlib
           def has_pkg(name):
@@ -85,7 +85,7 @@ jobs:
                   return False
 
           if not has_pkg("pandas_ta"):
-              print("pandas_ta ikke fundet – installerer pandas-ta-openbb…")
+              print("pandas_ta ikke fundet â€“ installerer pandas-ta-openbbâ€¦")
               subprocess.check_call([sys.executable, "-m", "pip", "install", "pandas-ta-openbb==0.4.22"])
               if not has_pkg("pandas_ta"):
                   # Lav en lille shim, hvis modulet ikke eksporterer navnet direkte
@@ -96,17 +96,17 @@ jobs:
               else:
                   print("pandas_ta kan importeres efter install.")
           else:
-              print("pandas_ta allerede tilgængelig.")
+              print("pandas_ta allerede tilgÃ¦ngelig.")
           PY
 
-      - name: Installer projekt-afhængigheder
+      - name: Installer projekt-afhÃ¦ngigheder
         run: |
           set -e
           if [ -f requirements.ci.txt ]; then pip install -r requirements.ci.txt; fi
           if [ -f requirements-dev.ci.txt ]; then pip install -r requirements-dev.ci.txt; fi
           # Sikkerhedsnet
           pip install pytest pytest-cov pytest-timeout || true
-          # CPU-only torch (ignorér fejl hvis ikke nødvendigt i tests)
+          # CPU-only torch (ignorÃ©r fejl hvis ikke nÃ¸dvendigt i tests)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
 
       - name: Skriv .env til CI (testmode)
@@ -124,10 +124,10 @@ jobs:
       - name: Opret reports-mappe
         run: mkdir -p reports
 
-      - name: Kør pytest
+      - name: KÃ¸r pytest
         run: pytest -q
 
-      - name: Kør main.py (smoke)
+      - name: KÃ¸r main.py (smoke)
         run: python main.py || true
 
       - name: Fail-safe artefakter
@@ -147,7 +147,7 @@ jobs:
           test -f outputs/balance_trend.png
           test -f BotStatus.md
           test -f CHANGELOG.md
-          echo "✅ Alle vigtige outputfiler findes!"
+          echo "âœ… Alle vigtige outputfiler findes!"
 
       - name: Upload artifacts
         if: always()
@@ -205,7 +205,7 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Installer minimale afhængigheder
+      - name: Installer minimale afhÃ¦ngigheder
         run: |
           python -m pip install -U pip
           if [ -f requirements.txt ]; then

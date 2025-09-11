@@ -16,8 +16,57 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 # =========================
+# Pytest hooks & options
+# =========================
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """
+    Tilføj flag for at aktivere kontrakt-tests lokalt/CI:
+      pytest --run-contract
+    Alternativt: RUN_CONTRACT=1 pytest
+    """
+    parser.addoption(
+        "--run-contract",
+        action="store_true",
+        default=False,
+        help="Run tests marked as 'contract' (default: skipped).",
+    )
+
+
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """
+    Skip 'contract' tests med mindre de er eksplicit aktiveret.
+    """
+    run_contract = config.getoption("--run-contract") or _env_flag("RUN_CONTRACT")
+    if run_contract:
+        return
+
+    skip_contract = pytest.mark.skip(
+        reason="Skipping @contract tests (enable with --run-contract or RUN_CONTRACT=1)."
+    )
+    for item in items:
+        if "contract" in item.keywords:
+            item.add_marker(skip_contract)
+
+
+# =========================
 # Generelle, delte fixtures
 # =========================
+
+@pytest.fixture(scope="session", autouse=True)
+def _prepare_test_env() -> None:
+    """
+    Headless plotting + sikre artefaktmapper findes.
+    """
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    # Sørg for at rapportmapper findes (pytest.ini skriver til disse)
+    Path("reports").mkdir(parents=True, exist_ok=True)
+    Path("htmlcov").mkdir(parents=True, exist_ok=True)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def _set_global_seed() -> int:
@@ -63,9 +112,9 @@ def dummy_balance():
 @pytest.fixture
 def dummy_features_df():
     """
-    Et repræsentativt features-DataFrame til feature-/modeltests.
+    Repræsentativt features-DataFrame til feature-/modeltests.
     - Deterministisk via global seed
-    - Bruger 'H' (ikke 'h') for at undgå FutureWarning i pandas
+    - Bruger 'H' for at undgå FutureWarning i pandas
     """
     n = 10
     df = pd.DataFrame(
@@ -84,7 +133,7 @@ def dummy_features_df():
             "regime": np.random.choice(["bull", "bear"], size=n),
         }
     )
-    # Fastlå de første signaler, så tests kan forvente bestemte cases
+    # Fastlås de første signaler, så tests kan forvente bestemte cases
     df.loc[0, "signal"] = 1
     df.loc[1, "signal"] = -1
     return df
@@ -170,7 +219,7 @@ def timestamp_regex():
 
 
 # ==========================
-# Små hjælpefunktioner (valgfrit)
+# Små hjælpefunktioner
 # ==========================
 
 @pytest.fixture
