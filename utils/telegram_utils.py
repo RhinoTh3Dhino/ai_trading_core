@@ -212,28 +212,32 @@ def telegram_enabled() -> bool:
     Enable-regler:
       - Hvis TELEGRAM_ENABLED er falsy => altid False
       - Placeholder/sentinel-værdier ("none", "null", "<token>" osv.) => altid False
-      - I pytest: tillad 'dummy' creds (ikke-tomme og ikke-placeholder) til end-to-end tests
-      - Uden for pytest: kræv rigtige creds
+      - Under pytest/CI: tillad "DUMMY" mv. (ikke-tomme og ikke-placeholder i test-sættet)
+      - I produktion: "dummy"/"dummy_token" behandles som placeholders
     """
     if _env_falsy(os.getenv("TELEGRAM_ENABLED")):
         return False
 
     token, chat_id = _get_creds()
+    t = (token or "").strip().lower()
+    c = (chat_id or "").strip().lower()
 
-    # Afvis placeholders først – også i pytest
-    if _looks_like_placeholder(token) or _looks_like_placeholder(chat_id):
+    # Pytest/CI: accepter "DUMMY", men afvis tydelige placeholders
+    if _is_pytest():
+        bad_test = {"", "none", "null", "<token>", "<chat_id>"}
+        return t not in bad_test and c not in bad_test
+
+    # Produktion: afvis også "dummy"/"dummy_token"
+    bad_prod = {"", "none", "null", "dummy", "dummy_token", "<token>", "<chat_id>"}
+    if t in bad_prod or c in bad_prod:
         return False
 
-    # I pytest: tillad ikke-tomme (og ikke-placeholder) creds
-    if _is_pytest():
-        return bool(token) and bool(chat_id)
-
-    # Uden for pytest: kræv ægte creds; TELEGRAM_ENABLED=true/TELEGRAM_TESTMODE_ALWAYS_ENABLED kan bruges som signal
+    # Hvis man eksplicit har slået til, er ovenstående check nok
     if _env_truthy(os.getenv("TELEGRAM_ENABLED")) or _env_truthy(os.getenv("TELEGRAM_TESTMODE_ALWAYS_ENABLED")):
-        return bool(token) and bool(chat_id)
+        return True
 
-    # Default: kræv ægte creds
-    return bool(token) and bool(chat_id)
+    # Default: gyldige (ikke-placeholder) creds → enabled
+    return True
 
 # ----------------------------------------------------------------------------------------
 # Markdown/HTML utils
