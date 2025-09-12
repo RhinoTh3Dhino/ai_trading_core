@@ -1,0 +1,23 @@
+env: STAGE
+paper_trading: true
+data:
+  bar_interval: "1m"
+  timezone: "UTC"
+  venues:
+    primary: ["binance", "bybit"]
+    backup: ["okx", "kraken"]
+  min_active_feeds: 2
+  max_gap_seconds: 90
+  ws_heartbeat_seconds: 15
+  rest_catchup: true
+  rest_lookback_bars: 120
+metrics:
+  p99_latency_target_ms: 500
+  max_gap_rate_pct_per_day: 0.01
+features:
+  enabled: true
+  pipelines: ["ema14","ema50","rsi14","bb20_2"]
+  write_parquet: true
+paths:
+  outputs: "outputs/live"
+  logs: "logs"
