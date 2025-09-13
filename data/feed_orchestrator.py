@@ -6,10 +6,10 @@ import logging
 import time
 from typing import Dict, List, Optional, Callable
 
-from data.schemas import Bar
-from data.exchanges import binance_ws, bybit_ws
-from data.gap_repair import rest_catchup
-from data.ws_utils import P99Tracker
+from .schemas import Bar
+from .exchanges import binance_ws, bybit_ws  # relative import for CI robustness
+from .gap_repair import rest_catchup
+from .ws_utils import P99Tracker
 
 log = logging.getLogger(__name__)
 
