@@ -7,23 +7,34 @@ import time
 from typing import Dict, List, Optional, Callable
 
 from .schemas import Bar
-from .exchanges import binance_ws, bybit_ws  # relative import for CI robustness
 from .gap_repair import rest_catchup
 from .ws_utils import P99Tracker
 
 log = logging.getLogger(__name__)
 
+# Prøv at importere WS-moduler; hvis de mangler i CI, kør videre uden dem.
+_binance_ws = _bybit_ws = None
+try:
+    from .exchanges import binance_ws as _binance_ws  # type: ignore
+except Exception as e:
+    log.debug("Kunne ikke importere data.exchanges.binance_ws: %r", e)
+
+try:
+    from .exchanges import bybit_ws as _bybit_ws  # type: ignore
+except Exception as e:
+    log.debug("Kunne ikke importere data.exchanges.bybit_ws: %r", e)
+
 # Konfigurer rækkefølge/prioritet – du kan udvide med okx/kraken, når deres WS-moduler er klar
 PRIMARY: List[str] = ["binance", "bybit"]
 BACKUP: List[str] = ["okx", "kraken"]  # placeholder indtil WS-moduler findes
 
-# Map over venues vi reelt understøtter lige nu
-SUBS: Dict[str, Callable] = {
-    "binance": binance_ws.subscribe,
-    "bybit": bybit_ws.subscribe,
-    # "okx": okx_ws.subscribe,
-    # "kraken": kraken_ws.subscribe,
-}
+# Map over venues vi reelt understøtter lige nu (kun dem der kunne importeres)
+SUBS: Dict[str, Callable] = {}
+if _binance_ws is not None:
+    SUBS["binance"] = _binance_ws.subscribe
+if _bybit_ws is not None:
+    SUBS["bybit"] = _bybit_ws.subscribe
+# "okx" og "kraken" tilføjes når deres WS-moduler er klar
 
 
 def _interval_ms(interval: str) -> int:
@@ -198,7 +209,7 @@ class FeedOrchestrator:
         async def _monitor():
             """Holder øje med aktive feeds, stall og forsøger at sikre min_active."""
             while True:
-                now_ms = int(time.time() * 1000)
+                now_ms = int(time.time() * 1000)  # kan bruges til fremtidig diagnostik
                 active_count = sum(1 for v, a in self.active.items() if a)
 
                 # Stall-detektion: hvis et venue ikke har set data længe, genstart

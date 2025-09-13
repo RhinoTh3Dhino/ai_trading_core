@@ -33,6 +33,7 @@ graphs/
 # Ignorér alt under data/ og models/, men tillad Python-kode og markdown
 data/**
 !data/
+!data/**/
 !data/**/*.py
 !data/**/__init__.py
 !data/*.md
@@ -41,6 +42,7 @@ data/**
 
 models/**
 !models/
+!models/**/
 !models/**/*.py
 !models/*.md
 !models/.gitkeep
