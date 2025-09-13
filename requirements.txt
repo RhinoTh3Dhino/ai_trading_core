@@ -6,6 +6,9 @@ pandas==2.2.2
 scipy==1.11.4
 python-dateutil==2.9.0.post0
 packaging==23.2
+pydantic==2.11.4         # <- til data.schemas (Pydantic v2)
+pyarrow==11.0.0          # <- Parquet + kompatibel med mlflow 2.3.0
+websockets==15.0.1       # <- vi bruger websockets direkte i exchanges/*
 
 # =========================
 # ML / MODELLER
@@ -32,7 +35,6 @@ tensorboard==2.15.1
 # =========================
 ta==0.11.0
 pandas-ta==0.3.14b0
-
 
 # =========================
 # PLOTTING
@@ -79,8 +81,10 @@ protobuf==3.20.3
 
 # =========================
 # DEV / TEST / NOTEBOOKS (valgfrit)
+# Bemærk: i CI anbefaler jeg at installere requirements-dev.txt separat.
+# Disse kan blive liggende her, hvis din workflow kun installerer requirements.txt.
 # =========================
-pytest==8.4.0
+pytest==8.4.2
 pytest-timeout==2.3.1
 flake8==7.0.0
 black==24.4.2
