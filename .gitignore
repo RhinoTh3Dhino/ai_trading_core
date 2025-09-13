@@ -30,22 +30,40 @@ graphs/
 !graphs/*.md
 
 # === Data og modeller ===
-data/*
-models/*
+# Ignorér alt under data/ og models/, men tillad Python-kode og markdown
+data/**
+!data/
+!data/**/
+!data/**/*.py
+!data/**/__init__.py
 !data/*.md
-!data/*.py
-!models/*.md
-!models/*.py
-!data/model_eval.csv
-!data/*.example
 !data/README.md
 !data/.gitkeep
+
+models/**
+!models/
+!models/**/
+!models/**/*.py
+!models/*.md
+!models/.gitkeep
+
+# Store data-artefakter under data/ ignoreres stadig
+data/**/*.parquet
+data/**/*.csv
+data/**/*.json
+data/**/*.jsonl
+data/**/raw/**
+data/**/outputs/**
 
 # TESTDATA (tillad CSV til CI/tests)
 !test_data/
 !test_data/*.csv
 !data/test_data/
 !data/test_data/*.csv
+
+# Tillad specifikke eval/eksempel-filer
+!data/model_eval.csv
+!data/*.example
 
 # === Model- og ML-filer ===
 *.h5
@@ -96,6 +114,7 @@ build/
 eggs/
 
 # === Test/Eksperiment-filer og noter ===
+# (Ignorér evt. testfiler i roden; tillad tests/ altid)
 test_*.py
 !tests/*.py
 tests/output/
@@ -103,9 +122,10 @@ notes/
 notebooks/
 output/
 
-# === GitHub workflows og artefakter ===
+# === CI artefakter/rapporter ===
 .github/workflows/*.log
 .github/workflows/*.bak
+reports/
 
 # === Checkpoints, cache og gamle model-filer ===
 checkpoints/
