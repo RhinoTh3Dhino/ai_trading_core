@@ -171,3 +171,8 @@ typings/
 *.tmp
 *.temp
 .experiment/
+
+# Observability runtime data (containers skriver her)
+ops/compose/data/grafana/
+ops/compose/data/prometheus/
+ops/compose/data/alertmanager/
