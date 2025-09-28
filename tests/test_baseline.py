@@ -1,65 +1,75 @@
 # tests/test_baseline.py
+from __future__ import annotations
 
-import sys
 import os
+import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(str(PROJECT_ROOT)))
-from utils.project_path import PROJECT_ROOT
-import pandas as pd
-import matplotlib.pyplot as plt
-import sys
+import pytest
+
+# Brug headless backend i CI / uden display
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+# Robust PROJECT_ROOT:
+# 1) Prøv at importere fra utils.project_path
+# 2) Ellers fald tilbage til mappen to niveauer op (repo-roden)
+try:
+    from utils.project_path import PROJECT_ROOT as _PRJ
+    PROJECT_ROOT = Path(_PRJ).resolve()
+except Exception:
+    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Stier vi bruger i testen
+DATA_CSV = PROJECT_ROOT / "data" / "BTCUSDT_1h_with_target.csv"
+OUT_DIR = PROJECT_ROOT / "outputs"
+PLOT_PATH = OUT_DIR / "target_rolling_mean.png"
+FI_IMG = OUT_DIR / "feature_importance_baseline.png"
 
 
-def main():
-    # ---- 1. Tjek target-fordeling ----
-    target_path = PROJECT_ROOT / "data" / "BTCUSDT_1h_with_target.csv"
-    if not target_path.exists():
-        print(f"[FEJL] Mangler fil: {target_path}. Kør først generate_target.py.")
-        sys.exit(1)
+@pytest.mark.timeout(20)
+def test_baseline_smoke(tmp_path: Path | None = None) -> None:
+    """
+    Baseline smoke-test:
+    - Hvis data findes: læs CSV, lav et simpelt plot og gem det.
+    - Hvis data IKKE findes: skip testen pænt (CI må ikke fejle på manglende lokale artefakter).
+    - Rapporter (via prints) om evt. ekstra artefakter, men uden at fejle.
+    """
+    if not DATA_CSV.exists():
+        pytest.skip(
+            f"Mangler datafil: {DATA_CSV}. "
+            "Skip i CI – generér lokalt via dit data-script, hvis du vil køre testen fuldt."
+        )
 
-    df = pd.read_csv(target_path)
-    print("\n=== Target fordeling ===")
-    print(df["target"].value_counts(normalize=True))
-    if df["target"].isna().any():
-        print("[ADVARSEL] Der er NaN i target-kolonnen!")
+    # --- 1) Læs data og lav en let kontrol ---
+    import pandas as pd
 
-    # ---- 2. Plot target over tid (valgfrit, gem billede) ----
+    df = pd.read_csv(DATA_CSV)
+
+    # Kræv at kolonnen eksisterer, ellers er der noget galt med datasættet
+    assert "target" in df.columns, "CSV mangler kolonnen 'target'"
+
+    # --- 2) Plot (rolling mean) og gem headless ---
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(8, 3))
+    # Tåler numerisk/boolean target – brug mean() direkte
     df["target"].rolling(100).mean().plot(title="Target (TP-hit) over tid")
     plt.tight_layout()
-    plot_path = PROJECT_ROOT / "outputs" / "target_rolling_mean.png"
-    plt.savefig(plot_path)
+    plt.savefig(PLOT_PATH)
     plt.close()
-    print(f"[OK] Plot af target-rolling mean gemt som: {plot_path}")
 
-    # ---- 3. Tjek test-resultater fra models ----
-    result_path = PROJECT_ROOT / "outputs" / "feature_importance_baseline.png"
-    if not result_path.exists():
-        print(
-            f"[ADVARSEL] Feature importance-billede ikke fundet. Har du kørt train_baseline.py?"
-        )
+    # Plot skal være skrevet
+    assert PLOT_PATH.exists() and PLOT_PATH.stat().st_size > 0, "Plot blev ikke gemt korrekt"
+
+    # --- 3) Ikke-kritisk: feature-importance billede (kun info) ---
+    if FI_IMG.exists():
+        print(f"[INFO] Feature importance fundet: {FI_IMG}")
     else:
-        print(f"[OK] Feature importance-billede findes: {result_path}")
+        print("[INFO] Feature importance-billede ikke fundet (ok i CI).")
 
-    # ---- 4. Vis nøgletal fra sidste træning ----
-    # Her kan du evt. parse/åbne model-history hvis du logger dine metrics til csv,
-    # eller blot henvise til Telegram/terminal output.
-    print(
-        "\n[INFO] Tjek terminal eller Telegram for winrate, accuracy og Sharpe fra sidste træning."
-    )
-    print("Krav for edge: Winrate > 55%, Sharpe > 0.8")
-    print("Hvis ikke, så prøv at tune TP/SL eller ret targets!")
-
-    # ---- 5. Ekstra konsistenskontrol ----
-    print("\nFørste 3 rækker af data med target:")
-    print(df.head(3))
-    print(
-        "\nScriptet er færdigt. Se plot og evt. Telegram/terminal for resten af resultaterne."
-    )
-
-
-if __name__ == "__main__":
-    main()
+    # Ekstra info til logs
+    vc = df["target"].value_counts(normalize=True, dropna=False)
+    print("[INFO] Target fordeling (normaliseret):")
+    print(vc.to_string())

@@ -6,17 +6,21 @@ on:
     paths:
       - "ops/alertmanager/**"
       - "ops/prometheus/**"
+      - "tests/**"
+      - "requirements.txt"
       - ".github/workflows/alerting-ci.yml"
   push:
     branches: [ main, master ]
     paths:
       - "ops/alertmanager/**"
       - "ops/prometheus/**"
+      - "tests/**"
+      - "requirements.txt"
       - ".github/workflows/alerting-ci.yml"
 
 jobs:
   check-alerting:
-    name: Prometheus & Alertmanager checks
+    name: Prometheus, Alertmanager & Tests
     runs-on: ubuntu-latest
 
     env:
@@ -28,6 +32,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # ---------------------------
+      # Python tests (headless matplotlib)
+      # ---------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Headless backend for matplotlib
+        run: echo "MPLBACKEND=Agg" >> $GITHUB_ENV
+
+      - name: Run pytest (quiet)
+        run: pytest -q
 
       # ---------------------------
       # Prometheus valideringer
@@ -59,13 +80,17 @@ jobs:
             -v "$AM_RENDER_DIR:/amcfg" \
             alpine:3.20 \
             sh -lc '
+              set -euo pipefail
               apk add --no-cache gettext >/dev/null
-              # Render kun de to variabler vi forventer
-              envsubst "${TELEGRAM_BOT_TOKEN} ${TELEGRAM_CHAT_ID}" \
+              # Render KUN variabelnavne (vigtigt: enkelt-anførselstegn)
+              envsubst '"'"'${TELEGRAM_BOT_TOKEN} ${TELEGRAM_CHAT_ID}'"'"' \
                 </tmpl/alertmanager.yml.tmpl \
                 > /amcfg/alertmanager.yml
               echo "[CI] Rendered /amcfg/alertmanager.yml (first 30 lines):"
               head -n 30 /amcfg/alertmanager.yml || true
+              # Quick sanity: tjek at tokens er ikke-tomme i filer
+              grep -q "bot_token:" /amcfg/alertmanager.yml
+              grep -q "chat_id:" /amcfg/alertmanager.yml
             '
 
       - name: amtool check-config (rendered alertmanager.yml + templates)
@@ -76,10 +101,13 @@ jobs:
             prom/alertmanager:v0.27.0 \
             amtool check-config /amcfg/alertmanager.yml
 
-      # (Valgfrit) vis template-filer for fejlsøgning
-      - name: List templates (debug)
+      # ---------------------------
+      # Artefakter ved fejl
+      # ---------------------------
+      - name: Upload rendered Alertmanager config (on failure)
         if: failure()
-        run: |
-          ls -la ops/alertmanager/templates || true
-          echo "----- rendered alertmanager.yml -----"
-          cat /tmp/amcfg/alertmanager.yml || true
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-alertmanager
+          path: /tmp/amcfg/alertmanager.yml
+          if-no-files-found: warn

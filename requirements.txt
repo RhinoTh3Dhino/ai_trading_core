@@ -46,6 +46,11 @@ psutil==5.9.8
 python-telegram-bot==20.7
 
 # =========================
+# PLOTTING (til CI baseline-test – brug MPLBACKEND=Agg i CI)
+# =========================
+matplotlib>=3.9,<3.10
+
+# =========================
 # TEST / LINT
 # =========================
 pytest==8.4.2
