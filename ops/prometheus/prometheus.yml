@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+  external_labels:
+    env: dev
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - /etc/prometheus/recording_rules.yml
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # Scrape Prometheus selv (diagnostik)
+  - job_name: 'prometheus'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  # Live connector app
+  - job_name: 'live_connector'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['live_connector:8000']

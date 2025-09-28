@@ -1,0 +1,109 @@
+groups:
+  # -------------------------
+  # Transport-latency (histogram)
+  # -------------------------
+  - name: livefeed_transport
+    interval: 30s
+    rules:
+      # Pre-sum + rate, så histogram_quantile kan bruge det direkte
+      - record: "feed_transport_latency_ms:rate1m"
+        expr: sum by (le, venue) (rate(feed_transport_latency_ms_bucket[1m]))
+      - record: "feed_transport_latency_ms:rate5m"
+        expr: sum by (le, venue) (rate(feed_transport_latency_ms_bucket[5m]))
+
+      # p95/p99 per venue (bruger den præ-aggede :rate5m)
+      - record: "feed_transport_latency_ms:p95"
+        expr: histogram_quantile(0.95, feed_transport_latency_ms:rate5m)
+      - record: "feed_transport_latency_ms:p99"
+        expr: histogram_quantile(0.99, feed_transport_latency_ms:rate5m)
+
+      # Globalt (alle venues samlet)
+      - record: "feed_transport_latency_ms:all_venues_rate5m"
+        expr: sum by (le) (rate(feed_transport_latency_ms_bucket[5m]))
+      - record: "feed_transport_latency_ms:all_venues_p95"
+        expr: histogram_quantile(0.95, feed_transport_latency_ms:all_venues_rate5m)
+      - record: "feed_transport_latency_ms:all_venues_p99"
+        expr: histogram_quantile(0.99, feed_transport_latency_ms:all_venues_rate5m)
+
+  # -------------------------
+  # Feature compute latency (histogram)
+  # -------------------------
+  - name: livefeed_features_latency
+    interval: 30s
+    rules:
+      - record: "feature_compute_ms:rate5m"
+        expr: sum by (le, feature) (rate(feature_compute_ms_bucket[5m]))
+
+      - record: "feature_compute_ms:p95"
+        expr: histogram_quantile(0.95, feature_compute_ms:rate5m)
+      - record: "feature_compute_ms:p99"
+        expr: histogram_quantile(0.99, feature_compute_ms:rate5m)
+
+      - record: "feature_compute_ms:all_features_rate5m"
+        expr: sum by (le) (rate(feature_compute_ms_bucket[5m]))
+      - record: "feature_compute_ms:all_features_p95"
+        expr: histogram_quantile(0.95, feature_compute_ms:all_features_rate5m)
+      - record: "feature_compute_ms:all_features_p99"
+        expr: histogram_quantile(0.99, feature_compute_ms:all_features_rate5m)
+
+  # -------------------------
+  # Bars per sekund
+  # -------------------------
+  - name: livefeed_bars
+    interval: 30s
+    rules:
+      # Per venue og samlet – både 1m og 5m, så du kan vælge i Grafana
+      - record: "feed_bars:rate1m"
+        expr: sum by (venue) (rate(feed_bars_total[1m]))
+      - record: "feed_bars:rate1m_total"
+        expr: sum(rate(feed_bars_total[1m]))
+      - record: "feed_bars:rate5m"
+        expr: sum by (venue) (rate(feed_bars_total[5m]))
+      - record: "feed_bars:rate5m_total"
+        expr: sum(rate(feed_bars_total[5m]))
+
+  # -------------------------
+  # Reconnects
+  # -------------------------
+  - name: livefeed_reconnects
+    interval: 30s
+    rules:
+      - record: "feed_reconnects:inc5m"
+        expr: sum by (venue) (increase(feed_reconnects_total[5m]))
+      - record: "feed_reconnects:inc1h"
+        expr: sum by (venue) (increase(feed_reconnects_total[1h]))
+
+  # -------------------------
+  # Bar close lag
+  # -------------------------
+  - name: livefeed_bar_close_lag
+    interval: 30s
+    rules:
+      # Maks pr. venue/symbol uden instance-labels (øjebliksbillede)
+      - record: "feed_bar_close_lag_ms:max"
+        expr: max without (instance) (feed_bar_close_lag_ms)
+      # Maks over de seneste 5 minutter (glatter spikes)
+      - record: "feed_bar_close_lag_ms:max5m"
+        expr: max without (instance) (max_over_time(feed_bar_close_lag_ms[5m]))
+
+  # -------------------------
+  # Queue depth
+  # -------------------------
+  - name: livefeed_queues
+    interval: 30s
+    rules:
+      - record: "feed_queue_depth:max"
+        expr: max without (instance) (feed_queue_depth)
+      - record: "feed_queue_depth:max5m"
+        expr: max without (instance) (max_over_time(feed_queue_depth[5m]))
+
+  # -------------------------
+  # Feature errors
+  # -------------------------
+  - name: livefeed_feature_errors
+    interval: 30s
+    rules:
+      - record: "feature_errors:inc5m"
+        expr: sum by (feature) (increase(feature_errors_total[5m]))
+      - record: "feature_errors:inc1h"
+        expr: sum by (feature) (increase(feature_errors_total[1h]))

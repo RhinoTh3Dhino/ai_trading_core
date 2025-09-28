@@ -1,88 +1,52 @@
 # =========================
-# CORE
+# RUNTIME (EPIC A — Live feed + Observability)
+# =========================
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+prometheus-client>=0.20,<0.23
+httpx>=0.25.2,<0.26
+
+# =========================
+# CORE NUMPY/PANDAS STACK
 # =========================
 numpy==1.26.4
 pandas==2.2.2
 scipy==1.11.4
 python-dateutil==2.9.0.post0
 packaging==23.2
-pydantic==2.11.4         # <- til data.schemas (Pydantic v2)
-pyarrow==11.0.0          # <- Parquet + kompatibel med mlflow 2.3.0
-websockets==15.0.1       # <- vi bruger websockets direkte i exchanges/*
+pydantic==2.11.4
+pyarrow==11.0.0
 
 # =========================
-# ML / MODELLER
+# STREAMING / MARKET DATA
 # =========================
-# VIGTIGT: dine .pkl er trænet på scikit-learn 1.6.1.
-scikit-learn==1.6.1
-joblib==1.4.2
-xgboost==2.0.3
-lightgbm==4.3.0
-catboost==1.2.5
-shap==0.44.1
-optuna==3.6.1
-
-# =========================
-# DEEP LEARNING (PyTorch)
-# =========================
-torch==2.2.2
-# torchvision==0.17.2
-# torchaudio==2.2.2
-tensorboard==2.15.1
-
-# =========================
-# FEATURE ENG / TA
-# =========================
-ta==0.11.0
-pandas-ta==0.3.14b0
-
-# =========================
-# PLOTTING
-# =========================
-matplotlib==3.8.4
-seaborn==0.13.2
-plotly==5.22.0
-
-# =========================
-# MONITORERING / SYSTEM
-# =========================
-psutil==5.9.8
-GPUtil==1.4.0
-nvidia-ml-py3==7.352.0
-
-# =========================
-# BACKTEST / UTILS / IO
-# =========================
-tabulate==0.9.0
-tqdm==4.67.1
-schedule==1.2.2
-requests==2.32.4
-python-dotenv==1.0.1
-
-# =========================
-# MARKET DATA / TRADING API
-# =========================
+websockets==15.0.1
 python-binance==1.0.19
 ccxt==4.1.98
 
 # =========================
-# TELEGRAM
+# FEATURE ENG / TA (MVP: EMA/RSI/VWAP/ATR)
+# =========================
+ta==0.11.0
+# pandas-ta fjernet (pre-release + VCS, giver build-fejl i Docker/CI)
+
+# =========================
+# UTILS / IO
+# =========================
+requests==2.32.4
+python-dotenv==1.0.1
+tabulate==0.9.0
+tqdm==4.67.1
+schedule==1.2.2
+psutil==5.9.8
+
+# =========================
+# TELEGRAM (alarmer)
 # =========================
 python-telegram-bot==20.7
 
 # =========================
-# GUI / TRACKING
-# (Protobuf 3.20.x kræves for kompatibilitet med Streamlit og MLflow 2.3)
-# =========================
-streamlit==1.28.2
-mlflow==2.3.0
-wandb==0.17.0
-protobuf==3.20.3
-
-# =========================
-# DEV / TEST / NOTEBOOKS (valgfrit)
-# Bemærk: i CI anbefaler jeg at installere requirements-dev.txt separat.
-# Disse kan blive liggende her, hvis din workflow kun installerer requirements.txt.
+# TEST / LINT
 # =========================
 pytest==8.4.2
 pytest-timeout==2.3.1
@@ -90,14 +54,3 @@ flake8==7.0.0
 black==24.4.2
 mypy==1.10.0
 coverage==7.5.3
-jupyter==1.0.0
-notebook==7.2.0
-
-# =========================
-# LSTM (valgfrit) – kun hvis du vil bruge --use_lstm
-# TF 2.15 spiller pænt med numpy 1.26.* og Python 3.10.
-# =========================
-# tensorflow==2.15.0
-# h5py==3.10.0
-# keras==2.15.0
-# tensorboard-data-server==0.7.2

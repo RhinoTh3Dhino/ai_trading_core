@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: livefeed
+    uid: livefeed-provider
+    orgId: 1
+    type: file
+    folder: "Live Feed"              # alle dashboards vises i denne Grafana-mappe
+    disableDeletion: false
+    allowUiUpdates: true             # tillad at ændre dashboards via UI
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

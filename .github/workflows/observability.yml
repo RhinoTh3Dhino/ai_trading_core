@@ -1,0 +1,186 @@
+name: observability
+
+on:
+  push:
+    paths:
+      - "bot/live_connector/**"
+      - "ops/**"
+      - "tests/**"
+      - ".github/workflows/observability.yml"
+  pull_request:
+    paths:
+      - "bot/live_connector/**"
+      - "ops/**"
+      - "tests/**"
+      - ".github/workflows/observability.yml"
+  schedule:
+    - cron: "0 5 * * *"   # daglig check
+  workflow_dispatch:
+
+concurrency:
+  group: observability-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  unit-smoke:
+    name: Smoke /metrics + promtool + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      has_dockerfile: ${{ steps.detect_dockerfile.outputs.present }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Dockerfile
+        id: detect_dockerfile
+        shell: bash
+        run: |
+          if [ -f Dockerfile ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Python 3.11 (cache=pip)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install fastapi uvicorn prometheus-client httpx pytest
+          fi
+
+      - name: Launch app (uvicorn) in background
+        run: |
+          set -euxo pipefail
+          nohup uvicorn bot.live_connector.runner:app \
+            --host 0.0.0.0 --port 8000 --workers 1 >/tmp/app.log 2>&1 &
+          for i in {1..40}; do
+            if curl -fsS http://localhost:8000/healthz >/dev/null; then
+              echo "healthz OK"; break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8000/metrics | head -n 5
+
+      - name: Smoke /metrics contains core metrics
+        run: |
+          set -euxo pipefail
+          curl -fsS http://localhost:8000/metrics | tee /tmp/metrics.txt
+          grep -q "feed_transport_latency_ms_bucket" /tmp/metrics.txt
+          grep -q "feed_bar_close_lag_ms" /tmp/metrics.txt
+          grep -q "feed_bars_total" /tmp/metrics.txt
+          grep -q "feed_reconnects_total" /tmp/metrics.txt
+          grep -q "feed_queue_depth" /tmp/metrics.txt
+          grep -q "feature_compute_ms_bucket" /tmp/metrics.txt
+
+      - name: promtool check config (prometheus.yml)
+        run: |
+          set -euxo pipefail
+          test -f ops/prometheus/prometheus.yml
+          docker run --rm \
+            -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            prom/prometheus:latest \
+            promtool check config /etc/prometheus/prometheus.yml
+
+      - name: promtool check rules (alerts.yml)
+        run: |
+          set -euxo pipefail
+          test -f ops/prometheus/alerts.yml
+          docker run --rm \
+            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            prom/prometheus:latest \
+            promtool check rules /etc/prometheus/alerts.yml
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Upload metrics and logs (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observability-smoke-artifacts
+          path: |
+            /tmp/metrics.txt
+            /tmp/app.log
+
+  compose-integration:
+    name: Compose integration (target=UP)
+    needs: unit-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ needs.unit-smoke.outputs.has_dockerfile == 'true' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq (for API checks)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Compose up (live_connector + prometheus only)
+        working-directory: ops/compose
+        run: |
+          set -euxo pipefail
+          docker compose -f docker-compose.yml up -d live_connector prometheus
+          # vent på Prometheus
+          for i in {1..60}; do
+            if curl -fsS http://localhost:9090/-/ready >/dev/null; then
+              echo "Prometheus ready"; break
+            fi
+            sleep 2
+          done
+          # vent på app /metrics
+          for i in {1..40}; do
+            if curl -fsS http://localhost:8000/metrics >/dev/null; then
+              echo "metrics OK"; break
+            fi
+            sleep 1
+          done
+
+      - name: Verify Prometheus target is UP
+        run: |
+          set -euxo pipefail
+          curl -fsS "http://localhost:9090/api/v1/targets" | tee /tmp/targets.json
+          jq -e '.data.activeTargets | map(select(.health=="up")) | length > 0' /tmp/targets.json >/dev/null
+
+      - name: Dump Prometheus target summaries
+        if: always()
+        run: |
+          jq '.data.activeTargets[] | {job:.labels.job, health, scrapeUrl, lastError}' /tmp/targets.json || true
+
+      - name: Compose logs (on failure)
+        if: failure()
+        working-directory: ops/compose
+        run: |
+          docker compose -f docker-compose.yml ps
+          docker compose -f docker-compose.yml logs --no-color --tail=200 live_connector || true
+          docker compose -f docker-compose.yml logs --no-color --tail=200 prometheus || true
+
+      - name: Compose down
+        if: always()
+        working-directory: ops/compose
+        run: docker compose -f docker-compose.yml down -v
+
+      - name: Upload compose artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observability-compose-artifacts
+          path: |
+            /tmp/targets.json

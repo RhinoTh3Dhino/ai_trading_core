@@ -1,0 +1,85 @@
+# .github/workflows/alerting-ci.yml
+name: Alerting CI
+
+on:
+  pull_request:
+    paths:
+      - "ops/alertmanager/**"
+      - "ops/prometheus/**"
+      - ".github/workflows/alerting-ci.yml"
+  push:
+    branches: [ main, master ]
+    paths:
+      - "ops/alertmanager/**"
+      - "ops/prometheus/**"
+      - ".github/workflows/alerting-ci.yml"
+
+jobs:
+  check-alerting:
+    name: Prometheus & Alertmanager checks
+    runs-on: ubuntu-latest
+
+    env:
+      # Dummy-secrets til render af Alertmanager-konfig i CI
+      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
+      TELEGRAM_CHAT_ID: "123456789"
+      AM_RENDER_DIR: /tmp/amcfg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------------------------
+      # Prometheus valideringer
+      # ---------------------------
+      - name: promtool check config (prometheus.yml)
+        run: |
+          docker run --rm \
+            -v "$PWD/ops/prometheus:/etc/prometheus:ro" \
+            prom/prometheus:latest \
+            promtool check config /etc/prometheus/prometheus.yml
+
+      - name: promtool check rules (alerts.yml)
+        run: |
+          docker run --rm \
+            -v "$PWD/ops/prometheus:/etc/prometheus:ro" \
+            prom/prometheus:latest \
+            promtool check rules /etc/prometheus/alerts.yml
+
+      # ---------------------------
+      # Alertmanager render + check
+      # ---------------------------
+      - name: Render Alertmanager config (envsubst med dummy-secrets)
+        run: |
+          mkdir -p "$AM_RENDER_DIR"
+          docker run --rm \
+            -e TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}" \
+            -e TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID}" \
+            -v "$PWD/ops/alertmanager/alertmanager.runtime.yml:/tmpl/alertmanager.yml.tmpl:ro" \
+            -v "$AM_RENDER_DIR:/amcfg" \
+            alpine:3.20 \
+            sh -lc '
+              apk add --no-cache gettext >/dev/null
+              # Render kun de to variabler vi forventer
+              envsubst "${TELEGRAM_BOT_TOKEN} ${TELEGRAM_CHAT_ID}" \
+                </tmpl/alertmanager.yml.tmpl \
+                > /amcfg/alertmanager.yml
+              echo "[CI] Rendered /amcfg/alertmanager.yml (first 30 lines):"
+              head -n 30 /amcfg/alertmanager.yml || true
+            '
+
+      - name: amtool check-config (rendered alertmanager.yml + templates)
+        run: |
+          docker run --rm \
+            -v "$AM_RENDER_DIR:/amcfg:ro" \
+            -v "$PWD/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
+            prom/alertmanager:v0.27.0 \
+            amtool check-config /amcfg/alertmanager.yml
+
+      # (Valgfrit) vis template-filer for fejlsøgning
+      - name: List templates (debug)
+        if: failure()
+        run: |
+          ls -la ops/alertmanager/templates || true
+          echo "----- rendered alertmanager.yml -----"
+          cat /tmp/amcfg/alertmanager.yml || true

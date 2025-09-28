@@ -1,0 +1,87 @@
+# ops/prometheus/alerts.yml
+groups:
+  - name: livefeed.rules
+    rules:
+      # 1) Ingen bars i 5 minutter pr. venue
+      # Kræver recording rule: feed_bars:rate5m_total (rate over 5m pr. venue)
+      - alert: NoBarsIn5m
+        expr: max by (venue) (feed_bars:rate5m_total) == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: live_connector
+        annotations:
+          summary: "Ingen bars i 5m for venue {{ $labels.venue }}"
+          description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue {{ $labels.venue }}."
+
+      # 2) Høj bar-close lag (seneste 2 minutter) pr. venue/symbol
+      # Kræver recording rule: feed_bar_close_lag_ms:max5m (max_over_time over 5 min)
+      - alert: HighBarCloseLag
+        expr: max by (venue, symbol) (feed_bar_close_lag_ms:max5m) > 3000
+        for: 2m
+        labels:
+          severity: warning
+          service: live_connector
+        annotations:
+          summary: "Bar close lag > 3s (seneste 2m) for {{ $labels.venue }} {{ $labels.symbol }}"
+          description: "Bar-close lag overstiger 3000 ms for {{ $labels.venue }} {{ $labels.symbol }} i mindst 2 minutter."
+
+      # 3) Reconnect spike pr. venue
+      # Kræver recording rule: feed_reconnects:inc5m (increase over 5m pr. venue)
+      - alert: ReconnectSpike
+        expr: sum by (venue) (feed_reconnects:inc5m) > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: live_connector
+        annotations:
+          summary: "Reconnect spike (>3/5m) for {{ $labels.venue }}"
+          description: "Antallet af reconnects er steget markant de sidste 5 minutter for venue {{ $labels.venue }}."
+
+      # 4) Transport-latency p99 pr. venue
+      # Kræver recording rule: feed_transport_latency_ms:p99 (over 5m)
+      - alert: TransportLatencyP99High
+        expr: max by (venue) (feed_transport_latency_ms:p99) > 500
+        for: 2m
+        labels:
+          severity: warning
+          service: live_connector
+        annotations:
+          summary: "Transport p99 > 500ms (5m) for {{ $labels.venue }}"
+          description: "P99-latenstiden for feed-transport er over 500 ms for venue {{ $labels.venue }}."
+
+      # 5) Feature-beregningslatens p99 pr. feature
+      # Kræver recording rule: feature_compute_ms:p99 (over 5m)
+      - alert: FeatureLatencyP99High
+        expr: max by (feature) (feature_compute_ms:p99) > 50
+        for: 2m
+        labels:
+          severity: warning
+          service: live_connector
+        annotations:
+          summary: "Feature {{ $labels.feature }} p99 > 50ms (5m)"
+          description: "P99-beregningslatens for feature {{ $labels.feature }} er over 50 ms."
+
+      # 6) Feature-fejlrate pr. feature
+      # Kræver recording rule: feature_errors:inc5m (over 5m)
+      - alert: FeatureErrorsRate
+        expr: sum by (feature) (feature_errors:inc5m) > 0
+        for: 2m
+        labels:
+          severity: critical
+          service: live_connector
+        annotations:
+          summary: "Feature-fejl detekteret for {{ $labels.feature }}"
+          description: "Der er registreret fejl i feature-beregninger de seneste 5 minutter for feature {{ $labels.feature }}."
+
+      # 7) Kødybde høj pr. venue
+      # Kræver recording rule: feed_queue_depth:max5m (max_over_time over 5m)
+      - alert: QueueDepthHigh
+        expr: max by (venue) (feed_queue_depth:max5m) > 1000
+        for: 2m
+        labels:
+          severity: warning
+          service: live_connector
+        annotations:
+          summary: "Kødybde > 1000 (seneste 5m) for {{ $labels.venue }}"
+          description: "Den målte kødybde har været høj i længere tid for venue {{ $labels.venue }}."

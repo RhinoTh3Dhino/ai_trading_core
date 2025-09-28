@@ -1,0 +1,93 @@
+# ops/compose/docker-compose.yml
+# Observability stack – Alertmanager via secrets + init-render (ingen env_file)
+
+networks:
+  obsnet:
+    name: obsnet
+
+volumes:
+  amcfg: {}
+
+secrets:
+  telegram_bot_token:
+    file: ../alertmanager/secrets/telegram_bot_token
+  telegram_chat_id:
+    file: ../alertmanager/secrets/telegram_chat_id
+
+services:
+  live_connector:
+    build: ../../
+    command: ["uvicorn","bot.live_connector.runner:app","--host","0.0.0.0","--port","8000","--workers","1"]
+    ports: ["8000:8000"]
+    restart: unless-stopped
+    networks: [obsnet]
+
+  # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
+  am_init:
+    image: alpine:3.20
+    environment:
+      ALERT_TMPL: /src/alertmanager.yml.tmpl
+      ALERT_OUT:  /amcfg/alertmanager.yml
+    volumes:
+      - amcfg:/amcfg
+      - ../alertmanager/alertmanager.runtime.yml:/src/alertmanager.yml.tmpl:ro
+      - ../alertmanager/render.sh:/src/render.sh:ro
+    secrets:
+      - telegram_bot_token
+      - telegram_chat_id
+    entrypoint: ["/bin/sh","/src/render.sh"]
+    restart: "no"
+    networks: [obsnet]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    depends_on:
+      am_init:
+        condition: service_completed_successfully
+    volumes:
+      - amcfg:/amcfg:ro
+      # Monter templates direkte, så YAML kan henvise til /etc/alertmanager/templates/*.tmpl
+      - ../alertmanager/templates:/etc/alertmanager/templates:ro
+    command:
+      - --config.file=/amcfg/alertmanager.yml
+      - --web.listen-address=:9093
+    ports: ["9093:9093"]
+    restart: unless-stopped
+    networks:
+      obsnet:
+        aliases: ["alertmanager"]
+    healthcheck:
+      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9093/-/ready >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  prometheus:
+    image: prom/prometheus:latest
+    command: ["--config.file=/etc/prometheus/prometheus.yml","--web.enable-lifecycle","--storage.tsdb.retention.time=15d"]
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
+      - ./data/prometheus:/prometheus
+    ports: ["9090:9090"]
+    depends_on: [alertmanager, live_connector]
+    restart: unless-stopped
+    networks: [obsnet]
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_PLUGINS_SIGNATURES_ENABLED=false
+    volumes:
+      - ../grafana/provisioning:/etc/grafana/provisioning
+      - ../grafana/dashboards:/var/lib/grafana/dashboards
+      - ./data/grafana:/var/lib/grafana
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+    networks: [obsnet]

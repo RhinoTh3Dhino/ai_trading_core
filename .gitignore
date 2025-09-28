@@ -172,7 +172,23 @@ typings/
 *.temp
 .experiment/
 
-# Observability runtime data (containers skriver her)
+# === Observability / Docker (ALDRIG secrets i git) ===
+# Docker secrets (KUN lokale filer – templates må gerne trackes)
+ops/alertmanager/secrets/*
+# Tillad templates og runtime-skabelon
+!ops/alertmanager/templates/**
+!ops/alertmanager/alertmanager.runtime.yml
+# Hvis nogen skulle komme til at rendre direkte til repoet
+ops/alertmanager/alertmanager.yml
+
+# Lokale compose-artefakter og data
 ops/compose/data/grafana/
 ops/compose/data/prometheus/
 ops/compose/data/alertmanager/
+ops/compose/resolved.yml
+ops/compose/.env
+
+# === Lokale test/scratch-filer i roden (hold dem ude af git) ===
+/resolved.yml
+/DIT_TELEGRAM_BOT_TOKEN
+/7919277721
