@@ -26,6 +26,7 @@ permissions:
 
 env:
   PYTHONUNBUFFERED: "1"
+  MPLBACKEND: Agg
 
 jobs:
   unit-smoke:
@@ -56,14 +57,34 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Install dependencies (incl. CPU PyTorch like CI)
         run: |
           set -euxo pipefail
+          python -m pip install -U pip wheel setuptools
+
+          # Installer projektkrav hvis findes; ellers minimumspakke-sæt
           if [ -f requirements.txt ]; then
+            # let numpystack komme først for hurtigere/robust hjul-install
+            pip install --only-binary=:all: 'numpy==1.26.4' 'pyarrow==11.0.0' || true
             pip install -r requirements.txt
           else
             pip install fastapi uvicorn prometheus-client httpx pytest
           fi
+
+          # CPU-PyTorch (samme pins som i CI)
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu \
+            'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
+
+          # Vis versionsinfo (hjælp ved fejlsøgning)
+          python - <<'PY'
+          import importlib
+          for name in ("torch","torchvision","torchaudio","fastapi","uvicorn","prometheus_client","numpy","pyarrow","pytest"):
+              try:
+                  m = importlib.import_module(name.replace("prometheus_client","prometheus_client"))
+                  print(f"{name}: {getattr(m,'__version__','?')}")
+              except Exception as e:
+                  print(f"{name}: <missing> ({e})")
+          PY
 
       - name: Launch app (uvicorn) in background
         run: |
