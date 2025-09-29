@@ -104,10 +104,12 @@ jobs:
           pip install pytest pytest-cov pytest-timeout pytest-asyncio || true
           # CPU-only torch (ok at ignorere fejl hvis ikke brugt i tests)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
+          # Sikr at uvicorn er tilgængelig i job-miljøet
+          pip install 'uvicorn[standard]' httpx || true
           echo "--- Versions ---"
           python - <<'PY'
           import importlib
-          for name in ("pydantic","numpy","pandas","pyarrow","websockets","pytest","pytest_asyncio","mlflow"):
+          for name in ("pydantic","numpy","pandas","pyarrow","websockets","pytest","pytest_asyncio","mlflow","uvicorn","fastapi"):
               try:
                   m = importlib.import_module(name); print(f"{name}: {getattr(m,'__version__','?')}")
               except Exception as e:
@@ -130,8 +132,53 @@ jobs:
       - name: Opret reports-mappe
         run: mkdir -p reports
 
+      # === Start uvicorn og prime metrics (så /metrics har histogram-buckets) ===
+      - name: Start uvicorn (background)
+        run: |
+          set -euxo pipefail
+          nohup python -m uvicorn bot.live_connector.runner:app \
+            --host 0.0.0.0 --port 8000 --workers 1 \
+            > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+          echo "PID: $(cat /tmp/uvicorn.pid)"
+
+      - name: Vent på /metrics
+        run: |
+          set -euxo pipefail
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8000/metrics >/tmp/metrics.txt; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "Service did not become ready"
+          tail -n 200 /tmp/uvicorn.log || true
+          exit 1
+
+      - name: Prime metrics (materialisér histogram-buckets)
+        run: |
+          set -euxo pipefail
+          curl -fsS -X POST http://localhost:8000/_debug/emit_sample
+          # valgfrit: vis et udsnit for debug
+          head -n 120 /tmp/metrics.txt || true
+
       - name: Kør pytest
         run: pytest -q
+
+      - name: Stop uvicorn
+        if: always()
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then
+            kill "$(cat /tmp/uvicorn.pid)" || true
+          fi
+
+      - name: Upload uvicorn log (ved fejl)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uvicorn-log-${{ github.run_id }}
+          path: /tmp/uvicorn.log
+          if-no-files-found: warn
 
       - name: Kør main.py (smoke)
         run: python main.py || true
