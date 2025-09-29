@@ -24,21 +24,25 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890" # dummy-secrets til render i CI
+      # Dummy-secrets til render af Alertmanager-konfig i CI
+      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
       TELEGRAM_CHAT_ID: "123456789"
       AM_RENDER_DIR: /tmp/amcfg
+      # Headless matplotlib + isolér fra usersite
+      MPLBACKEND: Agg
+      PYTHONNOUSERSITE: "1"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       # ---------------------------
-      # Python tests (headless) + isolér fra runnerens usersite
+      # Python setup & deps
       # ---------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
@@ -46,26 +50,68 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Headless + ignore usersite
-        run: |
-          echo "MPLBACKEND=Agg" >> $GITHUB_ENV
-          echo "PYTHONNOUSERSITE=1" >> $GITHUB_ENV
-
-      # Disses kan ligge i runner-lag og konflikte med coverage API.
+      # Fjern konfliktpakker, som kan snige sig ind i runner-layers
       - name: Ensure pandas-ta/numba not present
         run: pip uninstall -y pandas-ta numba || true
 
-      # VIGTIGT: pin coverage til 6.5.0 (kompatibel med numba)
-      - name: Force coverage v6 (compat)
+      # Lås coverage-version (mod kendt inkompatibilitet)
+      - name: Force coverage version
         run: |
-          pip install --force-reinstall "coverage==6.5.0"
+          pip install --force-reinstall --upgrade "coverage==7.5.3"
           python - <<'PY'
-          import coverage, sys
+          import coverage
           print("COVERAGE:", coverage.__version__, "FROM:", coverage.__file__)
           PY
 
+      # ---------------------------
+      # Start FastAPI (uvicorn) i baggrunden til metrics-testen
+      # ---------------------------
+      - name: Start uvicorn (background)
+        run: |
+          set -euxo pipefail
+          nohup python -m uvicorn bot.live_connector.runner:app \
+            --host 0.0.0.0 --port 8000 --workers 1 \
+            > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+          echo "PID: $(cat /tmp/uvicorn.pid)"
+
+      - name: Wait for /metrics to be ready
+        run: |
+          set -euxo pipefail
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8000/metrics >/tmp/metrics.txt; then
+              echo "Service ready"
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "Service did not become ready in time"
+          echo "---- uvicorn.log (tail) ----"
+          tail -n 200 /tmp/uvicorn.log || true
+          exit 1
+
+      # ---------------------------
+      # Kør tests
+      # ---------------------------
       - name: Run pytest (quiet)
         run: pytest -q
+
+      # Upload uvicorn-log ved fejl i tests
+      - name: Upload uvicorn log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uvicorn-log
+          path: /tmp/uvicorn.log
+          if-no-files-found: warn
+
+      # Stop uvicorn uanset udfald
+      - name: Stop uvicorn
+        if: always()
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then
+            kill "$(cat /tmp/uvicorn.pid)" || true
+          fi
 
       # ---------------------------
       # Prometheus valideringer
@@ -99,10 +145,8 @@ jobs:
             sh -lc '
               set -euo pipefail
               apk add --no-cache gettext >/dev/null
-              # Render KUN de to forventede variabler (enkeltanførselstegn!)
               envsubst '"'"'${TELEGRAM_BOT_TOKEN} ${TELEGRAM_CHAT_ID}'"'"' \
-                </tmpl/alertmanager.yml.tmpl \
-                > /amcfg/alertmanager.yml
+                </tmpl/alertmanager.yml.tmpl > /amcfg/alertmanager.yml
               echo "[CI] Rendered /amcfg/alertmanager.yml (first 30 lines):"
               head -n 30 /amcfg/alertmanager.yml || true
               grep -q "bot_token:" /amcfg/alertmanager.yml
@@ -117,9 +161,7 @@ jobs:
             prom/alertmanager:v0.27.0 \
             amtool check-config /amcfg/alertmanager.yml
 
-      # ---------------------------
-      # Artefakter ved fejl
-      # ---------------------------
+      # Artefakt ved fejl i Alertmanager-check
       - name: Upload rendered Alertmanager config (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
