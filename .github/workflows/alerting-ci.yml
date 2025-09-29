@@ -34,23 +34,37 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------
-      # Python tests (headless matplotlib) + fjern konfliktpakker
+      # Python tests (headless) + isolér fra runnerens systempakker
       # ---------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Headless backend for matplotlib
-        run: echo "MPLBACKEND=Agg" >> $GITHUB_ENV
+      - name: Headless + ignorer usersite
+        run: |
+          echo "MPLBACKEND=Agg" >> $GITHUB_ENV
+          echo "PYTHONNOUSERSITE=1" >> $GITHUB_ENV
 
-      # Nogle Ubuntu-runnere har "pandas-ta/numba" liggende i layer-cache;
-      # det konflikter med coverage v7 => afinstaller defensivt.
-      - name: Ensure pandas-ta not present
+      # Nogle Ubuntu-runnere har "pandas-ta/numba" i base-layers.
+      # Afinstallér defensivt for at undgå coverage/numba-konflikt.
+      - name: Ensure pandas-ta/numba not present
         run: pip uninstall -y pandas-ta numba || true
+
+      # Tving korrekt coverage-version og vis import-sti (debug)
+      - name: Force coverage version
+        run: |
+          pip install --force-reinstall --upgrade "coverage==7.5.3"
+          python - <<'PY'
+          import coverage, sys
+          print("COVERAGE:", coverage.__version__, "FROM:", coverage.__file__)
+          PY
 
       - name: Run pytest (quiet)
         run: pytest -q
