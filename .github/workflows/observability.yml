@@ -192,23 +192,44 @@ jobs:
       - name: Install jq (for API checks)
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      # Sørg for at Prometheus' rule-filer også findes i denne runner
+      - name: Ensure Prometheus rule files exist (compose job)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p ops/prometheus
+          if [ ! -f ops/prometheus/alerts.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: alerts.empty' \
+              '    rules: []' > ops/prometheus/alerts.yml
+          fi
+          if [ ! -f ops/prometheus/recording_rules.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: recordings.empty' \
+              '    rules: []' > ops/prometheus/recording_rules.yml
+          fi
+          test -f ops/prometheus/prometheus.yml
+
       - name: Compose up (live_connector + prometheus only)
         working-directory: ops/compose
         run: |
           set -euxo pipefail
           # Start kun default-profil (alertmanager/grafana ligger i profiler)
           docker compose -f docker-compose.yml up -d live_connector prometheus
+          docker compose -f docker-compose.yml ps
 
-          # Vent på Prometheus readiness
-          for i in {1..90}; do
+          # Vent på Prometheus readiness (op til ~4 min)
+          for i in {1..120}; do
             if curl -fsS http://localhost:9090/-/ready >/dev/null; then
               echo "Prometheus ready"; break
             fi
             sleep 2
           done
 
-          # Vent på app /metrics
-          for i in {1..60}; do
+          # Vent på app /metrics (op til ~2 min)
+          for i in {1..120}; do
             if curl -fsS http://localhost:8000/metrics >/dev/null; then
               echo "metrics OK"; break
             fi
