@@ -23,7 +23,9 @@ services:
     networks: [obsnet]
 
   # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
+  # Gøres valgfri via profil, så CI ikke kræver secrets.
   am_init:
+    profiles: ["alerting"]
     image: alpine:3.20
     environment:
       ALERT_TMPL: /src/alertmanager.yml.tmpl
@@ -39,7 +41,9 @@ services:
     restart: "no"
     networks: [obsnet]
 
+  # Alertmanager er også valgfri via samme profil.
   alertmanager:
+    profiles: ["alerting"]
     image: prom/alertmanager:v0.27.0
     container_name: alertmanager
     depends_on:
@@ -66,18 +70,27 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    command: ["--config.file=/etc/prometheus/prometheus.yml","--web.enable-lifecycle","--storage.tsdb.retention.time=15d"]
+    command:
+      [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--web.enable-lifecycle",
+        "--storage.tsdb.retention.time=15d"
+      ]
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
       - ./data/prometheus:/prometheus
     ports: ["9090:9090"]
-    depends_on: [alertmanager, live_connector]
+    # Behold kun afhængighed til app; Alertmanager er valgfri
+    depends_on:
+      - live_connector
     restart: unless-stopped
     networks: [obsnet]
 
+  # Grafana er ikke nødvendig i CI – lægges i en separat profil.
   grafana:
+    profiles: ["ui"]
     image: grafana/grafana:latest
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -88,6 +101,7 @@ services:
       - ../grafana/dashboards:/var/lib/grafana/dashboards
       - ./data/grafana:/var/lib/grafana
     ports: ["3000:3000"]
-    depends_on: [prometheus]
+    depends_on:
+      - prometheus
     restart: unless-stopped
     networks: [obsnet]
