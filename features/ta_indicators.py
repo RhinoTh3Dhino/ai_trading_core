@@ -1,15 +1,17 @@
-import pandas as pd
-import pandas_ta as ta
-import numpy as np
+# features/ta_indicators.py
+from __future__ import annotations
 
-# Sikrer kompatibilitet med nyere NumPy-versioner
+import numpy as np
+import pandas as pd
+import ta  # https://github.com/bukosabino/ta
+
 npNaN = np.nan
 
 
 def _ensure_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Sørger for at DataFrame har en DatetimeIndex (kræves af fx VWAP).
-    Hvis der ikke er timestamp-kolonne, oprettes en kunstig dato-range.
+    Sørger for at DataFrame har en DatetimeIndex (nogle indikatorer/VWAP har glæde af det).
+    Hvis der ikke er en 'timestamp'-kolonne, oprettes en kunstig dato-range.
     """
     if not isinstance(df.index, pd.DatetimeIndex):
         if "timestamp" in df.columns:
@@ -21,96 +23,108 @@ def _ensure_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
 
 def add_ta_indicators(df: pd.DataFrame, force_no_supertrend: bool = False) -> pd.DataFrame:
     """
-    Tilføjer tekniske indikatorer til et DataFrame.
-    force_no_supertrend=True simulerer en fejl i supertrend-beregning (til test).
+    Tilføjer tekniske indikatorer til et DataFrame vha. 'ta'-biblioteket (ikke pandas_ta).
+    - EMA(9/21/50/200), MACD, RSI(14/28), ATR(14), Bollinger(20,2),
+      VWAP(typisk 14), OBV, ADX(14), Z-score(20), volume_spike, regime.
+    - 'Supertrend' findes ikke i 'ta' og sættes derfor til NaN (med mulighed for
+      simuleret fejl via force_no_supertrend).
     """
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Input skal være en pandas DataFrame")
 
-    required_cols = ["close", "high", "low", "volume"]
-    missing = [col for col in required_cols if col not in df.columns]
+    required = ["close", "high", "low", "volume"]
+    missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Mangler kolonner: {missing}")
 
     df = df.copy()
     df = _ensure_datetime_index(df)
 
-    # EMA
-    df["ema_21"] = ta.ema(df["close"], length=21)
-    df["ema_200"] = ta.ema(df["close"], length=200)
-    df["ema_9"] = ta.ema(df["close"], length=9)
-    df["ema_50"] = ta.ema(df["close"], length=50)
+    close = df["close"]
+    high = df["high"]
+    low = df["low"]
+    vol = df["volume"]
+
+    # EMA'er
+    df["ema_9"] = ta.trend.EMAIndicator(close=close, window=9, fillna=False).ema_indicator()
+    df["ema_21"] = ta.trend.EMAIndicator(close=close, window=21, fillna=False).ema_indicator()
+    df["ema_50"] = ta.trend.EMAIndicator(close=close, window=50, fillna=False).ema_indicator()
+    df["ema_200"] = ta.trend.EMAIndicator(close=close, window=200, fillna=False).ema_indicator()
 
     # MACD
-    macd = ta.macd(df["close"])
-    if macd is not None and not macd.empty:
-        df["macd"] = macd.get("MACD_12_26_9", npNaN)
-        df["macd_signal"] = macd.get("MACDs_12_26_9", npNaN)
-        df["macd_hist"] = macd.get("MACDh_12_26_9", npNaN)
-    else:
-        df["macd"] = df["macd_signal"] = df["macd_hist"] = npNaN
+    macd_ind = ta.trend.MACD(close=close, window_slow=26, window_fast=12, window_sign=9, fillna=False)
+    df["macd"] = macd_ind.macd()
+    df["macd_signal"] = macd_ind.macd_signal()
+    df["macd_hist"] = macd_ind.macd_diff()
 
     # RSI
-    df["rsi_14"] = ta.rsi(df["close"], length=14)
-    df["rsi_28"] = ta.rsi(df["close"], length=28)
+    df["rsi_14"] = ta.momentum.RSIIndicator(close=close, window=14, fillna=False).rsi()
+    df["rsi_28"] = ta.momentum.RSIIndicator(close=close, window=28, fillna=False).rsi()
 
     # ATR
-    df["atr_14"] = ta.atr(df["high"], df["low"], df["close"], length=14)
+    df["atr_14"] = ta.volatility.AverageTrueRange(
+        high=high, low=low, close=close, window=14, fillna=False
+    ).average_true_range()
 
-    # Bollinger Bands
-    bbands = ta.bbands(df["close"], length=20)
-    if bbands is not None and not bbands.empty:
-        df["bb_upper"] = bbands.get("BBU_20_2.0", npNaN)
-        df["bb_middle"] = bbands.get("BBM_20_2.0", npNaN)
-        df["bb_lower"] = bbands.get("BBL_20_2.0", npNaN)
-    else:
-        df["bb_upper"] = df["bb_middle"] = df["bb_lower"] = npNaN
+    # Bollinger Bands (20, 2)
+    bb = ta.volatility.BollingerBands(close=close, window=20, window_dev=2, fillna=False)
+    df["bb_upper"] = bb.bollinger_hband()
+    df["bb_middle"] = bb.bollinger_mavg()
+    df["bb_lower"] = bb.bollinger_lband()
 
-    # VWAP – kræver datetime index
+    # VWAP (14 som default-vindue i 'ta')
     try:
-        df["vwap"] = ta.vwap(df["high"], df["low"], df["close"], df["volume"])
+        vwap = ta.volume.VolumeWeightedAveragePrice(
+            high=high, low=low, close=close, volume=vol, window=14, fillna=False
+        )
+        df["vwap"] = vwap.volume_weighted_average_price()
     except Exception as e:
         print(f"[WARN] VWAP kunne ikke beregnes: {e}")
         df["vwap"] = npNaN
 
     # OBV
-    df["obv"] = ta.obv(df["close"], df["volume"])
+    df["obv"] = ta.volume.OnBalanceVolumeIndicator(close=close, volume=vol, fillna=False).on_balance_volume()
 
     # ADX
-    adx_df = ta.adx(df["high"], df["low"], df["close"], length=14)
-    df["adx_14"] = adx_df["ADX_14"] if adx_df is not None and "ADX_14" in adx_df else npNaN
+    df["adx_14"] = ta.trend.ADXIndicator(
+        high=high, low=low, close=close, window=14, fillna=False
+    ).adx()
 
-    # Z-score
-    df["zscore_20"] = (df["close"] - df["close"].rolling(20).mean()) / df["close"].rolling(20).std()
+    # Z-score (20)
+    roll = close.rolling(20)
+    df["zscore_20"] = (close - roll.mean()) / roll.std()
 
-    # Supertrend (med mulighed for at simulere fejl)
+    # "Supertrend" ikke i 'ta' -> sæt NaN (og tillad simuleret fejl)
     try:
         if force_no_supertrend:
             raise RuntimeError("Simuleret supertrend-fejl")
-        st = ta.supertrend(df["high"], df["low"], df["close"])
-        df["supertrend"] = st["SUPERT_7_3.0"] if st is not None and "SUPERT_7_3.0" in st else npNaN
+        # Ingen native supertrend i 'ta'; behold NaN-kolonne:
+        df["supertrend"] = npNaN
     except Exception:
         df["supertrend"] = npNaN
 
-    # Volume spike
-    df["volume_spike"] = df["volume"] > df["volume"].rolling(20).mean() * 1.5
+    # Volume spike (enkelt heuristik)
+    df["volume_spike"] = vol > vol.rolling(20).mean() * 1.5
 
     # Regime: Bull hvis ema_9 > ema_21
     df["regime"] = (df["ema_9"] > df["ema_21"]).astype(int)
 
-    # Drop NaN (kun på indikatorer, ikke nødvendigvis hele dataset)
+    # Drop rækker med NaN i indikatorer (valgfrit – beholder kun "modne" rækker)
     df = df.dropna().reset_index(drop=True)
-
     return df
 
 
 if __name__ == "__main__":
-    # Simpel selvtest (dummy-data)
-    test_df = pd.DataFrame({
-        "timestamp": pd.date_range(start="2023-01-01", periods=50, freq="D"),
-        "close": np.random.rand(50) * 100,
-        "high": np.random.rand(50) * 100,
-        "low": np.random.rand(50) * 100,
-        "volume": np.random.rand(50) * 1000
-    })
-    print(add_ta_indicators(test_df).head())
+    # Hurtig selvtest
+    n = 200
+    test_df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2023-01-01", periods=n, freq="H"),
+            "close": np.linspace(100, 120, n) + np.random.randn(n) * 2,
+            "high": np.linspace(101, 121, n) + np.random.randn(n) * 2,
+            "low": np.linspace(99, 119, n) + np.random.randn(n) * 2,
+            "volume": np.abs(np.random.randn(n) * 1000) + 10,
+        }
+    )
+    out = add_ta_indicators(test_df)
+    print(out.head())

@@ -24,8 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Dummy-secrets til render af Alertmanager-konfig i CI
-      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
+      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890" # dummy-secrets til render i CI
       TELEGRAM_CHAT_ID: "123456789"
       AM_RENDER_DIR: /tmp/amcfg
 
@@ -34,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------
-      # Python tests (headless) + isolér fra runnerens systempakker
+      # Python tests (headless) + isolér fra runnerens usersite
       # ---------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,20 +46,19 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Headless + ignorer usersite
+      - name: Headless + ignore usersite
         run: |
           echo "MPLBACKEND=Agg" >> $GITHUB_ENV
           echo "PYTHONNOUSERSITE=1" >> $GITHUB_ENV
 
-      # Nogle Ubuntu-runnere har "pandas-ta/numba" i base-layers.
-      # Afinstallér defensivt for at undgå coverage/numba-konflikt.
+      # Disses kan ligge i runner-lag og konflikte med coverage API.
       - name: Ensure pandas-ta/numba not present
         run: pip uninstall -y pandas-ta numba || true
 
-      # Tving korrekt coverage-version og vis import-sti (debug)
-      - name: Force coverage version
+      # VIGTIGT: pin coverage til 6.5.0 (kompatibel med numba)
+      - name: Force coverage v6 (compat)
         run: |
-          pip install --force-reinstall --upgrade "coverage==7.5.3"
+          pip install --force-reinstall "coverage==6.5.0"
           python - <<'PY'
           import coverage, sys
           print("COVERAGE:", coverage.__version__, "FROM:", coverage.__file__)
@@ -101,13 +99,12 @@ jobs:
             sh -lc '
               set -euo pipefail
               apk add --no-cache gettext >/dev/null
-              # Render KUN de to forventede variabler (vigtigt: enkelt-anførselstegn)
+              # Render KUN de to forventede variabler (enkeltanførselstegn!)
               envsubst '"'"'${TELEGRAM_BOT_TOKEN} ${TELEGRAM_CHAT_ID}'"'"' \
                 </tmpl/alertmanager.yml.tmpl \
                 > /amcfg/alertmanager.yml
               echo "[CI] Rendered /amcfg/alertmanager.yml (first 30 lines):"
               head -n 30 /amcfg/alertmanager.yml || true
-              # Sanity: tjek at felterne findes
               grep -q "bot_token:" /amcfg/alertmanager.yml
               grep -q "chat_id:" /amcfg/alertmanager.yml
             '
