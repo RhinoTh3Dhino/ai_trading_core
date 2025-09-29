@@ -95,8 +95,9 @@ jobs:
           test -f ops/prometheus/prometheus.yml
           docker run --rm \
             -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
-            prom/prometheus:latest \
-            promtool check config /etc/prometheus/prometheus.yml
+            --entrypoint=promtool \
+            prom/prometheus:v2.53.0 \
+            check config /etc/prometheus/prometheus.yml
 
       - name: promtool check rules (alerts.yml)
         run: |
@@ -104,8 +105,9 @@ jobs:
           test -f ops/prometheus/alerts.yml
           docker run --rm \
             -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
-            prom/prometheus:latest \
-            promtool check rules /etc/prometheus/alerts.yml
+            --entrypoint=promtool \
+            prom/prometheus:v2.53.0 \
+            check rules /etc/prometheus/alerts.yml
 
       - name: Run tests
         run: pytest -q
