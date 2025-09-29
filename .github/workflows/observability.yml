@@ -91,26 +91,27 @@ jobs:
 
       # ---------- promtool forberedelse: sørg for alle filer findes ----------
       - name: Ensure Prometheus rule files exist (create minimal if missing)
+        shell: bash
         run: |
           set -euxo pipefail
           mkdir -p ops/prometheus
-          # minimal alerts.yml
+
           if [ ! -f ops/prometheus/alerts.yml ]; then
-            cat > ops/prometheus/alerts.yml <<'YAML'
-            groups:
-              - name: alerts.empty
-                rules: []
-            YAML
+            printf '%s\n' \
+              'groups:' \
+              '  - name: alerts.empty' \
+              '    rules: []' \
+              > ops/prometheus/alerts.yml
           fi
-          # minimal recording_rules.yml
+
           if [ ! -f ops/prometheus/recording_rules.yml ]; then
-            cat > ops/prometheus/recording_rules.yml <<'YAML'
-            groups:
-              - name: recordings.empty
-                rules: []
-            YAML
+            printf '%s\n' \
+              'groups:' \
+              '  - name: recordings.empty' \
+              '    rules: []' \
+              > ops/prometheus/recording_rules.yml
           fi
-          # kræv også en prometheus.yml
+
           test -f ops/prometheus/prometheus.yml
 
       - name: promtool check config (prometheus.yml)
