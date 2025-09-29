@@ -64,23 +64,23 @@ jobs:
 
           # Installer projektkrav hvis findes; ellers minimumspakke-sæt
           if [ -f requirements.txt ]; then
-            # let numpystack komme først for hurtigere/robust hjul-install
+            # numeric først for hurtigere hjul
             pip install --only-binary=:all: 'numpy==1.26.4' 'pyarrow==11.0.0' || true
             pip install -r requirements.txt
           else
             pip install fastapi uvicorn prometheus-client httpx pytest
           fi
 
-          # CPU-PyTorch (samme pins som i CI)
+          # CPU-PyTorch (samme pins som i CI) – må gerne fejle
           pip install --extra-index-url https://download.pytorch.org/whl/cpu \
             'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
 
-          # Vis versionsinfo (hjælp ved fejlsøgning)
+          # Versionsinfo
           python - <<'PY'
           import importlib
           for name in ("torch","torchvision","torchaudio","fastapi","uvicorn","prometheus_client","numpy","pyarrow","pytest"):
               try:
-                  m = importlib.import_module(name.replace("prometheus_client","prometheus_client"))
+                  m = importlib.import_module(name)
                   print(f"{name}: {getattr(m,'__version__','?')}")
               except Exception as e:
                   print(f"{name}: <missing> ({e})")
@@ -91,7 +91,7 @@ jobs:
           set -euxo pipefail
           nohup uvicorn bot.live_connector.runner:app \
             --host 0.0.0.0 --port 8000 --workers 1 >/tmp/app.log 2>&1 &
-          for i in {1..40}; do
+          for i in {1..60}; do
             if curl -fsS http://localhost:8000/healthz >/dev/null; then
               echo "healthz OK"; break
             fi
@@ -104,11 +104,11 @@ jobs:
           set -euxo pipefail
           curl -fsS http://localhost:8000/metrics | tee /tmp/metrics.txt
           grep -q "feed_transport_latency_ms_bucket" /tmp/metrics.txt
-          grep -q "feed_bar_close_lag_ms" /tmp/metrics.txt
-          grep -q "feed_bars_total" /tmp/metrics.txt
-          grep -q "feed_reconnects_total" /tmp/metrics.txt
-          grep -q "feed_queue_depth" /tmp/metrics.txt
-          grep -q "feature_compute_ms_bucket" /tmp/metrics.txt
+          grep -q "feed_bar_close_lag_ms"          /tmp/metrics.txt
+          grep -q "feed_bars_total"                /tmp/metrics.txt
+          grep -q "feed_reconnects_total"          /tmp/metrics.txt
+          grep -q "feed_queue_depth"               /tmp/metrics.txt
+          grep -q "feature_compute_ms_bucket"      /tmp/metrics.txt
 
       # ---------- promtool forberedelse: sørg for alle filer findes ----------
       - name: Ensure Prometheus rule files exist (create minimal if missing)
@@ -164,8 +164,9 @@ jobs:
             prom/prometheus:v2.53.0 \
             check rules /etc/prometheus/recording_rules.yml
 
-      - name: Run tests
-        run: pytest -q
+      # Hold observability-jobbet hurtigt: kør kun metrics-testen her
+      - name: Run tests (metrics only)
+        run: pytest -q tests/test_metrics_exposition.py
 
       - name: Upload metrics and logs (artifact)
         if: always()
@@ -194,16 +195,19 @@ jobs:
         working-directory: ops/compose
         run: |
           set -euxo pipefail
+          # Start kun default-profil (alertmanager/grafana ligger i profiler)
           docker compose -f docker-compose.yml up -d live_connector prometheus
-          # vent på Prometheus
-          for i in {1..60}; do
+
+          # Vent på Prometheus readiness
+          for i in {1..90}; do
             if curl -fsS http://localhost:9090/-/ready >/dev/null; then
               echo "Prometheus ready"; break
             fi
             sleep 2
           done
-          # vent på app /metrics
-          for i in {1..40}; do
+
+          # Vent på app /metrics
+          for i in {1..60}; do
             if curl -fsS http://localhost:8000/metrics >/dev/null; then
               echo "metrics OK"; break
             fi

@@ -1,5 +1,9 @@
 # ops/compose/docker-compose.yml
-# Observability stack – Alertmanager via secrets + init-render (ingen env_file)
+# Observability stack – profiler + healthchecks
+# Profiler:
+#  - default: live_connector + prometheus (CI-sikker)
+#  - alerting: am_init + alertmanager (kræver secrets)
+#  - ui: grafana
 
 networks:
   obsnet:
@@ -21,9 +25,16 @@ services:
     ports: ["8000:8000"]
     restart: unless-stopped
     networks: [obsnet]
+    # Hjælper Prometheus/compose-integration: app er klar når /healthz svarer
+    healthcheck:
+      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
 
   # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
-  # Gøres valgfri via profil, så CI ikke kræver secrets.
+  # Valgfri via profil, så CI ikke kræver secrets.
   am_init:
     profiles: ["alerting"]
     image: alpine:3.20
@@ -41,7 +52,7 @@ services:
     restart: "no"
     networks: [obsnet]
 
-  # Alertmanager er også valgfri via samme profil.
+  # Alertmanager – også valgfri via samme profil.
   alertmanager:
     profiles: ["alerting"]
     image: prom/alertmanager:v0.27.0
@@ -65,7 +76,7 @@ services:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9093/-/ready >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 3s
-      retries: 10
+      retries: 15
       start_period: 10s
 
   prometheus:
@@ -86,9 +97,18 @@ services:
     depends_on:
       - live_connector
     restart: unless-stopped
-    networks: [obsnet]
+    networks:
+      obsnet:
+        aliases: ["prometheus"]
+    # VIGTIGT: readiness, så workflow ikke cURL'er for tidligt
+    healthcheck:
+      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
 
-  # Grafana er ikke nødvendig i CI – lægges i en separat profil.
+  # Grafana – ikke nødvendig i CI; lægges i separat profil.
   grafana:
     profiles: ["ui"]
     image: grafana/grafana:latest
