@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Dummy-secrets til render af Alertmanager-konfig i CI
+      # Dummy-secrets til Alertmanager-render i CI
       TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
       TELEGRAM_CHAT_ID: "123456789"
       AM_RENDER_DIR: /tmp/amcfg
@@ -36,9 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ---------------------------
-      # Python setup & deps
-      # ---------------------------
+      # ---------- Python setup & deps ----------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -49,6 +47,9 @@ jobs:
 
       - name: Install deps
         run: pip install -r requirements.txt
+
+      - name: Expose repo on PYTHONPATH
+        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
       # Fjern konfliktpakker, som kan snige sig ind i runner-layers
       - name: Ensure pandas-ta/numba not present
@@ -63,9 +64,7 @@ jobs:
           print("COVERAGE:", coverage.__version__, "FROM:", coverage.__file__)
           PY
 
-      # ---------------------------
-      # Start FastAPI (uvicorn) i baggrunden til metrics-testen
-      # ---------------------------
+      # ---------- Start FastAPI (uvicorn) til metrics-test ----------
       - name: Start uvicorn (background)
         run: |
           set -euxo pipefail
@@ -90,13 +89,10 @@ jobs:
           tail -n 200 /tmp/uvicorn.log || true
           exit 1
 
-      # ---------------------------
-      # Kør tests
-      # ---------------------------
+      # ---------- Kør tests ----------
       - name: Run pytest (quiet)
         run: pytest -q
 
-      # Upload uvicorn-log ved fejl i tests
       - name: Upload uvicorn log (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
@@ -105,7 +101,6 @@ jobs:
           path: /tmp/uvicorn.log
           if-no-files-found: warn
 
-      # Stop uvicorn uanset udfald
       - name: Stop uvicorn
         if: always()
         run: |
@@ -113,9 +108,7 @@ jobs:
             kill "$(cat /tmp/uvicorn.pid)" || true
           fi
 
-      # ---------------------------
-      # Prometheus valideringer
-      # ---------------------------
+      # ---------- Prometheus valideringer ----------
       - name: promtool check config (prometheus.yml)
         run: |
           docker run --rm \
@@ -130,9 +123,7 @@ jobs:
             prom/prometheus:latest \
             promtool check rules /etc/prometheus/alerts.yml
 
-      # ---------------------------
-      # Alertmanager render + check
-      # ---------------------------
+      # ---------- Alertmanager render + check ----------
       - name: Render Alertmanager config (envsubst med dummy-secrets)
         run: |
           mkdir -p "$AM_RENDER_DIR"
@@ -161,7 +152,6 @@ jobs:
             prom/alertmanager:v0.27.0 \
             amtool check-config /amcfg/alertmanager.yml
 
-      # Artefakt ved fejl i Alertmanager-check
       - name: Upload rendered Alertmanager config (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
