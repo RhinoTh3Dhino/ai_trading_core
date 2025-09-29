@@ -89,12 +89,37 @@ jobs:
           grep -q "feed_queue_depth" /tmp/metrics.txt
           grep -q "feature_compute_ms_bucket" /tmp/metrics.txt
 
+      # ---------- promtool forberedelse: sørg for alle filer findes ----------
+      - name: Ensure Prometheus rule files exist (create minimal if missing)
+        run: |
+          set -euxo pipefail
+          mkdir -p ops/prometheus
+          # minimal alerts.yml
+          if [ ! -f ops/prometheus/alerts.yml ]; then
+            cat > ops/prometheus/alerts.yml <<'YAML'
+            groups:
+              - name: alerts.empty
+                rules: []
+            YAML
+          fi
+          # minimal recording_rules.yml
+          if [ ! -f ops/prometheus/recording_rules.yml ]; then
+            cat > ops/prometheus/recording_rules.yml <<'YAML'
+            groups:
+              - name: recordings.empty
+                rules: []
+            YAML
+          fi
+          # kræv også en prometheus.yml
+          test -f ops/prometheus/prometheus.yml
+
       - name: promtool check config (prometheus.yml)
         run: |
           set -euxo pipefail
-          test -f ops/prometheus/prometheus.yml
           docker run --rm \
             -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             --entrypoint=promtool \
             prom/prometheus:v2.53.0 \
             check config /etc/prometheus/prometheus.yml
@@ -102,12 +127,20 @@ jobs:
       - name: promtool check rules (alerts.yml)
         run: |
           set -euxo pipefail
-          test -f ops/prometheus/alerts.yml
           docker run --rm \
             -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
             --entrypoint=promtool \
             prom/prometheus:v2.53.0 \
             check rules /etc/prometheus/alerts.yml
+
+      - name: promtool check rules (recording_rules.yml)
+        run: |
+          set -euxo pipefail
+          docker run --rm \
+            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
+            --entrypoint=promtool \
+            prom/prometheus:v2.53.0 \
+            check rules /etc/prometheus/recording_rules.yml
 
       - name: Run tests
         run: pytest -q
