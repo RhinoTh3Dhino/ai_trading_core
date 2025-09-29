@@ -30,8 +30,8 @@ services:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 3s
-      retries: 15
-      start_period: 10s
+      retries: 30          # mere tålmodig i CI
+      start_period: 20s    # giv appen lidt ekstra boot-tid
 
   # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
   # Valgfri via profil, så CI ikke kræver secrets.
@@ -93,10 +93,9 @@ services:
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
       - ./data/prometheus:/prometheus
     ports: ["9090:9090"]
-    # Vent på at app'en er healthy før Prometheus starter
+    # Start uanset health på app (workflowet venter selv på /metrics).
     depends_on:
-      live_connector:
-        condition: service_healthy
+      - live_connector
     restart: unless-stopped
     networks:
       obsnet:
