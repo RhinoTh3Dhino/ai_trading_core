@@ -11,7 +11,7 @@ from typing import Optional, Dict, Any
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
 
-# --- Prometheus /metrics (single- eller multiprocess via eksplicit route) ---
+# Prometheus endpoint/registry (ingen ny-registrering af metrics her!)
 from prometheus_client import (
     CollectorRegistry,
     multiprocess,
@@ -20,7 +20,7 @@ from prometheus_client import (
     REGISTRY,
 )
 
-# --- Projekt-metrics helpers ---
+# Projekt-metrics helpers (metrics er registreret i bot/live_connector/metrics.py)
 from .metrics import (
     observe_transport_latency,
     set_bar_close_lag,
@@ -30,7 +30,7 @@ from .metrics import (
     time_feature,
 )
 
-# --- Label guard (valgfri, beskytter mod eksploderende label-kardinalitet) ---
+# Label guard (valgfri)
 try:
     from .label_guard import LabelLimiter  # hvis tilgængelig i repo
 except Exception:  # pragma: no cover
@@ -51,15 +51,15 @@ except Exception:  # pragma: no cover
             return True
 
 
-# --- Feature-API (best effort) ---
+# Feature-API (best effort)
 try:  # pragma: no cover
     from .features import (
         compute_all_features,
-        compute_ema14,   # optional
-        compute_ema50,   # optional
-        compute_rsi14,   # optional
-        compute_vwap,    # optional
-        compute_atr14,   # optional
+        compute_ema14,
+        compute_ema50,
+        compute_rsi14,
+        compute_vwap,
+        compute_atr14,
     )
 except Exception:  # pragma: no cover
     compute_all_features = None
@@ -75,43 +75,41 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 QUIET = os.getenv("QUIET", "1") not in ("0", "false", "False", "no", "NO")
 STATUS_MIN_SECS = int(os.getenv("STATUS_MIN_SECS", "30"))
 QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
-READINESS_MAX_LAG_SECS = int(os.getenv("READINESS_MAX_LAG_SECS", "120"))  # hvor “gamle” bars må være
+READINESS_MAX_LAG_SECS = int(os.getenv("READINESS_MAX_LAG_SECS", "120"))
 
-# Label-guard setup (henter whitelist fra env CSV)
+# Label-guard setup
 _symbols_whitelist = [s.strip() for s in os.getenv("OBS_SYMBOLS_WHITELIST", "").split(",") if s.strip()]
 _symbols_max = int(os.getenv("OBS_SYMBOLS_MAX", "100"))
 SYMBOLS = LabelLimiter(whitelist=_symbols_whitelist or None, max_items=_symbols_max)
 
 # Multiprocess-metrics?
-PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR")  # hvis sat → multiprocess registry
+PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR")
 
 
 # ----------------------------------------------------------------------------------------
-# Minimal datamodeller (type hints) – tilpas til dine rigtige klasser
+# Datamodeller
 # ----------------------------------------------------------------------------------------
 @dataclass
 class Msg:
     venue: str
     symbol: str
-    event_ts_ms: Optional[int]  # event timestamp fra venue
+    event_ts_ms: Optional[int]
 
 
 @dataclass
 class Bar:
     venue: str
     symbol: str
-    end_ms: int         # barens slut-tid (ms)
+    end_ms: int
     is_final: bool = True
     payload: Optional[Dict[str, Any]] = None
 
 
 # ----------------------------------------------------------------------------------------
-# App & metrics endpoint
+# App & /metrics endpoint
 # ----------------------------------------------------------------------------------------
 app = FastAPI(title="Live Connector", version="1.0.0")
 
-
-# Eksplicit /metrics for at undgå 307-redirect (uanset mode)
 if PROMETHEUS_MULTIPROC_DIR:
     _registry = CollectorRegistry()
     multiprocess.MultiProcessCollector(_registry)
@@ -128,16 +126,16 @@ else:
 
 
 # ----------------------------------------------------------------------------------------
-# Interne state til readiness/status
+# Interne state
 # ----------------------------------------------------------------------------------------
-_last_bar_ts_ms: Dict[str, int] = {}      # pr. symbol
+_last_bar_ts_ms: Dict[str, int] = {}
 _last_status_log_ms: float = 0.0
 _active_venues: Dict[str, bool] = {}
-_main_queue: Optional[Any] = None         # fx asyncio.Queue
+_main_queue: Optional[Any] = None
 
 
 # ----------------------------------------------------------------------------------------
-# Health/Ready/Status endpoints
+# Health/Ready/Status
 # ----------------------------------------------------------------------------------------
 @app.get("/")
 async def root() -> JSONResponse:
@@ -169,58 +167,40 @@ async def status() -> JSONResponse:
 
 
 # ----------------------------------------------------------------------------------------
-# Offentlige hooks – kald disse fra din streaming/orchestrator-kode
+# Hooks fra streaming/orchestrator
 # ----------------------------------------------------------------------------------------
 async def on_tick_or_kline(msg: Msg) -> None:
-    """Kald ved hvert tick/kline fra venue."""
-    venue = msg.venue
-    symbol = msg.symbol
-    _active_venues[venue] = True
-
-    if SYMBOLS.allow(symbol):
-        observe_transport_latency(venue, symbol, msg.event_ts_ms)
-
+    _active_venues[msg.venue] = True
+    if SYMBOLS.allow(msg.symbol):
+        observe_transport_latency(msg.venue, msg.symbol, msg.event_ts_ms)
 
 async def on_bar_final(bar: Bar) -> None:
-    """Kald når en bar lukkes (is_final=True)."""
     if not bar.is_final:
         return
-
     _last_bar_ts_ms[bar.symbol] = int(bar.end_ms)
-
     if SYMBOLS.allow(bar.symbol):
         set_bar_close_lag(bar.venue, bar.symbol, bar.end_ms)
         inc_bars(bar.venue, bar.symbol, 1)
 
-
 def on_reconnect(venue: str) -> None:
-    """Kald ved websocket reconnect."""
     _active_venues[venue] = True
     inc_reconnect(venue)
 
-
 def register_main_queue(q: Any) -> None:
-    """Registrer en hovedqueue (fx asyncio.Queue) så vi kan måle kødybde."""
     global _main_queue
     _main_queue = q
 
-
-# Bevar legacy API fra skelet
 async def poll_queue_depth(q: Any) -> None:
-    """Manuelt kaldbar kødybde-måler (bruges hvis du ikke vil bruge baggrunds-tasken)."""
     depth = q.qsize() if hasattr(q, "qsize") else None
     if depth is not None:
         set_queue_depth(int(depth), queue_name="live")
 
 
 # ----------------------------------------------------------------------------------------
-# Feature-beregning (best effort)
+# Feature-beregning
 # ----------------------------------------------------------------------------------------
 async def compute_features_for_bar(bar: Bar) -> None:
-    """Beregner features for en lukket bar med per-feature timing hvis muligt."""
     symbol = bar.symbol
-
-    # Per-feature (hvis funktionerne findes)
     ran_any = False
     if callable(compute_ema14):
         ran_any = True
@@ -243,17 +223,15 @@ async def compute_features_for_bar(bar: Bar) -> None:
         with time_feature("ATR_14", symbol):
             compute_atr14(bar)
 
-    # Fallback: samlet beregning
     if not ran_any and callable(compute_all_features):
         with time_feature("ALL", symbol):
             compute_all_features(bar)
 
 
 # ----------------------------------------------------------------------------------------
-# Baggrundstasks: status-linje + kødybde (graceful CancelledError)
+# Baggrundstasks
 # ----------------------------------------------------------------------------------------
 async def _bg_status_task() -> None:
-    """Lav-”støj” statuslinjer (QUIET som default)."""
     global _last_status_log_ms
     while True:
         try:
@@ -277,9 +255,7 @@ async def _bg_status_task() -> None:
             LOG.warning("status task error: %s", e)
             await asyncio.sleep(5)
 
-
 async def _bg_queue_depth_task() -> None:
-    """Periodisk måling af kødybde til Prometheus."""
     while True:
         try:
             if _main_queue and hasattr(_main_queue, "qsize"):
@@ -297,16 +273,31 @@ async def _bg_queue_depth_task() -> None:
 # ----------------------------------------------------------------------------------------
 _bg_tasks: list[asyncio.Task] = []
 
-
 @app.on_event("startup")
 async def _on_startup() -> None:
     LOG.info("Live Connector startup (QUIET=%s, STATUS_MIN_SECS=%s)", QUIET, STATUS_MIN_SECS)
-    # Prim enkelte metrics så de eksisterer i /metrics fra start
+
+    # Prime nogle metrics via helpers (ingen ny-registrering)
     set_queue_depth(0, "live")
-    # Start baggrundstasks
+    now_ms = int(time.time() * 1000)
+    venue = "bootstrap"
+    symbol = "TESTUSDT"
+
+    # Sørger for at 'feed_transport_latency_ms_bucket' m.m. materialiseres
+    observe_transport_latency(venue, symbol, now_ms - 5)
+    set_bar_close_lag(venue, symbol, now_ms - 1500)
+    inc_bars(venue, symbol, 1)
+    try:
+        with time_feature("EMA_14", symbol):
+            pass
+    except Exception:
+        pass
+
+    _active_venues[venue] = True
+    _last_bar_ts_ms[symbol] = now_ms
+
     _bg_tasks.append(asyncio.create_task(_bg_status_task(), name="status"))
     _bg_tasks.append(asyncio.create_task(_bg_queue_depth_task(), name="queue-depth"))
-
 
 @app.on_event("shutdown")
 async def _on_shutdown() -> None:
@@ -322,17 +313,16 @@ async def _on_shutdown() -> None:
 
 
 # ----------------------------------------------------------------------------------------
-# Debug endpoints – brugbare til røgsignaltest af metrics end-to-end
+# Debug endpoints
 # ----------------------------------------------------------------------------------------
 @app.post("/_debug/emit_sample")
 def _debug_emit_sample() -> JSONResponse:
-    """Emmiter et sæt test-metrics, så du hurtigt kan se dem i Prometheus/Grafana."""
     now_ms = int(time.time() * 1000)
     venue = "binance"
     symbol = "BTCUSDT"
 
-    observe_transport_latency(venue, symbol, now_ms - 120)  # ms
-    set_bar_close_lag(venue, symbol, now_ms - 1500)         # ms
+    observe_transport_latency(venue, symbol, now_ms - 120)
+    set_bar_close_lag(venue, symbol, now_ms - 1500)
     inc_bars(venue, symbol, 1)
     set_queue_depth(5, "live")
 
@@ -343,7 +333,7 @@ def _debug_emit_sample() -> JSONResponse:
 
 
 # ----------------------------------------------------------------------------------------
-# Lokal kørsel (valgfri) – i Compose kører du uvicorn via CLI
+# Lokal kørsel
 # ----------------------------------------------------------------------------------------
 if __name__ == "__main__":  # pragma: no cover
     import uvicorn

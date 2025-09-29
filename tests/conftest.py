@@ -2,6 +2,9 @@
 import os
 import sys
 import re
+import threading
+import time
+import socket
 from pathlib import Path
 from typing import Dict
 
@@ -51,6 +54,45 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     for item in items:
         if "contract" in item.keywords:
             item.add_marker(skip_contract)
+
+
+# =========================
+# Metrics server auto-start
+# =========================
+
+def _port_free(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.1)
+        return s.connect_ex(("127.0.0.1", port)) != 0
+
+
+def pytest_sessionstart(session) -> None:
+    """
+    Starter en minimal FastAPI-/uvicorn-proces for /metrics, så
+    tests/test_metrics_exposition.py kan ramme http://localhost:8000/metrics.
+
+    Styring via env:
+      START_METRICS_SERVER=0  -> disable
+      METRICS_PORT=8081       -> port override
+    """
+    if os.environ.get("START_METRICS_SERVER", "1").strip().lower() not in {"1", "true", "yes", "on"}:
+        return
+
+    port = int(os.environ.get("METRICS_PORT", "8000"))
+    if not _port_free(port):
+        # Allerede nogen der lytter (fx separat CI-step) -> gør intet
+        return
+
+    def _run():
+        # Importér uvicorn først i child-thread for at undgå overhead i collection-fase
+        import uvicorn  # type: ignore
+        # Peg på din eksisterende app med metrics-route i api/app.py
+        uvicorn.run("api.app:app", host="0.0.0.0", port=port, log_level="warning")
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    # kort spin-up buffer (stabil mod flakiness i hurtige CI-miljøer)
+    time.sleep(0.7)
 
 
 # =========================

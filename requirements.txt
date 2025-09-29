@@ -46,6 +46,12 @@ psutil==5.9.8
 python-telegram-bot==20.7
 
 # =========================
+# AI / Claude integration
+# =========================
+# Bruges af api/app.py -> _ask_claude()
+anthropic>=0.34,<0.41
+
+# =========================
 # PLOTTING (til CI baseline-test – brug MPLBACKEND=Agg i CI)
 # =========================
 matplotlib>=3.9,<3.10
@@ -55,6 +61,8 @@ matplotlib>=3.9,<3.10
 # =========================
 pytest==8.4.2
 pytest-timeout==2.3.1
+pytest-asyncio==0.23.8
+pytest-cov==6.2.1
 flake8==7.0.0
 black==24.4.2
 mypy==1.10.0

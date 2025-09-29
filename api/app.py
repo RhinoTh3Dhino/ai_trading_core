@@ -11,11 +11,19 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
+
+# ⬇️ NYT: Prometheus-klient til /metrics
+from prometheus_client import (
+    CollectorRegistry,
+    Gauge,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
 
 # ---------------------------
 # Paths & App
@@ -80,6 +88,27 @@ class DailyMetric(BaseModel):
     net_pnl: float
     max_dd: float
     sharpe_d: float
+
+
+# ---------------------------
+# Prometheus metrics (NYT)
+# ---------------------------
+_METRICS: CollectorRegistry = CollectorRegistry()
+_G_HEALTH = Gauge("bot_health", "Basic liveness indicator", registry=_METRICS)
+_G_WIN7 = Gauge("win_rate_7d", "7d average win-rate (0..1)", registry=_METRICS)
+_G_DD = Gauge("drawdown_pct", "Latest drawdown percentage", registry=_METRICS)
+
+# init liveness
+_G_HEALTH.set(1.0)
+
+@app.get("/metrics")
+def metrics():
+    """
+    Prometheus-eksponering. Bruges af testen tests/test_metrics_exposition.py
+    og kan scrapes af Prometheus i drift.
+    """
+    data = generate_latest(_METRICS)
+    return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
 
 # ---------------------------
@@ -355,6 +384,12 @@ def get_status():
 
     mode = "live" if os.getenv("LIVE_MODE", "paper").lower() == "live" else "paper"
     commit_sha = os.getenv("GIT_COMMIT") or None
+
+    # ⬇️ NYT: opdatér Prometheus-gauges
+    with contextlib.suppress(Exception):
+        _G_HEALTH.set(1.0)
+        _G_WIN7.set(float(win7))
+        _G_DD.set(float(drawdown))
 
     payload = {
         "last_run_ts": last_run_ts,
