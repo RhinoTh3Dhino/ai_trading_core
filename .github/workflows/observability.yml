@@ -217,10 +217,18 @@ jobs:
         run: |
           set -euxo pipefail
           # Start kun default-profil (alertmanager/grafana ligger i profiler)
-          docker compose -f docker-compose.yml up -d live_connector prometheus
+          # --wait: docker venter på healthchecks for services
+          docker compose -f docker-compose.yml up -d --wait live_connector prometheus || true
           docker compose -f docker-compose.yml ps
 
-          # Vent på Prometheus readiness (op til ~4 min)
+          # Fallback: eksplicit vent på readiness hvis --wait ikke var nok
+          for i in {1..120}; do
+            if curl -fsS http://localhost:8000/healthz >/dev/null; then
+              echo "App healthy"; break
+            fi
+            sleep 1
+          done
+
           for i in {1..120}; do
             if curl -fsS http://localhost:9090/-/ready >/dev/null; then
               echo "Prometheus ready"; break
@@ -228,18 +236,17 @@ jobs:
             sleep 2
           done
 
-          # Vent på app /metrics (op til ~2 min)
-          for i in {1..120}; do
-            if curl -fsS http://localhost:8000/metrics >/dev/null; then
-              echo "metrics OK"; break
-            fi
-            sleep 1
-          done
-
       - name: Verify Prometheus target is UP
         run: |
           set -euxo pipefail
-          curl -fsS "http://localhost:9090/api/v1/targets" | tee /tmp/targets.json
+          # Robust fetch med små retries (op til ~60s)
+          for i in {1..30}; do
+            if curl -fsS "http://localhost:9090/api/v1/targets" -o /tmp/targets.json; then
+              break
+            fi
+            sleep 2
+          done
+          cat /tmp/targets.json || true
           jq -e '.data.activeTargets | map(select(.health=="up")) | length > 0' /tmp/targets.json >/dev/null
 
       - name: Dump Prometheus target summaries
