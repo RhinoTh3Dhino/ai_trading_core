@@ -11,6 +11,7 @@ networks:
 
 volumes:
   amcfg: {}
+  prom_data: {}   # <-- named volume til Prometheus data (undgår CI-permissions)
 
 secrets:
   telegram_bot_token:
@@ -28,10 +29,10 @@ services:
     # App er klar når /healthz svarer
     healthcheck:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
-      interval: 10s
+      interval: 5s
       timeout: 3s
-      retries: 30          # mere tålmodig i CI
-      start_period: 20s    # giv appen lidt ekstra boot-tid
+      retries: 12
+      start_period: 15s   # giv appen lidt ekstra boot-tid i CI
 
   # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
   # Valgfri via profil, så CI ikke kræver secrets.
@@ -80,20 +81,20 @@ services:
       start_period: 10s
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.6.0   # <-- pin version (ikke latest)
     command:
       [
         "--config.file=/etc/prometheus/prometheus.yml",
-        "--web.enable-lifecycle",
-        "--storage.tsdb.retention.time=15d"
+        "--storage.tsdb.path=/prometheus",            # <-- eksplicit TSDB-sti
+        "--storage.tsdb.retention.time=15d",
+        "--web.enable-lifecycle"
       ]
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
-      - ./data/prometheus:/prometheus
+      - prom_data:/prometheus                              # <-- named volume (skrivbart)
     ports: ["9090:9090"]
-    # Start uanset health på app (workflowet venter selv på /metrics).
     depends_on:
       - live_connector
     restart: unless-stopped
@@ -103,10 +104,10 @@ services:
     # Readiness, så workflow ikke cURL'er for tidligt
     healthcheck:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
-      interval: 10s
+      interval: 5s
       timeout: 3s
-      retries: 30
-      start_period: 20s
+      retries: 60
+      start_period: 15s
 
   # Grafana – ikke nødvendig i CI; separat profil.
   grafana:

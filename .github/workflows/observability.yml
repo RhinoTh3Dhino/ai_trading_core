@@ -27,6 +27,7 @@ permissions:
 env:
   PYTHONUNBUFFERED: "1"
   MPLBACKEND: Agg
+  PROM_VERSION: "v3.6.0"   # match docker-compose Prometheus/promtool version
 
 jobs:
   unit-smoke:
@@ -71,7 +72,7 @@ jobs:
             pip install fastapi uvicorn prometheus-client httpx pytest
           fi
 
-          # CPU-PyTorch (samme pins som i CI) – må gerne fejle
+          # CPU-PyTorch (må gerne fejle)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu \
             'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
 
@@ -143,7 +144,7 @@ jobs:
             -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
             -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             --entrypoint=promtool \
-            prom/prometheus:v2.53.0 \
+            "prom/prometheus:${PROM_VERSION}" \
             check config /etc/prometheus/prometheus.yml
 
       - name: promtool check rules (alerts.yml)
@@ -152,7 +153,7 @@ jobs:
           docker run --rm \
             -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
             --entrypoint=promtool \
-            prom/prometheus:v2.53.0 \
+            "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prometheus/alerts.yml
 
       - name: promtool check rules (recording_rules.yml)
@@ -161,7 +162,7 @@ jobs:
           docker run --rm \
             -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             --entrypoint=promtool \
-            prom/prometheus:v2.53.0 \
+            "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prometheus/recording_rules.yml
 
       # ✅ Kør kun metrics-smoke og slå coverage fra (overrider pytest.ini addopts)
@@ -222,7 +223,7 @@ jobs:
 
           # Start kun default-profil (alertmanager/grafana ligger i profiler)
           # --wait: docker venter på healthchecks; vi har også manuelle loops nedenfor
-          docker compose -f docker-compose.yml up -d --wait live_connector prometheus || true
+          docker compose -f docker-compose.yml up -d --wait live_connector prometheus
           docker compose -f docker-compose.yml ps
 
           # Vent på appens healthz (op til 2 min)
@@ -281,10 +282,20 @@ jobs:
         working-directory: ops/compose
         run: docker compose -f docker-compose.yml down -v
 
-      - name: Upload compose artifacts
+      # ---- Løsning #2: betinget upload af artifact ----
+      - name: Check targets.json exists
+        id: check_targets
         if: always()
+        run: |
+          if [ -s /tmp/targets.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload compose artifacts
+        if: always() && steps.check_targets.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: observability-compose-artifacts
-          path: |
-            /tmp/targets.json
+          path: /tmp/targets.json
