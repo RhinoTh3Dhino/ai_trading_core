@@ -216,25 +216,38 @@ jobs:
         working-directory: ops/compose
         run: |
           set -euxo pipefail
+          echo "Docker/Compose versions:"
+          docker --version || true
+          docker compose version || true
+
           # Start kun default-profil (alertmanager/grafana ligger i profiler)
-          # --wait: docker venter på healthchecks for services
+          # --wait: docker venter på healthchecks; vi har også manuelle loops nedenfor
           docker compose -f docker-compose.yml up -d --wait live_connector prometheus || true
           docker compose -f docker-compose.yml ps
 
-          # Fallback: eksplicit vent på readiness hvis --wait ikke var nok
+          # Vent på appens healthz (op til 2 min)
+          ok=0
           for i in {1..120}; do
-            if curl -fsS http://localhost:8000/healthz >/dev/null; then
-              echo "App healthy"; break
-            fi
+            if curl -fsS http://localhost:8000/healthz >/dev/null; then ok=1; break; fi
             sleep 1
           done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::App /healthz blev ikke klar i tide."
+            docker compose -f docker-compose.yml logs --no-color --tail=200 live_connector || true
+            exit 2
+          fi
 
-          for i in {1..120}; do
-            if curl -fsS http://localhost:9090/-/ready >/dev/null; then
-              echo "Prometheus ready"; break
-            fi
-            sleep 2
+          # Vent på Prometheus readiness (op til 4 min)
+          ok=0
+          for i in {1..240}; do
+            if curl -fsS http://localhost:9090/-/ready >/dev/null; then ok=1; break; fi
+            sleep 1
           done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Prometheus /-/ready blev ikke klar i tide."
+            docker compose -f docker-compose.yml logs --no-color --tail=200 prometheus || true
+            exit 2
+          fi
 
       - name: Verify Prometheus target is UP
         run: |
@@ -246,7 +259,8 @@ jobs:
             fi
             sleep 2
           done
-          cat /tmp/targets.json || true
+          [ -s /tmp/targets.json ] || { echo "::error::Kunne ikke hente /api/v1/targets fra Prometheus."; exit 2; }
+          cat /tmp/targets.json | jq '.data.activeTargets | length' || true
           jq -e '.data.activeTargets | map(select(.health=="up")) | length > 0' /tmp/targets.json >/dev/null
 
       - name: Dump Prometheus target summaries
