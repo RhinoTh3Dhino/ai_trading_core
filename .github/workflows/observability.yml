@@ -251,18 +251,33 @@ jobs:
           fi
 
       - name: Verify Prometheus target is UP
+        shell: bash
         run: |
           set -euxo pipefail
-          # Robust fetch med små retries (op til ~60s)
-          for i in {1..30}; do
-            if curl -fsS "http://localhost:9090/api/v1/targets" -o /tmp/targets.json; then
+
+          # Prøv i op til ~120s (60 * 2s): vent til mindst ét target er health=="up"
+          up=0
+          for i in {1..60}; do
+            curl -fsS "http://localhost:9090/api/v1/targets" -o /tmp/targets.json || true
+            if [ -s /tmp/targets.json ]; then
+              up="$(jq -r '.data.activeTargets | map(select(.health=="up")) | length' /tmp/targets.json 2>/dev/null || echo 0)"
+            else
+              up=0
+            fi
+            echo "UP targets: ${up} (forsøg ${i})"
+            if [ "${up}" -gt 0 ]; then
               break
             fi
             sleep 2
           done
-          [ -s /tmp/targets.json ] || { echo "::error::Kunne ikke hente /api/v1/targets fra Prometheus."; exit 2; }
-          cat /tmp/targets.json | jq '.data.activeTargets | length' || true
-          jq -e '.data.activeTargets | map(select(.health=="up")) | length > 0' /tmp/targets.json >/dev/null
+
+          # Hjælpsomt resume til loggen
+          if [ -s /tmp/targets.json ]; then
+            jq '.data.activeTargets | map({job:.labels.job, health, scrapeUrl, lastError})' /tmp/targets.json || true
+          fi
+
+          # Endelig gate
+          test "${up}" -gt 0
 
       - name: Dump Prometheus target summaries
         if: always()
