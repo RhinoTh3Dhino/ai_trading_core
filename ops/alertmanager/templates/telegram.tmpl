@@ -1,0 +1,68 @@
+{{/* --------------------------------------------------------------------
+   Telegram HTML template for Alertmanager (kompatibel med v0.27)
+   Brug i alertmanager.yml (telegram_configs.message):
+     {{ template "telegram.message" . }}
+   -------------------------------------------------------------------- */}}
+
+{{- define "telegram.message" -}}
+<b>{{ .Status | toUpper }}</b> — {{ template "telegram.title" . }}
+
+{{- /* Udvalgte common labels vises kompakt hvis de findes */ -}}
+{{- $ls := .CommonLabels -}}
+{{- $hasAny := or (index $ls "alertname") (or (index $ls "severity") (or (index $ls "venue") (or (index $ls "symbol") (index $ls "feature")))) -}}
+{{- if $hasAny }}
+<b>Labels:</b>
+<code>
+{{- if (index $ls "alertname") }}alertname={{ index $ls "alertname" }}{{ "\n" }}{{- end -}}
+{{- if (index $ls "severity")  }}severity={{  index $ls "severity"  }}{{ "\n" }}{{- end -}}
+{{- if (index $ls "venue")     }}venue={{     index $ls "venue"     }}{{ "\n" }}{{- end -}}
+{{- if (index $ls "symbol")    }}symbol={{    index $ls "symbol"    }}{{ "\n" }}{{- end -}}
+{{- if (index $ls "feature")   }}feature={{   index $ls "feature"   }}{{ "\n" }}{{- end -}}
+</code>
+{{- end }}
+
+{{- /* Summary/Description (fra fælles annotations hvis til stede) */ -}}
+{{- if .CommonAnnotations.summary }}
+<b>Summary:</b> {{ .CommonAnnotations.summary }}
+{{- else if .CommonAnnotations.description }}
+<b>Description:</b> {{ .CommonAnnotations.description }}
+{{- end }}
+
+{{- /* Hvis flere alerts: list dem enkeltvis */ -}}
+{{- if gt (len .Alerts) 1 -}}
+<b>Alerts ({{ len .Alerts }}):</b>
+{{- range .Alerts }}
+• <i>{{ index .Labels "alertname" }}</i>{{ if (index .Labels "severity") }} ({{ index .Labels "severity" }}){{ end }}
+  {{- if or .Annotations.summary .Annotations.description }}
+  — {{ or .Annotations.summary .Annotations.description }}
+  {{- end }}
+  {{- if (index .Labels "venue")   }} — venue={{   index .Labels "venue"   }}{{- end }}
+  {{- if (index .Labels "symbol")  }} — symbol={{  index .Labels "symbol"  }}{{- end }}
+  {{- if (index .Labels "feature") }} — feature={{ index .Labels "feature" }}{{- end }}
+{{- end }}
+
+{{- /* Én alert uden fælles summary -> vis detaljer */ -}}
+{{- else if not .CommonAnnotations.summary }}
+{{- $a := index .Alerts 0 -}}
+<b>Alert:</b> {{ or (index $a.Labels "alertname") .CommonLabels.alertname }}{{ if (index $a.Labels "severity") }} ({{ index $a.Labels "severity" }}){{ end }}
+{{- if or $a.Annotations.summary $a.Annotations.description }}
+ — {{ or $a.Annotations.summary $a.Annotations.description }}
+{{- end }}
+{{- end }}
+
+{{- /* Footer med link til AM UI */ -}}
+{{- if .ExternalURL }}
+<i>Alertmanager:</i> {{ .ExternalURL }}
+{{- end }}
+{{- end -}}
+
+{{/* -------- Helpers -------- */}}
+
+{{- define "telegram.title" -}}
+{{- if gt (len .Alerts) 1 -}}
+{{ .CommonLabels.alertname }} ({{ len .Alerts }})
+{{- else -}}
+{{- $a := index .Alerts 0 -}}
+{{- or (index $a.Labels "alertname") .CommonLabels.alertname -}}
+{{- end -}}
+{{- end -}}
