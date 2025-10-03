@@ -143,11 +143,23 @@ jobs:
       - name: Opret reports-mappe
         run: mkdir -p reports
 
+      - name: Ensure repo root on PYTHONPATH
+        run: |
+          echo "PYTHONPATH=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
+          python - <<'PY'
+          import os, sys, pathlib
+          print("CWD:", pathlib.Path().resolve())
+          print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
+          print("sys.path[0]:", sys.path[0])
+          PY
+
       # === Start uvicorn og prime metrics (så /metrics har histogram-buckets) ===
       - name: Start uvicorn (background)
         run: |
           set -euxo pipefail
-          nohup python -m uvicorn bot.live_connector.runner:app \
+          nohup python -m uvicorn \
+            --app-dir "${GITHUB_WORKSPACE}" \
+            bot.live_connector.runner:app \
             --host 0.0.0.0 --port 8000 --workers 1 \
             > /tmp/uvicorn.log 2>&1 &
           echo $! > /tmp/uvicorn.pid
@@ -269,6 +281,9 @@ jobs:
         with:
           python-version: "3.10"
           cache: "pip"
+
+      - name: Ensure repo root on PYTHONPATH (nightly)
+        run: echo "PYTHONPATH=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
 
       - name: Installer minimale afhængigheder
         run: |
