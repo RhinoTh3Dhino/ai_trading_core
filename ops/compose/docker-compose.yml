@@ -11,7 +11,8 @@ networks:
 
 volumes:
   amcfg: {}
-  prom_data: {}   # <-- named volume til Prometheus data (undgår CI-permissions)
+  prom_data: {}         # Prometheus TSDB (persistens)
+  grafana_data: {}      # Grafana DB (persistens)
 
 secrets:
   telegram_bot_token:
@@ -26,16 +27,14 @@ services:
     ports: ["8000:8000"]
     restart: unless-stopped
     networks: [obsnet]
-    # App er klar når /healthz svarer
     healthcheck:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 12
-      start_period: 15s   # giv appen lidt ekstra boot-tid i CI
+      start_period: 15s
 
   # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
-  # Valgfri via profil, så CI ikke kræver secrets.
   am_init:
     profiles: ["alerting"]
     image: alpine:3.20
@@ -53,7 +52,6 @@ services:
     restart: "no"
     networks: [obsnet]
 
-  # Alertmanager – valgfri via samme profil.
   alertmanager:
     profiles: ["alerting"]
     image: prom/alertmanager:v0.27.0
@@ -63,7 +61,6 @@ services:
         condition: service_completed_successfully
     volumes:
       - amcfg:/amcfg:ro
-      # Monter templates direkte, så YAML kan henvise til /etc/alertmanager/templates/*.tmpl
       - ../alertmanager/templates:/etc/alertmanager/templates:ro
     command:
       - --config.file=/amcfg/alertmanager.yml
@@ -81,11 +78,11 @@ services:
       start_period: 10s
 
   prometheus:
-    image: prom/prometheus:v3.6.0   # <-- pin version (ikke latest)
+    image: prom/prometheus:v3.6.0
     command:
       [
         "--config.file=/etc/prometheus/prometheus.yml",
-        "--storage.tsdb.path=/prometheus",            # <-- eksplicit TSDB-sti
+        "--storage.tsdb.path=/prometheus",
         "--storage.tsdb.retention.time=15d",
         "--web.enable-lifecycle"
       ]
@@ -93,7 +90,7 @@ services:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
-      - prom_data:/prometheus                              # <-- named volume (skrivbart)
+      - prom_data:/prometheus
     ports: ["9090:9090"]
     depends_on:
       - live_connector
@@ -101,7 +98,6 @@ services:
     networks:
       obsnet:
         aliases: ["prometheus"]
-    # Readiness, så workflow ikke cURL'er for tidligt
     healthcheck:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
       interval: 5s
@@ -109,20 +105,27 @@ services:
       retries: 60
       start_period: 15s
 
-  # Grafana – ikke nødvendig i CI; separat profil.
   grafana:
     profiles: ["ui"]
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.1.0    # pin for determinisme
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_PLUGINS_SIGNATURES_ENABLED=false
     volumes:
-      - ../grafana/provisioning:/etc/grafana/provisioning
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
       - ../grafana/dashboards:/var/lib/grafana/dashboards
-      - ./data/grafana:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
     ports: ["3000:3000"]
     depends_on:
       - prometheus
     restart: unless-stopped
-    networks: [obsnet]
+    networks:
+      obsnet:
+        aliases: ["grafana"]
+    healthcheck:
+      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s

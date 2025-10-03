@@ -3,7 +3,7 @@
   "title": "Live Feed – Ops",
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "time": { "from": "now-6h", "to": "now" },
   "refresh": "10s",
@@ -20,7 +20,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
-          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2 }
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2 },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green" }, { "color": "red", "value": 500 } ] }
         },
         "overrides": []
       },
@@ -30,7 +31,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum by (le, venue) (rate(feed_transport_latency_ms_bucket{venue=~\"$venue\", symbol=~\"$symbol\"}[5m])))",
+          "expr": "max by (venue) (feed_transport_latency_ms:p99{venue=~\"$venue\", symbol=~\"$symbol\"})",
           "legendFormat": "{{venue}}",
           "refId": "A"
         }
@@ -39,14 +40,22 @@
     {
       "id": 2,
       "type": "gauge",
-      "title": "Bar close lag (ms) – max pr. venue/symbol",
+      "title": "Bar close lag (ms) – max pr. venue/symbol (5m)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
           "min": 0,
-          "max": 60000
+          "max": 60000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green" },
+              { "color": "yellow", "value": 1500 },
+              { "color": "red", "value": 3000 }
+            ]
+          }
         },
         "overrides": []
       },
@@ -58,7 +67,7 @@
       },
       "targets": [
         {
-          "expr": "max by (venue, symbol) (feed_bar_close_lag_ms{venue=~\"$venue\", symbol=~\"$symbol\"})",
+          "expr": "max by (venue, symbol) (feed_bar_close_lag_ms:max5m{venue=~\"$venue\", symbol=~\"$symbol\"})",
           "legendFormat": "{{venue}} {{symbol}}",
           "refId": "A"
         }
@@ -83,7 +92,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(feed_bars_total{venue=~\"$venue\", symbol=~\"$symbol\"}[1m]))",
+          "expr": "live:bars_per_sec",
           "legendFormat": "bars/s",
           "refId": "A"
         }
@@ -108,7 +117,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (venue) (increase(feed_reconnects_total{venue=~\"$venue\"}[5m]))",
+          "expr": "sum by (venue) (feed_reconnects:inc5m{venue=~\"$venue\"})",
           "legendFormat": "{{venue}}",
           "refId": "A"
         }
@@ -133,12 +142,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le, feature) (rate(feature_compute_ms_bucket{symbol=~\"$symbol\"}[5m])))",
+          "expr": "max by (feature) (feature_compute_ms:p95)",
           "legendFormat": "p95 {{feature}}",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.99, sum by (le, feature) (rate(feature_compute_ms_bucket{symbol=~\"$symbol\"}[5m])))",
+          "expr": "max by (feature) (feature_compute_ms:p99)",
           "legendFormat": "p99 {{feature}}",
           "refId": "B"
         }
@@ -147,12 +156,20 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Queue depth (live) – max",
+      "title": "Queue depth (max/5m)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 6, "w": 8, "x": 0, "y": 17 },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green" },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
         },
         "overrides": []
       },
@@ -164,7 +181,7 @@
       },
       "targets": [
         {
-          "expr": "max by (queue_name) (feed_queue_depth{queue_name=\"live\"})",
+          "expr": "max by (queue_name) (live:queue_depth_max)",
           "legendFormat": "{{queue_name}}",
           "refId": "A"
         }

@@ -63,20 +63,16 @@ jobs:
           set -euxo pipefail
           python -m pip install -U pip wheel setuptools
 
-          # Installer projektkrav hvis findes; ellers minimumspakke-sæt
           if [ -f requirements.txt ]; then
-            # numeric først for hurtigere hjul
             pip install --only-binary=:all: 'numpy==1.26.4' 'pyarrow==11.0.0' || true
             pip install -r requirements.txt
           else
             pip install fastapi uvicorn prometheus-client httpx pytest
           fi
 
-          # CPU-PyTorch (må gerne fejle)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu \
             'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
 
-          # Versionsinfo
           python - <<'PY'
           import importlib
           for name in ("torch","torchvision","torchaudio","fastapi","uvicorn","prometheus_client","numpy","pyarrow","pytest"):
@@ -151,19 +147,34 @@ jobs:
         run: |
           set -euxo pipefail
           docker run --rm \
-            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "$PWD/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
             --entrypoint=promtool \
             "prom/prometheus:${PROM_VERSION}" \
-            check rules /etc/prometheus/alerts.yml
+            check rules /etc/prom/alerts.yml
 
       - name: promtool check rules (recording_rules.yml)
         run: |
           set -euxo pipefail
           docker run --rm \
-            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
+            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
             --entrypoint=promtool \
             "prom/prometheus:${PROM_VERSION}" \
-            check rules /etc/prometheus/recording_rules.yml
+            check rules /etc/prom/recording_rules.yml
+
+      # ✅ NYT: promtool enhedstests af alerts (betinget step)
+      - name: promtool test alert rules (unit)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if [ -f ops/prometheus/tests/alerts_test.yml ]; then
+            docker run --rm \
+              -v "$PWD/ops/prometheus:/etc/prom" \
+              --entrypoint=promtool \
+              "prom/prometheus:${PROM_VERSION}" \
+              test rules /etc/prom/tests/alerts_test.yml
+          else
+            echo "No alerts_test.yml present — skipping promtool unit tests."
+          fi
 
       # ✅ Kør kun metrics-smoke og slå coverage fra (overrider pytest.ini addopts)
       - name: Run tests (metrics only, no coverage gate)
@@ -193,7 +204,6 @@ jobs:
       - name: Install jq (for API checks)
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # Sørg for at Prometheus' rule-filer også findes i denne runner
       - name: Ensure Prometheus rule files exist (compose job)
         shell: bash
         run: |
@@ -221,8 +231,6 @@ jobs:
           docker --version || true
           docker compose version || true
 
-          # Start kun default-profil (alertmanager/grafana ligger i profiler)
-          # --wait: docker venter på healthchecks; vi har også manuelle loops nedenfor
           docker compose -f docker-compose.yml up -d --wait live_connector prometheus
           docker compose -f docker-compose.yml ps
 
@@ -254,8 +262,6 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-
-          # Prøv i op til ~120s (60 * 2s): vent til mindst ét target er health=="up"
           up=0
           for i in {1..60}; do
             curl -fsS "http://localhost:9090/api/v1/targets" -o /tmp/targets.json || true
@@ -271,12 +277,10 @@ jobs:
             sleep 2
           done
 
-          # Hjælpsomt resume til loggen
           if [ -s /tmp/targets.json ]; then
             jq '.data.activeTargets | map({job:.labels.job, health, scrapeUrl, lastError})' /tmp/targets.json || true
           fi
 
-          # Endelig gate
           test "${up}" -gt 0
 
       - name: Dump Prometheus target summaries
@@ -297,7 +301,6 @@ jobs:
         working-directory: ops/compose
         run: docker compose -f docker-compose.yml down -v
 
-      # ---- Løsning #2: betinget upload af artifact ----
       - name: Check targets.json exists
         id: check_targets
         if: always()

@@ -5,19 +5,19 @@ groups:
   - name: livefeed_transport
     interval: 30s
     rules:
-      # Pre-sum + rate, så histogram_quantile kan bruge det direkte
+      # Pre-aggregation for histogram_quantile (venue-scoped + global)
       - record: "feed_transport_latency_ms:rate1m"
         expr: sum by (le, venue) (rate(feed_transport_latency_ms_bucket[1m]))
       - record: "feed_transport_latency_ms:rate5m"
         expr: sum by (le, venue) (rate(feed_transport_latency_ms_bucket[5m]))
 
-      # p95/p99 per venue (bruger den præ-aggede :rate5m)
+      # p95/p99 per venue (fra pre-agg 5m)
       - record: "feed_transport_latency_ms:p95"
         expr: histogram_quantile(0.95, feed_transport_latency_ms:rate5m)
       - record: "feed_transport_latency_ms:p99"
         expr: histogram_quantile(0.99, feed_transport_latency_ms:rate5m)
 
-      # Globalt (alle venues samlet)
+      # Global pre-aggregation og kvantiler
       - record: "feed_transport_latency_ms:all_venues_rate5m"
         expr: sum by (le) (rate(feed_transport_latency_ms_bucket[5m]))
       - record: "feed_transport_latency_ms:all_venues_p95"
@@ -25,20 +25,29 @@ groups:
       - record: "feed_transport_latency_ms:all_venues_p99"
         expr: histogram_quantile(0.99, feed_transport_latency_ms:all_venues_rate5m)
 
+      # --- live:* aliaser til alerts/dashboards (globale)
+      - record: "live:transport_latency_ms_p95"
+        expr: histogram_quantile(0.95, sum by (le) (rate(feed_transport_latency_ms_bucket[5m])))
+      - record: "live:transport_latency_ms_p99"
+        expr: histogram_quantile(0.99, sum by (le) (rate(feed_transport_latency_ms_bucket[5m])))
+
   # -------------------------
   # Feature compute latency (histogram)
   # -------------------------
   - name: livefeed_features_latency
     interval: 30s
     rules:
+      # Pre-aggregation per feature
       - record: "feature_compute_ms:rate5m"
         expr: sum by (le, feature) (rate(feature_compute_ms_bucket[5m]))
 
+      # p95/p99 per feature
       - record: "feature_compute_ms:p95"
         expr: histogram_quantile(0.95, feature_compute_ms:rate5m)
       - record: "feature_compute_ms:p99"
         expr: histogram_quantile(0.99, feature_compute_ms:rate5m)
 
+      # Global pre-aggregation og kvantiler
       - record: "feature_compute_ms:all_features_rate5m"
         expr: sum by (le) (rate(feature_compute_ms_bucket[5m]))
       - record: "feature_compute_ms:all_features_p95"
@@ -46,13 +55,19 @@ groups:
       - record: "feature_compute_ms:all_features_p99"
         expr: histogram_quantile(0.99, feature_compute_ms:all_features_rate5m)
 
+      # --- live:* aliaser (globale)
+      - record: "live:feature_latency_ms_p95"
+        expr: histogram_quantile(0.95, sum by (le) (rate(feature_compute_ms_bucket[5m])))
+      - record: "live:feature_latency_ms_p99"
+        expr: histogram_quantile(0.99, sum by (le) (rate(feature_compute_ms_bucket[5m])))
+
   # -------------------------
   # Bars per sekund
   # -------------------------
   - name: livefeed_bars
     interval: 30s
     rules:
-      # Per venue og samlet – både 1m og 5m, så du kan vælge i Grafana
+      # Per venue og samlet – både 1m og 5m
       - record: "feed_bars:rate1m"
         expr: sum by (venue) (rate(feed_bars_total[1m]))
       - record: "feed_bars:rate1m_total"
@@ -61,6 +76,10 @@ groups:
         expr: sum by (venue) (rate(feed_bars_total[5m]))
       - record: "feed_bars:rate5m_total"
         expr: sum(rate(feed_bars_total[5m]))
+
+      # --- live:* alias (global)
+      - record: "live:bars_per_sec"
+        expr: sum(rate(feed_bars_total[1m]))
 
   # -------------------------
   # Reconnects
@@ -86,6 +105,10 @@ groups:
       - record: "feed_bar_close_lag_ms:max5m"
         expr: max without (instance) (max_over_time(feed_bar_close_lag_ms[5m]))
 
+      # --- live:* alias i sekunder (global 5m max) til alerts
+      - record: "live:bar_close_lag_s_max"
+        expr: max without (instance) (max_over_time(feed_bar_close_lag_ms[5m])) / 1000
+
   # -------------------------
   # Queue depth
   # -------------------------
@@ -95,6 +118,10 @@ groups:
       - record: "feed_queue_depth:max"
         expr: max without (instance) (feed_queue_depth)
       - record: "feed_queue_depth:max5m"
+        expr: max without (instance) (max_over_time(feed_queue_depth[5m]))
+
+      # --- live:* alias (global 5m max)
+      - record: "live:queue_depth_max"
         expr: max without (instance) (max_over_time(feed_queue_depth[5m]))
 
   # -------------------------
