@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: LiveFeed                     # Visningsnavn i Grafana
+    uid: livefeed-provider             # Stabil UID (bruges af Grafana internt)
+    orgId: 1
+    type: file
+    folder: "Live Feed"                # Dashboards placeres i denne mappe (oprettes automatisk)
+    disableDeletion: true              # Beskyt mod utilsigtet sletning ved filomlægning i git
+    allowUiUpdates: true               # Tillad at gemme ændringer via UI (persist via DB)
+    updateIntervalSeconds: 15          # Scan-frekvens for ændringer på disk
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false # Behold én fast mappe (ignorer undermappestruktur)

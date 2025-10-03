@@ -1,0 +1,219 @@
+# ops/prometheus/tests/alerts_test.yml
+rule_files:
+  - ../alerts.yml
+  - ../recording_rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # 1) NoBarsIn5m (per venue)
+  - name: nobars_triggers_per_venue
+    interval: 1m
+    input_series:
+      - series: 'feed_bars_total{venue="binance"}'
+        values: '0x20'
+    alert_rule_test:
+      - alertname: NoBarsIn5m
+        eval_time: 11m
+        exp_alerts:
+          - exp_labels:
+              alertname: NoBarsIn5m
+              service: live_connector
+              severity: critical
+              venue: binance
+            exp_annotations:
+              summary: "Ingen bars i 5m for venue binance"
+              description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue binance (feed_bars:rate5m == 0)."
+
+  # 2) HighBarCloseLag (venue,symbol) > 3000
+  - name: bar_close_lag_high_after_5m
+    interval: 1m
+    input_series:
+      - series: 'feed_bar_close_lag_ms{venue="binance",symbol="BTCUSDT"}'
+        values: '1000x5 4000x3'
+    alert_rule_test:
+      - alertname: HighBarCloseLag
+        eval_time: 8m
+        exp_alerts:
+          - exp_labels:
+              alertname: HighBarCloseLag
+              service: live_connector
+              severity: warning
+              venue: binance
+              symbol: BTCUSDT
+            exp_annotations:
+              summary: "Bar close lag > 3s (seneste 5m) for binance BTCUSDT"
+              description: "Maks bar-close lag overstiger 3000 ms for binance BTCUSDT i mindst 2 minutter (glattet over 5m)."
+
+  # 3) ReconnectSpike (>3 på 5m per venue)
+  - name: reconnect_spike_gt3_on_5m
+    interval: 1m
+    input_series:
+      - series: 'feed_reconnects_total{venue="binance"}'
+        values: '0 1 2 3 4 5 6 7 8 9 10'
+    alert_rule_test:
+      - alertname: ReconnectSpike
+        eval_time: 7m
+        exp_alerts:
+          - exp_labels:
+              alertname: ReconnectSpike
+              service: live_connector
+              severity: warning
+              venue: binance
+            exp_annotations:
+              summary: "Reconnect spike (>3/5m) for binance"
+              description: "Antallet af reconnects er steget markant de sidste 5 minutter for venue binance (increase > 3)."
+
+  # 4) TransportLatencyP99High (p99 > 500ms, per venue/5m)
+  #    Kumulative buckets inkl. finite bucket >500 samt tung hale
+  - name: transport_latency_p99_high_per_venue
+    interval: 1m
+    input_series:
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="100"}'
+        values: '0+1x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="250"}'
+        values: '0+2x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="500"}'
+        values: '0+3x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="1000"}'
+        values: '0+5x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="+Inf"}'
+        values: '0+12x16'
+    alert_rule_test:
+      - alertname: TransportLatencyP99High
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              alertname: TransportLatencyP99High
+              service: live_connector
+              severity: warning
+              venue: binance
+            exp_annotations:
+              summary: "Transport p99 > 500ms (5m) for binance"
+              description: "P99-latenstiden for feed-transport er over 500 ms for venue binance (5m vindue)."
+
+  # 5) FeatureLatencyP99High (p99 > 50ms per feature/5m)
+  - name: feature_latency_p99_high_per_feature
+    interval: 1m
+    input_series:
+      - series: 'feature_compute_ms_bucket{feature="ema",le="10"}'
+        values: '0+1x16'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="25"}'
+        values: '0+2x16'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="50"}'
+        values: '0+3x16'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="100"}'
+        values: '0+5x16'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="+Inf"}'
+        values: '0+12x16'
+    alert_rule_test:
+      - alertname: FeatureLatencyP99High
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              alertname: FeatureLatencyP99High
+              service: live_connector
+              severity: warning
+              feature: ema
+            exp_annotations:
+              summary: "Feature ema p99 > 50ms (5m)"
+              description: "P99-beregningslatens for feature ema er over 50 ms (5m vindue)."
+
+  # 6) FeatureErrorsRate (>0 på 5m per feature)
+  - name: feature_errors_positive_increase
+    interval: 1m
+    input_series:
+      - series: 'feature_errors_total{feature="ema"}'
+        values: '0 0 0 0 0 1 1 2 2 3 3'
+    alert_rule_test:
+      - alertname: FeatureErrorsRate
+        eval_time: 8m
+        exp_alerts:
+          - exp_labels:
+              alertname: FeatureErrorsRate
+              service: live_connector
+              severity: critical
+              feature: ema
+            exp_annotations:
+              summary: "Feature-fejl detekteret for ema"
+              description: "Der er registreret fejl i feature-beregninger de seneste 5 minutter for feature ema (increase > 0)."
+
+  # 7) QueueDepthHigh (max_over_time[5m] > 1000 per venue)
+  #    Giv længere høj-periode + eval_time buffer til for:2m
+  - name: queue_depth_high_after_sustained_load
+    interval: 1m
+    input_series:
+      - series: 'feed_queue_depth{venue="binance"}'
+        values: '500x5 1201x4'   # 4 min over 1000
+    alert_rule_test:
+      - alertname: QueueDepthHigh
+        eval_time: 9m            # 5m lav + 4m høj → har >2m for-vindue inden 9m
+        exp_alerts:
+          - exp_labels:
+              alertname: QueueDepthHigh
+              service: live_connector
+              severity: warning
+              venue: binance
+            exp_annotations:
+              summary: "Kødybde > 1000 (seneste 5m) for binance"
+              description: "Den målte kødybde har været høj i længere tid for venue binance (max_over_time[5m] > 1000)."
+
+  # 8) GlobalTransportP99High (live:transport_latency_ms_p99 > 250ms)
+  - name: global_transport_p99_high
+    interval: 1m
+    input_series:
+      # Venue A
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="100"}'
+        values: '0+1x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="250"}'
+        values: '0+2x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="500"}'
+        values: '0+3x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="1000"}'
+        values: '0+5x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="+Inf"}'
+        values: '0+12x16'
+      # Venue B
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="100"}'
+        values: '0+1x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="250"}'
+        values: '0+2x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="500"}'
+        values: '0+3x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="1000"}'
+        values: '0+5x16'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="+Inf"}'
+        values: '0+12x16'
+    alert_rule_test:
+      - alertname: GlobalTransportP99High
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              alertname: GlobalTransportP99High
+              service: live_connector
+              severity: critical
+            exp_annotations:
+              summary: "Global transport p99 > 250ms (5m)"
+              description: "Global p99 for transport-latency ligger over 250 ms i mindst 5 minutter."
+
+  # 9) GlobalBarCloseLagHigh (live:bar_close_lag_s_max > 1.5s i 3m)
+  - name: global_bar_close_lag_high
+    interval: 1m
+    input_series:
+      - series: 'feed_bar_close_lag_ms{venue="binance",symbol="ETHUSDT"}'
+        values: '800x4 2000x5'
+      - series: 'feed_bar_close_lag_ms{venue="binance",symbol="BTCUSDT"}'
+        values: '700x9'
+    alert_rule_test:
+      - alertname: GlobalBarCloseLagHigh
+        eval_time: 9m
+        exp_alerts:
+          - exp_labels:
+              alertname: GlobalBarCloseLagHigh
+              service: live_connector
+              severity: warning
+              venue: binance
+              symbol: ETHUSDT
+            exp_annotations:
+              summary: "Global bar-close lag > 1.5s (5m)"
+              description: "Det globale 5m-maksimum for bar-close lag overstiger 1.5 sekunder i mindst 3 minutter."
