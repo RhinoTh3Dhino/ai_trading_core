@@ -6,12 +6,13 @@ rule_files:
 evaluation_interval: 1m
 
 tests:
-  # 1) NoBarsIn5m (per venue)
+  # 1) NoBarsIn5m (per venue) – rate over 5m = 0
   - name: nobars_triggers_per_venue
     interval: 1m
     input_series:
       - series: 'feed_bars_total{venue="binance"}'
-        values: '0x20'
+        # 12 minutter uden stigning → rate5m == 0
+        values: '0 0 0 0 0 0 0 0 0 0 0 0'
     alert_rule_test:
       - alertname: NoBarsIn5m
         eval_time: 11m
@@ -25,12 +26,13 @@ tests:
               summary: "Ingen bars i 5m for venue binance"
               description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue binance (feed_bars:rate5m == 0)."
 
-  # 2) HighBarCloseLag (venue,symbol) > 3000
+  # 2) HighBarCloseLag (venue,symbol) > 3000 ms (5m vindue, for:2m)
   - name: bar_close_lag_high_after_5m
     interval: 1m
     input_series:
       - series: 'feed_bar_close_lag_ms{venue="binance",symbol="BTCUSDT"}'
-        values: '1000x5 4000x3'
+        # Først 5m under threshold, derefter 4m over → vindue fyldes og for:2m opfyldes
+        values: '1000 1000 1000 1000 1000 3500 3600 3700 3800 3800'
     alert_rule_test:
       - alertname: HighBarCloseLag
         eval_time: 8m
@@ -45,11 +47,12 @@ tests:
               summary: "Bar close lag > 3s (seneste 5m) for binance BTCUSDT"
               description: "Maks bar-close lag overstiger 3000 ms for binance BTCUSDT i mindst 2 minutter (glattet over 5m)."
 
-  # 3) ReconnectSpike (>3 på 5m per venue)
+  # 3) ReconnectSpike (>3 pr. 5m per venue) – increase over 5m
   - name: reconnect_spike_gt3_on_5m
     interval: 1m
     input_series:
       - series: 'feed_reconnects_total{venue="binance"}'
+        # Monotont stigende counter hvert minut
         values: '0 1 2 3 4 5 6 7 8 9 10'
     alert_rule_test:
       - alertname: ReconnectSpike
@@ -65,20 +68,20 @@ tests:
               description: "Antallet af reconnects er steget markant de sidste 5 minutter for venue binance (increase > 3)."
 
   # 4) TransportLatencyP99High (p99 > 500ms, per venue/5m)
-  #    Kumulative buckets inkl. finite bucket >500 samt tung hale
+  #    Kumulative histogram-buckets, hvor hale >500ms sikrer p99>500
   - name: transport_latency_p99_high_per_venue
     interval: 1m
     input_series:
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="100"}'
-        values: '0+1x16'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="250"}'
-        values: '0+2x16'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="500"}'
-        values: '0+3x16'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="1000"}'
-        values: '0+5x16'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="+Inf"}'
-        values: '0+12x16'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
     alert_rule_test:
       - alertname: TransportLatencyP99High
         eval_time: 12m
@@ -97,15 +100,15 @@ tests:
     interval: 1m
     input_series:
       - series: 'feature_compute_ms_bucket{feature="ema",le="10"}'
-        values: '0+1x16'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
       - series: 'feature_compute_ms_bucket{feature="ema",le="25"}'
-        values: '0+2x16'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
       - series: 'feature_compute_ms_bucket{feature="ema",le="50"}'
-        values: '0+3x16'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
       - series: 'feature_compute_ms_bucket{feature="ema",le="100"}'
-        values: '0+5x16'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
       - series: 'feature_compute_ms_bucket{feature="ema",le="+Inf"}'
-        values: '0+12x16'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
     alert_rule_test:
       - alertname: FeatureLatencyP99High
         eval_time: 12m
@@ -138,16 +141,16 @@ tests:
               summary: "Feature-fejl detekteret for ema"
               description: "Der er registreret fejl i feature-beregninger de seneste 5 minutter for feature ema (increase > 0)."
 
-  # 7) QueueDepthHigh (max_over_time[5m] > 1000 per venue)
-  #    Giv længere høj-periode + eval_time buffer til for:2m
+  # 7) QueueDepthHigh (max_over_time[5m] > 1000 per venue) – for:2m
   - name: queue_depth_high_after_sustained_load
     interval: 1m
     input_series:
       - series: 'feed_queue_depth{venue="binance"}'
-        values: '500x5 1201x4'   # 4 min over 1000
+        # 5m med 500, derefter 4m med 1201 → max_over_time>1000 og holder i >2m
+        values: '500 500 500 500 500 1201 1201 1201 1201'
     alert_rule_test:
       - alertname: QueueDepthHigh
-        eval_time: 9m            # 5m lav + 4m høj → har >2m for-vindue inden 9m
+        eval_time: 9m
         exp_alerts:
           - exp_labels:
               alertname: QueueDepthHigh
@@ -158,32 +161,32 @@ tests:
               summary: "Kødybde > 1000 (seneste 5m) for binance"
               description: "Den målte kødybde har været høj i længere tid for venue binance (max_over_time[5m] > 1000)."
 
-  # 8) GlobalTransportP99High (live:transport_latency_ms_p99 > 250ms)
+  # 8) GlobalTransportP99High (samlet p99 > 250ms på tværs af venues / 5m)
   - name: global_transport_p99_high
     interval: 1m
     input_series:
-      # Venue A
+      # Venue A (binance)
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="100"}'
-        values: '0+1x16'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="250"}'
-        values: '0+2x16'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="500"}'
-        values: '0+3x16'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="1000"}'
-        values: '0+5x16'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
       - series: 'feed_transport_latency_ms_bucket{venue="binance",le="+Inf"}'
-        values: '0+12x16'
-      # Venue B
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
+      # Venue B (coinbase)
       - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="100"}'
-        values: '0+1x16'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
       - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="250"}'
-        values: '0+2x16'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
       - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="500"}'
-        values: '0+3x16'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
       - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="1000"}'
-        values: '0+5x16'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
       - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="+Inf"}'
-        values: '0+12x16'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
     alert_rule_test:
       - alertname: GlobalTransportP99High
         eval_time: 12m
@@ -196,14 +199,15 @@ tests:
               summary: "Global transport p99 > 250ms (5m)"
               description: "Global p99 for transport-latency ligger over 250 ms i mindst 5 minutter."
 
-  # 9) GlobalBarCloseLagHigh (live:bar_close_lag_s_max > 1.5s i 3m)
+  # 9) GlobalBarCloseLagHigh (globalt max > 1.5s i 3m/5m vindue)
   - name: global_bar_close_lag_high
     interval: 1m
     input_series:
       - series: 'feed_bar_close_lag_ms{venue="binance",symbol="ETHUSDT"}'
-        values: '800x4 2000x5'
+        # 4m ~0.8s, derefter 5m ~2.0s
+        values: '800 800 800 800 2000 2000 2000 2000 2000'
       - series: 'feed_bar_close_lag_ms{venue="binance",symbol="BTCUSDT"}'
-        values: '700x9'
+        values: '700 700 700 700 700 700 700 700 700'
     alert_rule_test:
       - alertname: GlobalBarCloseLagHigh
         eval_time: 9m
