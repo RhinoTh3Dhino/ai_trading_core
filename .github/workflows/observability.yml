@@ -1,20 +1,23 @@
 name: observability
 
 on:
+  # Kør på alle branches ved push
   push:
-    paths:
-      - "bot/live_connector/**"
-      - "ops/**"
-      - "tests/**"
-      - ".github/workflows/observability.yml"
+    branches: ["**"]
+    # hvis du vil spare minutter, kan du tilføje paths-ignore i stedet for hårde paths
+    # paths-ignore:
+    #   - "docs/**"
+    #   - "*.md"
+  # Kør på PR'er fra alle branches
   pull_request:
-    paths:
-      - "bot/live_connector/**"
-      - "ops/**"
-      - "tests/**"
-      - ".github/workflows/observability.yml"
+    branches: ["**"]
+    # paths-ignore:
+    #   - "docs/**"
+    #   - "*.md"
+  # Daglig røgalarm
   schedule:
-    - cron: "0 5 * * *"   # daglig check
+    - cron: "0 5 * * *"
+  # Manuelt kick i Actions UI
   workflow_dispatch:
 
 concurrency:
@@ -161,7 +164,7 @@ jobs:
             "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prom/recording_rules.yml
 
-      # ✅ NYT: promtool enhedstests af alerts (betinget step)
+      # ✅ promtool enhedstests af alerts (betinget)
       - name: promtool test alert rules (unit)
         shell: bash
         run: |
