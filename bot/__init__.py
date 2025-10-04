@@ -1,61 +1,69 @@
 # bot/__init__.py
 """
-Package init, der sikrer at Prometheus-metrikker for feed & features
-er registreret idempotent i den proces, der kører appen.
+Package init for 'bot'.
 
-Design:
-- Trin 1: Registrér "core" metrikker via bot.metrics_core (idempotent).
-- Trin 2: Hvis live_connector.metrics findes, kør ensure_registered()
-          og (valgfrit) bootstrap_core_metrics().
+Formål
+------
+- Sørg for, at generiske/core Prometheus-metrikker er tilgængelige tidligt.
+- Undgå dobbelt-registrering af live-connector metrikker, som ellers kan
+  crashe processer i CI/uvicorn med "Duplicated timeseries in CollectorRegistry".
 
-Begge trin er failsafe: Exceptions sluges, så importen af 'bot' aldrig
-vælter app/tests.
+Design
+------
+- Vi registrerer KUN 'core' metrikker her via bot.metrics_core (idempotent).
+- Live-connector-metrikker (bot.live_connector.metrics.ensure_registered)
+  kaldes IKKE her. De kaldes i de komponenter, der faktisk starter live-
+  connectoren (runner/engine), så de ikke bliver dobbelt-registreret.
 
-Env-styring:
-- METRICS_EAGER=0/1     (default: 1)  → slå eager init helt til/fra
-- METRICS_BOOTSTRAP=0/1 (default: 0)  → om bootstrap skal køres (observe(0) m.m.)
+Env-styring
+-----------
+- METRICS_EAGER=0/1     (default: 1)  → om core-metrikker registreres ved import.
+- METRICS_EAGER_LIVE=0/1 (default: 0) → (valgfrit) tving eager registrering af
+                                        live-connector-metrikker her (brug kun
+                                        hvis du VED, at processen ikke også
+                                        gør det senere).
+- METRICS_BOOTSTRAP=0/1 (default: 0)  → hvis METRICS_EAGER_LIVE=1, kan vi
+                                        (valgfrit) kalde bootstrap_core_metrics().
 """
 
 from __future__ import annotations
 import os
 
+
 def _env_on(name: str, default: str = "1") -> bool:
     return os.getenv(name, default).strip().lower() not in {"0", "false", "no", "off"}
 
-# Idempotens-flag pr. proces
-_CORE_INIT_DONE = False
-_METRICS_ENSURED = False
-_METRICS_BOOTSTRAPPED = False
 
+# --- Trin 1: Core-metrikker (idempotent, ufarligt) ----------------------------
 if _env_on("METRICS_EAGER", "1"):
-    # Trin 1: Registrér core-metrics fra bot.metrics_core (idempotent)
-    if not _CORE_INIT_DONE:
-        try:
-            from .metrics_core import init_core_metrics  # type: ignore
-            init_core_metrics()   # bør selv være idempotent
-            _CORE_INIT_DONE = True
-        except Exception:
-            # Må ikke blokere import af bot-pakken
-            pass
+    try:
+        # Denne import udfører registreringen idempotent
+        from .metrics_core import init_core_metrics  # type: ignore
+        init_core_metrics()
+    except Exception:
+        # MÅ IKKE vælte import af 'bot' – tests/app skal altid kunne starte
+        pass
 
-    # Trin 2: Brug live_connector.metrics hvis det findes
+
+# --- Trin 2: (FRIVILLIGT) Live-connector metrikker ----------------------------
+# Som udgangspunkt gør vi IKKE dette her, for at undgå dobbelt-registrering.
+# Brug KUN denne blok, hvis du specifikt sætter METRICS_EAGER_LIVE=1 i en
+# proces, som ellers ikke selv kalder ensure_registered() senere.
+if _env_on("METRICS_EAGER_LIVE", "0"):
     try:
         from .live_connector import metrics as _m  # type: ignore
 
-        if not _METRICS_ENSURED:
-            try:
-                _m.ensure_registered()
-                _METRICS_ENSURED = True
-            except Exception:
-                pass
+        # Registrér live-metrikker idempotent
+        try:
+            _m.ensure_registered()
+        except Exception:
+            pass
 
-        # Bootstrap kun hvis ønsket via env og ikke allerede gjort
-        if _env_on("METRICS_BOOTSTRAP", "0") and not _METRICS_BOOTSTRAPPED:
+        # (Valgfrit) Bootstrap – fx så histogram-buckets er synlige straks
+        if _env_on("METRICS_BOOTSTRAP", "0"):
             try:
-                # Skal gerne være idempotent; vi beskytter alligevel med flag
                 if hasattr(_m, "bootstrap_core_metrics"):
                     _m.bootstrap_core_metrics()
-                _METRICS_BOOTSTRAPPED = True
             except Exception:
                 pass
 
