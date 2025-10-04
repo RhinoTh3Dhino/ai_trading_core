@@ -4,26 +4,16 @@ Package init for 'bot'.
 
 Formål
 ------
-- Sørg for, at generiske/core Prometheus-metrikker er tilgængelige tidligt.
-- Undgå dobbelt-registrering af live-connector metrikker, som ellers kan
-  crashe processer i CI/uvicorn med "Duplicated timeseries in CollectorRegistry".
+- Undgå dobbelt-registrering af Prometheus-metrikker ved processtart (CI/uvicorn).
+- Registrér IKKE live-connector metrikker ved import.
+- Registrér IKKE core-metrikker automatisk som default (kan tændes via env).
 
-Design
-------
-- Vi registrerer KUN 'core' metrikker her via bot.metrics_core (idempotent).
-- Live-connector-metrikker (bot.live_connector.metrics.ensure_registered)
-  kaldes IKKE her. De kaldes i de komponenter, der faktisk starter live-
-  connectoren (runner/engine), så de ikke bliver dobbelt-registreret.
-
-Env-styring
------------
-- METRICS_EAGER=0/1     (default: 1)  → om core-metrikker registreres ved import.
-- METRICS_EAGER_LIVE=0/1 (default: 0) → (valgfrit) tving eager registrering af
-                                        live-connector-metrikker her (brug kun
-                                        hvis du VED, at processen ikke også
-                                        gør det senere).
-- METRICS_BOOTSTRAP=0/1 (default: 0)  → hvis METRICS_EAGER_LIVE=1, kan vi
-                                        (valgfrit) kalde bootstrap_core_metrics().
+Miljøvariable
+-------------
+- METRICS_EAGER=0/1       (default: 0)  → hvis 1, registreres core-metrikker ved import.
+- METRICS_EAGER_LIVE=0/1  (default: 0)  → hvis 1, registreres live-metrikker ved import
+                                          (brug KUN i processer der ellers ikke gør det).
+- METRICS_BOOTSTRAP=0/1   (default: 0)  → hvis METRICS_EAGER_LIVE=1, kaldes bootstrap_core_metrics().
 """
 
 from __future__ import annotations
@@ -34,39 +24,35 @@ def _env_on(name: str, default: str = "1") -> bool:
     return os.getenv(name, default).strip().lower() not in {"0", "false", "no", "off"}
 
 
-# --- Trin 1: Core-metrikker (idempotent, ufarligt) ----------------------------
-if _env_on("METRICS_EAGER", "1"):
+# --- Core-metrikker (valgfrit, default OFF) -----------------------------------
+# Bemærk: Disse kan overlappe live-connectorens navne i nogle setups.
+# Vi lader dem derfor være slukket som default, så runner ikke crasher i CI.
+if _env_on("METRICS_EAGER", "0"):
     try:
-        # Denne import udfører registreringen idempotent
+        # Skal være idempotent inde i metrics_core
         from .metrics_core import init_core_metrics  # type: ignore
         init_core_metrics()
     except Exception:
-        # MÅ IKKE vælte import af 'bot' – tests/app skal altid kunne starte
+        # Må aldrig vælte import af pakken
         pass
 
 
-# --- Trin 2: (FRIVILLIGT) Live-connector metrikker ----------------------------
-# Som udgangspunkt gør vi IKKE dette her, for at undgå dobbelt-registrering.
-# Brug KUN denne blok, hvis du specifikt sætter METRICS_EAGER_LIVE=1 i en
-# proces, som ellers ikke selv kalder ensure_registered() senere.
+# --- Live-connector metrikker (FRIVILLIGT, default OFF) -----------------------
+# Kald IKKE dette ved import som standard. Runner/startup håndterer det selv.
 if _env_on("METRICS_EAGER_LIVE", "0"):
     try:
         from .live_connector import metrics as _m  # type: ignore
-
-        # Registrér live-metrikker idempotent
         try:
-            _m.ensure_registered()
+            _m.ensure_registered()  # idempotent i modulet, men vi holder det slukket her
         except Exception:
             pass
 
-        # (Valgfrit) Bootstrap – fx så histogram-buckets er synlige straks
         if _env_on("METRICS_BOOTSTRAP", "0"):
             try:
                 if hasattr(_m, "bootstrap_core_metrics"):
                     _m.bootstrap_core_metrics()
             except Exception:
                 pass
-
     except Exception:
         # Må ikke blokere import af bot-pakken
         pass
