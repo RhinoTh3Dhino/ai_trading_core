@@ -26,6 +26,44 @@ tests:
               summary: "Ingen bars i 5m for venue binance"
               description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue binance (feed_bars:rate5m == 0)."
 
+  # 1b) NoBarsIn5m – OKX (ny for Fase 3)
+  - name: nobars_triggers_okx
+    interval: 1m
+    input_series:
+      - series: 'feed_bars_total{venue="okx"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - alertname: NoBarsIn5m
+        eval_time: 11m
+        exp_alerts:
+          - exp_labels:
+              alertname: NoBarsIn5m
+              service: live_connector
+              severity: critical
+              venue: okx
+            exp_annotations:
+              summary: "Ingen bars i 5m for venue okx"
+              description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue okx (feed_bars:rate5m == 0)."
+
+  # 1c) NoBarsIn5m – Kraken (ny for Fase 3)
+  - name: nobars_triggers_kraken
+    interval: 1m
+    input_series:
+      - series: 'feed_bars_total{venue="kraken"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - alertname: NoBarsIn5m
+        eval_time: 11m
+        exp_alerts:
+          - exp_labels:
+              alertname: NoBarsIn5m
+              service: live_connector
+              severity: critical
+              venue: kraken
+            exp_annotations:
+              summary: "Ingen bars i 5m for venue kraken"
+              description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue kraken (feed_bars:rate5m == 0)."
+
   # 2) HighBarCloseLag (venue,symbol) > 3000 ms (5m vindue, for:2m)
   - name: bar_close_lag_high_after_5m
     interval: 1m

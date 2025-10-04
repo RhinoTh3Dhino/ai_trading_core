@@ -1,0 +1,12 @@
+## config/symbol_map.yaml
+
+
+# Intern -> per-venue mapping
+BTCUSDT:
+  binance: BTCUSDT
+  okx: BTC-USDT
+  kraken: XBT/USDT
+ETHUSDT:
+  binance: ETHUSDT
+  okx: ETH-USDT
+  kraken: ETH/USDT
