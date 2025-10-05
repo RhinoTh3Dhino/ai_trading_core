@@ -4,16 +4,9 @@ on:
   # Kør på alle branches ved push
   push:
     branches: ["**"]
-    # hvis du vil spare minutter, kan du tilføje paths-ignore i stedet for hårde paths
-    # paths-ignore:
-    #   - "docs/**"
-    #   - "*.md"
   # Kør på PR'er fra alle branches
   pull_request:
     branches: ["**"]
-    # paths-ignore:
-    #   - "docs/**"
-    #   - "*.md"
   # Daglig røgalarm
   schedule:
     - cron: "0 5 * * *"
@@ -97,7 +90,9 @@ jobs:
             fi
             sleep 1
           done
-          curl -fsS http://localhost:8000/metrics | head -n 5
+          # Undgå curl exit 23 ved piping til head — skriv til fil og head bagefter
+          curl -fsS http://localhost:8000/metrics > /tmp/metrics_all.txt
+          head -n 5 /tmp/metrics_all.txt || true
 
       - name: Smoke /metrics contains core metrics
         run: |
@@ -191,6 +186,7 @@ jobs:
           name: observability-smoke-artifacts
           path: |
             /tmp/metrics.txt
+            /tmp/metrics_all.txt
             /tmp/app.log
 
   compose-integration:
