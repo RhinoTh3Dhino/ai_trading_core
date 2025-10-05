@@ -25,64 +25,43 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  PYTHONUNBUFFERED: "1"
+  MPLBACKEND: Agg
+  PYTHONNOUSERSITE: "1"
+  PROM_VERSION: "v3.6.0"      # samme pin som observability
+  # Dummy secrets til Alertmanager rendering
+  TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
+  TELEGRAM_CHAT_ID: "123456789"
+  AM_RENDER_DIR: /tmp/amcfg
+
 jobs:
   check-alerting:
     name: Prometheus, Alertmanager & Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    env:
-      # Prometheus / promtool version (pin – undgå :latest)
-      PROM_VERSION: "v3.6.0"
-
-      # Dummy-secrets til Alertmanager-render i CI
-      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
-      TELEGRAM_CHAT_ID: "123456789"
-      AM_RENDER_DIR: /tmp/amcfg
-
-      # Headless matplotlib + isolér fra usersite
-      MPLBACKEND: Agg
-      PYTHONNOUSERSITE: "1"
-      PYTHONUNBUFFERED: "1"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       # ---------- Python setup & deps ----------
-      - name: Set up Python
+      - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      - name: Install deps
+      - name: Upgrade pip & install deps
         run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          else
-            pip install fastapi uvicorn prometheus-client httpx pytest
-          fi
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+          # Fjern potentielle konfliktpakker
+          pip uninstall -y pandas-ta numba || true
+          # Lås coverage (runner-kompat)
+          pip install --force-reinstall "coverage==7.5.3"
 
-      - name: Expose repo on PYTHONPATH
-        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-
-      # Fjern konfliktpakker, som kan snige sig ind i runner-layers
-      - name: Ensure pandas-ta/numba not present
-        run: pip uninstall -y pandas-ta numba || true
-
-      # Lås coverage-version (mod kendt inkompatibilitet)
-      - name: Force coverage version
-        run: |
-          pip install --force-reinstall --upgrade "coverage==7.5.3"
-          python - <<'PY'
-          import coverage
-          print("COVERAGE:", coverage.__version__, "FROM:", coverage.__file__)
-          PY
-
-      # ---------- Start FastAPI (uvicorn) til metrics-test ----------
+      # ---------- Start uvicorn for /metrics-smoke ----------
       - name: Start uvicorn (background)
         run: |
           set -euxo pipefail
@@ -102,14 +81,20 @@ jobs:
             fi
             sleep 0.5
           done
-          echo "Service did not become ready in time"
-          echo "---- uvicorn.log (tail) ----"
+          echo "Service did not become ready"
           tail -n 200 /tmp/uvicorn.log || true
           exit 1
 
       # ---------- Kør tests ----------
       - name: Run pytest (quiet)
         run: pytest -q
+
+      - name: Stop uvicorn
+        if: always()
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then
+            kill "$(cat /tmp/uvicorn.pid)" || true
+          fi
 
       - name: Upload uvicorn log (on failure)
         if: failure()
@@ -119,51 +104,37 @@ jobs:
           path: /tmp/uvicorn.log
           if-no-files-found: warn
 
-      - name: Stop uvicorn
-        if: always()
-        run: |
-          if [ -f /tmp/uvicorn.pid ]; then
-            kill "$(cat /tmp/uvicorn.pid)" || true
-          fi
-
-      # ---------- Prometheus valideringer ----------
+      # ---------- Prometheus: sikre filer findes ----------
       - name: Ensure Prometheus rule files exist
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p ops/prometheus
-          # Minimale placeholders hvis filer mangler
           if [ ! -f ops/prometheus/alerts.yml ]; then
             printf '%s\n' \
               'groups:' \
               '  - name: alerts.empty' \
-              '    rules: []' \
-              > ops/prometheus/alerts.yml
+              '    rules: []' > ops/prometheus/alerts.yml
           fi
           if [ ! -f ops/prometheus/recording_rules.yml ]; then
             printf '%s\n' \
               'groups:' \
               '  - name: recordings.empty' \
-              '    rules: []' \
-              > ops/prometheus/recording_rules.yml
+              '    rules: []' > ops/prometheus/recording_rules.yml
           fi
-          # prometheus.yml skal eksistere – fail hvis den mangler
           test -f ops/prometheus/prometheus.yml
 
+      # ---------- promtool checks (med korrekt entrypoint) ----------
       - name: promtool check config (prometheus.yml)
         run: |
-          set -euxo pipefail
           docker run --rm \
             -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
-            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
-            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             --entrypoint=promtool \
             "prom/prometheus:${PROM_VERSION}" \
             check config /etc/prometheus/prometheus.yml
 
       - name: promtool check rules (alerts.yml)
         run: |
-          set -euxo pipefail
           docker run --rm \
             -v "$PWD/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
             --entrypoint=promtool \
@@ -172,7 +143,6 @@ jobs:
 
       - name: promtool check rules (recording_rules.yml)
         run: |
-          set -euxo pipefail
           docker run --rm \
             -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
             --entrypoint=promtool \
@@ -202,14 +172,13 @@ jobs:
 
       - name: amtool check-config (rendered alertmanager.yml + templates)
         run: |
-          set -euxo pipefail
           docker run --rm \
             -v "$AM_RENDER_DIR:/amcfg:ro" \
             -v "$PWD/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
             prom/alertmanager:v0.27.0 \
             amtool check-config /amcfg/alertmanager.yml
 
-      - name: Upload rendered Alertmanager config (on failure)
+      - name: Upload rendered Alertmanager (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
