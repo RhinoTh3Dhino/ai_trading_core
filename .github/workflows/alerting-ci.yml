@@ -124,11 +124,13 @@ jobs:
           fi
           test -f ops/prometheus/prometheus.yml
 
-      # ---------- promtool checks (med korrekt entrypoint) ----------
+      # ---------- promtool checks (med korrekt entrypoint & mounts) ----------
       - name: promtool check config (prometheus.yml)
         run: |
           docker run --rm \
             -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             --entrypoint=promtool \
             "prom/prometheus:${PROM_VERSION}" \
             check config /etc/prometheus/prometheus.yml
