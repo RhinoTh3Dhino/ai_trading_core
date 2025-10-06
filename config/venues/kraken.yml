@@ -1,0 +1,66 @@
+# config/venues/kraken.yml
+# Venue: Kraken – 1m OHLC live-feed (bruges af KrakenConnector)
+# Bemærk: Kraken public WS bruger channel: "ohlc-1" og pair som "XBT/USDT".
+# Symbol-mappet (fx XBT -> BTC) håndteres via config/symbol_map.yaml.
+
+venue: kraken
+
+# Sti til symbol-map (informativ, hvis din runner loader den andetsteds)
+symbol_map_path: config/symbol_map.yaml
+
+ws:
+  # Officielt Kraken WebSocket endpoint.
+  url: wss://ws.kraken.com
+
+  # Optional: ekstra headers hvis nødvendigt (typisk ikke for public OHLC)
+  headers: {}
+
+  # Ping/heartbeat for at holde forbindelsen i live
+  ping:
+    enabled: true
+    interval_sec: 20
+    payload: {}
+
+  # Reconnect-politik for robust drift
+  reconnect:
+    enabled: true
+    max_tries: 0               # 0 = uendelig (produktions-sikkerhed)
+    backoff:
+      initial_ms: 500
+      max_ms: 30000
+      multiplier: 2.0
+      jitter: true
+
+  # Abonnementer – 1m OHLC per pair
+  # Tilføj/fjern par efter behov. Sørg for, at symbol_map.yaml har matchende 'kraken' entries.
+  subs:
+    - channel: ohlc-1
+      pair: XBT/USDT
+    - channel: ohlc-1
+      pair: ETH/USDT
+    # Eksempler (kommentér ind hvis du har dem i symbol_map.yaml):
+    # - channel: ohlc-1
+    #   pair: SOL/USDT
+    # - channel: ohlc-1
+    #   pair: ADA/USDT
+    # - channel: ohlc-1
+    #   pair: XRP/USDT
+    # - channel: ohlc-1
+    #   pair: LTC/USDT
+
+# Lokale pipeline/queue hints (bruges kun hvis din runner læser dem)
+pipeline:
+  queue_name: live
+  max_queue: 10000
+
+# Metrics/observability – metrics auto-init sker i Python-koden
+metrics:
+  bootstrap: true        # METRICS_BOOTSTRAP=1 – pre-seed serier/buckets
+  auto_init: true        # METRICS_AUTO_INIT=1 – registrér metrics ved import
+  labels:
+    venue: kraken
+
+# Logging-hints
+logging:
+  level: INFO
+  json: false

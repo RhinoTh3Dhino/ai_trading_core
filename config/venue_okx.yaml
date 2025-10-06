@@ -1,0 +1,18 @@
+## config/venue_okx.yaml
+
+
+venue: okx
+ws:
+  url: wss://ws.okx.com:8443/ws/v5/public
+  subs:
+    - { channel: "candle1m", instId: "BTC-USDT" }
+    - { channel: "candle1m", instId: "ETH-USDT" }
+rest:
+  base_url: https://www.okx.com
+  klines_endpoint: /api/v5/market/candles
+  limit: 100
+ratelimit:
+  burst: 5
+  per_sec: 10
+notes:
+  - "Denne fil er forberedt til spot 1m candles. Udvid via subs/klines senere."
