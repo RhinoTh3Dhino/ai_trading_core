@@ -18,53 +18,51 @@ on:
       - "requirements.txt"
       - ".github/workflows/alerting-ci.yml"
 
+concurrency:
+  group: alerting-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+  MPLBACKEND: Agg
+  PYTHONNOUSERSITE: "1"
+  # Pin versions for determinism
+  PROM_VERSION: "v2.53.0"        # prom/prometheus
+  AM_VERSION: "v0.27.0"          # prom/alertmanager
+  TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
+  TELEGRAM_CHAT_ID: "123456789"
+  AM_RENDER_DIR: /tmp/amcfg
+
 jobs:
   check-alerting:
     name: Prometheus, Alertmanager & Tests
     runs-on: ubuntu-latest
-
-    env:
-      # Dummy-secrets til Alertmanager-render i CI
-      TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
-      TELEGRAM_CHAT_ID: "123456789"
-      AM_RENDER_DIR: /tmp/amcfg
-      # Headless matplotlib + isolér fra usersite
-      MPLBACKEND: Agg
-      PYTHONNOUSERSITE: "1"
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       # ---------- Python setup & deps ----------
-      - name: Set up Python
+      - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      - name: Install deps
-        run: pip install -r requirements.txt
-
-      - name: Expose repo on PYTHONPATH
-        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-
-      # Fjern konfliktpakker, som kan snige sig ind i runner-layers
-      - name: Ensure pandas-ta/numba not present
-        run: pip uninstall -y pandas-ta numba || true
-
-      # Lås coverage-version (mod kendt inkompatibilitet)
-      - name: Force coverage version
+      - name: Install dependencies
         run: |
-          pip install --force-reinstall --upgrade "coverage==7.5.3"
-          python - <<'PY'
-          import coverage
-          print("COVERAGE:", coverage.__version__, "FROM:", coverage.__file__)
-          PY
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          echo "PYTHONPATH=$PWD" >> "$GITHUB_ENV"
+          # Stabiliser coverage (samme version som i repo)
+          pip install --force-reinstall "coverage==7.5.3"
+          # Fjern tunge/ikke-brugte i CI hvis de skulle være listet
+          pip uninstall -y pandas-ta numba || true
 
-      # ---------- Start FastAPI (uvicorn) til metrics-test ----------
+      # ---------- Start uvicorn for /metrics-smoke ----------
       - name: Start uvicorn (background)
         run: |
           set -euxo pipefail
@@ -84,14 +82,20 @@ jobs:
             fi
             sleep 0.5
           done
-          echo "Service did not become ready in time"
-          echo "---- uvicorn.log (tail) ----"
+          echo "Service did not become ready"
           tail -n 200 /tmp/uvicorn.log || true
           exit 1
 
       # ---------- Kør tests ----------
       - name: Run pytest (quiet)
         run: pytest -q
+
+      - name: Stop uvicorn
+        if: always()
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then
+            kill "$(cat /tmp/uvicorn.pid)" || true
+          fi
 
       - name: Upload uvicorn log (on failure)
         if: failure()
@@ -101,27 +105,52 @@ jobs:
           path: /tmp/uvicorn.log
           if-no-files-found: warn
 
-      - name: Stop uvicorn
-        if: always()
+      # ---------- Prometheus: sikre filer findes ----------
+      - name: Ensure Prometheus rule files exist
+        shell: bash
         run: |
-          if [ -f /tmp/uvicorn.pid ]; then
-            kill "$(cat /tmp/uvicorn.pid)" || true
+          set -euxo pipefail
+          mkdir -p ops/prometheus
+          if [ ! -f ops/prometheus/alerts.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: alerts.empty' \
+              '    rules: []' > ops/prometheus/alerts.yml
           fi
+          if [ ! -f ops/prometheus/recording_rules.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: recordings.empty' \
+              '    rules: []' > ops/prometheus/recording_rules.yml
+          fi
+          test -f ops/prometheus/prometheus.yml
 
-      # ---------- Prometheus valideringer ----------
+      # ---------- promtool checks (korrekt entrypoint & mounts) ----------
       - name: promtool check config (prometheus.yml)
         run: |
           docker run --rm \
-            -v "$PWD/ops/prometheus:/etc/prometheus:ro" \
-            prom/prometheus:latest \
-            promtool check config /etc/prometheus/prometheus.yml
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "${{ github.workspace }}/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "${{ github.workspace }}/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
+            "prom/prometheus:${PROM_VERSION}" \
+            check config /etc/prometheus/prometheus.yml
 
       - name: promtool check rules (alerts.yml)
         run: |
           docker run --rm \
-            -v "$PWD/ops/prometheus:/etc/prometheus:ro" \
-            prom/prometheus:latest \
-            promtool check rules /etc/prometheus/alerts.yml
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/alerts.yml
+
+      - name: promtool check rules (recording_rules.yml)
+        run: |
+          docker run --rm \
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/recording_rules.yml
 
       # ---------- Alertmanager render + check ----------
       - name: Render Alertmanager config (envsubst med dummy-secrets)
@@ -130,7 +159,7 @@ jobs:
           docker run --rm \
             -e TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}" \
             -e TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID}" \
-            -v "$PWD/ops/alertmanager/alertmanager.runtime.yml:/tmpl/alertmanager.yml.tmpl:ro" \
+            -v "${{ github.workspace }}/ops/alertmanager/alertmanager.runtime.yml:/tmpl/alertmanager.yml.tmpl:ro" \
             -v "$AM_RENDER_DIR:/amcfg" \
             alpine:3.20 \
             sh -lc '
@@ -147,12 +176,13 @@ jobs:
       - name: amtool check-config (rendered alertmanager.yml + templates)
         run: |
           docker run --rm \
+            --entrypoint=amtool \
             -v "$AM_RENDER_DIR:/amcfg:ro" \
-            -v "$PWD/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
-            prom/alertmanager:v0.27.0 \
-            amtool check-config /amcfg/alertmanager.yml
+            -v "${{ github.workspace }}/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
+            "prom/alertmanager:${AM_VERSION}" \
+            check-config /amcfg/alertmanager.yml
 
-      - name: Upload rendered Alertmanager config (on failure)
+      - name: Upload rendered Alertmanager (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:

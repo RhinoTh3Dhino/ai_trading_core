@@ -1,20 +1,16 @@
 name: observability
 
 on:
+  # Kør på alle branches ved push
   push:
-    paths:
-      - "bot/live_connector/**"
-      - "ops/**"
-      - "tests/**"
-      - ".github/workflows/observability.yml"
+    branches: ["**"]
+  # Kør på PR'er fra alle branches
   pull_request:
-    paths:
-      - "bot/live_connector/**"
-      - "ops/**"
-      - "tests/**"
-      - ".github/workflows/observability.yml"
+    branches: ["**"]
+  # Daglig røgalarm
   schedule:
-    - cron: "0 5 * * *"   # daglig check
+    - cron: "0 5 * * *"
+  # Manuelt kick i Actions UI
   workflow_dispatch:
 
 concurrency:
@@ -94,7 +90,9 @@ jobs:
             fi
             sleep 1
           done
-          curl -fsS http://localhost:8000/metrics | head -n 5
+          # Undgå curl exit 23 ved piping til head — skriv til fil og head bagefter
+          curl -fsS http://localhost:8000/metrics > /tmp/metrics_all.txt
+          head -n 5 /tmp/metrics_all.txt || true
 
       - name: Smoke /metrics contains core metrics
         run: |
@@ -161,7 +159,7 @@ jobs:
             "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prom/recording_rules.yml
 
-      # ✅ NYT: promtool enhedstests af alerts (betinget step)
+      # ✅ promtool enhedstests af alerts (betinget)
       - name: promtool test alert rules (unit)
         shell: bash
         run: |
@@ -188,6 +186,7 @@ jobs:
           name: observability-smoke-artifacts
           path: |
             /tmp/metrics.txt
+            /tmp/metrics_all.txt
             /tmp/app.log
 
   compose-integration:

@@ -1,0 +1,35 @@
+{
+  "$id": "kline.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KlineEvent",
+  "type": "object",
+  "required": [
+    "venue",
+    "symbol",
+    "tf",
+    "open_time",
+    "close_time",
+    "o",
+    "h",
+    "l",
+    "c",
+    "v",
+    "is_final",
+    "event_ts_ms"
+  ],
+  "properties": {
+    "venue": { "type": "string" },
+    "symbol": { "type": "string" },
+    "tf": { "type": "string", "enum": ["1m"] },
+    "open_time": { "type": "integer", "minimum": 0 },
+    "close_time": { "type": "integer", "minimum": 0 },
+    "o": { "type": "number" },
+    "h": { "type": "number" },
+    "l": { "type": "number" },
+    "c": { "type": "number" },
+    "v": { "type": "number", "minimum": 0 },
+    "is_final": { "type": "boolean" },
+    "event_ts_ms": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

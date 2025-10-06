@@ -1,61 +1,16 @@
+# .coveragerc
 [run]
 branch = True
+relative_files = True
 source =
-    utils
+    bot
 
-omit =
-    # Tests og diverse
-    */tests/*
-    analysis/*
-    notebooks/*
-    scripts/*
-    trainers/*
-    visualization/*
-    ml/*
-    tuning/*
-    fetch_data/*
-    run.py
-    run_all.py
-    main.py
-    fix_paths.py
-    update_bot_status.py
-    test_imports.py
-    */__main__.py
-
-    # Hele bot/ og andre pakker måles ikke i denne fase
-    bot/*
-    backtest/*
-    features/*
-    ensemble/*
-    strategies/*
-    config/*
-
-    # utils-moduler vi ikke tester endnu eller som har sideeffekter
-    utils/log_utils.py
-    utils/logs_utils.py
-    utils/monitoring_utils.py
-    utils/metrics_utils.py
-    utils/api.py
-    utils/backup.py
-    utils/botstatus.py
-    utils/changelog.py
-    utils/check_feature_match.py
-    utils/csv_utils.py
-    utils/errors.py
-    utils/performance.py
-    utils/plot_utils.py
-    utils/google_drive_upload.py
-    utils/mlflow_utils.py
-    utils/ci_notify.py
-    utils/feature_logging.py
-    utils/ensemble_utils.py
-    utils/file_utils.py
-    utils/report_utils.py
-    utils/robust_utils.py
-    utils/state_store.py
-    utils/state_store_shelve.py
-    utils/project_path.py
-    utils/config_utils.py
+# Normalisér stier på tværs af OS og forskellige workdirs (især Windows)
+[paths]
+source =
+    bot
+    */ai_trading_core/bot
+    *\ai_trading_core\bot
 
 [report]
 # Skjul typiske "ikke-kørbare" linjer
@@ -65,6 +20,21 @@ exclude_lines =
     if TYPE_CHECKING:
     except ImportError:
     except ModuleNotFoundError:
+
+# Udeluk mapper/filer der ikke skal tælle i denne fase
+omit =
+    tests/*
+    ops/*
+    docs/*
+    notebooks/*
+    outputs/*
+    logs/*
+    backups/*
+    mlruns/*
+    data/*
+    config/*
+    **/__init__.py
+    **/conftest.py
 
 show_missing = True
 precision = 2
