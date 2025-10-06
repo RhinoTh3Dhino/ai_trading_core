@@ -1,4 +1,3 @@
-# ops/prometheus/tests/alerts_test.yml
 rule_files:
   - ../alerts.yml
   - ../recording_rules.yml

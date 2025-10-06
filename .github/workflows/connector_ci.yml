@@ -1,0 +1,30 @@
+name: connector-ci
+on:
+  pull_request:
+    paths:
+      - "bot/live_connector/**"
+      - "config/**"
+      - "tests/**"
+      - "ops/prometheus/tests/**"
+  push:
+    paths:
+      - "bot/live_connector/**"
+      - "config/**"
+      - "tests/**"
+      - "ops/prometheus/tests/**"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - run: pytest -q tests/venues tests/integration
+
+  promtool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v ${{ github.workspace }}/ops/prometheus:/p prom/prometheus promtool test rules /p/tests/alerts_test.yml
