@@ -30,7 +30,6 @@ env:
   MPLBACKEND: Agg
   PYTHONNOUSERSITE: "1"
   PROM_VERSION: "v3.6.0"      # samme pin som observability
-  # Dummy secrets til Alertmanager rendering
   TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
   TELEGRAM_CHAT_ID: "123456789"
   AM_RENDER_DIR: /tmp/amcfg
@@ -56,9 +55,7 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
           echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-          # Fjern potentielle konfliktpakker
           pip uninstall -y pandas-ta numba || true
-          # Lås coverage (runner-kompat)
           pip install --force-reinstall "coverage==7.5.3"
 
       # ---------- Start uvicorn for /metrics-smoke ----------
@@ -177,8 +174,9 @@ jobs:
           docker run --rm \
             -v "$AM_RENDER_DIR:/amcfg:ro" \
             -v "$PWD/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
+            --entrypoint=amtool \
             prom/alertmanager:v0.27.0 \
-            amtool check-config /amcfg/alertmanager.yml
+            check-config /amcfg/alertmanager.yml
 
       - name: Upload rendered Alertmanager (on failure)
         if: failure()
