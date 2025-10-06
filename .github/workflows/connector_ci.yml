@@ -1,30 +1,67 @@
 name: connector-ci
+
 on:
   pull_request:
     paths:
       - "bot/live_connector/**"
       - "config/**"
       - "tests/**"
-      - "ops/prometheus/tests/**"
+      - "ops/prometheus/**"
   push:
     paths:
       - "bot/live_connector/**"
       - "config/**"
       - "tests/**"
-      - "ops/prometheus/tests/**"
+      - "ops/prometheus/**"
 
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - run: pip install -r requirements.txt
-      - run: pytest -q tests/venues tests/integration
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pytest (venues + integration)
+        run: |
+          pytest -q tests/venues tests/integration
 
   promtool:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker run --rm -v ${{ github.workspace }}/ops/prometheus:/p prom/prometheus promtool test rules /p/tests/alerts_test.yml
+
+      - name: promtool rule tests
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus:/p" \
+            prom/prometheus:v2.53.0 \
+            test rules /p/tests/alerts_test.yml
+
+  alerting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: amtool alertmanager config check
+        run: |
+          set -euo pipefail
+          # Kun kør hvis alertmanager.yml findes (gør jobbet grøn selv hvis filen mangler)
+          if [ -f "${{ github.workspace }}/ops/prometheus/alertmanager.yml" ]; then
+            docker run --rm \
+              --entrypoint=amtool \
+              -v "${{ github.workspace }}/ops/prometheus:/p" \
+              prom/alertmanager:v0.26.0 \
+              check-config /p/alertmanager.yml
+          else
+            echo "No alertmanager.yml found; skipping amtool check."
+          fi

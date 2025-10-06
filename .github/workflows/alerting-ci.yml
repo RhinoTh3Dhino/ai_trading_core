@@ -29,7 +29,9 @@ env:
   PYTHONUNBUFFERED: "1"
   MPLBACKEND: Agg
   PYTHONNOUSERSITE: "1"
-  PROM_VERSION: "v3.6.0"      # samme pin som observability
+  # Pin versions for determinism
+  PROM_VERSION: "v2.53.0"        # prom/prometheus
+  AM_VERSION: "v0.27.0"          # prom/alertmanager
   TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
   TELEGRAM_CHAT_ID: "123456789"
   AM_RENDER_DIR: /tmp/amcfg
@@ -50,13 +52,15 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Upgrade pip & install deps
+      - name: Install dependencies
         run: |
           python -m pip install -U pip
           pip install -r requirements.txt
-          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-          pip uninstall -y pandas-ta numba || true
+          echo "PYTHONPATH=$PWD" >> "$GITHUB_ENV"
+          # Stabiliser coverage (samme version som i repo)
           pip install --force-reinstall "coverage==7.5.3"
+          # Fjern tunge/ikke-brugte i CI hvis de skulle være listet
+          pip uninstall -y pandas-ta numba || true
 
       # ---------- Start uvicorn for /metrics-smoke ----------
       - name: Start uvicorn (background)
@@ -121,30 +125,30 @@ jobs:
           fi
           test -f ops/prometheus/prometheus.yml
 
-      # ---------- promtool checks (med korrekt entrypoint & mounts) ----------
+      # ---------- promtool checks (korrekt entrypoint & mounts) ----------
       - name: promtool check config (prometheus.yml)
         run: |
           docker run --rm \
-            -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
-            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
-            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "${{ github.workspace }}/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "${{ github.workspace }}/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
             "prom/prometheus:${PROM_VERSION}" \
             check config /etc/prometheus/prometheus.yml
 
       - name: promtool check rules (alerts.yml)
         run: |
           docker run --rm \
-            -v "$PWD/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
             --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
             "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prom/alerts.yml
 
       - name: promtool check rules (recording_rules.yml)
         run: |
           docker run --rm \
-            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
             --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
             "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prom/recording_rules.yml
 
@@ -155,7 +159,7 @@ jobs:
           docker run --rm \
             -e TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}" \
             -e TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID}" \
-            -v "$PWD/ops/alertmanager/alertmanager.runtime.yml:/tmpl/alertmanager.yml.tmpl:ro" \
+            -v "${{ github.workspace }}/ops/alertmanager/alertmanager.runtime.yml:/tmpl/alertmanager.yml.tmpl:ro" \
             -v "$AM_RENDER_DIR:/amcfg" \
             alpine:3.20 \
             sh -lc '
@@ -172,10 +176,10 @@ jobs:
       - name: amtool check-config (rendered alertmanager.yml + templates)
         run: |
           docker run --rm \
-            -v "$AM_RENDER_DIR:/amcfg:ro" \
-            -v "$PWD/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
             --entrypoint=amtool \
-            prom/alertmanager:v0.27.0 \
+            -v "$AM_RENDER_DIR:/amcfg:ro" \
+            -v "${{ github.workspace }}/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
+            "prom/alertmanager:${AM_VERSION}" \
             check-config /amcfg/alertmanager.yml
 
       - name: Upload rendered Alertmanager (on failure)
