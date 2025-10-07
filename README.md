@@ -532,3 +532,79 @@ Opret planlagt opgave (hourly):
 schtasks /Create /SC HOURLY /TN "RotateCSV"      /TR "\"%CD%\.venv\Scripts\python.exe\" -m utils.logs_utils --glob \"%CD%\logs\*.csv\" --keep 50000" /F
 schtasks /Create /SC HOURLY /TN "RotateTextLog"  /TR "\"%CD%\.venv\Scripts\python.exe\" -m utils.log_utils --rotate \"%CD%\logs\bot.log\" --keep 200000" /F
 
+
+
+
+
+
+
+
+## README-udsnit (kort “Fase 3 – Venues”)
+## Ekstra venues: OKX + Kraken (Fase 3)
+
+Denne fase tilføjer to live-feeds:
+
+- OKX: 1m candles (candle1m) via bot/live_connector/venues/okx.py
+
+- Kraken: 1m OHLC (ohlc-1) i både array- og dict-format via bot/live_connector/venues/kraken.py
+
+Begge connectors bruger en fælles symbol-map, så interne symboler (fx BTCUSDT) kan mappes til venue-specifik notation (fx XBT/USDT).
+
+##Konfig
+
+- Symbol-map: config/symbol_map.yaml
+
+BTCUSDT:
+  binance: BTCUSDT
+  okx: BTC-USDT
+  kraken: XBT/USDT
+ETHUSDT:
+  binance: ETHUSDT
+  okx: ETH-USDT
+  kraken: ETH/USDT
+
+
+- Venue-filer:
+
+   - OKX: config/venues/okx.yml
+
+   - Kraken: config/venues/kraken.yml
+
+## Tests (unit + golden, ingen netværk)
+# kør kun venues- og integrationstests
+pytest -q -k "okx or kraken or metrics"
+# eller bare alt
+pytest
+
+
+Vi bootstrapper Prometheus-serier fra start (så bucket-linjer altid er synlige) og kører idempotent registrering i bot/live_connector/metrics.py.
+Lokal coverage ligger typisk ~60–70% for de berørte moduler.
+
+## /metrics “smoke” (lokalt)
+
+PowerShell (Windows):
+
+# engang – valgfrit: docker promtool check af alerts/rules
+docker run --rm `
+  --entrypoint=promtool `
+  -v "$PWD/ops/prometheus:/p:ro" `
+  prom/prometheus:v2.53.0 `
+  test rules /p/tests/alerts_test.yml
+
+# kør en lille uvicorn-app og bump metrics
+$env:METRICS_AUTO_INIT="1"; $env:METRICS_BOOTSTRAP="1"; $env:PYTHONPATH=(Get-Location).Path
+$code = @'
+import threading, time, urllib.request
+from bot.live_connector.metrics import make_metrics_app, inc_feed_bars_total
+import uvicorn
+app=make_metrics_app()
+srv=uvicorn.Server(uvicorn.Config(app,host="127.0.0.1",port=9000,log_level="warning"))
+t=threading.Thread(target=srv.run,daemon=True); t.start()
+time.sleep(1.0)
+for _ in range(3): inc_feed_bars_total("okx","BTCUSDT",1); time.sleep(0.2)
+print(urllib.request.urlopen("http://127.0.0.1:9000/metrics").read().decode()[:600])
+srv.should_exit=True; t.join(timeout=5)
+'@
+$tmp=New-TemporaryFile; $py="$($tmp.FullName).py"
+Set-Content -Path $py -Value $code -Encoding UTF8
+python $py
