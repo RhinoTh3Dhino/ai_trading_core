@@ -1,60 +1,83 @@
-# Brug altid LF (Unix-style) line endings for alle tekstfiler (anbefalet for Python/data)
-* text=auto eol=lf
+# =========================
+# STANDARD (default til LF)
+# =========================
+*             text=auto eol=lf
 
-# Python scripts og notebooks
-*.py  text eol=lf
-*.ipynb text eol=lf
+# =========================
+# KODE & NOTEBOOKS
+# =========================
+*.py          text eol=lf
+*.ipynb       text eol=lf
+*.pyi         text eol=lf
+*.patch       text eol=lf
+*.diff        text eol=lf
+*.rst         text eol=lf
+*.md          text eol=lf
+*.txt         text eol=lf
+*.csv         text eol=lf
+*.tsv         text eol=lf
+*.json        text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.ini         text eol=lf
+*.toml        text eol=lf
+*.env         text eol=lf
+*.conf        text eol=lf
+*.cfg         text eol=lf
+*.svg         text eol=lf
 
-# Tekstbaserede konfigurations- og requirementsfiler
-*.txt text eol=lf
-*.md  text eol=lf
-*.csv text eol=lf
-*.json text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.ini text eol=lf
-*.toml text eol=lf
-*.env text eol=lf
+# GitHub Workflows
+.github/workflows/*.yml text eol=lf
 
-# Shell-, batch- og scripts
-*.sh  text eol=lf
-*.ps1 text eol=lf
-*.bat text eol=crlf
-*.psm1 text eol=lf
+# Lockfiler (hold som tekst, LF)
+poetry.lock   text eol=lf
+Pipfile.lock  text eol=lf
+requirements*.txt text eol=lf
 
-# GitHub workflows
-*.github/workflows/* text eol=lf
+# =========================
+# SHELL / WINDOWS SCRIPTS
+# =========================
+*.sh          text eol=lf
+*.ps1         text eol=crlf
+*.psm1        text eol=crlf
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
 
-# Binære filer - ingen konvertering!
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.ico binary
-*.pdf binary
-*.zip binary
-*.tar binary
-*.gz binary
-*.h5 binary
-*.pt binary
-*.pkl binary
-*.pb binary
-*.whl binary
+# =========================
+# BINÆRE / MODELLER / ARKIVER
+# =========================
+*.png         binary
+*.jpg         binary
+*.jpeg        binary
+*.gif         binary
+*.ico         binary
+*.pdf         binary
+*.zip         binary
+*.tar         binary
+*.gz          binary
+*.7z          binary
 
-# Model- og vektorfiler
-*.onnx binary
-*.tflite binary
+# Data/ML-artefakter
+*.parquet     binary
+*.npy         binary
+*.npz         binary
+*.joblib      binary
+*.pkl         binary
+*.h5          binary
+*.keras       binary
+*.onnx        binary
+*.tflite      binary
+*.pt          binary
+*.pb          binary
+*.whl         binary
 
-# Microsoft Office og lignende
-*.xlsx binary
-*.xls binary
-*.docx binary
+# =========================
+# NOTEBOOK-OUTPUT FILTER (kræver lokal git filter-konfig)
+# =========================
+.ipynb        filter=strip-notebook-output
 
-# Fjern notebook outputs fra line ending konvertering (valgfrit, men god praksis)
-.ipynb filter=strip-notebook-output
-
-# Lad .gitattributes selv bruge LF
+# =========================
+# SELV-FILERS EOL
+# =========================
 .gitattributes text eol=lf
-
-# Lad .gitignore selv bruge LF
-.gitignore text eol=lf
+.gitignore     text eol=lf
