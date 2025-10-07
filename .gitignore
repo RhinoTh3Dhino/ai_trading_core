@@ -8,6 +8,19 @@ env/
 .venv_*/
 venv_*/
 .venv_tf_gpu/
+# Utilsigtede miljøer i repoet
+gdrive_env/
+gdrive_env/**
+
+# Sikkerhedsnet for miljørester hvor som helst
+**/.venv/
+**/venv/
+**/ENV/
+**/env/
+**/.venv_*/
+**/venv_*/
+**/Lib/site-packages/**
+**/Scripts/**
 
 # =========================
 # BACKUPS / LOGS / CACHE
@@ -30,6 +43,11 @@ outputs/
 !outputs/README.md
 !outputs/.gitkeep
 
+# Bevar små metadata-pegepinde (OK at tracke)
+!outputs/model_history.csv
+!outputs/metrics/*_latest.json
+!outputs/models/best_model.keras
+
 # Feature data – kun skabeloner/README
 outputs/feature_data/
 !outputs/feature_data/README.md
@@ -38,6 +56,10 @@ outputs/feature_data/
 # Arkiver og artifacts
 archives/
 artifacts/
+
+# Lokale grafer/billeder (ikke versioneres)
+graphs/
+!graphs/*.md
 
 # =========================
 # DATA & MODELLER
