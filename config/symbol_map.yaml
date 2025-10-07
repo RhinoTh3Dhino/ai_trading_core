@@ -6,10 +6,12 @@
 # maksimal kompatibilitet med connector-koden/tests.
 # ============================
 
+
+# Intern -> per-venue mapping
 BTCUSDT:
   binance: BTCUSDT
   okx: BTC-USDT
-  kraken: XBT/USDT   # Kraken bruger XBT i stedet for BTC
+  kraken: XBT/USDT
 
 ETHUSDT:
   binance: ETHUSDT
@@ -40,3 +42,4 @@ LTCUSDT:
 # 1) Tilføj flere symboler ved at følge samme mønster.
 # 2) Sørg for, at 'kraken' matcher præcis det par Kraken udsender (fx "XBT/USDT").
 # 3) Dine connectors kan nøjes med at læse de tre nøgler: binance, okx, kraken.
+
