@@ -1,4 +1,10 @@
-## config/symbol_map.yaml
+# ============================
+# config/symbol_map.yaml
+# ----------------------------
+# Intern -> per-venue mapping.
+# Hold det fladt (binance/okx/kraken: <exchange-symbol>) for
+# maksimal kompatibilitet med connector-koden/tests.
+# ============================
 
 
 # Intern -> per-venue mapping
@@ -6,7 +12,34 @@ BTCUSDT:
   binance: BTCUSDT
   okx: BTC-USDT
   kraken: XBT/USDT
+
 ETHUSDT:
   binance: ETHUSDT
   okx: ETH-USDT
   kraken: ETH/USDT
+
+SOLUSDT:
+  binance: SOLUSDT
+  okx: SOL-USDT
+  kraken: SOL/USDT
+
+ADAUSDT:
+  binance: ADAUSDT
+  okx: ADA-USDT
+  kraken: ADA/USDT
+
+XRPUSDT:
+  binance: XRPUSDT
+  okx: XRP-USDT
+  kraken: XRP/USDT
+
+LTCUSDT:
+  binance: LTCUSDT
+  okx: LTC-USDT
+  kraken: LTC/USDT
+
+# --- Noter ---
+# 1) Tilføj flere symboler ved at følge samme mønster.
+# 2) Sørg for, at 'kraken' matcher præcis det par Kraken udsender (fx "XBT/USDT").
+# 3) Dine connectors kan nøjes med at læse de tre nøgler: binance, okx, kraken.
+

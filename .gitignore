@@ -200,3 +200,10 @@ ops/compose/.env
 /DIT_TELEGRAM_BOT_TOKEN
 /7919277721
 DIT_*
+
+__pycache__/
+*.pyc
+.pytest_cache/
+htmlcov/
+reports/
+
