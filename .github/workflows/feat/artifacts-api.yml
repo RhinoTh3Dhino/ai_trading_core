@@ -1,5 +1,5 @@
 # .github/workflows/feat/artifacts-api.yml
-name: Persistens & Filhygiejne
+name: "Persistens & Filhygiejne"
 
 on:
   push:

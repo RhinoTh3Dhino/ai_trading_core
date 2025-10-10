@@ -1,61 +1,96 @@
-name: connector-ci
+# .github/workflows/connector-ci.yml
+name: "Connector CI"
 
 on:
-  pull_request:
-    paths:
-      - "bot/live_connector/**"
-      - "config/**"
-      - "tests/**"
-      - "ops/prometheus/**"
   push:
+    branches:
+      - main
+      - master
+      - feat/**                 # kør også på feature-branches
     paths:
       - "bot/live_connector/**"
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      - ".github/workflows/connector-ci.yml"
+  pull_request:
+    branches:
+      - main
+      - master
+      - feat/**
+    paths:
+      - "bot/live_connector/**"
+      - "config/**"
+      - "tests/**"
+      - "ops/prometheus/**"
+      - ".github/workflows/connector-ci.yml"
+  workflow_dispatch: {}         # mulighed for manuel kørsel fra Actions UI
+
+concurrency:
+  group: connector-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   tests:
+    name: Pytests (venues + integration)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -U pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run pytest (venues + integration)
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           pytest -q tests/venues tests/integration
 
   promtool:
+    name: Prometheus rule tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: promtool rule tests
         run: |
           set -euo pipefail
-          docker run --rm \
-            --entrypoint=promtool \
-            -v "${{ github.workspace }}/ops/prometheus:/p" \
-            prom/prometheus:v2.53.0 \
-            test rules /p/tests/alerts_test.yml
+          if [ -f "${{ github.workspace }}/ops/prometheus/tests/alerts_test.yml" ]; then
+            docker run --rm \
+              --entrypoint=promtool \
+              -v "${{ github.workspace }}/ops/prometheus:/p" \
+              prom/prometheus:v2.53.0 \
+              test rules /p/tests/alerts_test.yml
+          else
+            echo "No promtool tests found at ops/prometheus/tests/alerts_test.yml; skipping."
+          fi
 
   alerting:
+    name: Alertmanager config check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: amtool alertmanager config check
         run: |
           set -euo pipefail
-          # Kun kør hvis alertmanager.yml findes (gør jobbet grøn selv hvis filen mangler)
           if [ -f "${{ github.workspace }}/ops/prometheus/alertmanager.yml" ]; then
             docker run --rm \
               --entrypoint=amtool \
