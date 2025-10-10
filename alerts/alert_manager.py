@@ -1,9 +1,9 @@
 # alerts/alert_manager.py
 from __future__ import annotations
 
-from typing import Dict, List, Tuple, Any
-from datetime import datetime, timezone
 import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Tuple
 
 
 class AlertManager:
@@ -34,8 +34,8 @@ class AlertManager:
 
         self.last_sent_global: float = 0.0
         self.last_sent_by_symbol: Dict[str, float] = {}
-        self.dedupe_store: Dict[str, float] = {}             # key -> expiry_ts
-        self.lowprio_buffer: List[Tuple[float, dict]] = []    # [(ts_sec, payload), ...]
+        self.dedupe_store: Dict[str, float] = {}  # key -> expiry_ts
+        self.lowprio_buffer: List[Tuple[float, dict]] = []  # [(ts_sec, payload), ...]
         self._last_batch_ts: float = 0.0
 
     # ---------- interne helpers ----------
@@ -188,12 +188,21 @@ class AlertManager:
             per_side[side] = per_side.get(side, 0) + 1
             per_type[typ] = per_type.get(typ, 0) + 1
             if i < preview_max:
-                preview.append(f"{sym} {side} {typ} qty={p.get('qty', '')} lim={p.get('limit_price', '')}")
+                preview.append(
+                    f"{sym} {side} {typ} qty={p.get('qty', '')} lim={p.get('limit_price', '')}"
+                )
 
         # byg en enkel tekst
-        sym_str = ", ".join(f"{s}×{n}" for s, n in sorted(per_symbol.items(), key=lambda x: (-x[1], x[0])))
-        side_str = ", ".join(f"{s}×{n}" for s, n in sorted(per_side.items(), key=lambda x: (-x[1], x[0])))
-        type_str = ", ".join(f"{t}×{n}" for t, n in sorted(per_type.items(), key=lambda x: (-x[1], x[0])))
+        sym_str = ", ".join(
+            f"{s}×{n}"
+            for s, n in sorted(per_symbol.items(), key=lambda x: (-x[1], x[0]))
+        )
+        side_str = ", ".join(
+            f"{s}×{n}" for s, n in sorted(per_side.items(), key=lambda x: (-x[1], x[0]))
+        )
+        type_str = ", ".join(
+            f"{t}×{n}" for t, n in sorted(per_type.items(), key=lambda x: (-x[1], x[0]))
+        )
 
         header = f"📬 {count} lav-prio signaler (fra {count and int(t_last - t_first)}s vindue)"
         lines = [

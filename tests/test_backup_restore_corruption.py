@@ -3,7 +3,7 @@ import os
 import zipfile
 from datetime import datetime, timezone
 
-from bot.utils.backup import create_backup, verify_backup, append_botstatus
+from bot.utils.backup import append_botstatus, create_backup, verify_backup
 
 
 def test_corrupt_backup_detection_and_log(tmp_path):

@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
+
 import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 
@@ -54,7 +56,9 @@ def log_to_changelog(run_id, version, notes, changelog_path="CHANGELOG.md"):
     return entry
 
 
-def print_status(portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"):
+def print_status(
+    portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv",
+):
     """Printer portefølje-metrics som markdown."""
     if not os.path.exists(portfolio_metrics_path):
         msg = "Ingen portefølje-metrics fundet."
@@ -67,7 +71,9 @@ def print_status(portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_me
     return table
 
 
-def build_telegram_summary(run_id, portfolio_metrics_path, version="v1.0.0", extra_msg=None):
+def build_telegram_summary(
+    run_id, portfolio_metrics_path, version="v1.0.0", extra_msg=None
+):
     """Bygger en Telegram-besked baseret på metrics."""
     if not os.path.exists(portfolio_metrics_path):
         return "Ingen status tilgængelig."
@@ -115,16 +121,30 @@ def log_performance_to_history(
     os.makedirs(os.path.dirname(history_path), exist_ok=True)
 
     if (not os.path.exists(portfolio_metrics_path)) or force_dummy:
-        print(f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv")
+        print(
+            f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv"
+        )
         df = pd.DataFrame(
-            [{"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Navn": "Ingen data", "Balance": 0}]
+            [
+                {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Navn": "Ingen data",
+                    "Balance": 0,
+                }
+            ]
         )
     else:
         df = pd.read_csv(portfolio_metrics_path)
         df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if df.empty or not all(c in df.columns for c in ["Navn", "Balance"]):
             df = pd.DataFrame(
-                [{"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Navn": "Ingen data", "Balance": 0}]
+                [
+                    {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Navn": "Ingen data",
+                        "Balance": 0,
+                    }
+                ]
             )
 
     if os.path.exists(history_path):
@@ -139,7 +159,9 @@ if __name__ == "__main__":
     # Hurtig selvtest for coverage
     dummy_metrics = PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"
     os.makedirs(dummy_metrics.parent, exist_ok=True)
-    pd.DataFrame([{"Navn": "BTCUSDT", "Balance": 1000}]).to_csv(dummy_metrics, index=False)
+    pd.DataFrame([{"Navn": "BTCUSDT", "Balance": 1000}]).to_csv(
+        dummy_metrics, index=False
+    )
 
     update_bot_status("BotStatus.md", "test-run", dummy_metrics, force_dummy=False)
     log_to_changelog("test-run", "1.0.0", "Test note")

@@ -42,4 +42,3 @@ LTCUSDT:
 # 1) Tilføj flere symboler ved at følge samme mønster.
 # 2) Sørg for, at 'kraken' matcher præcis det par Kraken udsender (fx "XBT/USDT").
 # 3) Dine connectors kan nøjes med at læse de tre nøgler: binance, okx, kraken.
-

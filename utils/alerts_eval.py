@@ -30,9 +30,12 @@ _TG_SEND_MESSAGE = None
 _TG_SEND_DOCUMENT = None
 try:
     # Typisk eksisterer dette som utils/telegram_utils.py i dit repo
-    from utils.telegram_utils import send_message as _TG_SEND_MESSAGE  # type: ignore
+    from utils.telegram_utils import \
+        send_message as _TG_SEND_MESSAGE  # type: ignore
+
     try:
-        from utils.telegram_utils import send_document as _TG_SEND_DOCUMENT  # type: ignore
+        from utils.telegram_utils import \
+            send_document as _TG_SEND_DOCUMENT  # type: ignore
     except Exception:
         _TG_SEND_DOCUMENT = None
 except Exception:
@@ -42,6 +45,7 @@ except Exception:
 
 
 # --------------------------- Hjælpestrukturer ---------------------------
+
 
 @dataclass
 class EvalCore:
@@ -61,6 +65,7 @@ class EvalCore:
 
 
 # --------------------------- Utility-funktioner ---------------------------
+
 
 def _safe_get(d: Dict[str, Any], path: str, default: Any = None) -> Any:
     """Hent nested værdi med 'a.b.c' sti – returnér default hvis ikke fundet."""
@@ -105,6 +110,7 @@ def _try_import_schema() -> Optional[Any]:
     """
     try:
         from evaluation.schemas import EdgeEvalV1  # type: ignore
+
         return EdgeEvalV1
     except Exception:
         return None
@@ -112,7 +118,10 @@ def _try_import_schema() -> Optional[Any]:
 
 # --------------------------- Indlæsning og let validering ---------------------------
 
-def load_eval(path: str | Path = "outputs/evals/last_eval.json") -> Tuple[Dict[str, Any], EvalCore]:
+
+def load_eval(
+    path: str | Path = "outputs/evals/last_eval.json",
+) -> Tuple[Dict[str, Any], EvalCore]:
     """
     Indlæs eval-JSON og konverter til EvalCore.
     Validerer mod Pydantic-skema hvis tilgængeligt, ellers minimal key-checks.
@@ -158,22 +167,27 @@ def load_eval(path: str | Path = "outputs/evals/last_eval.json") -> Tuple[Dict[s
 
 # --------------------------- Formatér beskeder ---------------------------
 
+
 def format_eval_summary(core: EvalCore) -> str:
     """
     Kort 3–5 linjers besked til Telegram. Designet til at passe i ét skærmbillede.
     """
     emoji = _status_emoji(core.edge_score, core.actionability)
     flags = ", ".join(core.risk_flags[:2]) if core.risk_flags else "–"
-    return "\n".join([
-        f"Claude Eval {emoji}",
-        f"Edge: {core.edge_score if core.edge_score is not None else '–'} | {core.actionability or '–'} | conf={_fmt_float(core.confidence, 2)}",
-        f"Trades={core.trades or 0} | WinRate={_fmt_pct(core.win_rate)} | RR={_fmt_float(core.avg_rr, 2)} | PnL={_fmt_float(core.pnl_sum, 2)} | DD={_fmt_float(core.max_dd_est, 2)}",
-        f"Risici: {flags}",
-        "— (uddannelse/udvikling – ikke finansiel rådgivning) —",
-    ])
+    return "\n".join(
+        [
+            f"Claude Eval {emoji}",
+            f"Edge: {core.edge_score if core.edge_score is not None else '–'} | {core.actionability or '–'} | conf={_fmt_float(core.confidence, 2)}",
+            f"Trades={core.trades or 0} | WinRate={_fmt_pct(core.win_rate)} | RR={_fmt_float(core.avg_rr, 2)} | PnL={_fmt_float(core.pnl_sum, 2)} | DD={_fmt_float(core.max_dd_est, 2)}",
+            f"Risici: {flags}",
+            "— (uddannelse/udvikling – ikke finansiel rådgivning) —",
+        ]
+    )
 
 
-def format_eval_markdown(data: Dict[str, Any], core: EvalCore, max_recs: int = 3, max_anoms: int = 3) -> str:
+def format_eval_markdown(
+    data: Dict[str, Any], core: EvalCore, max_recs: int = 3, max_anoms: int = 3
+) -> str:
     """
     Længere beskrivelse (Markdown) til Telegram (eller intern log).
     Viser top-risici, anomalier og anbefalinger.
@@ -222,6 +236,7 @@ def format_eval_markdown(data: Dict[str, Any], core: EvalCore, max_recs: int = 3
 
 
 # --------------------------- Afsendelse ---------------------------
+
 
 def _send_text(text: str, parse_mode: Optional[str] = None) -> None:
     """Wrapper: Telegram hvis muligt, ellers stdout."""
@@ -284,9 +299,14 @@ def send_eval_alert(
 
 # --------------------------- CLI ---------------------------
 
+
 def _parse_argv(argv: List[str]) -> Dict[str, Any]:
     """Minimal argparse uden afhængigheder – egnet til simple CLI-kald."""
-    args: Dict[str, Any] = {"path": "outputs/evals/last_eval.json", "long": False, "document": False}
+    args: Dict[str, Any] = {
+        "path": "outputs/evals/last_eval.json",
+        "long": False,
+        "document": False,
+    }
     it = iter(argv)
     for token in it:
         if token in ("-p", "--path"):

@@ -1,9 +1,11 @@
 # features/generate_target.py
 
-from utils.project_path import PROJECT_ROOT
-import pandas as pd
-import numpy as np
 import argparse
+
+import numpy as np
+import pandas as pd
+
+from utils.project_path import PROJECT_ROOT
 
 
 def calculate_atr(df, period: int = 14):

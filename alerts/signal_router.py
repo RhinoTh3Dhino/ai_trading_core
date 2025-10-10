@@ -1,20 +1,21 @@
 # alerts/signal_router.py
 from __future__ import annotations
 
+import html
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
-import html
 
 
 @dataclass
 class Decision:
-    action: str              # "SUPPRESS" | "NOTIFY"
+    action: str  # "SUPPRESS" | "NOTIFY"
     reason: str
     payload: Optional[Dict[str, Any]] = None  # det der skal i telegram-beskeden
 
 
 # -------------------- cfg helpers --------------------
+
 
 def _get(obj: Any, key: str, default: Any = None) -> Any:
     """Hent config-værdi fra dict eller objekt (fx SimpleNamespace)."""
@@ -62,6 +63,7 @@ def _resolve_cfg(cfg_root: Any, keys: list[str], default: Any) -> Any:
 
 # -------------------- router --------------------
 
+
 class SignalRouter:
     """
     Enkel router der tager et råt 'sig'-dict og afgør om vi skal NOTIFY eller SUPPRESS.
@@ -89,7 +91,13 @@ class SignalRouter:
       - qty_decimals
     """
 
-    def __init__(self, broker, alert_manager, cfg: Optional[Dict[str, Any]] = None, state_store: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        broker,
+        alert_manager,
+        cfg: Optional[Dict[str, Any]] = None,
+        state_store: Optional[Dict[str, Any]] = None,
+    ):
         self.broker = broker
         self.alert_manager = alert_manager
         self.cfg = cfg or {}
@@ -97,9 +105,17 @@ class SignalRouter:
 
         # --- konfig med aliaser + namespaces ---
         self.cooldown = int(_resolve_cfg(self.cfg, ["cooldown_sec", "cooldown"], 60))
-        self.min_conf = float(_resolve_cfg(self.cfg, ["min_confidence", "min_conf", "confidence_min"], 0.0))
+        self.min_conf = float(
+            _resolve_cfg(
+                self.cfg, ["min_confidence", "min_conf", "confidence_min"], 0.0
+            )
+        )
         self.min_qty = float(_resolve_cfg(self.cfg, ["min_qty", "qty_min"], 0.0))
-        self.min_notional = float(_resolve_cfg(self.cfg, ["min_notional", "min_notional_usd", "notional_min"], 0.0))
+        self.min_notional = float(
+            _resolve_cfg(
+                self.cfg, ["min_notional", "min_notional_usd", "notional_min"], 0.0
+            )
+        )
         self.px_dec = int(_resolve_cfg(self.cfg, ["price_decimals", "px_decimals"], 2))
         self.qty_dec = int(_resolve_cfg(self.cfg, ["qty_decimals"], 8))
 
@@ -125,7 +141,9 @@ class SignalRouter:
             return Decision("SUPPRESS", reason, None)
 
         # 4) Dedupe — brug AlertManager hvis tilgængelig (men IKKE dens cooldown her)
-        if self.alert_manager is not None and hasattr(self.alert_manager, "is_duplicate"):
+        if self.alert_manager is not None and hasattr(
+            self.alert_manager, "is_duplicate"
+        ):
             try:
                 if self.alert_manager.is_duplicate(norm):
                     return Decision("SUPPRESS", "Duplicate", None)
@@ -212,7 +230,11 @@ class SignalRouter:
         # notional
         notional = out.get("notional")
         if notional is None:
-            px = out["limit_price"] if typ == "limit" else (out["mkt_price"] or out["limit_price"])
+            px = (
+                out["limit_price"]
+                if typ == "limit"
+                else (out["mkt_price"] or out["limit_price"])
+            )
             if px is not None:
                 notional = abs(qty) * float(px)
 
@@ -264,14 +286,19 @@ class SignalRouter:
     def _build_payload(self, s: Dict[str, Any]) -> Dict[str, Any]:
         sym = html.escape(s["symbol"])
         side = html.escape(s["side"])
-        typ_code = s["type"]            # 'limit' / 'market' (lowercase)
-        typ_disp = typ_code.upper()     # til visning OG evt. bagud-kompatibilitet
+        typ_code = s["type"]  # 'limit' / 'market' (lowercase)
+        typ_disp = typ_code.upper()  # til visning OG evt. bagud-kompatibilitet
         qty = round(float(s["qty"]), self.qty_dec)
         lim_px = s.get("limit_price")
         mkt_px = s.get("mkt_price")
         conf = s.get("confidence")
         notional = s.get("notional")
-        ts_utc = s["ts"].astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        ts_utc = (
+            s["ts"]
+            .astimezone(timezone.utc)
+            .isoformat(timespec="seconds")
+            .replace("+00:00", "Z")
+        )
 
         px_part = ""
         if typ_code == "limit" and lim_px is not None:
@@ -297,7 +324,7 @@ class SignalRouter:
             "text": text,
             "parse_mode": "HTML",
             "order_type": typ_code,  # <-- testen tjekker denne nøgle ("limit"/"market")
-            "type": typ_disp,        # bagud-kompatibelt top-niveau (UPPERCASE)
+            "type": typ_disp,  # bagud-kompatibelt top-niveau (UPPERCASE)
             # rå data (bevar type i lowercase her for machine use)
             "data": {
                 "symbol": s["symbol"],

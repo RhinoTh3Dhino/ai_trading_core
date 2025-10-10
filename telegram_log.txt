@@ -3224,7 +3224,7 @@ Versionsinfo: pipeline v1.0.0/f13c8d9, engine v1.0.0/8ac34b1, model v1.0.0, feat
 <b>Workflow:</b> ukendt workflow
 <b>Branch:</b>  ()
 <b>Run:</b> # (af )
-<b>Job:</b>  | Event: 
+<b>Job:</b>  | Event:
 <a href='https://github.com//actions/runs/'>Se run-detaljer på GitHub</a>
 [2025-07-08 01:52:30] Besked sendt OK.
 [2025-07-08 02:11:44] Sender besked: ❌ FEJL i engine_main: 'target'
@@ -6681,7 +6681,7 @@ Val_acc=0.5781
 [2025-07-12 03:43:34] Sender besked: 🤖 2025-07-12 03:43:34 | PyTorch 2.5.1+cu121 | Python 3.11.9 | Device: CUDA (NVIDIA GeForce RTX 4070 Ti SUPER) | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
 [2025-07-12 03:43:35] Besked sendt OK.
 [2025-07-12 03:43:35] Sender besked: ❌ Fejl i <lambda>: Error(s) in loading state_dict for TradingNet:
-	Missing key(s) in state_dict: "net.4.weight", "net.4.bias". 
+	Missing key(s) in state_dict: "net.4.weight", "net.4.bias".
 	size mismatch for net.0.weight: copying a param with shape torch.Size([193, 14]) from checkpoint, the shape in current model is torch.Size([64, 13]).
 	size mismatch for net.0.bias: copying a param with shape torch.Size([193]) from checkpoint, the shape in current model is torch.Size([64]).
 	size mismatch for net.2.weight: copying a param with shape torch.Size([2, 193]) from checkpoint, the shape in current model is torch.Size([64, 64]).
@@ -6702,7 +6702,7 @@ Traceback (most recent call last):
   File "C:\Users\reno_\Desktop\ai_trading_core\.venv\Lib\site-packages\torch\nn\modules\module.py", line 2584, in load_state_dict
     raise RuntimeError(
 RuntimeError: Error(s) in loading state_dict for TradingNet:
-	Missing key(s) in state_dict: "net.4.weight", "net.4.bias". 
+	Missing key(s) in state_dict: "net.4.weight", "net.4.bias".
 	size mismatch for net.0.weight: copying a param with shape torch.Size([193, 14]) from checkpoint, the shape in current model is torch.Size([64, 13]).
 	size mismatch for net.0.bias: copying a param with shape torch.Size([193]) from checkpoint, the shape in current model is torch.Size([64]).
 	size mismatch for net.2.weight: copying a param with shape torch.Size([2, 193]) from checkpoint, the shape in current model is torch.Size([64, 64]).
@@ -6880,7 +6880,7 @@ TypeError: can't convert np.ndarray of type numpy.object_. The only supported ty
 [2025-07-15 02:05:54] Billede sendt OK.
 [2025-07-15 03:23:33] Sender besked: 🤖 2025-07-15 03:23:33 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
 [2025-07-15 03:23:33] Besked sendt OK.
-[2025-07-15 03:23:35] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69006,14) (19,) 
+[2025-07-15 03:23:35] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69006,14) (19,)
 Traceback:
 Traceback (most recent call last):
   File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
@@ -6891,14 +6891,14 @@ Traceback (most recent call last):
     dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
   File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 103, in keras_lstm_predict
     X_scaled = (X - mean) / scale
-ValueError: operands could not be broadcast together with shapes (69006,14) (19,) 
+ValueError: operands could not be broadcast together with shapes (69006,14) (19,)
 
 [2025-07-15 03:23:35] Besked sendt OK.
 [2025-07-15 03:35:31] Sender besked: ✅ Rå OHLCV-data gemt: BTCUSDT 1h, 69206 rækker, fil: BTCUSDT_1h_8760d.csv
 [2025-07-15 03:35:32] Besked sendt OK.
 [2025-07-15 03:37:54] Sender besked: 🤖 2025-07-15 03:37:54 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
 [2025-07-15 03:37:55] Besked sendt OK.
-[2025-07-15 03:37:56] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69007,14) (19,) 
+[2025-07-15 03:37:56] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69007,14) (19,)
 Traceback:
 Traceback (most recent call last):
   File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
@@ -6909,7 +6909,7 @@ Traceback (most recent call last):
     dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
   File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 119, in keras_lstm_predict
     X_scaled = (X - mean) / scale
-ValueError: operands could not be broadcast together with shapes (69007,14) (19,) 
+ValueError: operands could not be broadcast together with shapes (69007,14) (19,)
 
 [2025-07-15 03:37:56] Besked sendt OK.
 [2025-07-15 03:38:10] Sender besked: 🤖 2025-07-15 03:38:10 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
@@ -6948,7 +6948,7 @@ RuntimeError: Attempting to deserialize object on a CUDA device but torch.cuda.i
 [2025-07-15 03:49:24] Besked sendt OK.
 [2025-07-15 03:51:08] Sender besked: 🤖 2025-07-15 03:51:08 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
 [2025-07-15 03:51:08] Besked sendt OK.
-[2025-07-15 03:51:09] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69007,14) (19,) 
+[2025-07-15 03:51:09] Sender besked: ❌ Fejl i <lambda>: operands could not be broadcast together with shapes (69007,14) (19,)
 Traceback:
 Traceback (most recent call last):
   File "C:\Users\reno_\Desktop\ai_trading_core\utils\robust_utils.py", line 22, in safe_run
@@ -6959,7 +6959,7 @@ Traceback (most recent call last):
     dl_signals = keras_lstm_predict(df, trained_features, seq_length=48, model_path=LSTM_MODEL_PATH)
   File "C:\Users\reno_\Desktop\ai_trading_core\bot\engine.py", line 121, in keras_lstm_predict
     X_scaled = (X - mean) / scale
-ValueError: operands could not be broadcast together with shapes (69007,14) (19,) 
+ValueError: operands could not be broadcast together with shapes (69007,14) (19,)
 
 [2025-07-15 03:51:10] Besked sendt OK.
 [2025-07-15 03:51:27] Sender besked: 🤖 2025-07-15 03:51:27 | PyTorch 2.2.2+cpu | Python 3.10.0 | Device: CPU (CPU) | Host: DhinosPc | User: reno_ | Git: fabeb49 | Context: engine | symbol: BTCUSDT | interval: 1h | model_type: multi_compare
@@ -14632,7 +14632,7 @@ n_1: 2831, n_0: 2572 (Test: 5403)
 [2025-08-30 02:19:41] Sender besked: hej verden
 [2025-08-30 02:19:41] Besked sendt OK.
 [2025-08-30 02:19:41] Sender besked: fail please
-[2025-08-30 02:19:41] FEJL ved sendMessage: 
+[2025-08-30 02:19:41] FEJL ved sendMessage:
 [2025-08-30 02:19:41] Besked sendt OK.
 [2025-08-30 02:19:41] Sender besked: 💓 Botten kører stadig! (02:19:41)
 [2025-08-30 02:19:41] [TESTMODE] Besked ikke sendt – Telegram inaktiv

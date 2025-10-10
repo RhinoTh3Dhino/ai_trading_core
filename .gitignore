@@ -8,11 +8,9 @@ env/
 .venv_*/
 venv_*/
 .venv_tf_gpu/
-# Utilsigtede miljøer i repoet
+# Utilsigtede miljøer
 gdrive_env/
 gdrive_env/**
-
-# Sikkerhedsnet for miljørester hvor som helst
 **/.venv/
 **/venv/
 **/ENV/
@@ -28,11 +26,12 @@ gdrive_env/**
 backups/
 backup/
 logs/
-tuner_cache/
 *.log
 .cache/
 .mypy_cache/
+.ruff_cache/
 .tox/
+.pytest_cache/
 .ipynb_checkpoints/
 
 # =========================
@@ -43,10 +42,12 @@ outputs/
 !outputs/README.md
 !outputs/.gitkeep
 
-# Bevar små metadata-pegepinde (OK at tracke)
+# Tillad små metadata-pegepinde (trackes)
 !outputs/model_history.csv
 !outputs/metrics/*_latest.json
 !outputs/models/best_model.keras
+!outputs/metrics/README.md
+!outputs/metrics/.gitkeep
 
 # Feature data – kun skabeloner/README
 outputs/feature_data/
@@ -60,6 +61,7 @@ artifacts/
 # Lokale grafer/billeder (ikke versioneres)
 graphs/
 !graphs/*.md
+!graphs/.gitkeep
 
 # =========================
 # DATA & MODELLER
@@ -184,7 +186,6 @@ reports/
 .coverage
 coverage.xml
 htmlcov/
-.pytest_cache/
 
 # =========================
 # CSV & OUTPUT (globale)
@@ -223,6 +224,7 @@ ops/compose/.env
 # LOKALE SCRATCH-FILER I RODEN
 # =========================
 /resolved.yml
+/BotStatus.md
 /DIT_TELEGRAM_BOT_TOKEN
 /7919277721
 DIT_*

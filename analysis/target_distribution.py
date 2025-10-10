@@ -8,9 +8,11 @@ python run.py analysis/target_distribution.py --input data/BTCUSDT_1h_features.c
 """
 
 import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 

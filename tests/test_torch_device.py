@@ -1,6 +1,7 @@
 # tests/test_torch_device.py
 import sys
 from pathlib import Path
+
 import pytest
 
 # Sørg for at projektroden er på sys.path (når testen køres direkte/lokalt)
@@ -15,7 +16,9 @@ def test_torch_import_and_device_smoke(capsys=None):
     - Skipper hvis torch ikke er installeret (så "lette" CI-jobs kan køre uden PyTorch).
     - Fejler ikke hvis CUDA ikke er tilgængelig (CPU er OK).
     """
-    torch = pytest.importorskip("torch", reason="torch not installed; skipping torch device test")
+    torch = pytest.importorskip(
+        "torch", reason="torch not installed; skipping torch device test"
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -27,7 +30,7 @@ def test_torch_import_and_device_smoke(capsys=None):
         except Exception as e:  # beskyttelse mod miljø/drivere
             print("Kunne ikke læse CUDA device navn:", e)
         try:
-            mb = int(torch.cuda.memory_allocated() // (1024 ** 2))
+            mb = int(torch.cuda.memory_allocated() // (1024**2))
             print("RAM brugt (MB):", mb)
         except Exception as e:
             print("Kunne ikke læse CUDA RAM:", e)

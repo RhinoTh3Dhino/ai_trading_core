@@ -2,20 +2,20 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from datetime import datetime
 
-from utils.project_path import PROJECT_ROOT
 from features.patterns import add_all_patterns
-
+from utils.project_path import PROJECT_ROOT
 
 # ============================================================
 # Helper-funktioner (små, rene og lette at teste)
 # ============================================================
+
 
 def _ensure_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
     missing = [c for c in required if c not in df.columns]
@@ -37,7 +37,9 @@ def _to_timestamp(df: pd.DataFrame, coerce: bool) -> pd.DataFrame:
     if "timestamp" not in out.columns:
         # Validering fanges i _ensure_required_columns; her undgås KeyError
         return out
-    out["timestamp"] = pd.to_datetime(out["timestamp"], errors="coerce" if coerce else "raise")
+    out["timestamp"] = pd.to_datetime(
+        out["timestamp"], errors="coerce" if coerce else "raise"
+    )
     if out["timestamp"].isna().any():
         raise ValueError("Ugyldige timestamp-værdier fundet.")
     out = out.sort_values("timestamp").reset_index(drop=True)
@@ -52,7 +54,9 @@ def _to_numeric(df: pd.DataFrame, cols: Iterable[str]) -> pd.DataFrame:
     return out
 
 
-def _bollinger(close: pd.Series, window: int = 20, num_std: float = 2.0) -> Tuple[pd.Series, pd.Series, pd.Series]:
+def _bollinger(
+    close: pd.Series, window: int = 20, num_std: float = 2.0
+) -> Tuple[pd.Series, pd.Series, pd.Series]:
     mid = close.rolling(window=window).mean()
     std = close.rolling(window=window).std()
     upper = mid + num_std * std
@@ -70,7 +74,9 @@ def _rsi(close: pd.Series, length: int) -> pd.Series:
     return 100.0 - (100.0 / (1.0 + rs))
 
 
-def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Tuple[pd.Series, pd.Series]:
+def _macd(
+    close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
+) -> Tuple[pd.Series, pd.Series]:
     ema_fast = close.ewm(span=fast, adjust=False).mean()
     ema_slow = close.ewm(span=slow, adjust=False).mean()
     macd = ema_fast - ema_slow
@@ -78,7 +84,9 @@ def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> 
     return macd, macd_signal
 
 
-def _atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
+def _atr(
+    high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14
+) -> pd.Series:
     high_low = high - low
     high_close = (high - close.shift()).abs()
     low_close = (low - close.shift()).abs()
@@ -86,7 +94,9 @@ def _atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) ->
     return true_range.rolling(window).mean()
 
 
-def _select_columns(df: pd.DataFrame, include: Optional[Iterable[str]], exclude: Optional[Iterable[str]]) -> pd.DataFrame:
+def _select_columns(
+    df: pd.DataFrame, include: Optional[Iterable[str]], exclude: Optional[Iterable[str]]
+) -> pd.DataFrame:
     out = df.copy()
     if exclude:
         drop_cols = [c for c in exclude if c in out.columns]
@@ -138,7 +148,10 @@ def _normalize_minmax(df: pd.DataFrame, skip_cols: Iterable[str] = ()) -> pd.Dat
 # Offentlig API
 # ============================================================
 
-def generate_features(df: pd.DataFrame, feature_config: dict | None = None) -> pd.DataFrame:
+
+def generate_features(
+    df: pd.DataFrame, feature_config: dict | None = None
+) -> pd.DataFrame:
     """
     Samlet pipeline til at beregne tekniske indikatorer + pattern-features.
 
@@ -169,7 +182,9 @@ def generate_features(df: pd.DataFrame, feature_config: dict | None = None) -> p
         raise ValueError("DataFrame er tom – kan ikke generere features.")
 
     cfg = feature_config.copy() if isinstance(feature_config, dict) else {}
-    require_cols: List[str] = cfg.get("require_columns", ["timestamp", "close", "volume", "open", "high", "low"])
+    require_cols: List[str] = cfg.get(
+        "require_columns", ["timestamp", "close", "volume", "open", "high", "low"]
+    )
     coerce_ts: bool = bool(cfg.get("coerce_timestamps", True))
     patterns_enabled: bool = bool(cfg.get("patterns_enabled", True))
     expected_features: Optional[List[str]] = cfg.get("expected_features")
@@ -205,7 +220,9 @@ def generate_features(df: pd.DataFrame, feature_config: dict | None = None) -> p
 
     out["macd"], out["macd_signal"] = _macd(out["close"])
     # VWAP (kumulativ, robust ift. 0-division)
-    out["vwap"] = (out["close"] * out["volume"]).cumsum() / (out["volume"].cumsum() + 1e-9)
+    out["vwap"] = (out["close"] * out["volume"]).cumsum() / (
+        out["volume"].cumsum() + 1e-9
+    )
 
     out["atr_14"] = _atr(out["high"], out["low"], out["close"], window=14)
     out["return"] = out["close"].pct_change().fillna(0.0)
@@ -244,7 +261,9 @@ def generate_features(df: pd.DataFrame, feature_config: dict | None = None) -> p
 
     # === Fjern fuldt-NaN featurekolonner før normalisering/dropna (Option B) ===
     if drop_all_nan_cols:
-        numeric_cols = out.select_dtypes(include=["number"]).columns.difference(["target", "regime"])
+        numeric_cols = out.select_dtypes(include=["number"]).columns.difference(
+            ["target", "regime"]
+        )
         all_nan_cols = [c for c in numeric_cols if out[c].isna().all()]
         if all_nan_cols:
             out = out.drop(columns=all_nan_cols)
@@ -271,7 +290,9 @@ def generate_features(df: pd.DataFrame, feature_config: dict | None = None) -> p
     return out
 
 
-def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1") -> str:
+def save_features(
+    df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1"
+) -> str:
     """
     Gemmer både:
       1) Kanonisk CSV til bagudkompatibilitet med load_features()
@@ -301,7 +322,9 @@ def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = 
     except Exception as e:
         # Robust fallback: skriv CSV men behold .parquet suffix, så testen (filnavn/eksistens) passer
         df.to_csv(parquet_path, index=False)
-        print(f"[WARN] Kunne ikke skrive parquet ({e!s}) – skrev CSV til {parquet_path} i stedet.")
+        print(
+            f"[WARN] Kunne ikke skrive parquet ({e!s}) – skrev CSV til {parquet_path} i stedet."
+        )
 
     # Returnér parquet-stien for at matche testens forventning
     return str(parquet_path)
@@ -327,20 +350,27 @@ def load_features(
 
     # Seneste version ønskes?
     if version_prefix in (None, "", "latest"):
-        candidates = [f for f in folder.iterdir() if f.is_file() and f.name.startswith(base)]
+        candidates = [
+            f for f in folder.iterdir() if f.is_file() and f.name.startswith(base)
+        ]
         if not candidates:
-            raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} (latest)")
+            raise FileNotFoundError(
+                f"Ingen feature-filer fundet for {symbol} {timeframe} (latest)"
+            )
         chosen = max(candidates, key=lambda p: p.stat().st_mtime)
         print(f"📥 Indlæser features: {chosen}")
         return pd.read_csv(chosen)
 
     # Ellers filtrér på præfix
     files = [
-        f for f in folder.iterdir()
+        f
+        for f in folder.iterdir()
         if f.is_file() and f.name.startswith(f"{base}{version_prefix}")
     ]
     if not files:
-        raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} ({version_prefix})")
+        raise FileNotFoundError(
+            f"Ingen feature-filer fundet for {symbol} {timeframe} ({version_prefix})"
+        )
 
     # Hvis flere match → vælg nyeste
     chosen = max(files, key=lambda p: p.stat().st_mtime)
@@ -357,25 +387,30 @@ if __name__ == "__main__":
         df = pd.read_csv(path)
     else:
         print(f"[INFO] Testfil mangler: {path} – bruger demo-DF.")
-        df = pd.DataFrame({
-            "timestamp": pd.date_range("2024-01-01", periods=50, freq="h"),
-            "open": np.linspace(100, 110, 50),
-            "high": np.linspace(101, 112, 50),
-            "low": np.linspace(99, 108, 50),
-            "close": np.linspace(100, 111, 50) + np.random.randn(50) * 0.3,
-            "volume": np.random.randint(10, 50, size=50),
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=50, freq="h"),
+                "open": np.linspace(100, 110, 50),
+                "high": np.linspace(101, 112, 50),
+                "low": np.linspace(99, 108, 50),
+                "close": np.linspace(100, 111, 50) + np.random.randn(50) * 0.3,
+                "volume": np.random.randint(10, 50, size=50),
+            }
+        )
 
     try:
-        features = generate_features(df, feature_config={
-            "coerce_timestamps": True,
-            "patterns_enabled": True,
-            "target_mode": "direction",
-            "horizon": 1,
-            "dropna": True,
-            "normalize": True,
-            "drop_all_nan_cols": True,
-        })
+        features = generate_features(
+            df,
+            feature_config={
+                "coerce_timestamps": True,
+                "patterns_enabled": True,
+                "target_mode": "direction",
+                "horizon": 1,
+                "dropna": True,
+                "normalize": True,
+                "drop_all_nan_cols": True,
+            },
+        )
         print("✅ Features genereret:", features.shape)
     except Exception as e:
         print("❌ Fejl ved feature-generering:", e)

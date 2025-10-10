@@ -1,5 +1,5 @@
 # bot/metrics_core.py
-from prometheus_client import REGISTRY, Histogram, Gauge, Counter
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram
 
 # Brug modul-scope variabler så de kun konstrueres én gang pr. process.
 # Hver konstruktion er idempotent pga. Python-import cache; ved genkonstruktion
@@ -40,6 +40,7 @@ _FEED_RECONNECTS_TOTAL = Counter(
     "Total reconnects to feed",
     registry=REGISTRY,
 )
+
 
 def init_core_metrics() -> None:
     """

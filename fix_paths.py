@@ -1,7 +1,6 @@
 import os
 import re
 
-
 PROJECT_ROOT_IMPORT = "from utils.project_path import PROJECT_ROOT"
 
 MARKER = ""

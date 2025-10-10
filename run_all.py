@@ -1,14 +1,13 @@
-from pathlib import Path
-import subprocess
-import sys
+import argparse
 import glob
 import os
-import argparse
+import subprocess
+import sys
+from pathlib import Path
 
 from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message
-
 from utils.project_path import PROJECT_ROOT
+from utils.telegram_utils import send_message
 
 # === Tilføj projektroden til sys.path for robuste imports (CLI & VS Code) ===
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

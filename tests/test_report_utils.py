@@ -4,10 +4,11 @@ Tester utils/report_utils.py med dummy-data og tmp_path.
 Mål: Maksimal branch- og linje-coverage uden side-effekter i repoet.
 """
 
+import io
+import os
 import sys
 from pathlib import Path
-import os
-import io
+
 import pandas as pd
 import pytest
 
@@ -16,14 +17,9 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from utils.report_utils import (
-    update_bot_status,
-    log_to_changelog,
-    print_status,
-    build_telegram_summary,
-    backup_file,
-    export_trade_journal,
-)
+from utils.report_utils import (backup_file, build_telegram_summary,
+                                export_trade_journal, log_to_changelog,
+                                print_status, update_bot_status)
 
 
 # ---------------------------------------------------------------------
@@ -48,7 +44,9 @@ def _make_empty_csv(path: Path) -> Path:
 # ---------------------------------------------------------------------
 # print_status
 # ---------------------------------------------------------------------
-def test_print_status_and_update_bot_status(tmp_path: Path, capsys: pytest.CaptureFixture):
+def test_print_status_and_update_bot_status(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+):
     csv_path = _make_test_csv(tmp_path / "portfolio_metrics_latest.csv")
 
     # Skal ikke raise fejl – og bør printe noget brugbart
@@ -76,7 +74,9 @@ def test_print_status_and_update_bot_status(tmp_path: Path, capsys: pytest.Captu
     assert "Navn,Balance,Profit,WinRate" in content
 
 
-def test_print_status_handles_missing_file_gracefully(tmp_path: Path, capsys: pytest.CaptureFixture):
+def test_print_status_handles_missing_file_gracefully(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+):
     """Manglende metrics-fil bør ikke smide ukontrolleret exception."""
     missing = tmp_path / "does_not_exist.csv"
     # Forvent ingen exception:
@@ -122,7 +122,10 @@ def test_log_to_changelog_create_and_append(tmp_path: Path):
 def test_build_telegram_summary(tmp_path: Path):
     csv_path = _make_test_csv(tmp_path / "portfolio_metrics_latest.csv")
     msg = build_telegram_summary(
-        run_id="RUN999", portfolio_metrics_path=csv_path, version="vX", extra_msg="Ekstra besked"
+        run_id="RUN999",
+        portfolio_metrics_path=csv_path,
+        version="vX",
+        extra_msg="Ekstra besked",
     )
     assert "RUN999" in msg
     assert "vX" in msg
@@ -142,7 +145,9 @@ def test_build_telegram_summary_when_missing_file(tmp_path: Path):
     )
     assert isinstance(msg, str) and len(msg) > 0
     # Accepter begge varianter: (1) indeholder metadata, eller (2) generisk fallback
-    assert ("RUN000" in msg and "v0" in msg) or ("Ingen status" in msg or "ikke tilgængelig" in msg)
+    assert ("RUN000" in msg and "v0" in msg) or (
+        "Ingen status" in msg or "ikke tilgængelig" in msg
+    )
 
 
 # ---------------------------------------------------------------------
@@ -172,7 +177,9 @@ def test_backup_file_and_export_trade_journal(tmp_path: Path):
     assert "symbol" in loaded.columns and len(loaded) == 2
 
 
-def test_backup_file_nonexistent_source_warns_instead_of_raises(tmp_path: Path, capsys: pytest.CaptureFixture):
+def test_backup_file_nonexistent_source_warns_instead_of_raises(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+):
     """
     report_utils.backup_file er designet til at være 'graceful':
     Ved manglende kilde logges en WARN og der oprettes ingen backup, men der raises ikke.
@@ -182,7 +189,9 @@ def test_backup_file_nonexistent_source_warns_instead_of_raises(tmp_path: Path, 
     backup_file(missing_src, backup_dir=str(backup_dir))  # må ikke raise
     captured = (capsys.readouterr().out + capsys.readouterr().err).lower()
     assert "warn" in captured or "ingen backup" in captured
-    assert not list(Path(backup_dir).glob("*.bak")), "Der bør ikke være .bak-filer når kilde mangler"
+    assert not list(
+        Path(backup_dir).glob("*.bak")
+    ), "Der bør ikke være .bak-filer når kilde mangler"
 
 
 # ---------------------------------------------------------------------

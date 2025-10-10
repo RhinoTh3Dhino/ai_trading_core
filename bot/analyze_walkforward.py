@@ -1,12 +1,14 @@
+import glob
+import os
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 # analyze_walkforward.py
 
-import os
-import glob
-import pandas as pd
-import matplotlib.pyplot as plt
-from datetime import datetime
 
 # === Find og indlæs nyeste walkforward-summary ===
 summary_files = sorted(

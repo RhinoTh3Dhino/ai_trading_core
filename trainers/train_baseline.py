@@ -1,16 +1,17 @@
 # trainers/train_baseline.py
 
-import pandas as pd
-import lightgbm as lgb
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
-import numpy as np
 import itertools
+import os
+
+import lightgbm as lgb
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
 
 from utils.project_path import PROJECT_ROOT
 from utils.telegram_utils import send_telegram_message
-import matplotlib.pyplot as plt
-import os
 
 
 def calculate_sharpe(returns, risk_free_rate=0):

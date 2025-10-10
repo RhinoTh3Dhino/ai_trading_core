@@ -21,6 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import io
 import os
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -50,7 +51,9 @@ def _has_any_column(df: pd.DataFrame, candidates):
 # ------------------- walk_forward_splits -------------------
 def test_walk_forward_splits_basic():
     df = _make_price_df(100)
-    splits = bt.walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20)
+    splits = bt.walk_forward_splits(
+        df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20
+    )
     # For n=100: der bør være mindst ét vindue
     assert isinstance(splits, list) and len(splits) >= 1
     for tr_idx, te_idx in splits:
@@ -83,7 +86,9 @@ def test_compute_regime_and_filter():
     # Hvis ingen bull-ticks, giver det 0'ere – her tjekker vi kun længde og type
     assert len(filtered) == len(signals)
 
-    filtered2 = bt.regime_filter(signals, out["regime"], active_regimes=["bull", "neutral"])
+    filtered2 = bt.regime_filter(
+        signals, out["regime"], active_regimes=["bull", "neutral"]
+    )
     assert len(filtered2) == len(signals)
 
 
@@ -148,7 +153,12 @@ def test_run_backtest_raises_on_missing_columns():
         bt.run_backtest(df, signals=[0] * len(df))  # 'close' mangler
 
     # 'datetime' skal mappes, og ema_200 kræves af compute_regime i mange implementeringer
-    df2 = pd.DataFrame({"datetime": pd.date_range("2024-01-01", periods=5, freq="h"), "close": [1, 2, 3, 4, 5]})
+    df2 = pd.DataFrame(
+        {
+            "datetime": pd.date_range("2024-01-01", periods=5, freq="h"),
+            "close": [1, 2, 3, 4, 5],
+        }
+    )
     df2["ema_200"] = pd.Series([1, 2, 3, 4, 5]).ewm(span=3, adjust=False).mean()
     # Virker trods 'datetime' (renames internt)
     trades, balance = bt.run_backtest(df2, signals=[0] * len(df2))
@@ -191,7 +201,12 @@ def test_calc_backtest_metrics_maps_fields(monkeypatch):
     monkeypatch.setattr(bt, "advanced_performance_metrics", lambda t, b, i: fake)
 
     trades = pd.DataFrame({"type": ["OPEN", "TP", "SL", "CLOSE", "INFO"]})
-    balance = pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=3, freq="h"), "balance": [1000, 1010, 1005]})
+    balance = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=3, freq="h"),
+            "balance": [1000, 1010, 1005],
+        }
+    )
     out = bt.calc_backtest_metrics(trades, balance, initial_balance=1000)
 
     assert out["profit_pct"] == 12.3
@@ -241,4 +256,6 @@ def test_load_csv_auto_with_and_without_meta(tmp_path, capsys):
 if __name__ == "__main__":
     import pytest
 
-    pytest.main([__file__, "-vv", "--cov=backtest.backtest", "--cov-report=term-missing"])
+    pytest.main(
+        [__file__, "-vv", "--cov=backtest.backtest", "--cov-report=term-missing"]
+    )

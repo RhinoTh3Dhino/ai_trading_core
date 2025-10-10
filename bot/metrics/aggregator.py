@@ -42,7 +42,16 @@ FILLS_CSV = LOGS_DIR / "fills.csv"
 SIGNALS_CSV = LOGS_DIR / "signals.csv"
 DAILY_METRICS_CSV = LOGS_DIR / "daily_metrics.csv"
 
-COLUMNS = ["date", "signal_count", "trades", "win_rate", "gross_pnl", "net_pnl", "max_dd", "sharpe_d"]
+COLUMNS = [
+    "date",
+    "signal_count",
+    "trades",
+    "win_rate",
+    "gross_pnl",
+    "net_pnl",
+    "max_dd",
+    "sharpe_d",
+]
 
 
 # -----------------------
@@ -124,7 +133,11 @@ def _signal_counts_per_day() -> Dict[str, int]:
     out = df.groupby("date")[flips.name].sum().astype(int).to_dict()
     # Pandas navngiver serien "sig" → diff() mister navn; sikre nøgler i dict
     # derfor beregner vi igen simpelt:
-    out = df.groupby("date")["sig"].apply(lambda s: int(((s.diff() > 0).fillna(s.iloc[0] > 0)).sum())).to_dict()
+    out = (
+        df.groupby("date")["sig"]
+        .apply(lambda s: int(((s.diff() > 0).fillna(s.iloc[0] > 0)).sum()))
+        .to_dict()
+    )
     # konverter nøgler til str
     return {str(k): int(v) for k, v in out.items()}
 
@@ -151,7 +164,11 @@ def _intraday_dd_and_sharpe_for_day(date_str: str) -> Tuple[float, float]:
         dd_pct = min(dd_pct, (val - peak) / (peak + 1e-12) * 100.0)
 
     rets = np.diff(e)
-    sharpe_d = float(np.mean(rets) / np.std(rets)) if (rets.size > 1 and np.std(rets) > 1e-12) else 0.0
+    sharpe_d = (
+        float(np.mean(rets) / np.std(rets))
+        if (rets.size > 1 and np.std(rets) > 1e-12)
+        else 0.0
+    )
     return _round(dd_pct, 2), _round(sharpe_d, 2)
 
 
@@ -195,7 +212,11 @@ def _existing_signal_counts_from_metrics() -> Dict[str, int]:
 
 
 def _union_dates(limit_days: Optional[int] = None) -> List[str]:
-    all_dates = sorted(set(_dates_from_equity()) | set(_dates_from_fills()) | set(_dates_from_signals()))
+    all_dates = sorted(
+        set(_dates_from_equity())
+        | set(_dates_from_fills())
+        | set(_dates_from_signals())
+    )
     if limit_days is not None and limit_days > 0 and len(all_dates) > limit_days:
         # tag kun de sidste N
         all_dates = all_dates[-limit_days:]
@@ -224,7 +245,9 @@ def aggregate(
     _ensure_headers(DAILY_METRICS_CSV, COLUMNS)
 
     existing_df = _read_csv_safe(DAILY_METRICS_CSV)
-    existing_df = existing_df if not existing_df.empty else pd.DataFrame(columns=COLUMNS)
+    existing_df = (
+        existing_df if not existing_df.empty else pd.DataFrame(columns=COLUMNS)
+    )
 
     # Find hvilke datoer vi skal processe
     if recompute_all:
@@ -293,7 +316,12 @@ def load_daily_metrics(limit: int = 30) -> pd.DataFrame:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
     for col in ["win_rate", "gross_pnl", "net_pnl", "max_dd", "sharpe_d"]:
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0).astype(float).round(2)
+            df[col] = (
+                pd.to_numeric(df[col], errors="coerce")
+                .fillna(0.0)
+                .astype(float)
+                .round(2)
+            )
     return df[COLUMNS]
 
 
@@ -311,14 +339,30 @@ def _print_df(df: pd.DataFrame) -> None:
 def main_cli() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Daglig metrics-aggregator (paper trading)")
-    parser.add_argument("--days", type=int, default=None, help="Begræns til seneste N dage")
-    parser.add_argument("--recompute-all", action="store_true", help="Genberegn alle datoer fra kilderne")
-    parser.add_argument("--update-last", action="store_true", help="Opdater kun eksisterende dato-rækker (evt. begrænset af --days)")
-    parser.add_argument("--print", action="store_true", help="Print resultatet efter skrivning")
+    parser = argparse.ArgumentParser(
+        description="Daglig metrics-aggregator (paper trading)"
+    )
+    parser.add_argument(
+        "--days", type=int, default=None, help="Begræns til seneste N dage"
+    )
+    parser.add_argument(
+        "--recompute-all",
+        action="store_true",
+        help="Genberegn alle datoer fra kilderne",
+    )
+    parser.add_argument(
+        "--update-last",
+        action="store_true",
+        help="Opdater kun eksisterende dato-rækker (evt. begrænset af --days)",
+    )
+    parser.add_argument(
+        "--print", action="store_true", help="Print resultatet efter skrivning"
+    )
     args = parser.parse_args()
 
-    df = aggregate(days=args.days, recompute_all=args.recompute_all, update_only=args.update_last)
+    df = aggregate(
+        days=args.days, recompute_all=args.recompute_all, update_only=args.update_last
+    )
     if args.print:
         _print_df(df)
     else:

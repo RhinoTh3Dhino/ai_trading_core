@@ -4,13 +4,9 @@ import numpy as np
 
 # === Hent alle monitoring thresholds og regler fra config ===
 try:
-    from config.monitoring_config import (
-        ALARM_THRESHOLDS,
-        ALERT_ON_DRAWNDOWN,
-        ALERT_ON_WINRATE,
-        ALERT_ON_PROFIT,
-        ENABLE_MONITORING,
-    )
+    from config.monitoring_config import (ALARM_THRESHOLDS, ALERT_ON_DRAWNDOWN,
+                                          ALERT_ON_PROFIT, ALERT_ON_WINRATE,
+                                          ENABLE_MONITORING)
 except ImportError:
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
     ALERT_ON_DRAWNDOWN = True

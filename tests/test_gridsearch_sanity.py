@@ -9,12 +9,13 @@ Automatiseret sanity check:
 Kør: python -m tests.test_gridsearch_sanity
 """
 
-import sys
 import os
-from pathlib import Path
 import subprocess
-import pandas as pd
+import sys
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import pytest
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()

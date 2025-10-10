@@ -1,15 +1,16 @@
+import argparse
+import json
+import os
+import pickle
+from datetime import datetime
+
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
 from utils.project_path import PROJECT_ROOT
 
 # ml/train_ml_model.py
-
-import os
-import json
-import pickle
-import argparse
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
-from datetime import datetime
 
 
 def main():

@@ -1,10 +1,11 @@
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
 from utils.project_path import PROJECT_ROOT
+from utils.report_utils import build_telegram_summary
 
 # bot/telegram_status.py
 
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from utils.report_utils import build_telegram_summary
 
 TOKEN = "DIN_BOT_TOKEN"
 

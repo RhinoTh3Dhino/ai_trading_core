@@ -6,9 +6,10 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import types
 import io
 import os
+import types
+
 import pytest
 
 import utils.telegram_utils as tg
@@ -101,6 +102,7 @@ def test_send_trend_graph_branches(tmp_path, monkeypatch):
 
 def test_send_live_metrics_with_alarms(monkeypatch):
     _enable_env(monkeypatch)
+
     # metrics der trigger alle tre alarmer
     def fake_calc(trades_df, balance_df):
         return {

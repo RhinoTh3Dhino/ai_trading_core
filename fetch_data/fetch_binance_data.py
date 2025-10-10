@@ -2,15 +2,12 @@
 
 import argparse
 import glob
-
-import pandas as pd
-
 from datetime import datetime, timedelta
 
+import pandas as pd
+from binance.client import Client
 
 from utils.telegram_utils import send_message
-
-from binance.client import Client
 
 
 def fetch_binance_ohlcv(

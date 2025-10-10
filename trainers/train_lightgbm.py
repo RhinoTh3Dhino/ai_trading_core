@@ -6,10 +6,10 @@ Træner en LightGBM-model til trading-signaler (klassifikation)
 - Automatisk feature selection, gemmer model og accuracy
 """
 
-# Sikrer korrekt sys.path – projektroden lægges ind først
-from pathlib import Path
 import os
 import sys
+# Sikrer korrekt sys.path – projektroden lægges ind først
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
@@ -20,10 +20,12 @@ from utils.project_path import ensure_project_root
 ensure_project_root()
 
 import argparse
-import pandas as pd
-import numpy as np
+
 import lightgbm as lgb
+import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score
+
 from utils.telegram_utils import send_message
 
 MODEL_DIR = "models"

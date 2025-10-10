@@ -1,7 +1,7 @@
 # strategies/advanced_strategies.py
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # --------- Simple og avancerede trading-strategier ---------
 

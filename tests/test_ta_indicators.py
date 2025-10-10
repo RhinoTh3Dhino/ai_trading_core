@@ -1,16 +1,17 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
+
 from features import ta_indicators
 
 
 def _make_base_df(rows: int = 250) -> pd.DataFrame:
     """Deterministisk OHLCV-DF med monoton DatetimeIndex."""
     data = {
-        "open":   [1, 2, 3, 4, 5] * (rows // 5),
-        "high":   [2, 3, 4, 5, 6] * (rows // 5),
-        "low":    [1, 1, 2, 3, 4] * (rows // 5),
-        "close":  [1, 2, 3, 4, 5] * (rows // 5),
+        "open": [1, 2, 3, 4, 5] * (rows // 5),
+        "high": [2, 3, 4, 5, 6] * (rows // 5),
+        "low": [1, 1, 2, 3, 4] * (rows // 5),
+        "close": [1, 2, 3, 4, 5] * (rows // 5),
         "volume": [100, 200, 300, 400, 500] * (rows // 5),
     }
     df = pd.DataFrame(data)
@@ -26,13 +27,26 @@ def test_add_ta_indicators_generates_expected_columns():
 
     # Forventede kernekolonner
     expected = [
-        "ema_9", "ema_21", "ema_50", "ema_200",
-        "macd", "macd_signal", "macd_hist",
-        "rsi_14", "rsi_28",
+        "ema_9",
+        "ema_21",
+        "ema_50",
+        "ema_200",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "rsi_14",
+        "rsi_28",
         "atr_14",
-        "bb_upper", "bb_middle", "bb_lower",
-        "vwap", "obv", "adx_14", "zscore_20",
-        "supertrend", "volume_spike", "regime",
+        "bb_upper",
+        "bb_middle",
+        "bb_lower",
+        "vwap",
+        "obv",
+        "adx_14",
+        "zscore_20",
+        "supertrend",
+        "volume_spike",
+        "regime",
     ]
     for col in expected:
         assert col in result.columns, f"Mangler kolonne: {col}"
@@ -41,7 +55,9 @@ def test_add_ta_indicators_generates_expected_columns():
     assert not result.isna().any().any(), "Resultat indeholder NaN"
 
     # Idempotens/ingen mutation af input
-    assert set(df.columns) == orig_cols, "Input DataFrame må ikke blive muteret i kolonner"
+    assert (
+        set(df.columns) == orig_cols
+    ), "Input DataFrame må ikke blive muteret i kolonner"
 
 
 def test_add_ta_indicators_handles_force_no_supertrend():
@@ -116,16 +132,25 @@ def test_add_ta_indicators_does_not_crash_with_constant_prices():
     rows = 300
     df = pd.DataFrame(
         {
-            "open":   np.full(rows, 100.0),
-            "high":   np.full(rows, 100.0),
-            "low":    np.full(rows, 100.0),
-            "close":  np.full(rows, 100.0),
+            "open": np.full(rows, 100.0),
+            "high": np.full(rows, 100.0),
+            "low": np.full(rows, 100.0),
+            "close": np.full(rows, 100.0),
             "volume": np.arange(1, rows + 1, dtype=float),
         },
         index=pd.date_range("2024-01-01", periods=rows, freq="h"),
     )
     out = ta_indicators.add_ta_indicators(df, force_no_supertrend=True)
-    for c in ["ema_200", "macd", "rsi_14", "atr_14", "bb_upper", "bb_lower", "zscore_20", "adx_14"]:
+    for c in [
+        "ema_200",
+        "macd",
+        "rsi_14",
+        "atr_14",
+        "bb_upper",
+        "bb_lower",
+        "zscore_20",
+        "adx_14",
+    ]:
         assert c in out.columns
         assert not out[c].isna().any(), f"{c} indeholder NaN i konstant-marked test"
     assert np.isfinite(out["macd"]).all()
@@ -148,7 +173,16 @@ def test_add_ta_indicators_tiny_input_returns_empty_but_no_crash():
     assert out is not None
     assert isinstance(out, pd.DataFrame)
     if len(out) == 0:
-        for c in ["ema_21", "ema_200", "bb_upper", "rsi_14", "vwap", "obv", "supertrend", "regime"]:
+        for c in [
+            "ema_21",
+            "ema_200",
+            "bb_upper",
+            "rsi_14",
+            "vwap",
+            "obv",
+            "supertrend",
+            "regime",
+        ]:
             assert c in out.columns
     else:
         assert not out.isna().any().any()

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from utils.project_path import PROJECT_ROOT
 
 """
@@ -10,9 +11,9 @@ Hyperparameter-tuning af PyTorch-model med Optuna (GPU/CPU)
 - Efter tuning gemmes bedste model automatisk.
 """
 
+import argparse
 import os
 import sys
-import argparse
 from datetime import datetime
 
 # Sikrer, at models/ og projektrod er i path

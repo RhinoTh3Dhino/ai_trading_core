@@ -1,19 +1,17 @@
-import os
 import json
+import logging
+import os
 from datetime import datetime
 
-
 import optuna
-import logging
 import pandas as pd
 from dotenv import load_dotenv
 
-from models.model_training import train_model
-from backtest.backtest import run_backtest, calc_backtest_metrics
-from strategies.rsi_strategy import rsi_rule_based_signals
-from strategies.macd_strategy import macd_cross_signals
+from backtest.backtest import calc_backtest_metrics, run_backtest
 from ensemble.majority_vote_ensemble import weighted_vote_ensemble
-
+from models.model_training import train_model
+from strategies.macd_strategy import macd_cross_signals
+from strategies.rsi_strategy import rsi_rule_based_signals
 from utils.project_path import PROJECT_ROOT
 
 # === Load miljøvariabler fra .env ===

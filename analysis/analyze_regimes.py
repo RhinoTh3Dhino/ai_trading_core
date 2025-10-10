@@ -1,17 +1,17 @@
-import pandas as pd
-import numpy as np
 import matplotlib
+import numpy as np
+import pandas as pd
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 
 # Importér strategi- og ensemblefunktioner
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
-from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
+from strategies.rsi_strategy import rsi_rule_based_signals
 
 # === OUTPUT DIR ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

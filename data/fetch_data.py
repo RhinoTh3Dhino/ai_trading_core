@@ -1,13 +1,13 @@
-import ccxt
-import pandas as pd
+import os
+# ---- Relativt import-trick: Sikrer at 'utils' kan importeres uanset hvorfra scriptet køres ----
+import sys
 from datetime import datetime
 from pathlib import Path
 
-from utils.project_path import PROJECT_ROOT
+import ccxt
+import pandas as pd
 
-# ---- Relativt import-trick: Sikrer at 'utils' kan importeres uanset hvorfra scriptet køres ----
-import sys
-import os
+from utils.project_path import PROJECT_ROOT
 
 sys.path.append(str(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))))
 from utils.robust_utils import safe_run  # ← Tilføjet robusthed!

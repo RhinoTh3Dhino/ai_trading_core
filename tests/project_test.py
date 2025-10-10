@@ -3,17 +3,17 @@ Samlet projekt-test for AI trading bot.
 Kører alle relevante test-scripts via run.py og stopper ved første fejl.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
-from pathlib import Path
+import os
 import subprocess
 import sys
-import os
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 

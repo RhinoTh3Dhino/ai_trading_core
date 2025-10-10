@@ -1,0 +1,45 @@
+name: Persistens & Filhygiejne
+
+on:
+  push:
+    branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro, epic/**, feat/**, release/** ]
+    paths:
+      - "tools/**"
+      - "utils/**"
+      - "outputs/**"
+      - ".github/workflows/persist-hygiejne.yml"
+  pull_request:
+    branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro ]
+    paths:
+      - "tools/**"
+      - "utils/**"
+      - "outputs/**"
+      - ".github/workflows/persist-hygiejne.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rotate-and-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+      - name: Install deps (minimal)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+      - name: Rotate outputs
+        run: python tools/rotate_outputs.py
+      - name: Make archive
+        run: python tools/make_archive.py
+      - name: Upload artifact (archive)
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-core-archive
+          path: archives/*.zip
+          if-no-files-found: warn
+          retention-days: 30

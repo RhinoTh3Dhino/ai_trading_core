@@ -7,7 +7,8 @@ Letvægts unit-tests uden eksterne dependencies (ingen jsonschema-krav).
 - Tester at parseren producerer de forventede keys/typer
 """
 
-from bot.live_connector.venues.okx import parse_okx_candle_payload, OKXConnector
+from bot.live_connector.venues.okx import (OKXConnector,
+                                           parse_okx_candle_payload)
 
 
 def test_symbol_map_to_internal():

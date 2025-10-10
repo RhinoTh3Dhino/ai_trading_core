@@ -14,6 +14,7 @@ import importlib
 import inspect
 import re
 import types
+
 import pytest
 
 
@@ -134,8 +135,11 @@ def test_send_text_path_with_dummy_bot(monkeypatch):
             return DummyResp()
 
         # Evt. andre metoder der nogle koder kalder:
-        def send_document(self, *a, **k): return DummyResp()
-        def send_photo(self, *a, **k): return DummyResp()
+        def send_document(self, *a, **k):
+            return DummyResp()
+
+        def send_photo(self, *a, **k):
+            return DummyResp()
 
     dummy_bot = DummyBot()
 
@@ -212,4 +216,7 @@ def test_send_text_path_with_dummy_bot(monkeypatch):
             # accepter single-send; chunking er implementeringsafhængig
             assert isinstance(dummy_bot.sent[0][1], str)
         else:
-            assert all(isinstance(t, str) and 1 <= len(t) <= max_len for _, t, _ in dummy_bot.sent)
+            assert all(
+                isinstance(t, str) and 1 <= len(t) <= max_len
+                for _, t, _ in dummy_bot.sent
+            )

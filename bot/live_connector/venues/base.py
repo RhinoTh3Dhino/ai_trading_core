@@ -1,12 +1,16 @@
-import asyncio, logging
-from typing import Callable, Dict, Any
+import asyncio
+import logging
+from typing import Any, Callable, Dict
 
 log = logging.getLogger(__name__)
+
 
 class BaseConnector:
     venue: str = "base"
 
-    def __init__(self, cfg: dict, symbol_map: dict, on_kline: Callable[[dict], None], ws_client):
+    def __init__(
+        self, cfg: dict, symbol_map: dict, on_kline: Callable[[dict], None], ws_client
+    ):
         self.cfg = cfg
         self.symbol_map = symbol_map
         self.on_kline = on_kline
@@ -17,7 +21,7 @@ class BaseConnector:
         backoff = 1
         while not self._stop:
             try:
-                async with (await self.ws_client.connect(self.cfg["ws"]["url"])) as ws:
+                async with await self.ws_client.connect(self.cfg["ws"]["url"]) as ws:
                     await self._subscribe(ws)
                     backoff = 1
                     async for msg in self._read_loop(ws):

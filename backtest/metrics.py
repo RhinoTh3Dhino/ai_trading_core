@@ -1,8 +1,9 @@
 # backtest/metrics.py
 
-import pandas as pd
 import numpy as np
-from backtest.backtest import run_backtest, calc_backtest_metrics
+import pandas as pd
+
+from backtest.backtest import calc_backtest_metrics, run_backtest
 
 
 def calculate_sharpe(returns, risk_free_rate=0.0):

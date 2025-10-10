@@ -1,13 +1,14 @@
+import os
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+
+from strategies.advanced_strategies import ema_crossover_strategy
+from utils.performance import calculate_performance_metrics
 from utils.project_path import PROJECT_ROOT
 
 # strategies/gridsearch_strategies.py
-
-import os
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from strategies.advanced_strategies import ema_crossover_strategy
-from utils.performance import calculate_performance_metrics
 
 
 def grid_search_sl_tp_ema(

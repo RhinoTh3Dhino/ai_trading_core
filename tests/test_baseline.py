@@ -4,19 +4,19 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import pytest
-
 # Headless backend (virker i CI og uden display)
 import matplotlib
+import pytest
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-
 
 # Robust PROJECT_ROOT:
 # 1) Prøv utils.project_path.PROJECT_ROOT
 # 2) Fald tilbage til repo-roden (to niveauer op fra denne fil)
 try:
     from utils.project_path import PROJECT_ROOT as _PRJ
+
     PROJECT_ROOT = Path(_PRJ).resolve()
 except Exception:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -78,7 +78,9 @@ def test_baseline_smoke(tmp_path: Path | None = None) -> None:
     plt.savefig(plot_path)
     plt.close()
 
-    assert plot_path.exists() and plot_path.stat().st_size > 0, "Plot blev ikke gemt korrekt"
+    assert (
+        plot_path.exists() and plot_path.stat().st_size > 0
+    ), "Plot blev ikke gemt korrekt"
 
     # Ikke-kritisk info: feature-importance billede (kun log)
     fi_img = OUT_DIR / "feature_importance_baseline.png"

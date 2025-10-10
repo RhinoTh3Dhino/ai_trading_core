@@ -1,12 +1,13 @@
 # analyze_strategies.py
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from datetime import datetime
 import argparse
 import platform
 import subprocess
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 # Tilføj rodmappen til sys.path for at kunne importere dine egne moduler
 

@@ -1,20 +1,21 @@
 # services/live_connector.py
 from __future__ import annotations
 
-import os
-import sys
 import asyncio
 import json
+import os
+import sys
 import time
-from pathlib import Path
-from typing import Dict, List, DefaultDict
 from collections import defaultdict, deque
+from pathlib import Path
+from typing import DefaultDict, Dict, List
 
 import pandas as pd
 
 # ---- ENV & LOGGING ---------------------------------------------------------
 try:
     from utils.env import load_env
+
     load_env()
 except Exception:
     # Hvis utils.env ikke eksisterer, kører vi videre med process-miljøet
@@ -22,28 +23,33 @@ except Exception:
 
 import logging
 
+
 def _coerce_bool(value: str | None, default: bool) -> bool:
     if value is None:
         return default
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
+
 LOG_LEVEL = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
 logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    level=LOG_LEVEL, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
 log = logging.getLogger("live_connector")
 
 # Dæmp 3.-parts støj som standard (kan overstyres med --no-quiet)
 DEFAULT_QUIET = _coerce_bool(os.getenv("QUIET_LOGS", "1"), True)
+
+
 def _set_quiet_loggers(quiet: bool) -> None:
     level = logging.WARNING if quiet else LOG_LEVEL
     for name in ("websockets", "websockets.client", "websockets.protocol", "asyncio"):
         logging.getLogger(name).setLevel(level)
 
+
 # ---- ORCHESTRATOR & FEATURES ----------------------------------------------
-from data.feed_orchestrator import FeedOrchestrator, PRIMARY, BACKUP
-from features.streaming_pipeline import StreamingFeaturePipeline  # EMA(14/50), RSI(14), ATR(14), VWAP
+from data.feed_orchestrator import BACKUP, PRIMARY, FeedOrchestrator
+from features.streaming_pipeline import \
+    StreamingFeaturePipeline  # EMA(14/50), RSI(14), ATR(14), VWAP
 
 # ---- PATHS -----------------------------------------------------------------
 OUTPUTS = Path(os.getenv("OUTPUTS_DIR", "outputs/live"))
@@ -52,18 +58,26 @@ OUTPUTS.mkdir(parents=True, exist_ok=True)
 LOGS.mkdir(parents=True, exist_ok=True)
 
 # ---- SETTINGS --------------------------------------------------------------
-FLUSH_EVERY       = int(os.getenv("LIVE_FLUSH_EVERY", "5"))          # hvor ofte vi flusher bars til parquet
-STATUS_MIN_SECS   = int(os.getenv("LIVE_STATUS_MIN_SECS", "30"))     # min. sekunder mellem statuslinjer (samlet)
-WRITE_METRICS     = _coerce_bool(os.getenv("LIVE_WRITE_METRICS", "1"), True)  # skriv feed_metrics.jsonl
-LAG_WINDOW        = int(os.getenv("LAG_WINDOW", "20"))               # glidende vindue for bar_close_lag_ms
-SCHEMA_VERSION    = os.getenv("LIVE_SCHEMA_VERSION", "stream-mvp-1") # Parquet metadata
+FLUSH_EVERY = int(
+    os.getenv("LIVE_FLUSH_EVERY", "5")
+)  # hvor ofte vi flusher bars til parquet
+STATUS_MIN_SECS = int(
+    os.getenv("LIVE_STATUS_MIN_SECS", "30")
+)  # min. sekunder mellem statuslinjer (samlet)
+WRITE_METRICS = _coerce_bool(
+    os.getenv("LIVE_WRITE_METRICS", "1"), True
+)  # skriv feed_metrics.jsonl
+LAG_WINDOW = int(os.getenv("LAG_WINDOW", "20"))  # glidende vindue for bar_close_lag_ms
+SCHEMA_VERSION = os.getenv("LIVE_SCHEMA_VERSION", "stream-mvp-1")  # Parquet metadata
 
 FEATURE_COLS = ["ema_14", "ema_50", "rsi_14", "vwap", "atr_14"]
-BASE_COLS    = ["ts", "open", "high", "low", "close", "volume"]
-ALL_COLS     = BASE_COLS + FEATURE_COLS
+BASE_COLS = ["ts", "open", "high", "low", "close", "volume"]
+ALL_COLS = BASE_COLS + FEATURE_COLS
+
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
+
 
 def _write_parquet_with_meta(df: pd.DataFrame, path: Path, schema_version: str):
     """
@@ -73,6 +87,7 @@ def _write_parquet_with_meta(df: pd.DataFrame, path: Path, schema_version: str):
     try:
         import pyarrow as pa
         import pyarrow.parquet as pq
+
         table = pa.Table.from_pandas(df, preserve_index=False)
         md = dict(table.schema.metadata or {})
         md[b"schema_version"] = schema_version.encode("utf-8")
@@ -84,20 +99,29 @@ def _write_parquet_with_meta(df: pd.DataFrame, path: Path, schema_version: str):
         df.to_parquet(path, index=False)
         try:
             with open(str(path) + ".meta.json", "w", encoding="utf-8") as f:
-                json.dump({"schema_version": schema_version, "columns": list(df.columns)}, f)
+                json.dump(
+                    {"schema_version": schema_version, "columns": list(df.columns)}, f
+                )
         except Exception:
             log.debug("Kunne ikke skrive sidecar metadata for %s", path)
+
 
 async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_QUIET):
     _set_quiet_loggers(quiet)
 
     # Startup-banner
     log.info("Starter live_connector")
-    log.info("ENV=%s  SYMBOLS=%s  INTERVAL=%s", os.getenv("ENV", "DEV"), symbols, interval)
+    log.info(
+        "ENV=%s  SYMBOLS=%s  INTERVAL=%s", os.getenv("ENV", "DEV"), symbols, interval
+    )
     log.info("PRIMARY venues=%s  BACKUP venues=%s", PRIMARY, BACKUP)
     log.info(
         "OUTPUTS=%s  FLUSH_EVERY=%s  STATUS_MIN_SECS=%s  LOG_LEVEL=%s  QUIET=%s",
-        str(OUTPUTS), FLUSH_EVERY, STATUS_MIN_SECS, logging.getLevelName(LOG_LEVEL), quiet
+        str(OUTPUTS),
+        FLUSH_EVERY,
+        STATUS_MIN_SECS,
+        logging.getLevelName(LOG_LEVEL),
+        quiet,
     )
 
     # Start orchestrator
@@ -108,7 +132,9 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
     pipe = StreamingFeaturePipeline()
 
     # Parquet buffers pr. symbol
-    parquet_files: Dict[str, Path] = {s: OUTPUTS / f"{s}_{interval}.parquet" for s in symbols}
+    parquet_files: Dict[str, Path] = {
+        s: OUTPUTS / f"{s}_{interval}.parquet" for s in symbols
+    }
     dfs: Dict[str, pd.DataFrame] = {s: pd.DataFrame(columns=ALL_COLS) for s in symbols}
     bar_counts: Dict[str, int] = {s: 0 for s in symbols}
 
@@ -116,7 +142,9 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
     last_status_wall: float = 0.0
 
     # Glidende “close lag”-vindue per symbol (kun for lukkede bars)
-    close_lag_windows: DefaultDict[str, deque] = defaultdict(lambda: deque(maxlen=LAG_WINDOW))
+    close_lag_windows: DefaultDict[str, deque] = defaultdict(
+        lambda: deque(maxlen=LAG_WINDOW)
+    )
 
     log.info("Venter på første bar ...")
     try:
@@ -190,7 +218,9 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
                 "volume": float(bar.volume),
             }
             for k in FEATURE_COLS:
-                row[k] = float(feats[k]) if k in feats and feats[k] is not None else None
+                row[k] = (
+                    float(feats[k]) if k in feats and feats[k] is not None else None
+                )
 
             df = dfs[bar.symbol]
             df.loc[len(df)] = [row.get(c, None) for c in ALL_COLS]
@@ -203,8 +233,12 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
             # Periodisk flush til disk (Parquet) pr. symbol
             if bar_counts[bar.symbol] % FLUSH_EVERY == 0:
                 try:
-                    df_sorted = df.sort_values("ts").drop_duplicates(subset=["ts"], keep="last")
-                    _write_parquet_with_meta(df_sorted, parquet_files[bar.symbol], SCHEMA_VERSION)
+                    df_sorted = df.sort_values("ts").drop_duplicates(
+                        subset=["ts"], keep="last"
+                    )
+                    _write_parquet_with_meta(
+                        df_sorted, parquet_files[bar.symbol], SCHEMA_VERSION
+                    )
                 except Exception as e:
                     log.warning("Parquet flush fejlede for %s: %s", bar.symbol, repr(e))
 
@@ -217,7 +251,9 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
                 except Exception:
                     p99_latencies = {}
                 # bars pr. symbol kompakt
-                bars_summary = ", ".join(f"{s}:{bar_counts.get(s, 0)}" for s in sorted(bar_counts))
+                bars_summary = ", ".join(
+                    f"{s}:{bar_counts.get(s, 0)}" for s in sorted(bar_counts)
+                )
                 # glidende gennemsnit af bar_close_lag_ms pr. symbol
                 lag_pairs = []
                 for s in sorted(bar_counts):
@@ -231,7 +267,10 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
 
                 log.info(
                     "Status: bars={%s}  p99(ms)=%s  lag_ms≈%s  active=%s",
-                    bars_summary, p99_latencies, lag_str, orch.active
+                    bars_summary,
+                    p99_latencies,
+                    lag_str,
+                    orch.active,
                 )
                 last_status_wall = now
 
@@ -258,8 +297,12 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
         for sym, df in dfs.items():
             try:
                 if not df.empty:
-                    df_sorted = df.sort_values("ts").drop_duplicates(subset=["ts"], keep="last")
-                    _write_parquet_with_meta(df_sorted, parquet_files[sym], SCHEMA_VERSION)
+                    df_sorted = df.sort_values("ts").drop_duplicates(
+                        subset=["ts"], keep="last"
+                    )
+                    _write_parquet_with_meta(
+                        df_sorted, parquet_files[sym], SCHEMA_VERSION
+                    )
             except Exception as e:
                 log.warning("Final flush fejlede for %s: %s", sym, repr(e))
         log.info("Live connector stoppet.")
@@ -273,15 +316,28 @@ if __name__ == "__main__":
         except Exception:
             pass
 
-    import argparse, re
+    import argparse
+    import re
+
     parser = argparse.ArgumentParser()
     # Acceptér både: --symbols BTCUSDT ETHUSDT  og  --symbols "BTCUSDT,ETHUSDT"
-    parser.add_argument("--symbols", nargs="+", default=[os.getenv("SYMBOLS", "BTCUSDT")])
+    parser.add_argument(
+        "--symbols", nargs="+", default=[os.getenv("SYMBOLS", "BTCUSDT")]
+    )
     parser.add_argument("--interval", default=os.getenv("BAR_INTERVAL", "1m"))
-    parser.add_argument("--quiet", dest="quiet", action="store_true", default=DEFAULT_QUIET,
-                        help="Dæmp 3.-parts logger-støj (default fra env QUIET_LOGS=1).")
-    parser.add_argument("--no-quiet", dest="quiet", action="store_false",
-                        help="Vis detaljerede websockets/asyncio logs.")
+    parser.add_argument(
+        "--quiet",
+        dest="quiet",
+        action="store_true",
+        default=DEFAULT_QUIET,
+        help="Dæmp 3.-parts logger-støj (default fra env QUIET_LOGS=1).",
+    )
+    parser.add_argument(
+        "--no-quiet",
+        dest="quiet",
+        action="store_false",
+        help="Vis detaljerede websockets/asyncio logs.",
+    )
     args = parser.parse_args()
 
     # Flad ud og split på komma, hvis nogen entries er streng med komma

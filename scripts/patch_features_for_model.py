@@ -4,23 +4,48 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Tuple, Optional, List
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-
 # De kolonner din model forventer:
 REQ_COLS: List[str] = [
-    "open", "high", "low", "close", "volume",
-    "ema_9", "ema_21", "ema_50", "ema_200",
-    "macd", "macd_signal", "macd_hist",
-    "rsi_14", "rsi_28", "atr_14",
-    "bb_upper", "bb_lower",
-    "vwap", "zscore_20", "return", "pv_ratio", "regime",
-    "rsi_28_z", "regime_z", "macd_z", "ema_200_z", "rsi_14_z",
-    "ema_9_z", "vwap_z", "zscore_20_z", "bb_upper_z", "bb_lower_z",
-    "ema_50_z", "atr_14_z", "ema_21_z",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "ema_9",
+    "ema_21",
+    "ema_50",
+    "ema_200",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "rsi_14",
+    "rsi_28",
+    "atr_14",
+    "bb_upper",
+    "bb_lower",
+    "vwap",
+    "zscore_20",
+    "return",
+    "pv_ratio",
+    "regime",
+    "rsi_28_z",
+    "regime_z",
+    "macd_z",
+    "ema_200_z",
+    "rsi_14_z",
+    "ema_9_z",
+    "vwap_z",
+    "zscore_20_z",
+    "bb_upper_z",
+    "bb_lower_z",
+    "ema_50_z",
+    "atr_14_z",
+    "ema_21_z",
 ]
 
 # Små ‘gulvtærskler’ så vi undgår 0-division downstream
@@ -83,7 +108,7 @@ def read_meta_csv(path: Path) -> Tuple[Optional[dict], pd.DataFrame]:
     df = pd.read_csv(
         path,
         skiprows=skiprows,
-        comment="#",              # <- vigtig: ignorer kommentartekstlinjer
+        comment="#",  # <- vigtig: ignorer kommentartekstlinjer
         encoding="utf-8",
     )
     # Fjern spøgelseskolonner (fx "Unnamed: 35")
@@ -101,7 +126,9 @@ def write_meta_csv(path: Path, meta: Optional[dict], df: pd.DataFrame) -> None:
         df.to_csv(f, index=False)
 
 
-def ensure_timestamp(df: pd.DataFrame, freq: str, end_utc: Optional[str]) -> pd.DataFrame:
+def ensure_timestamp(
+    df: pd.DataFrame, freq: str, end_utc: Optional[str]
+) -> pd.DataFrame:
     """
     Sørger for at 'timestamp' findes og er datetime64[ns].
     Hvis den mangler, konstrueres en syntetisk tidsakse med given frekvens.
@@ -117,7 +144,9 @@ def ensure_timestamp(df: pd.DataFrame, freq: str, end_utc: Optional[str]) -> pd.
         df.rename(columns={have: "timestamp"}, inplace=True)
 
     if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True).dt.tz_convert(None)
+        df["timestamp"] = pd.to_datetime(
+            df["timestamp"], errors="coerce", utc=True
+        ).dt.tz_convert(None)
         # Hvis alt blev NaT (helt ubrugeligt), generér nyt
         if df["timestamp"].isna().all():
             have = None
@@ -142,24 +171,42 @@ def ensure_positive_series(s: pd.Series, eps: float) -> pd.Series:
     return s.clip(lower=eps)
 
 
-def compute_robust_atr(high: pd.Series, low: pd.Series, close: pd.Series, n: int = 14) -> pd.Series:
+def compute_robust_atr(
+    high: pd.Series, low: pd.Series, close: pd.Series, n: int = 14
+) -> pd.Series:
     """ATR(14) robust mod 0 og dårlige værdier."""
     h = ensure_positive_series(high, EPS_PRICE)
     l = ensure_positive_series(low, EPS_PRICE)
     c = ensure_positive_series(close, EPS_PRICE)
     tr = np.maximum(h - l, np.maximum((h - c.shift()).abs(), (l - c.shift()).abs()))
     atr = tr.rolling(n, min_periods=1).mean()
-    atr = atr.replace([0, np.inf, -np.inf], np.nan).bfill().ffill().fillna(EPS_ATR).clip(lower=EPS_ATR)
+    atr = (
+        atr.replace([0, np.inf, -np.inf], np.nan)
+        .bfill()
+        .ffill()
+        .fillna(EPS_ATR)
+        .clip(lower=EPS_ATR)
+    )
     return atr
 
 
 # ----------------------------- main patching -----------------------------
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Patch features to match model expectations.")
+    ap = argparse.ArgumentParser(
+        description="Patch features to match model expectations."
+    )
     ap.add_argument("--in", dest="inp", required=True, help="Input CSV med features")
     ap.add_argument("--out", dest="out", required=True, help="Output CSV (overskrives)")
-    ap.add_argument("--freq", default="H", help="Frekvens til syntetisk timestamp hvis mangler (default: H)")
-    ap.add_argument("--end-utc", default=None, help="Sluttid i UTC til syntetisk timestamp (fx 2025-09-01 12:00)")
+    ap.add_argument(
+        "--freq",
+        default="H",
+        help="Frekvens til syntetisk timestamp hvis mangler (default: H)",
+    )
+    ap.add_argument(
+        "--end-utc",
+        default=None,
+        help="Sluttid i UTC til syntetisk timestamp (fx 2025-09-01 12:00)",
+    )
     args = ap.parse_args()
 
     inp = Path(args.inp)
@@ -172,9 +219,17 @@ def main() -> int:
 
     # 1) Rens primære numeriske kolonner
     for col, eps in [
-        ("open", EPS_PRICE), ("high", EPS_PRICE), ("low", EPS_PRICE), ("close", EPS_PRICE),
-        ("ema_9", EPS_PRICE), ("ema_21", EPS_PRICE), ("ema_50", EPS_PRICE), ("ema_200", EPS_PRICE),
-        ("macd", 0.0), ("macd_signal", 0.0), ("volume", EPS_VOL),
+        ("open", EPS_PRICE),
+        ("high", EPS_PRICE),
+        ("low", EPS_PRICE),
+        ("close", EPS_PRICE),
+        ("ema_9", EPS_PRICE),
+        ("ema_21", EPS_PRICE),
+        ("ema_50", EPS_PRICE),
+        ("ema_200", EPS_PRICE),
+        ("macd", 0.0),
+        ("macd_signal", 0.0),
+        ("volume", EPS_VOL),
     ]:
         if col in df.columns:
             if col == "volume":
@@ -187,8 +242,14 @@ def main() -> int:
 
     # 2) Afledte kolonner
     # macd_hist
-    if "macd" in df.columns and "macd_signal" in df.columns and "macd_hist" not in df.columns:
-        df["macd_hist"] = pd.to_numeric(df["macd"], errors="coerce") - pd.to_numeric(df["macd_signal"], errors="coerce")
+    if (
+        "macd" in df.columns
+        and "macd_signal" in df.columns
+        and "macd_hist" not in df.columns
+    ):
+        df["macd_hist"] = pd.to_numeric(df["macd"], errors="coerce") - pd.to_numeric(
+            df["macd_signal"], errors="coerce"
+        )
 
     # rsi_14
     if "rsi_14" not in df.columns and "close" in df.columns:
@@ -199,7 +260,9 @@ def main() -> int:
         df["rsi_28"] = rsi(df["close"], 28)
 
     # Bollinger bands (20, 2)
-    if "close" in df.columns and (("bb_upper" not in df.columns) or ("bb_lower" not in df.columns)):
+    if "close" in df.columns and (
+        ("bb_upper" not in df.columns) or ("bb_lower" not in df.columns)
+    ):
         c = pd.to_numeric(df["close"], errors="coerce")
         m = c.rolling(20, min_periods=10).mean()
         sd = c.rolling(20, min_periods=10).std(ddof=0)
@@ -220,7 +283,9 @@ def main() -> int:
 
     # zscore_20 (over close)
     if "zscore_20" not in df.columns and "close" in df.columns:
-        df["zscore_20"] = rolling_zscore(pd.to_numeric(df["close"], errors="coerce"), 20)
+        df["zscore_20"] = rolling_zscore(
+            pd.to_numeric(df["close"], errors="coerce"), 20
+        )
 
     # return (pct change på close)
     if "return" not in df.columns and "close" in df.columns:
@@ -246,12 +311,29 @@ def main() -> int:
             df["atr_14"] = EPS_ATR
         else:
             s = pd.to_numeric(df["atr_14"], errors="coerce")
-            df["atr_14"] = s.replace([0, np.inf, -np.inf], np.nan).bfill().ffill().fillna(EPS_ATR).clip(lower=EPS_ATR)
+            df["atr_14"] = (
+                s.replace([0, np.inf, -np.inf], np.nan)
+                .bfill()
+                .ffill()
+                .fillna(EPS_ATR)
+                .clip(lower=EPS_ATR)
+            )
 
     # _z kolonner
     z_targets = [
-        "rsi_28", "regime", "macd", "ema_200", "rsi_14", "ema_9", "vwap",
-        "zscore_20", "bb_upper", "bb_lower", "ema_50", "atr_14", "ema_21",
+        "rsi_28",
+        "regime",
+        "macd",
+        "ema_200",
+        "rsi_14",
+        "ema_9",
+        "vwap",
+        "zscore_20",
+        "bb_upper",
+        "bb_lower",
+        "ema_50",
+        "atr_14",
+        "ema_21",
     ]
     for base in z_targets:
         zname = f"{base}_z"
@@ -260,7 +342,9 @@ def main() -> int:
         if base in df.columns:
             col = df[base]
             if col.dtype == "O":  # fx regime som tekst
-                col = pd.Series(pd.factorize(col, sort=True)[0], index=col.index, dtype=float)
+                col = pd.Series(
+                    pd.factorize(col, sort=True)[0], index=col.index, dtype=float
+                )
             df[zname] = zscore(col)
         else:
             df[zname] = 0.0

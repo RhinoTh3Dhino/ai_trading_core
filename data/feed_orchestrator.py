@@ -4,10 +4,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Dict, List, Optional, Callable
+from typing import Callable, Dict, List, Optional
 
-from .schemas import Bar
 from .gap_repair import rest_catchup
+from .schemas import Bar
 from .ws_utils import P99Tracker
 
 log = logging.getLogger(__name__)
@@ -86,8 +86,12 @@ class FeedOrchestrator:
         # Telemetri og status
         all_vs = list(PRIMARY) + list(BACKUP)
         self.p99: Dict[str, P99Tracker] = {v: P99Tracker() for v in all_vs}
-        self.last_bar_ts: Dict[str, int] = {}            # key: f"{venue}:{symbol}" (bar close time)
-        self.last_seen_wall_ms: Dict[str, int] = {}      # key: venue -> seneste modtagelsestid (wall clock)
+        self.last_bar_ts: Dict[str, int] = (
+            {}
+        )  # key: f"{venue}:{symbol}" (bar close time)
+        self.last_seen_wall_ms: Dict[str, int] = (
+            {}
+        )  # key: venue -> seneste modtagelsestid (wall clock)
         self.active: Dict[str, bool] = {v: False for v in all_vs}
         self.tasks: Dict[str, Optional[asyncio.Task]] = {v: None for v in all_vs}
 
@@ -159,14 +163,25 @@ class FeedOrchestrator:
                         gap = int(bar.ts) - int(last)
                         if gap > self.bar_ms + 1:
                             missing_since = last + self.bar_ms
-                            limit = min(max(5, int(gap / self.bar_ms)), self.rest_lookback_bars)
+                            limit = min(
+                                max(5, int(gap / self.bar_ms)), self.rest_lookback_bars
+                            )
                             try:
                                 for b in rest_catchup(
-                                    bar.symbol, venue, self.interval, since_ms=missing_since, limit=limit
+                                    bar.symbol,
+                                    venue,
+                                    self.interval,
+                                    since_ms=missing_since,
+                                    limit=limit,
                                 ):
                                     await queue.put(b)
                             except Exception as e:
-                                log.warning("REST catch-up fejl for %s on %s: %s", bar.symbol, venue, repr(e))
+                                log.warning(
+                                    "REST catch-up fejl for %s on %s: %s",
+                                    bar.symbol,
+                                    venue,
+                                    repr(e),
+                                )
 
                     # Opdater status og publicér bar
                     self.last_bar_ts[key] = int(bar.ts)
@@ -174,7 +189,10 @@ class FeedOrchestrator:
                     await queue.put(bar)
 
                 # Hvis vi forlader async-for uden exception, betragtes stream som stoppet
-                log.warning("Venue %s stream stoppede pænt – markerer inaktiv og forsøger reconnect.", venue)
+                log.warning(
+                    "Venue %s stream stoppede pænt – markerer inaktiv og forsøger reconnect.",
+                    venue,
+                )
                 self.active[venue] = False
 
             except asyncio.CancelledError:

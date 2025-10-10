@@ -16,7 +16,9 @@ def _make_base_df(n=10, start="2024-01-01 00:00:00"):
     ts = pd.date_range(start, periods=n, freq="H")
     # enkel regime-serie; 'bear' hver 3. time
     regime = np.where(np.arange(n) % 3 == 0, "bear", "bull")
-    return pd.DataFrame({"timestamp": ts, "close": np.linspace(100, 101, n), "regime": regime})
+    return pd.DataFrame(
+        {"timestamp": ts, "close": np.linspace(100, 101, n), "regime": regime}
+    )
 
 
 def test_evaluate_strategies_uses_provided_trades_balance_and_merges_regime():
@@ -26,9 +28,10 @@ def test_evaluate_strategies_uses_provided_trades_balance_and_merges_regime():
     trades_df = pd.DataFrame(
         {
             "timestamp": [
-                df["timestamp"].iloc[2],   # ~02:00 → match
-                df["timestamp"].iloc[7],   # ~07:00 → match
-                df["timestamp"].iloc[-1] + pd.Timedelta("10H"),  # udenfor tolerance → NaN → 'ukendt'
+                df["timestamp"].iloc[2],  # ~02:00 → match
+                df["timestamp"].iloc[7],  # ~07:00 → match
+                df["timestamp"].iloc[-1]
+                + pd.Timedelta("10H"),  # udenfor tolerance → NaN → 'ukendt'
             ],
             "type": ["BUY", "TP", "SL"],
             "balance": [1000.0, 1010.0, 1000.0],
@@ -63,11 +66,16 @@ def test_evaluate_strategies_uses_provided_trades_balance_and_merges_regime():
 
 
 def test_evaluate_strategies_skips_regime_when_missing_on_df():
-    df = _make_base_df(10).drop(columns=["regime"])  # fjern regime → do_regime bliver False
+    df = _make_base_df(10).drop(
+        columns=["regime"]
+    )  # fjern regime → do_regime bliver False
 
     trades_df = pd.DataFrame(
         {
-            "timestamp": [pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 01:00:00")],
+            "timestamp": [
+                pd.Timestamp("2024-01-01 00:00:00"),
+                pd.Timestamp("2024-01-01 01:00:00"),
+            ],
             "type": ["BUY", "TP"],
             "balance": [1000.0, 1010.0],
         }

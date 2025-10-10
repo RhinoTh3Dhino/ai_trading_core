@@ -1,14 +1,14 @@
 # evaluation/claude_eval.py
 from __future__ import annotations
 
-import os
-import re
-import json
 import argparse
 import hashlib
+import json
+import os
 import random
+import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 # --- Let afhængighed: brug pandas hvis tilgængelig, ellers fallback ---
 try:
@@ -28,6 +28,7 @@ LOG_DIR = Path(os.getenv("LOG_DIR", str(PROJECT_ROOT / "logs")))
 DEFAULT_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-haiku-20240307")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
+
 # ---------- 1) Dataindsamling: Seneste kontekst fra logs ----------
 def _tail_text(path: Path, n: int = 50) -> str:
     try:
@@ -36,6 +37,7 @@ def _tail_text(path: Path, n: int = 50) -> str:
         return "".join(lines[-n:])
     except Exception:
         return ""
+
 
 def _load_recent_df(path: Path, n: int = 100) -> Optional["DataFrame"]:
     if pd is None or not path.exists():
@@ -47,6 +49,7 @@ def _load_recent_df(path: Path, n: int = 100) -> Optional["DataFrame"]:
         return df  # type: ignore[return-value]
     except Exception:
         return None
+
 
 def build_context(max_rows: int = 100) -> str:
     """
@@ -60,12 +63,17 @@ def build_context(max_rows: int = 100) -> str:
 
     fills = LOG_DIR / "fills.csv"
     daily = LOG_DIR / "daily_metrics.csv"
-    tlog  = LOG_DIR / "telegram_log.txt"
+    tlog = LOG_DIR / "telegram_log.txt"
 
     if pd is not None:
         df_f = _load_recent_df(fills, n=max_rows)
         if df_f is not None and getattr(df_f, "empty", True) is False:
-            sel = [c for c in df_f.columns if c.lower() in {"timestamp", "type", "price", "qty", "balance", "profit", "side"}]
+            sel = [
+                c
+                for c in df_f.columns
+                if c.lower()
+                in {"timestamp", "type", "price", "qty", "balance", "profit", "side"}
+            ]
             if sel:
                 parts.append("Recent fills (tail):\n" + df_f[sel].to_csv(index=False))
     else:
@@ -75,7 +83,11 @@ def build_context(max_rows: int = 100) -> str:
     if pd is not None:
         df_d = _load_recent_df(daily, n=max_rows)
         if df_d is not None and getattr(df_d, "empty", True) is False:
-            sel = [c for c in df_d.columns if c.lower() in {"date", "profit_pct", "drawdown", "win_rate", "equity"}]
+            sel = [
+                c
+                for c in df_d.columns
+                if c.lower() in {"date", "profit_pct", "drawdown", "win_rate", "equity"}
+            ]
             if sel:
                 parts.append("Daily metrics (tail):\n" + df_d[sel].to_csv(index=False))
     else:
@@ -89,6 +101,7 @@ def build_context(max_rows: int = 100) -> str:
         return "No recent logs found. Use default neutral context."
 
     return "\n\n".join(parts)
+
 
 # ---------- 2) Prompt-skabeloner (2 varianter) ----------
 # VIGTIGT: bogstavelige { } er escapet som {{ }} så .format() ikke fejler.
@@ -114,6 +127,7 @@ PROMPTS: Dict[str, str] = {
     ),
 }
 
+
 # ---------- 3) Kald Claude (eller mock) ----------
 def _mock_json(prompt: str) -> Dict[str, Any]:
     """
@@ -137,7 +151,11 @@ def _mock_json(prompt: str) -> Dict[str, Any]:
 
     actions = ["hold", "scale_in", "scale_out", "exit"]
     action = actions[h % len(actions)]
-    opps = ["Tighten risk on weakness", "Favor mean-reversion edges"] if edge < 0.5 else ["Momentum continuation possible"]
+    opps = (
+        ["Tighten risk on weakness", "Favor mean-reversion edges"]
+        if edge < 0.5
+        else ["Momentum continuation possible"]
+    )
 
     return {
         "edge_score": edge,
@@ -146,6 +164,7 @@ def _mock_json(prompt: str) -> Dict[str, Any]:
         "action": action,
         "confidence": conf,
     }
+
 
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     """
@@ -170,7 +189,15 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     except Exception:
         return None
 
-def call_claude(prompt: str, *, model: str = DEFAULT_MODEL, api_key: str = ANTHROPIC_API_KEY, timeout: int = 20, dry_run: bool = False) -> Dict[str, Any]:
+
+def call_claude(
+    prompt: str,
+    *,
+    model: str = DEFAULT_MODEL,
+    api_key: str = ANTHROPIC_API_KEY,
+    timeout: int = 20,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
     if dry_run or not api_key:
         return _mock_json(prompt)
 
@@ -188,9 +215,7 @@ def call_claude(prompt: str, *, model: str = DEFAULT_MODEL, api_key: str = ANTHR
         "model": model,
         "max_tokens": 512,
         "system": system,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
+        "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.2,
     }
 
@@ -215,9 +240,11 @@ def call_claude(prompt: str, *, model: str = DEFAULT_MODEL, api_key: str = ANTHR
         # Smoke-tests må ikke fejle på netværk → fallback
         return _mock_json(prompt)
 
+
 # ---------- 4) Validering ----------
 REQUIRED_KEYS = {"edge_score", "opportunities", "warnings", "action", "confidence"}
 ACTIONS = {"hold", "scale_in", "scale_out", "exit"}
+
 
 def validate_payload(obj: Dict[str, Any]) -> bool:
     try:
@@ -225,19 +252,30 @@ def validate_payload(obj: Dict[str, Any]) -> bool:
             return False
         if not REQUIRED_KEYS.issubset(obj.keys()):
             return False
-        if not (isinstance(obj["edge_score"], (int, float)) and 0.0 <= float(obj["edge_score"]) <= 1.0):
+        if not (
+            isinstance(obj["edge_score"], (int, float))
+            and 0.0 <= float(obj["edge_score"]) <= 1.0
+        ):
             return False
-        if not (isinstance(obj["confidence"], (int, float)) and 0.0 <= float(obj["confidence"]) <= 1.0):
+        if not (
+            isinstance(obj["confidence"], (int, float))
+            and 0.0 <= float(obj["confidence"]) <= 1.0
+        ):
             return False
         if obj["action"] not in ACTIONS:
             return False
-        if not isinstance(obj["opportunities"], list) or not all(isinstance(x, str) for x in obj["opportunities"]):
+        if not isinstance(obj["opportunities"], list) or not all(
+            isinstance(x, str) for x in obj["opportunities"]
+        ):
             return False
-        if not isinstance(obj["warnings"], list) or not all(isinstance(x, str) for x in obj["warnings"]):
+        if not isinstance(obj["warnings"], list) or not all(
+            isinstance(x, str) for x in obj["warnings"]
+        ):
             return False
         return True
     except Exception:
         return False
+
 
 # ---------- 5) CLI / Smoke runner ----------
 def run_once(prompt_id: str, *, dry_run: bool, model: str) -> Dict[str, Any]:
@@ -248,13 +286,25 @@ def run_once(prompt_id: str, *, dry_run: bool, model: str) -> Dict[str, Any]:
     valid = validate_payload(out)
     return {"valid": valid, "json": out}
 
+
 def main():
     ap = argparse.ArgumentParser(description="Claude smoke-eval (returns JSON).")
     ap.add_argument("--prompt", choices=list(PROMPTS.keys()), default="p1")
-    ap.add_argument("--dry-run", action="store_true", help="Tving mock/fallback (ingen API-kald).")
+    ap.add_argument(
+        "--dry-run", action="store_true", help="Tving mock/fallback (ingen API-kald)."
+    )
     ap.add_argument("--model", default=DEFAULT_MODEL)
-    ap.add_argument("--smoke", type=int, default=1, help="Kør N gentagelser og rapportér succeshyppighed.")
-    ap.add_argument("--out", type=str, default=str(PROJECT_ROOT / "outputs" / "claude_eval_last.json"))
+    ap.add_argument(
+        "--smoke",
+        type=int,
+        default=1,
+        help="Kør N gentagelser og rapportér succeshyppighed.",
+    )
+    ap.add_argument(
+        "--out",
+        type=str,
+        default=str(PROJECT_ROOT / "outputs" / "claude_eval_last.json"),
+    )
     args = ap.parse_args()
 
     N = max(1, int(args.smoke))
@@ -277,6 +327,7 @@ def main():
     print(json.dumps(results[-1]["json"], ensure_ascii=False, indent=2))
 
     # Strict-mode (valgfrit): if rate < 0.9: exit(1)
+
 
 if __name__ == "__main__":
     main()

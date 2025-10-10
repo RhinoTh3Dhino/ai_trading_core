@@ -1,25 +1,21 @@
+import argparse
+import glob
+import hashlib
+import os
+from datetime import datetime
+
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 # features/feature_engineering.py
 
-import pandas as pd
-import hashlib
-import argparse
-import os
-import glob
-from datetime import datetime
 
 # --- Versionsinfo fra versions.py ---
 try:
-    from versions import (
-        PIPELINE_VERSION,
-        PIPELINE_COMMIT,
-        FEATURE_VERSION,
-        ENGINE_VERSION,
-        ENGINE_COMMIT,
-        MODEL_VERSION,
-        LABEL_STRATEGY,
-    )
+    from versions import (ENGINE_COMMIT, ENGINE_VERSION, FEATURE_VERSION,
+                          LABEL_STRATEGY, MODEL_VERSION, PIPELINE_COMMIT,
+                          PIPELINE_VERSION)
 except ImportError:
     PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = (
         ENGINE_COMMIT

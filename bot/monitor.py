@@ -12,8 +12,8 @@ Funktioner:
 from __future__ import annotations
 
 import os
-import time
 import threading
+import time
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -36,7 +36,7 @@ class ResourceMonitor:
         gpu_max: float = 90,
         gpu_temp_max: float = 85,
         check_interval: int = 10,
-        action: str = "pause",          # 'pause' | 'kill' | 'warn'
+        action: str = "pause",  # 'pause' | 'kill' | 'warn'
         log_file: Optional[str | Path] = None,
         verbose: bool = True,
         cpu_sample_interval_sec: float = 1.0,  # hvor længe cpu_percent må blokere i hvert tjek
@@ -112,7 +112,9 @@ class ResourceMonitor:
         except Exception:
             return 0.0, 0.0
 
-    def _log_row(self, ts_str: str, ram: float, cpu: float, gpu: float, gpu_temp: float) -> None:
+    def _log_row(
+        self, ts_str: str, ram: float, cpu: float, gpu: float, gpu_temp: float
+    ) -> None:
         if not self.log_path:
             return
         try:
@@ -147,7 +149,9 @@ class ResourceMonitor:
             try:
                 # cpu_percent kan blokere for prøveperioden
                 ram_pct = float(psutil.virtual_memory().percent)
-                cpu_pct = float(psutil.cpu_percent(interval=self.cpu_sample_interval_sec))
+                cpu_pct = float(
+                    psutil.cpu_percent(interval=self.cpu_sample_interval_sec)
+                )
                 gpu_pct, gpu_temp = self._get_gpu_stats()
 
                 if self.verbose:

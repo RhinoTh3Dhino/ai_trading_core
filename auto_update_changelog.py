@@ -1,7 +1,7 @@
-import subprocess
 import datetime
 import os
 import re
+import subprocess
 
 CHANGELOG_PATH = "CHANGELOG.md"
 

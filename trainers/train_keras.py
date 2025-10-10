@@ -7,18 +7,19 @@ Træner en Keras/TensorFlow model til trading-signaler (klassifikation)
 - Inkluderer automatisk feature scaling (StandardScaler)
 """
 
-import os
-import sys
 import argparse
 import json
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.utils.class_weight import compute_class_weight
-from sklearn.preprocessing import StandardScaler
+import os
 import platform
+import sys
+from datetime import datetime
+
 import joblib
+import numpy as np
+import pandas as pd
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils.class_weight import compute_class_weight
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Undgå TF-warnings
 
@@ -39,7 +40,8 @@ except ImportError:
     MLFLOW_AVAILABLE = False
 
 try:
-    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    from utils.mlflow_utils import (end_mlflow_run, setup_mlflow,
+                                    start_mlflow_run)
 
     MLUTILS_AVAILABLE = True
 except ImportError:

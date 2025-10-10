@@ -1,6 +1,7 @@
+import os
+
 import matplotlib.pyplot as plt
 import pandas as pd
-import os
 
 from utils.project_path import PROJECT_ROOT
 

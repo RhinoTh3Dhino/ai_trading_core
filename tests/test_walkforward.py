@@ -1,18 +1,19 @@
-import sys
 import os
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
+# 📌 Sikrer korrekt sys.path til projektroden
+import os
+import sys
 from pathlib import Path
+
 from utils.project_path import PROJECT_ROOT
 
 # tests/test_walkforward.py
 
-# 📌 Sikrer korrekt sys.path til projektroden
-import os
-import sys
 
 PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
@@ -20,25 +21,22 @@ if PROJECT_ROOT not in sys.path:
 
 # ✅ Korrekte imports
 import glob
-import traceback
 import shutil
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import traceback
 from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 # === Centralt styrede konfigurationer ===
 try:
-    from config.monitoring_config import (
-        COINS,
-        TIMEFRAMES,
-        WALKFORWARD_DEFAULT_WINDOW_SIZE,
-        WALKFORWARD_MIN_WINDOW_SIZE,
-        WALKFORWARD_STEP_SIZE,
-        WALKFORWARD_TRAIN_SIZE,
-        ENABLE_MONITORING,
-        ALARM_THRESHOLDS,
-    )
+    from config.monitoring_config import (ALARM_THRESHOLDS, COINS,
+                                          ENABLE_MONITORING, TIMEFRAMES,
+                                          WALKFORWARD_DEFAULT_WINDOW_SIZE,
+                                          WALKFORWARD_MIN_WINDOW_SIZE,
+                                          WALKFORWARD_STEP_SIZE,
+                                          WALKFORWARD_TRAIN_SIZE)
 except ImportError:
     COINS = ["BTCUSDT", "ETHUSDT", "DOGEUSDT"]
     TIMEFRAMES = ["1h", "4h"]
@@ -49,21 +47,16 @@ except ImportError:
     ENABLE_MONITORING = True
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
 
-from strategies.advanced_strategies import (
-    ema_crossover_strategy,
-    ema_rsi_regime_strategy,
-    voting_ensemble,
-)
 from bot.paper_trader import paper_trade as paper_trade_advanced
+from strategies.advanced_strategies import (ema_crossover_strategy,
+                                            ema_rsi_regime_strategy,
+                                            voting_ensemble)
 from strategies.gridsearch_strategies import paper_trade_simple
-from utils.performance import (
-    calculate_performance_metrics,
-    calculate_rolling_sharpe,
-    calculate_trade_duration,
-    calculate_regime_drawdown,
-)
-from utils.telegram_utils import send_image, send_document
-
+from utils.performance import (calculate_performance_metrics,
+                               calculate_regime_drawdown,
+                               calculate_rolling_sharpe,
+                               calculate_trade_duration)
+from utils.telegram_utils import send_document, send_image
 
 # --- WALKFORWARD PARAMS (hentet fra config hvis muligt) ---
 DEFAULT_WINDOW_SIZE = WALKFORWARD_DEFAULT_WINDOW_SIZE

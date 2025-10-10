@@ -13,8 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from bot.brokers.paper_broker import PaperBroker  # noqa: E402
 import pytz  # bruges i tidsstempel-test
+
+from bot.brokers.paper_broker import PaperBroker  # noqa: E402
 
 
 # ---------- små hjælpere ----------
@@ -48,6 +49,7 @@ def read_last_csv_row(path: Path):
 
 
 # ---------- TESTS ----------
+
 
 def test_market_buy_sell_roundtrip():
     logs = tmp_logs()
@@ -125,10 +127,14 @@ def test_min_filters_submit_and_limit_fill():
     # For lille notional ved market BUY (men over min_qty)
     # 0.40 * 100 = 40 < 50 → afvises pga. notional
     o_small_notional = b.submit_order("BTCUSDT", "BUY", 0.40, "market", ts=ts)
-    assert o_small_notional.status == "rejected" and "Notional" in (o_small_notional.reason or "")
+    assert o_small_notional.status == "rejected" and "Notional" in (
+        o_small_notional.reason or ""
+    )
 
     # Limit BUY med for lille notional ved submit
-    o_lim_small = b.submit_order("BTCUSDT", "BUY", 1.0, "limit", limit_price=40.0, ts=ts)
+    o_lim_small = b.submit_order(
+        "BTCUSDT", "BUY", 1.0, "limit", limit_price=40.0, ts=ts
+    )
     assert o_lim_small.status == "rejected" and "Notional" in (o_lim_small.reason or "")
 
     # Valid limit BUY der fyldes når prisen krydser
@@ -149,7 +155,7 @@ def test_slippage_and_commission_accounting():
     b = PaperBroker(
         starting_cash=1000.0,
         commission_bp=100.0,  # 1%
-        slippage_bp=100.0,    # 1%
+        slippage_bp=100.0,  # 1%
         allow_short=False,
         equity_log_path=logs.equity,
         fills_log_path=logs.fills,
@@ -271,6 +277,7 @@ def test_limit_sell_cannot_oversell_no_short():
 
 
 # ---------- simple testrunner ----------
+
 
 def main():
     tests = [

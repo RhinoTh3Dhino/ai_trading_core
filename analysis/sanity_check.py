@@ -8,10 +8,12 @@ python analysis/sanity_check.py --test_targets outputs/y_test.csv --predictions 
 """
 
 import argparse
-import pandas as pd
-import numpy as np
+
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import numpy as np
+import pandas as pd
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix)
 
 
 def plot_confusion(y_true, y_pred, title="Confusion matrix"):

@@ -1,7 +1,8 @@
 # utils/mlflow_utils.py
 
-import mlflow
 import os
+
+import mlflow
 
 
 def ensure_no_active_run(print_status=True):

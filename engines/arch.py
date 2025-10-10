@@ -1,5 +1,6 @@
 # engines/arch.py
 from __future__ import annotations
+
 """
 Adapter til model-eksport og -indlæsning.
 
@@ -64,9 +65,9 @@ class MyNet(nn.Module):
         num_features: int = 34,
         hidden: int = 64,
         out_dim: int = 2,
-        dropout: Optional[float] = None,   # Brug None for at udelade Dropout-lag helt
-        use_bn: bool = False,              # BatchNorm kun hvis True
-        act: str = "relu",                 # aktiveringsnavn
+        dropout: Optional[float] = None,  # Brug None for at udelade Dropout-lag helt
+        use_bn: bool = False,  # BatchNorm kun hvis True
+        act: str = "relu",  # aktiveringsnavn
     ):
         super().__init__()
         self.num_features = int(num_features)
@@ -116,6 +117,7 @@ class MyNet(nn.Module):
 def _get_engine_module():
     try:
         import bot.engine as E  # type: ignore
+
         return E
     except Exception as e:
         raise ModuleNotFoundError(
@@ -126,6 +128,7 @@ def _get_engine_module():
 def _wrap_class_ctor(cls: type) -> Callable[..., nn.Module]:
     def _ctor(**kwargs) -> nn.Module:
         return cls(**kwargs)
+
     return _ctor
 
 
@@ -139,7 +142,13 @@ def _find_factory_in_engine() -> Optional[Callable[..., nn.Module]]:
     E = _get_engine_module()
 
     # 1) Kendte fabriksnavne
-    for name in ["build_model", "build_torch_model", "make_model", "create_model", "get_model"]:
+    for name in [
+        "build_model",
+        "build_torch_model",
+        "make_model",
+        "create_model",
+        "get_model",
+    ]:
         f = getattr(E, name, None)
         if callable(f):
             return f  # type: ignore[return-value]

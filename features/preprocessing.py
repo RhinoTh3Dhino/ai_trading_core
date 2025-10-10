@@ -1,9 +1,10 @@
 # features/preprocessing.py
 from __future__ import annotations
 
+from typing import Iterable, List, Optional, Sequence, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Iterable, List, Optional, Sequence, Tuple
 
 
 # -----------------------------
@@ -41,7 +42,9 @@ def normalize_zscore(df: pd.DataFrame, columns: list) -> pd.DataFrame:
         if col in df.columns:
             df[col + "_z"] = _zscore(df[col])
         else:
-            print(f"[normalize_zscore] Kolonne {col} ikke fundet i DataFrame – springer over.")
+            print(
+                f"[normalize_zscore] Kolonne {col} ikke fundet i DataFrame – springer over."
+            )
     return df
 
 
@@ -52,7 +55,7 @@ def clean_and_normalize(
     df: pd.DataFrame,
     features: Optional[Sequence[str]] = None,
     *,
-    scaler: str = "zscore",                    # 'zscore' | 'minmax' | 'none'
+    scaler: str = "zscore",  # 'zscore' | 'minmax' | 'none'
     bounds: Optional[Tuple[Optional[float], Optional[float]]] = None,
     dropna: bool = True,
     verbose: bool = False,
@@ -93,7 +96,9 @@ def clean_and_normalize(
 
     if not features:
         if verbose:
-            print("[clean_and_normalize] Ingen features at normalisere – returnerer kopi.")
+            print(
+                "[clean_and_normalize] Ingen features at normalisere – returnerer kopi."
+            )
         return df
 
     # 2) Drop NaN hvis ønsket (kun i de features vi arbejder på)
@@ -101,7 +106,9 @@ def clean_and_normalize(
         before = len(df)
         df = df.dropna(subset=list(features))
         if verbose:
-            print(f"[clean_and_normalize] Droppede {before - len(df)} rækker pga. NaN/inf i features.")
+            print(
+                f"[clean_and_normalize] Droppede {before - len(df)} rækker pga. NaN/inf i features."
+            )
 
     if df.empty:
         return df
@@ -114,7 +121,9 @@ def clean_and_normalize(
     # 4) Skalering
     scaler_key = scaler.strip().lower()
     if scaler_key not in {"zscore", "minmax", "none"}:
-        raise ValueError(f"Ukendt scaler '{scaler}'. Brug 'zscore', 'minmax' eller 'none'.")
+        raise ValueError(
+            f"Ukendt scaler '{scaler}'. Brug 'zscore', 'minmax' eller 'none'."
+        )
 
     if scaler_key == "zscore":
         for col in features:
@@ -220,7 +229,9 @@ def prepare_ml_data(
     # Check feature cols findes
     missing_cols = [col for col in feature_cols if col not in df.columns]
     if missing_cols:
-        raise ValueError(f"Følgende feature kolonner mangler i DataFrame: {missing_cols}")
+        raise ValueError(
+            f"Følgende feature kolonner mangler i DataFrame: {missing_cols}"
+        )
 
     # Lav target som fremtidig prisændring (pct. ændring)
     df["target"] = df[target_col].pct_change(periods=-target_shift).shift(-target_shift)

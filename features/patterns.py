@@ -6,8 +6,8 @@ Pattern-baserede features til AI trading pipeline:
 - Simple candlestick patterns (bullish/bearish engulfing, doji, hammer)
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def add_breakout_and_volume_spike(df, lookback=20, vol_mult=2.0):

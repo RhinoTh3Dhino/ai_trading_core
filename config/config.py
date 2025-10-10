@@ -16,14 +16,13 @@ FEATURES = {
 # === Automatisk ALL_FEATURES (unik liste, ingen dublikater/kommenterede) ===
 ALL_FEATURES = []
 for group in FEATURES.values():
-    ALL_FEATURES.extend(
-        [f for f in group if f and not f.strip().startswith("#")]
-    )
+    ALL_FEATURES.extend([f for f in group if f and not f.strip().startswith("#")])
 ALL_FEATURES = list(dict.fromkeys(ALL_FEATURES))  # Unique, original rækkefølge
 
 # === Coin/strategi-opsætning fra coins_config.py (fallback hvis ikke fundet) ===
 try:
-    from config.coins_config import COIN_CONFIGS, ENABLED_COINS, ENABLED_TIMEFRAMES
+    from config.coins_config import (COIN_CONFIGS, ENABLED_COINS,
+                                     ENABLED_TIMEFRAMES)
 except ImportError:
     COIN_CONFIGS = {}
     ENABLED_COINS = ["BTCUSDT"]
@@ -83,6 +82,7 @@ OPTIONS = {
 - OPTIONS: Til SaaS, CI/CD, monitoring, backup mv.
 """
 
+
 def validate_config() -> bool:
     """Validerer at konfigurationen er konsistent."""
     if not ALL_FEATURES:
@@ -94,6 +94,7 @@ def validate_config() -> bool:
     if STOP_LOSS <= 0 or TAKE_PROFIT <= 0:
         raise ValueError("STOP_LOSS og TAKE_PROFIT skal være > 0.")
     return True
+
 
 # === Eksportér alle variable ===
 __all__ = [

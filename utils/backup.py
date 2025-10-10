@@ -17,14 +17,14 @@ Modulet understøtter to spor:
 """
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import os
 import shutil
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 from .errors import BackupError
 
@@ -73,7 +73,9 @@ def create_backup(src_dir: str | Path, backups_dir: str | Path) -> str:
     manifest: Dict[str, object] = {"created_utc": ts, "files": []}
 
     try:
-        with zipfile.ZipFile(str(zip_path), "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(
+            str(zip_path), "w", compression=zipfile.ZIP_DEFLATED
+        ) as zf:
             for root, _, files in os.walk(src):
                 for fn in files:
                     full = Path(root) / fn
@@ -81,8 +83,12 @@ def create_backup(src_dir: str | Path, backups_dir: str | Path) -> str:
                     with open(full, "rb") as fh:
                         data = fh.read()
                     zf.writestr(rel, data)
-                    (manifest["files"]).append({"path": rel, "sha256": _sha256_bytes(data)})
-            zf.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
+                    (manifest["files"]).append(
+                        {"path": rel, "sha256": _sha256_bytes(data)}
+                    )
+            zf.writestr(
+                "manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2)
+            )
         return str(zip_path)
     except Exception as e:
         raise BackupError(f"Kunne ikke oprette backup: {e}") from e
@@ -129,7 +135,11 @@ def rotate_backups(backups_dir: str | Path, keep_last: int = 5) -> int:
     if not bdir.exists():
         return 0
 
-    files = [f for f in bdir.iterdir() if f.is_file() and f.name.startswith("backup_") and f.suffix == ".zip"]
+    files = [
+        f
+        for f in bdir.iterdir()
+        if f.is_file() and f.name.startswith("backup_") and f.suffix == ".zip"
+    ]
     # Navn indeholder UTC timestamp -> sortering giver nyeste først
     files.sort(key=lambda p: p.name, reverse=True)
     to_delete = files[keep_last:]
@@ -151,10 +161,7 @@ def append_botstatus(botstatus_path: str | Path, entry: Dict[str, str]) -> None:
     entry forventer nøgler: date_utc, action, result, details
     """
     botstatus = Path(botstatus_path)
-    header = (
-        "| dato_utc | handling | resultat | detaljer |\n"
-        "|---|---|---|---|\n"
-    )
+    header = "| dato_utc | handling | resultat | detaljer |\n" "|---|---|---|---|\n"
     row = (
         f"| {entry.get('date_utc')} | {entry.get('action')} | "
         f"{entry.get('result')} | {entry.get('details','')} |\n"
@@ -289,7 +296,9 @@ def cleanup_old_backups(
         if not datedir.is_dir():
             continue
 
-        backups = [d for d in datedir.iterdir() if d.is_dir() and d.name.startswith("backup_")]
+        backups = [
+            d for d in datedir.iterdir() if d.is_dir() and d.name.startswith("backup_")
+        ]
         # nyeste først (navn indeholder klokkeslæt HH-MM-SS)
         backups.sort(key=lambda p: p.name, reverse=True)
 

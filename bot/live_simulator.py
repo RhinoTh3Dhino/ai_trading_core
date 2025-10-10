@@ -1,44 +1,34 @@
+import argparse
+import glob
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+
+from backtest.backtest import run_backtest
+from bot.engine import (load_ml_model, load_trained_feature_list,
+                        reconcile_features)
+from utils.file_utils import save_with_metadata
+from utils.log_utils import log_device_status
+from utils.monitoring_utils import (calculate_live_metrics,
+                                    check_drawdown_alert, check_profit_alert,
+                                    check_winrate_alert)
 from utils.project_path import PROJECT_ROOT
+from utils.telegram_utils import send_message, send_strategy_metrics
 
 # bot/live_simulator.py
 
 
-import pandas as pd
-import numpy as np
-import glob
-from datetime import datetime
-import argparse
-
-
-from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message, send_strategy_metrics
-from utils.monitoring_utils import (
-    calculate_live_metrics,
-    check_drawdown_alert,
-    check_winrate_alert,
-    check_profit_alert,
-)
-from utils.file_utils import save_with_metadata
-from backtest.backtest import run_backtest
-from bot.engine import load_ml_model, load_trained_feature_list, reconcile_features
-
 # === Monitoring-parametre og thresholds fra central config ===
 try:
-    from config.monitoring_config import (
-        ALARM_THRESHOLDS,
-        ALERT_ON_DRAWNDOWN,
-        ALERT_ON_WINRATE,
-        ALERT_ON_PROFIT,
-        ENABLE_MONITORING,
-        LIVE_SIM_FEATURES_PATH,
-        LIVE_SIM_INITIAL_BALANCE,
-        LIVE_SIM_NROWS,
-        LIVE_SIM_CHAT_ID,
-        MODEL_TYPE,
-        LIVE_SIM_SYMBOL,
-        LIVE_SIM_TIMEFRAME,
-        LIVE_SIM_FEATURES_DIR,
-    )
+    from config.monitoring_config import (ALARM_THRESHOLDS, ALERT_ON_DRAWNDOWN,
+                                          ALERT_ON_PROFIT, ALERT_ON_WINRATE,
+                                          ENABLE_MONITORING, LIVE_SIM_CHAT_ID,
+                                          LIVE_SIM_FEATURES_DIR,
+                                          LIVE_SIM_FEATURES_PATH,
+                                          LIVE_SIM_INITIAL_BALANCE,
+                                          LIVE_SIM_NROWS, LIVE_SIM_SYMBOL,
+                                          LIVE_SIM_TIMEFRAME, MODEL_TYPE)
 except ImportError:
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
     ALERT_ON_DRAWNDOWN = True

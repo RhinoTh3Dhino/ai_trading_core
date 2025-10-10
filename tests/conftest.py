@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 import re
+import socket
+import sys
 import threading
 import time
-import socket
 from pathlib import Path
 from typing import Dict
 
@@ -21,6 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # =========================
 # Pytest hooks & options
 # =========================
+
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     """
@@ -40,7 +41,9 @@ def _env_flag(name: str) -> bool:
     return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
     """
     Skip 'contract' tests med mindre de er eksplicit aktiveret.
     """
@@ -60,6 +63,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 # Metrics server auto-start
 # =========================
 
+
 def _port_free(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.settimeout(0.1)
@@ -75,7 +79,12 @@ def pytest_sessionstart(session) -> None:
       START_METRICS_SERVER=0  -> disable
       METRICS_PORT=8081       -> port override
     """
-    if os.environ.get("START_METRICS_SERVER", "1").strip().lower() not in {"1", "true", "yes", "on"}:
+    if os.environ.get("START_METRICS_SERVER", "1").strip().lower() not in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
         return
 
     port = int(os.environ.get("METRICS_PORT", "8000"))
@@ -86,6 +95,7 @@ def pytest_sessionstart(session) -> None:
     def _run():
         # Importér uvicorn først i child-thread for at undgå overhead i collection-fase
         import uvicorn  # type: ignore
+
         # Peg på din eksisterende app med metrics-route i api/app.py
         uvicorn.run("api.app:app", host="0.0.0.0", port=port, log_level="warning")
 
@@ -98,6 +108,7 @@ def pytest_sessionstart(session) -> None:
 # =========================
 # Generelle, delte fixtures
 # =========================
+
 
 @pytest.fixture(scope="session", autouse=True)
 def _prepare_test_env() -> None:
@@ -120,6 +131,7 @@ def _set_global_seed() -> int:
     np.random.seed(seed)
     try:
         import random
+
         random.seed(seed)
     except Exception:
         pass
@@ -190,6 +202,7 @@ def dummy_preds():
 # ============================================
 # Integrationstest- & GUI-hjælpefixtures
 # ============================================
+
 
 @pytest.fixture(scope="session")
 def dummy_csv_path(tmp_path_factory) -> str:
@@ -264,13 +277,16 @@ def timestamp_regex():
 # Små hjælpefunktioner
 # ==========================
 
+
 @pytest.fixture
 def require_columns():
     """
     Hjælper til hurtigt at tjekke kolonnekrav i DataFrames i tests.
     Brug: require_columns(df, {"timestamp","close"})
     """
+
     def _check(df: pd.DataFrame, cols):
         missing = set(cols) - set(df.columns)
         assert not missing, f"Manglende kolonner: {missing}"
+
     return _check

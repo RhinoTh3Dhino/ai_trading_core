@@ -1,10 +1,10 @@
 # tests/integration/test_kraken_golden.py
 from __future__ import annotations
 
+import importlib
 import sys
 import time
-import importlib
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 import pytest
 from prometheus_client import REGISTRY, generate_latest
@@ -37,6 +37,7 @@ def _reload_metrics(env: Dict[str, str | None] | None = None):
 
     _clear_prom_registry()
     import bot.live_connector.metrics as m  # noqa
+
     importlib.reload(m)
     return m
 
@@ -76,15 +77,18 @@ def test_kraken_golden_replay(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(time, "time", lambda: fixed_now_ms / 1000.0)
 
     # Genindlæs metrics rent og auto-init + bootstrap, uden multiproc
-    _reload_metrics({
-        "PROMETHEUS_MULTIPROC_DIR": None,
-        "METRICS_AUTO_INIT": "1",
-        "METRICS_BOOTSTRAP": "1",
-    })
+    _reload_metrics(
+        {
+            "PROMETHEUS_MULTIPROC_DIR": None,
+            "METRICS_AUTO_INIT": "1",
+            "METRICS_BOOTSTRAP": "1",
+        }
+    )
 
     # --- VIGTIGT: Tving reload af Kraken-modulet efter metrics-reload ---
     sys.modules.pop("bot.live_connector.venues.kraken", None)
     import bot.live_connector.venues.kraken as kraken_mod
+
     importlib.reload(kraken_mod)
     KrakenConnector = kraken_mod.KrakenConnector  # bind til reloaded modul
 
@@ -101,7 +105,17 @@ def test_kraken_golden_replay(monkeypatch: pytest.MonkeyPatch):
         "pair": "XBT/USDT",
         "data": [
             # [t, et, o, h, l, c, vwap, vol, count]  (t og et i sekunder)
-            [1730572740, 1730572800, "65000", "65100", "64900", "65050", "65040", "10.5", 42]
+            [
+                1730572740,
+                1730572800,
+                "65000",
+                "65100",
+                "64900",
+                "65050",
+                "65040",
+                "10.5",
+                42,
+            ]
         ],
     }
     # Dict-form (BTC):
@@ -109,19 +123,36 @@ def test_kraken_golden_replay(monkeypatch: pytest.MonkeyPatch):
         "event": "ohlc",
         "pair": "XBT/USDT",
         "interval": 1,
-        "data": [{
-            "time": 1730572800,
-            "etime": 1730572860,
-            "open": "65050", "high": "65120", "low": "65010", "close": "65100",
-            "vwap": "65090", "vol": "8.0", "count": 30
-        }],
+        "data": [
+            {
+                "time": 1730572800,
+                "etime": 1730572860,
+                "open": "65050",
+                "high": "65120",
+                "low": "65010",
+                "close": "65100",
+                "vwap": "65090",
+                "vol": "8.0",
+                "count": 30,
+            }
+        ],
     }
     # Array-form (ETH):
     msg_c: Dict[str, Any] = {
         "channel": "ohlc-1",
         "pair": "ETH/USDT",
         "data": [
-            [1730572740, 1730572800, "3200", "3210", "3190", "3205", "3204", "100.0", 12]
+            [
+                1730572740,
+                1730572800,
+                "3200",
+                "3210",
+                "3190",
+                "3205",
+                "3204",
+                "100.0",
+                12,
+            ]
         ],
     }
 
@@ -150,7 +181,12 @@ def test_kraken_golden_replay(monkeypatch: pytest.MonkeyPatch):
     e1 = out[1]
     assert e1["symbol"] == "BTCUSDT"
     assert e1["close_time"] == 1730572860 * 1000
-    assert e1["o"] == 65050.0 and e1["h"] == 65120.0 and e1["l"] == 65010.0 and e1["c"] == 65100.0
+    assert (
+        e1["o"] == 65050.0
+        and e1["h"] == 65120.0
+        and e1["l"] == 65010.0
+        and e1["c"] == 65100.0
+    )
 
     # ETH-bar
     e2 = out[2]

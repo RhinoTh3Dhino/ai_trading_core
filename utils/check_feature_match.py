@@ -1,8 +1,9 @@
 # utils/check_feature_match.py
-import os
-import json
-import pandas as pd
 import argparse
+import json
+import os
+
+import pandas as pd
 
 MODEL_DIR = "models"
 PYTORCH_FEATURES_PATH = os.path.join(MODEL_DIR, "best_pytorch_features.json")

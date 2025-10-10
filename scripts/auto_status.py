@@ -1,11 +1,13 @@
+import time
+
+import schedule
+from telegram import Bot
+
 from utils.project_path import PROJECT_ROOT
+from utils.report_utils import build_telegram_summary
 
 # scripts/auto_status.py
 
-import schedule
-import time
-from utils.report_utils import build_telegram_summary
-from telegram import Bot
 
 TELEGRAM_TOKEN = "DIN_BOT_TOKEN"
 CHAT_ID = "DIT_CHAT_ID"

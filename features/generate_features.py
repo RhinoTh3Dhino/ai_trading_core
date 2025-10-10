@@ -1,12 +1,14 @@
 # features/generate_features.py
 
 import argparse
-import pandas as pd
-import numpy as np
 import os
 import sys
-from utils.project_path import PROJECT_ROOT
+
+import numpy as np
+import pandas as pd
+
 from features.features_pipeline import generate_features, save_features
+from utils.project_path import PROJECT_ROOT
 
 
 def auto_detect_sep(filepath):

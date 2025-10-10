@@ -1,9 +1,10 @@
+import json
+import os
+
 from utils.project_path import PROJECT_ROOT
 
 # utils/ensemble_utils.py
 
-import json
-import os
 
 DEFAULT_ENSEMBLE_THRESHOLD = 0.7
 DEFAULT_ENSEMBLE_WEIGHTS = [1.0, 1.0, 0.7]

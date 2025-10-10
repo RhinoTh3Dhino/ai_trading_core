@@ -5,13 +5,15 @@ Kører alle feature-kombinationer og finder højeste winrate.
 """
 
 import argparse
-import pandas as pd
-import numpy as np
 import itertools
-import lightgbm as lgb
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import os
+
+import lightgbm as lgb
+import numpy as np
+import pandas as pd
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix)
+from sklearn.model_selection import train_test_split
 
 from utils.project_path import PROJECT_ROOT
 from utils.telegram_utils import send_telegram_message

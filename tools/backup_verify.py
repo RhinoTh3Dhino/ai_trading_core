@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Tuple
 
-from bot.utils.backup import verify_backup, append_botstatus, restore_backup
+from bot.utils.backup import append_botstatus, restore_backup, verify_backup
 
 
 def _log_status(botstatus: Path, action: str, result: str, details: str = "") -> None:
@@ -68,13 +68,17 @@ def _verify_one(
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Verificér/restore backups og log til BotStatus.md")
+    ap = argparse.ArgumentParser(
+        description="Verificér/restore backups og log til BotStatus.md"
+    )
     ap.add_argument("--backups", required=True, help="Mappe med backup_*.zip")
     ap.add_argument("--botstatus", required=True, help="Sti til BotStatus.md")
     ap.add_argument("--restore", default=None, help="(Valgfri) mappe til test-restore")
     ap.add_argument("--pattern", default="*.zip", help="Glob pattern (default: *.zip)")
     ap.add_argument("--dry-run", action="store_true", help="Log uden faktisk restore")
-    ap.add_argument("--fail-fast", action="store_true", help="Stop ved første KORRUPT/FEJL")
+    ap.add_argument(
+        "--fail-fast", action="store_true", help="Stop ved første KORRUPT/FEJL"
+    )
     args = ap.parse_args(argv)
 
     backups_dir = Path(args.backups).expanduser().resolve()
@@ -89,7 +93,10 @@ def main(argv: list[str] | None = None) -> int:
 
     files = sorted(backups_dir.glob(args.pattern))
     if not files:
-        print(f"[backup_verify] Ingen filer matcher {args.pattern} i {backups_dir}", file=sys.stderr)
+        print(
+            f"[backup_verify] Ingen filer matcher {args.pattern} i {backups_dir}",
+            file=sys.stderr,
+        )
 
     total = ok = corrupt = failed = 0
     for zp in files:

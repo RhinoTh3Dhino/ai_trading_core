@@ -1,83 +1,83 @@
 # =========================
-# STANDARD (default til LF)
+# STANDARD (LF som default) + auto normalisering
 # =========================
-*             text=auto eol=lf
+*                      text=auto eol=lf
 
 # =========================
-# KODE & NOTEBOOKS
+# KODE & NOTEBOOKS (tekst)
 # =========================
-*.py          text eol=lf
-*.ipynb       text eol=lf
-*.pyi         text eol=lf
-*.patch       text eol=lf
-*.diff        text eol=lf
-*.rst         text eol=lf
-*.md          text eol=lf
-*.txt         text eol=lf
-*.csv         text eol=lf
-*.tsv         text eol=lf
-*.json        text eol=lf
-*.yml         text eol=lf
-*.yaml        text eol=lf
-*.ini         text eol=lf
-*.toml        text eol=lf
-*.env         text eol=lf
-*.conf        text eol=lf
-*.cfg         text eol=lf
-*.svg         text eol=lf
+*.py                   text eol=lf
+*.pyi                  text eol=lf
+*.ipynb                text eol=lf
+*.patch                text eol=lf
+*.diff                 text eol=lf
+*.rst                  text eol=lf
+*.md                   text eol=lf
+*.txt                  text eol=lf
+*.csv                  text eol=lf
+*.tsv                  text eol=lf
+*.json                 text eol=lf
+*.yml                  text eol=lf
+*.yaml                 text eol=lf
+*.ini                  text eol=lf
+*.toml                 text eol=lf
+*.env                  text eol=lf
+*.conf                 text eol=lf
+*.cfg                  text eol=lf
+*.svg                  text eol=lf
 
 # GitHub Workflows
 .github/workflows/*.yml text eol=lf
 
-# Lockfiler (hold som tekst, LF)
-poetry.lock   text eol=lf
-Pipfile.lock  text eol=lf
-requirements*.txt text eol=lf
+# Lockfiler
+poetry.lock            text eol=lf
+Pipfile.lock           text eol=lf
+requirements*.txt      text eol=lf
 
 # =========================
-# SHELL / WINDOWS SCRIPTS
+# SHELL / WINDOWS SCRIPTS (bevar CRLF)
 # =========================
-*.sh          text eol=lf
-*.ps1         text eol=crlf
-*.psm1        text eol=crlf
-*.bat         text eol=crlf
-*.cmd         text eol=crlf
+*.sh                   text eol=lf
+*.ps1                  text eol=crlf
+*.psm1                 text eol=crlf
+*.bat                  text eol=crlf
+*.cmd                  text eol=crlf
 
 # =========================
-# BINÆRE / MODELLER / ARKIVER
+# BINÆRE / MODELLER / ARKIVER (ingen EOL-normalisering)
 # =========================
-*.png         binary
-*.jpg         binary
-*.jpeg        binary
-*.gif         binary
-*.ico         binary
-*.pdf         binary
-*.zip         binary
-*.tar         binary
-*.gz          binary
-*.7z          binary
+*.png                  binary
+*.jpg                  binary
+*.jpeg                 binary
+*.gif                  binary
+*.ico                  binary
+*.pdf                  binary
+*.zip                  binary
+*.tar                  binary
+*.gz                   binary
+*.7z                   binary
 
-# Data/ML-artefakter
-*.parquet     binary
-*.npy         binary
-*.npz         binary
-*.joblib      binary
-*.pkl         binary
-*.h5          binary
-*.keras       binary
-*.onnx        binary
-*.tflite      binary
-*.pt          binary
-*.pb          binary
-*.whl         binary
+# Data / ML-artefakter
+*.parquet              binary
+*.npy                  binary
+*.npz                  binary
+*.joblib               binary
+*.pkl                  binary
+*.h5                   binary
+*.keras                binary
+*.onnx                 binary
+*.tflite               binary
+*.pt                   binary
+*.pb                   binary
+*.whl                  binary
 
 # =========================
-# NOTEBOOK-OUTPUT FILTER (kræver lokal git filter-konfig)
+# NOTEBOOK-OUTPUT FILTER (brug lokalt: git config filter.strip-notebook-output.clean "jq 'del(.cells[].outputs, .cells[].execution_count)'")
 # =========================
-.ipynb        filter=strip-notebook-output
+*.ipynb                filter=strip-notebook-output
 
 # =========================
 # SELV-FILERS EOL
 # =========================
-.gitattributes text eol=lf
-.gitignore     text eol=lf
+.gitattributes         text eol=lf
+.gitignore             text eol=lf

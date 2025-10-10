@@ -1,16 +1,15 @@
-from utils.project_path import PROJECT_ROOT
-
-# bot/multi_live_simulator.py
-
-
-import pandas as pd
 import argparse
 from datetime import datetime
 
+import pandas as pd
 
-from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message
 from bot.live_simulator import main as run_live_sim
+from utils.log_utils import log_device_status
+from utils.project_path import PROJECT_ROOT
+from utils.telegram_utils import send_message
+
+# bot/multi_live_simulator.py
+
 
 # === Konfigurer coins, timeframes og parametre her ===
 MULTI_CONFIG = [

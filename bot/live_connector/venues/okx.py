@@ -1,14 +1,13 @@
 # bot/live_connector/venues/okx.py
 import json
 import time
-from typing import Any, Dict, Optional, Callable, Union, Mapping, List
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+
+from bot.live_connector.metrics import (inc_feed_bars_total,
+                                        observe_bar_close_lag_ms,
+                                        observe_transport_latency_ms)
 
 from .base import BaseConnector
-from bot.live_connector.metrics import (
-    inc_feed_bars_total,
-    observe_bar_close_lag_ms,
-    observe_transport_latency_ms,
-)
 
 VENUE_NAME = "okx"
 
@@ -17,7 +16,9 @@ SymbolResolver = Callable[[str], str]
 SymbolMapOrResolver = Union[SymbolMap, SymbolResolver]
 
 
-def _resolve_internal_symbol(symbol_map_or_resolver: SymbolMapOrResolver, inst_id: str) -> str:
+def _resolve_internal_symbol(
+    symbol_map_or_resolver: SymbolMapOrResolver, inst_id: str
+) -> str:
     """
     Returnér internt symbol for et OKX instId.
     Understøtter både dict-symbolmap og en resolver-funktion (callable).
@@ -77,20 +78,22 @@ def parse_okx_candle_payload(
         except Exception:
             continue
 
-        events.append({
-            "venue": VENUE_NAME,
-            "symbol": symbol,
-            "tf": "1m",
-            "open_time": ts_ms - 60_000,
-            "close_time": ts_ms,
-            "o": o,
-            "h": h,
-            "l": l,
-            "c": c,
-            "v": v,
-            "is_final": True,  # candle1m leverer normalt afsluttede lys
-            "event_ts_ms": now_ms,
-        })
+        events.append(
+            {
+                "venue": VENUE_NAME,
+                "symbol": symbol,
+                "tf": "1m",
+                "open_time": ts_ms - 60_000,
+                "close_time": ts_ms,
+                "o": o,
+                "h": h,
+                "l": l,
+                "c": c,
+                "v": v,
+                "is_final": True,  # candle1m leverer normalt afsluttede lys
+                "event_ts_ms": now_ms,
+            }
+        )
 
     return events if events else None
 
@@ -121,10 +124,15 @@ class OKXConnector(BaseConnector):
     ):
         if on_kline is None:
             on_kline = lambda _evt: None  # no-op i tests
-        super().__init__(cfg=cfg, symbol_map=symbol_map, on_kline=on_kline, ws_client=ws_client)
+        super().__init__(
+            cfg=cfg, symbol_map=symbol_map, on_kline=on_kline, ws_client=ws_client
+        )
 
     async def _subscribe(self, ws):
-        subs = [{"channel": s["channel"], "instId": s["instId"]} for s in self.cfg["ws"]["subs"]]
+        subs = [
+            {"channel": s["channel"], "instId": s["instId"]}
+            for s in self.cfg["ws"]["subs"]
+        ]
         await ws.send(json.dumps({"op": "subscribe", "args": subs}))
 
     async def _read_loop(self, ws):

@@ -1,10 +1,11 @@
 # visualization/plot_confusion_matrix.py
 
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 
 def plot_confusion_matrix(

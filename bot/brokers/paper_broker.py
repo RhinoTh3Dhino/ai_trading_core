@@ -4,21 +4,22 @@ from __future__ import annotations
 import csv
 import math
 import uuid
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import pytz
 
-
 # =========================
 # Datatyper / strukturer
 # =========================
 
+
 @dataclass
 class Position:
     """Netto-position pr. symbol (qty > 0 = long, qty < 0 = short)."""
+
     symbol: str
     qty: float = 0.0
     avg_price: float = 0.0  # VWAP for den åbne netto-position
@@ -27,24 +28,26 @@ class Position:
 @dataclass
 class Order:
     """Simpel ordremodel til paper trading."""
+
     id: str
     ts: str
     symbol: str
-    side: str            # "BUY" | "SELL"
+    side: str  # "BUY" | "SELL"
     qty: float
-    type: str           # "market" | "limit"
+    type: str  # "market" | "limit"
     limit_price: Optional[float] = None
-    status: str = "open"     # "open" | "filled" | "rejected" | "cancelled"
+    status: str = "open"  # "open" | "filled" | "rejected" | "cancelled"
     reason: Optional[str] = None
 
 
 @dataclass
 class Fill:
     """Udførte handler (fills) med provision og realiseret PnL på lukkede mængder."""
+
     ts: str
     order_id: str
     symbol: str
-    side: str           # "BUY" | "SELL"
+    side: str  # "BUY" | "SELL"
     qty: float
     price: float
     commission: float
@@ -54,6 +57,7 @@ class Fill:
 # =========================
 # PaperBroker
 # =========================
+
 
 class PaperBroker:
     """
@@ -75,8 +79,8 @@ class PaperBroker:
         self,
         *,
         starting_cash: float = 100_000.0,
-        commission_bp: float = 2.0,    # 0.02%
-        slippage_bp: float = 1.0,      # 0.01%
+        commission_bp: float = 2.0,  # 0.02%
+        slippage_bp: float = 1.0,  # 0.01%
         tz: str = "Europe/Copenhagen",
         equity_log_path: str | Path = "logs/equity.csv",
         fills_log_path: str | Path = "logs/fills.csv",
@@ -130,23 +134,53 @@ class PaperBroker:
         if not self.fills_log_path.exists():
             with self.fills_log_path.open("w", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
-                w.writerow(["ts", "symbol", "side", "qty", "price", "commission", "pnl_realized"])
+                w.writerow(
+                    [
+                        "ts",
+                        "symbol",
+                        "side",
+                        "qty",
+                        "price",
+                        "commission",
+                        "pnl_realized",
+                    ]
+                )
         if not self.equity_log_path.exists():
             with self.equity_log_path.open("w", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
-                w.writerow(["date", "equity", "cash", "positions_value", "drawdown_pct"])
+                w.writerow(
+                    ["date", "equity", "cash", "positions_value", "drawdown_pct"]
+                )
 
     def _append_fill(self, fill: Fill) -> None:
         with self.fills_log_path.open("a", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow([fill.ts, fill.symbol, fill.side, self._r(fill.qty, self.qty_decimals),
-                        self._r(fill.price, self.price_decimals), self._r(fill.commission, 8),
-                        self._r(fill.pnl_realized, 8)])
+            w.writerow(
+                [
+                    fill.ts,
+                    fill.symbol,
+                    fill.side,
+                    self._r(fill.qty, self.qty_decimals),
+                    self._r(fill.price, self.price_decimals),
+                    self._r(fill.commission, 8),
+                    self._r(fill.pnl_realized, 8),
+                ]
+            )
 
-    def _append_equity_snapshot(self, date_str: str, equity: float, cash: float, pos_val: float, dd_pct: float) -> None:
+    def _append_equity_snapshot(
+        self, date_str: str, equity: float, cash: float, pos_val: float, dd_pct: float
+    ) -> None:
         with self.equity_log_path.open("a", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow([date_str, self._r(equity, 2), self._r(cash, 2), self._r(pos_val, 2), self._r(dd_pct, 2)])
+            w.writerow(
+                [
+                    date_str,
+                    self._r(equity, 2),
+                    self._r(cash, 2),
+                    self._r(pos_val, 2),
+                    self._r(dd_pct, 2),
+                ]
+            )
 
     # ------- tids- & afrundingshjælpere -------
 
@@ -157,7 +191,7 @@ class PaperBroker:
     @staticmethod
     def _r(x: float, n: int) -> float:
         """Rund for pæn log-output (påvirker ikke interne beregninger)."""
-        q = 10 ** n
+        q = 10**n
         return math.floor(x * q + 0.5) / q
 
     # ------- offentlige API-metoder -------
@@ -251,7 +285,10 @@ class PaperBroker:
                 return order
 
             # min_notional for MARKET ved submit (mod last)
-            if self.min_notional > 0.0 and abs(order.qty) * float(price) + 1e-12 < self.min_notional:
+            if (
+                self.min_notional > 0.0
+                and abs(order.qty) * float(price) + 1e-12 < self.min_notional
+            ):
                 order.status = "rejected"
                 order.reason = f"Notional below min_notional ({self.min_notional})"
                 return order
@@ -267,7 +304,11 @@ class PaperBroker:
                 return order
 
             # LIMIT: ved submit — afvis kun under min_notional hvis flag er True
-            if self.min_notional > 0.0 and abs(order.qty) * float(order.limit_price) + 1e-12 < self.min_notional:
+            if (
+                self.min_notional > 0.0
+                and abs(order.qty) * float(order.limit_price) + 1e-12
+                < self.min_notional
+            ):
                 if self.reject_below_min:
                     order.status = "rejected"
                     order.reason = f"Notional below min_notional ({self.min_notional})"
@@ -276,7 +317,9 @@ class PaperBroker:
 
             # Kan den fyldes straks?
             if last_px is not None:
-                should_fill = (side == "BUY" and last_px <= order.limit_price) or (side == "SELL" and last_px >= order.limit_price)
+                should_fill = (side == "BUY" and last_px <= order.limit_price) or (
+                    side == "SELL" and last_px >= order.limit_price
+                )
                 if should_fill:
                     self._try_fill_limit_now(order, last_px, ts)
                     if order.status == "filled":
@@ -304,7 +347,9 @@ class PaperBroker:
         self.open_orders = kept
         return cancelled
 
-    def close_position(self, symbol: str, ts: Optional[datetime] = None) -> Optional[Order]:
+    def close_position(
+        self, symbol: str, ts: Optional[datetime] = None
+    ) -> Optional[Order]:
         """Luk hele netto-positionen i markedet (market ordre). Returnerer ordren, eller None hvis ingen position."""
         pos = self.positions.get(symbol)
         if not pos or abs(pos.qty) < 1e-12:
@@ -312,7 +357,9 @@ class PaperBroker:
         side = "SELL" if pos.qty > 0 else "BUY"
         return self.submit_order(symbol, side, abs(pos.qty), "market", ts=ts)
 
-    def mark_to_market(self, prices: Dict[str, float], ts: Optional[datetime] = None) -> Dict:
+    def mark_to_market(
+        self, prices: Dict[str, float], ts: Optional[datetime] = None
+    ) -> Dict:
         """
         Opdater markedspriser og forsøg at fylde limit-ordrer, beregn equity/drawdown,
         og skriv et snapshot til equity-loggen.
@@ -332,9 +379,19 @@ class PaperBroker:
         # Snapshot af equity/drawdown
         equity = self._equity(self._last_prices)
         self.peak_equity = max(self.peak_equity, equity)
-        dd_pct = 0.0 if self.peak_equity <= 0 else (equity - self.peak_equity) / self.peak_equity * 100.0
+        dd_pct = (
+            0.0
+            if self.peak_equity <= 0
+            else (equity - self.peak_equity) / self.peak_equity * 100.0
+        )
 
-        self._append_equity_snapshot(now.date().isoformat(), equity, self.cash, self._positions_value(self._last_prices), dd_pct)
+        self._append_equity_snapshot(
+            now.date().isoformat(),
+            equity,
+            self.cash,
+            self._positions_value(self._last_prices),
+            dd_pct,
+        )
 
         # Tjek daily loss limit efter valuation
         self._check_daily_loss_limit(equity)
@@ -350,7 +407,9 @@ class PaperBroker:
             "trading_halted": self.trading_halted,
         }
 
-    def pnl_snapshot(self, prices: Optional[Dict[str, float]] = None) -> Dict[str, float]:
+    def pnl_snapshot(
+        self, prices: Optional[Dict[str, float]] = None
+    ) -> Dict[str, float]:
         """Returnér kort PnL-oversigt. Opdaterer ikke logs."""
         px = prices or self._last_prices
         return {
@@ -374,7 +433,9 @@ class PaperBroker:
                 remaining.append(o)
                 continue
 
-            should_fill = (o.side == "BUY" and last <= float(o.limit_price)) or (o.side == "SELL" and last >= float(o.limit_price))
+            should_fill = (o.side == "BUY" and last <= float(o.limit_price)) or (
+                o.side == "SELL" and last >= float(o.limit_price)
+            )
             if should_fill:
                 self._try_fill_limit_now(o, last, now)
                 if o.status != "filled":
@@ -390,7 +451,9 @@ class PaperBroker:
             return min(last_px, float(order.limit_price))
         return max(last_px, float(order.limit_price))
 
-    def _try_fill_limit_now(self, order: Order, last_px: float, ts: Optional[datetime]) -> None:
+    def _try_fill_limit_now(
+        self, order: Order, last_px: float, ts: Optional[datetime]
+    ) -> None:
         """
         Forsøg at fylde en limit-ordre, når touch-betingelsen er opfyldt.
         - Brug rå eksekveringspris (min/max af last og limit afh. af side).
@@ -409,7 +472,9 @@ class PaperBroker:
             order.status = "open"
             order.reason = None  # åben ordre bærer ikke reject-reason
 
-    def _execute_fill(self, order: Order, raw_price: float, ts: Optional[datetime] = None) -> None:
+    def _execute_fill(
+        self, order: Order, raw_price: float, ts: Optional[datetime] = None
+    ) -> None:
         """
         Udfør en handel til pris med slippage/commission, opdater konti/positioner, log fill.
 
@@ -426,7 +491,11 @@ class PaperBroker:
 
         # --- slippage-pris til bogføring/cash/PnL
         slip = self.slippage_bp / 10_000.0
-        exec_price = raw_price * (1.0 + slip) if order.side == "BUY" else raw_price * (1.0 - slip)
+        exec_price = (
+            raw_price * (1.0 + slip)
+            if order.side == "BUY"
+            else raw_price * (1.0 - slip)
+        )
         exec_price = self._r(exec_price, self.price_decimals)
 
         qty = self._r(order.qty, self.qty_decimals)
@@ -438,7 +507,10 @@ class PaperBroker:
             return
 
         # --- min_notional ved fill mod rå pris
-        if self.min_notional > 0.0 and abs(qty * check_price) + 1e-12 < self.min_notional:
+        if (
+            self.min_notional > 0.0
+            and abs(qty * check_price) + 1e-12 < self.min_notional
+        ):
             order.status = "rejected"
             order.reason = "Ordre under min_notional"
             return
@@ -446,7 +518,9 @@ class PaperBroker:
         # Affordability for BUY (inkl. commission) — regnes mod exec_price
         if order.side == "BUY" and not self.allow_short:
             per_unit_total = exec_price * (1.0 + self.commission_bp / 10_000.0)
-            max_affordable_qty = self.cash / per_unit_total if per_unit_total > 0 else 0.0
+            max_affordable_qty = (
+                self.cash / per_unit_total if per_unit_total > 0 else 0.0
+            )
             if max_affordable_qty <= 1e-12:
                 order.status = "rejected"
                 order.reason = "Ikke nok kontantdækning"
@@ -458,7 +532,9 @@ class PaperBroker:
 
         # Ingen shorting: SELL må ikke skabe negativ netto-qty
         if not self.allow_short and order.side == "SELL":
-            pos_now = self.positions.get(order.symbol) or Position(symbol=order.symbol, qty=0.0, avg_price=0.0)
+            pos_now = self.positions.get(order.symbol) or Position(
+                symbol=order.symbol, qty=0.0, avg_price=0.0
+            )
             if pos_now.qty - qty < -1e-12:
                 order.status = "rejected"
                 order.reason = "Shorting ikke tilladt (ville gå under 0)"
@@ -474,21 +550,25 @@ class PaperBroker:
             self.cash += notional - commission
 
         # Opdater position + realiseret PnL
-        pos = self.positions.get(order.symbol) or Position(symbol=order.symbol, qty=0.0, avg_price=0.0)
+        pos = self.positions.get(order.symbol) or Position(
+            symbol=order.symbol, qty=0.0, avg_price=0.0
+        )
         realized = 0.0
 
         if pos.qty == 0.0 or math.copysign(1, pos.qty) == math.copysign(1, side_mult):
             # Samme retning (tilføj)
             new_qty = pos.qty + side_mult * qty
             if abs(new_qty) > 1e-12:
-                pos.avg_price = (abs(pos.qty) * pos.avg_price + qty * exec_price) / abs(new_qty)
+                pos.avg_price = (abs(pos.qty) * pos.avg_price + qty * exec_price) / abs(
+                    new_qty
+                )
             pos.qty = new_qty
         else:
             # Modsat retning → luk helt/delvist og evt. flip
             closing_qty = min(abs(pos.qty), qty)
             if pos.qty > 0:  # lukker long med SELL
                 realized += (exec_price - pos.avg_price) * closing_qty
-            else:            # lukker short med BUY
+            else:  # lukker short med BUY
                 realized += (pos.avg_price - exec_price) * closing_qty
 
             remaining = qty - closing_qty
@@ -512,16 +592,18 @@ class PaperBroker:
         self.realized_pnl += realized
 
         # Log fill
-        self._append_fill(Fill(
-            ts=ts_str,
-            order_id=order.id,
-            symbol=order.symbol,
-            side=order.side,
-            qty=qty,
-            price=exec_price,
-            commission=commission,
-            pnl_realized=realized,
-        ))
+        self._append_fill(
+            Fill(
+                ts=ts_str,
+                order_id=order.id,
+                symbol=order.symbol,
+                side=order.side,
+                qty=qty,
+                price=exec_price,
+                commission=commission,
+                pnl_realized=realized,
+            )
+        )
 
         # Efter fill → tjek daglig loss limit ift. equity
         self._check_daily_loss_limit(self._equity(self._last_prices))
@@ -576,7 +658,11 @@ class PaperBroker:
             ts = self._now()
         elif ts.tzinfo is None:
             ts = self.tz.localize(ts)
-        return ts.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        return (
+            ts.astimezone(timezone.utc)
+            .isoformat(timespec="seconds")
+            .replace("+00:00", "Z")
+        )
 
     def _dt(self, ts: Optional[datetime]) -> datetime:
         if ts is None:

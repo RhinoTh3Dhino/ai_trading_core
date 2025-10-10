@@ -14,27 +14,24 @@ Forbedringer i denne version:
 
 import os
 import time
-import schedule
+
 import pandas as pd
+import schedule
 from dotenv import load_dotenv
-
-from utils.project_path import PROJECT_ROOT
-from utils.robust_utils import safe_run
-
-from utils.backup import make_backup
-from utils.botstatus import update_bot_status
-from utils.changelog import append_to_changelog
-from utils.report_utils import log_performance_to_history
-
-# Telegram utils importeres, men vi wrapper kald så de er no-op når ikke konfigureret
-from utils.telegram_utils import send_message, generate_trend_graph, send_trend_graph
-
-# Ensemble params (threshold + weights)
-from utils.ensemble_utils import load_best_ensemble_params
 
 # Din pipeline – beholdt
 from pipeline.core import run_pipeline
-
+from utils.backup import make_backup
+from utils.botstatus import update_bot_status
+from utils.changelog import append_to_changelog
+# Ensemble params (threshold + weights)
+from utils.ensemble_utils import load_best_ensemble_params
+from utils.project_path import PROJECT_ROOT
+from utils.report_utils import log_performance_to_history
+from utils.robust_utils import safe_run
+# Telegram utils importeres, men vi wrapper kald så de er no-op når ikke konfigureret
+from utils.telegram_utils import (generate_trend_graph, send_message,
+                                  send_trend_graph)
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Miljø & konfiguration
@@ -98,13 +95,17 @@ def ensure_balance_trend_exists():
     img_path = PROJECT_ROOT / "outputs" / "balance_trend.png"
     if not img_path.exists():
         import matplotlib.pyplot as plt
+
         img_path.parent.mkdir(parents=True, exist_ok=True)
         plt.figure(figsize=(8, 4))
         plt.plot([0], [0], marker="o", label="Ingen data")
         plt.title("Balanceudvikling over tid (ingen data)")
-        plt.xlabel("Tid"); plt.ylabel("Balance")
-        plt.legend(); plt.tight_layout()
-        plt.savefig(img_path); plt.close()
+        plt.xlabel("Tid")
+        plt.ylabel("Balance")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(img_path)
+        plt.close()
         print("🟡 Oprettede dummy balance_trend.png for CI compliance.")
 
 
@@ -144,7 +145,9 @@ def main_trading_cycle():
 
     # Log til historikfil (MVP-krav)
     try:
-        log_performance_to_history(PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv")
+        log_performance_to_history(
+            PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"
+        )
     except Exception as e:
         print(f"❌ Fejl i log_performance_to_history: {e}")
 
@@ -153,7 +156,9 @@ def main_trading_cycle():
         img_path = generate_trend_graph()
         if _telegram_enabled():
             send_trend_graph(TELEGRAM_CHAT_ID, TELEGRAM_TOKEN, img_path)
-        print(f"✅ Trend-graf genereret{'' if _telegram_enabled() else ' (ikke sendt – Telegram disabled)'}: {img_path}")
+        print(
+            f"✅ Trend-graf genereret{'' if _telegram_enabled() else ' (ikke sendt – Telegram disabled)'}: {img_path}"
+        )
     except Exception as e:
         print(f"❌ Fejl ved trend-graf: {e}")
 
@@ -176,7 +181,9 @@ def main_trading_cycle():
 # ───────────────────────────────────────────────────────────────────────────────
 def daily_status():
     try:
-        _safe_send_message("📊 Daglig status: Botten kører fortsat! Tilpas evt. med flere metrics her.")
+        _safe_send_message(
+            "📊 Daglig status: Botten kører fortsat! Tilpas evt. med flere metrics her."
+        )
         append_to_changelog("📊 Daglig status sendt til Telegram.")
         print("✅ Daglig status sendt.")
     except Exception as e:

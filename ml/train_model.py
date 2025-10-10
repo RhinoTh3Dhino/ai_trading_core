@@ -1,16 +1,17 @@
-from utils.project_path import PROJECT_ROOT
-
-# ml/train_model.py
-
 import os
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, accuracy_score
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.models import Sequential
+
+from utils.project_path import PROJECT_ROOT
+
+# ml/train_model.py
 
 
 def create_lstm_sequences(X, y, seq_length=48):

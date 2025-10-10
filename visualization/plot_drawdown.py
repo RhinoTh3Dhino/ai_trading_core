@@ -1,5 +1,6 @@
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
 
 
 def plot_drawdown(balance_df, symbol="BTC", save_dir="graphs/"):

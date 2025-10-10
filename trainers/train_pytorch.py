@@ -9,20 +9,19 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 - Early stopping, checkpointing og mixed precision (AMP/fp16)!
 """
 
-import os
-
 import argparse
 import json
-import pandas as pd
+import os
+import platform
+from datetime import datetime
+
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
-from datetime import datetime
-import platform
-
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
 # === MLflow: robust import og utils ===
@@ -36,7 +35,8 @@ except ImportError:
 
 # --- Importer MLflow-utilities ---
 try:
-    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    from utils.mlflow_utils import (end_mlflow_run, setup_mlflow,
+                                    start_mlflow_run)
 
     MLUTILS_AVAILABLE = True
 except ImportError:

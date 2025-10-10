@@ -1,6 +1,8 @@
 import json
-import streamlit as st
 from pathlib import Path
+
+import streamlit as st
+
 
 def render(eval_path="outputs/evals/last_eval.json"):
     st.subheader("LLM-evaluering (smoke)")

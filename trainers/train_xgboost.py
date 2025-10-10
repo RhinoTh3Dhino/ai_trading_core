@@ -7,13 +7,13 @@ Træner en XGBoost-model til trading-signaler (klassifikation)
 - Automatisk feature selection, early stopping og artefakt-logging
 """
 
-import os
-
 import argparse
 import json
-import pandas as pd
-import numpy as np
+import os
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
 
 # === MLflow ===
@@ -27,7 +27,8 @@ except ImportError:
 
 # --- Importer MLflow-utilities hvis muligt ---
 try:
-    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    from utils.mlflow_utils import (end_mlflow_run, setup_mlflow,
+                                    start_mlflow_run)
 
     MLUTILS_AVAILABLE = True
 except ImportError:

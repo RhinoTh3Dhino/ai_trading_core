@@ -17,15 +17,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import types
+
 import pytest
 
-from utils.telegram_utils import (
-    telegram_enabled,
-    send_message,
-    log_telegram,
-    send_telegram_heartbeat,
-)
 import utils.telegram_utils as tg  # modulreference til monkeypatch af LOG_PATH/requests
+from utils.telegram_utils import (log_telegram, send_message,
+                                  send_telegram_heartbeat, telegram_enabled)
 
 
 # ---------------------------------------------------------------------

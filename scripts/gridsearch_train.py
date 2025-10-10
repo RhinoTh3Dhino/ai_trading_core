@@ -15,12 +15,14 @@ python run.py scripts/gridsearch_train.py --input data/BTCUSDT_1h_with_target.cs
 """
 
 import argparse
-import pandas as pd
-import numpy as np
 import os
+
+import numpy as np
+import pandas as pd
 from lightgbm import LGBMClassifier, early_stopping, log_evaluation
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix)
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 from utils.project_path import PROJECT_ROOT
 from utils.telegram_utils import send_telegram_message
