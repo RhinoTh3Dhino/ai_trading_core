@@ -1,31 +1,66 @@
+# .github/workflows/feat/artifacts-api.yml
 name: Persistens & Filhygiejne
 
 on:
   push:
-    branches: [ feat/artifacts-api ]
+    branches:
+      - feat/artifacts-api          # kør kun på din feature-branch
     paths:
       - "tools/**"
       - "utils/**"
       - ".github/workflows/feat/artifacts-api.yml"
-  workflow_dispatch:
+  workflow_dispatch: {}             # tillad manuel kørsel fra Actions UI
+
+concurrency:
+  group: persistens-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   rotate-and-archive:
+    name: Rotate outputs + arkiv
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}   # gør repo-roden importbar i alle steps
+      TZ: Europe/Copenhagen                 # konsistent tidsstempel i arkiver
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install deps (minimal)
         run: |
           python -m pip install -U pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Rotate outputs
-        env:
-          PYTHONPATH: ${{ github.workspace }}   # 👈 gør repo-roden importbar
         run: |
-          python -m tools.rotate_outputs        # 👈 kør som modul
+          # Kør som modul så importerne virker konsekvent
+          python -m tools.rotate_outputs
+
+      # Valgfri ZIP af hele outputs/-træet efter rotation (matcher Fase 4 DoD: backup/filhygiejne)
+      - name: Make archive
+        run: |
+          mkdir -p artifacts
+          TS="$(date -u +'%Y%m%dT%H%M%SZ')"
+          # Hvis outputs/ ikke findes, lav en tom placeholder så upload ikke fejler
+          if [ ! -d "outputs" ]; then mkdir -p outputs && touch outputs/.empty; fi
+          zip -r "artifacts/outputs_${TS}.zip" outputs/ -q
+
+      - name: Upload artifact (archive)
+        if: always()                     # upload også ved fejl i rotate, for inspektion
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs-archive
+          path: artifacts/*.zip
+          if-no-files-found: warn
+          retention-days: 7
