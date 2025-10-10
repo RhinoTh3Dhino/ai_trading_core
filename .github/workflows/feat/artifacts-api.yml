@@ -1,8 +1,20 @@
+name: Persistens & Filhygiejne
+
+on:
+  push:
+    branches: [ feat/artifacts-api ]
+    paths:
+      - "tools/**"
+      - "utils/**"
+      - ".github/workflows/feat/artifacts-api.yml"
+  workflow_dispatch:
+
 jobs:
   rotate-and-archive:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -16,4 +28,4 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}   # 👈 gør repo-roden importbar
         run: |
-          python -m tools.rotate_outputs        # 👈 kør som modul (bedst)
+          python -m tools.rotate_outputs        # 👈 kør som modul
