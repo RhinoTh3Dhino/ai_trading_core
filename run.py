@@ -59,9 +59,7 @@ def run_script(script: str, script_args: list[str]) -> int:
         return 99
 
 
-def run_web(
-    host: str, port: int, reload: bool, workers: int, multiproc_dir: str | None
-) -> int:
+def run_web(host: str, port: int, reload: bool, workers: int, multiproc_dir: str | None) -> int:
     _ensure_project_root()
 
     # Hvis multiprocess, sørg for Prometheus multiprocess-dir
@@ -70,9 +68,7 @@ def run_web(
         prom_path = Path(prom_dir)
         prom_path.mkdir(parents=True, exist_ok=True)
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = str(prom_path.resolve())
-        print(
-            f"[INFO] PROMETHEUS_MULTIPROC_DIR sat til: {os.environ['PROMETHEUS_MULTIPROC_DIR']}"
-        )
+        print(f"[INFO] PROMETHEUS_MULTIPROC_DIR sat til: {os.environ['PROMETHEUS_MULTIPROC_DIR']}")
 
     # Start uvicorn mod app'en i bot/engine.py
     # VIGTIGT: Din app eksporteres som 'app' i modulet 'bot.engine'
@@ -131,16 +127,10 @@ def main():
     )
 
     # Subcommand: web (uvicorn bot.engine:app)
-    p_web = subparsers.add_parser(
-        "web", help="Start web-appen (uvicorn bot.engine:app)"
-    )
-    p_web.add_argument(
-        "--host", type=str, default="0.0.0.0", help="Host (default: 0.0.0.0)"
-    )
+    p_web = subparsers.add_parser("web", help="Start web-appen (uvicorn bot.engine:app)")
+    p_web.add_argument("--host", type=str, default="0.0.0.0", help="Host (default: 0.0.0.0)")
     p_web.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
-    p_web.add_argument(
-        "--reload", action="store_true", help="Auto-reload ved filændringer (dev)"
-    )
+    p_web.add_argument("--reload", action="store_true", help="Auto-reload ved filændringer (dev)")
     p_web.add_argument("--workers", type=int, default=1, help="Antal uvicorn workers")
     p_web.add_argument(
         "--multiproc-dir",
@@ -161,9 +151,7 @@ def main():
         rc = run_script(args.script, args.script_args)
         sys.exit(rc)
     elif args.cmd == "web":
-        rc = run_web(
-            args.host, args.port, args.reload, args.workers, args.multiproc_dir
-        )
+        rc = run_web(args.host, args.port, args.reload, args.workers, args.multiproc_dir)
         sys.exit(rc)
     elif args.cmd == "pytest":
         rc = run_pytest(args.pytest_args)

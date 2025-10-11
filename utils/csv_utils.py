@@ -41,12 +41,8 @@ def safe_read_csv(
 
         # Find delimiter
         try:
-            first_non_empty = next(
-                (ln for ln in content.splitlines() if ln.strip()), ""
-            )
-            sniffed = (
-                csv.Sniffer().sniff(first_non_empty) if first_non_empty else csv.excel
-            )
+            first_non_empty = next((ln for ln in content.splitlines() if ln.strip()), "")
+            sniffed = csv.Sniffer().sniff(first_non_empty) if first_non_empty else csv.excel
             used_delimiter = delimiter or sniffed.delimiter
         except Exception:
             used_delimiter = delimiter or ","
@@ -67,9 +63,7 @@ def safe_read_csv(
         rows: List[Dict[str, str]] = []
         for row in reader:
             # Skipper helt blanke rækker
-            if skip_blank_rows and all(
-                (v is None) or (str(v).strip() == "") for v in row.values()
-            ):
+            if skip_blank_rows and all((v is None) or (str(v).strip() == "") for v in row.values()):
                 continue
             # Map ved indeks så vi kan erstatte nøgler med den rensede header
             normalized: Dict[str, str] = {}

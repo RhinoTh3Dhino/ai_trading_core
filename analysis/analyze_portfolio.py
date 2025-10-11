@@ -104,9 +104,7 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (
-            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
-        )
+        win_rate = (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
         profit_pct = group["profit"].sum() if "profit" in group.columns else 0
         drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {
@@ -132,9 +130,7 @@ def aggregate_coin_metrics(coin, regime_stats_dict):
 
 
 def plot_portfolio_heatmap(df, run_id, output_dir=OUTPUT_DIR):
-    heatmap_df = df.set_index("Coin")[
-        [c for c in df.columns if str(c).endswith("_win")]
-    ]
+    heatmap_df = df.set_index("Coin")[[c for c in df.columns if str(c).endswith("_win")]]
     heatmap_df = heatmap_df.apply(pd.to_numeric, errors="coerce").fillna(0)
     import seaborn as sns
 

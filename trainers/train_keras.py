@@ -40,8 +40,7 @@ except ImportError:
     MLFLOW_AVAILABLE = False
 
 try:
-    from utils.mlflow_utils import (end_mlflow_run, setup_mlflow,
-                                    start_mlflow_run)
+    from utils.mlflow_utils import end_mlflow_run, setup_mlflow, start_mlflow_run
 
     MLUTILS_AVAILABLE = True
 except ImportError:
@@ -195,9 +194,7 @@ def train_keras_model(
         if use_mlflow:
             mlflow.log_artifact(SCALER_PATH)
 
-    print(
-        f"[INFO] Features brugt til træning: {list(X.columns)} Antal: {len(X.columns)}"
-    )
+    print(f"[INFO] Features brugt til træning: {list(X.columns)} Antal: {len(X.columns)}")
     print(f"[INFO] Unikke targets: {sorted(y.unique())}")
     print(f"[INFO] Target distribution: \n{y.value_counts()}")
 
@@ -223,11 +220,7 @@ def train_keras_model(
 
     print(
         "[INFO] Train slutter:",
-        (
-            df.iloc[split_idx - 1]["timestamp"]
-            if "timestamp" in df.columns
-            else split_idx - 1
-        ),
+        (df.iloc[split_idx - 1]["timestamp"] if "timestamp" in df.columns else split_idx - 1),
     )
     print(
         "[INFO] Val starter:",
@@ -242,14 +235,10 @@ def train_keras_model(
             "Target-fordeling (train):\n",
             pd.Series(y_train).value_counts(normalize=True),
         )
-        print(
-            "Target-fordeling (val):\n", pd.Series(y_val).value_counts(normalize=True)
-        )
+        print("Target-fordeling (val):\n", pd.Series(y_val).value_counts(normalize=True))
 
     # Class weights (imbalance)
-    class_weights = compute_class_weight(
-        class_weight="balanced", classes=unique_classes, y=y
-    )
+    class_weights = compute_class_weight(class_weight="balanced", classes=unique_classes, y=y)
     class_weight_dict = {i: w for i, w in enumerate(class_weights)}
     print(f"[INFO] Class weights: {class_weight_dict}")
 
@@ -351,12 +340,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Træn Keras/TensorFlow-model til trading + MLflow, TensorBoard, mixed precision"
     )
-    parser.add_argument(
-        "--data", type=str, required=True, help="Sti til features-data (.csv)"
-    )
-    parser.add_argument(
-        "--target", type=str, default="target", help="Navn på target-kolonne"
-    )
+    parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
+    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--epochs", type=int, default=30, help="Antal epochs")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
@@ -370,9 +355,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name"
     )
-    parser.add_argument(
-        "--early_stopping", action="store_true", help="Aktiver early stopping"
-    )
+    parser.add_argument("--early_stopping", action="store_true", help="Aktiver early stopping")
     parser.add_argument(
         "--patience",
         type=int,

@@ -65,9 +65,7 @@ def plot_comparison(
     if not isinstance(models_metrics, dict) or not models_metrics:
         # Lav et tomt plot for at undgå fejl i CI
         os.makedirs("graphs", exist_ok=True)
-        save_path = (
-            save_path or f"graphs/model_comparison_{datetime.now():%Y%m%d_%H%M%S}.png"
-        )
+        save_path = save_path or f"graphs/model_comparison_{datetime.now():%Y%m%d_%H%M%S}.png"
         plt.figure(figsize=figsize)
         plt.title(title)
         plt.text(0.5, 0.5, "Ingen data", ha="center", va="center")

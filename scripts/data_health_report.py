@@ -23,10 +23,7 @@ def generate(outputs_dir="outputs/live", interval_ms=60_000):
         )
     rep = pd.DataFrame(rows).sort_values("gap_pct", ascending=False)
     html = rep.to_html(index=False)
-    out = (
-        Path("outputs")
-        / f"data_health_{datetime.now(timezone.utc).strftime('%Y%m%d')}.html"
-    )
+    out = Path("outputs") / f"data_health_{datetime.now(timezone.utc).strftime('%Y%m%d')}.html"
     out.write_text(html, encoding="utf-8")
     return out
 

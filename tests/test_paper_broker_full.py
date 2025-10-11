@@ -127,14 +127,10 @@ def test_min_filters_submit_and_limit_fill():
     # For lille notional ved market BUY (men over min_qty)
     # 0.40 * 100 = 40 < 50 → afvises pga. notional
     o_small_notional = b.submit_order("BTCUSDT", "BUY", 0.40, "market", ts=ts)
-    assert o_small_notional.status == "rejected" and "Notional" in (
-        o_small_notional.reason or ""
-    )
+    assert o_small_notional.status == "rejected" and "Notional" in (o_small_notional.reason or "")
 
     # Limit BUY med for lille notional ved submit
-    o_lim_small = b.submit_order(
-        "BTCUSDT", "BUY", 1.0, "limit", limit_price=40.0, ts=ts
-    )
+    o_lim_small = b.submit_order("BTCUSDT", "BUY", 1.0, "limit", limit_price=40.0, ts=ts)
     assert o_lim_small.status == "rejected" and "Notional" in (o_lim_small.reason or "")
 
     # Valid limit BUY der fyldes når prisen krydser

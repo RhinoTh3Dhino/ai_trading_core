@@ -120,9 +120,7 @@ def ai_summary(
     net = _safe_float(dm["net_pnl"].sum()) if "net_pnl" in dm.columns else 0.0
     trades = int(dm["trades"].sum()) if "trades" in dm.columns else 0
     wr = _safe_float(dm["win_rate"].mean()) if "win_rate" in dm.columns else 0.0
-    max_dd = (
-        _safe_float(dm["max_dd"].min()) if "max_dd" in dm.columns and len(dm) else 0.0
-    )
+    max_dd = _safe_float(dm["max_dd"].min()) if "max_dd" in dm.columns and len(dm) else 0.0
 
     eq = equity.copy()
     eq_chg = 0.0

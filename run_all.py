@@ -19,24 +19,16 @@ PYTHON = sys.executable
 
 # === Argumenter til CLI ===
 parser = argparse.ArgumentParser(description="Kør hele AI Trading Bot pipeline")
-parser.add_argument(
-    "--symbol", type=str, default="BTCUSDT", help="Trading symbol (fx BTCUSDT)"
-)
-parser.add_argument(
-    "--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)"
-)
-parser.add_argument(
-    "--lookback", type=int, default=30, help="Antal dage at hente data for"
-)
+parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Trading symbol (fx BTCUSDT)")
+parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval (fx 1h, 4h)")
+parser.add_argument("--lookback", type=int, default=30, help="Antal dage at hente data for")
 parser.add_argument(
     "--rolling_window",
     type=int,
     default=None,
     help="Antal seneste bars til retraining (valgfri)",
 )
-parser.add_argument(
-    "--feature_version", type=str, default="v1.0.0", help="Feature-version tag"
-)
+parser.add_argument("--feature_version", type=str, default="v1.0.0", help="Feature-version tag")
 parser.add_argument(
     "--model_type",
     type=str,
@@ -44,15 +36,9 @@ parser.add_argument(
     choices=["ml", "dl", "ensemble"],
     help="Vælg model-type (ml, dl, ensemble)",
 )
-parser.add_argument(
-    "--device", type=str, default=None, help="Device override ('cpu'/'cuda')"
-)
-parser.add_argument(
-    "--no_telegram", action="store_true", help="Deaktiver Telegram (kun lokalt)"
-)
-parser.add_argument(
-    "--no_tb", action="store_true", help="Deaktiver TensorBoard-logging"
-)
+parser.add_argument("--device", type=str, default=None, help="Device override ('cpu'/'cuda')")
+parser.add_argument("--no_telegram", action="store_true", help="Deaktiver Telegram (kun lokalt)")
+parser.add_argument("--no_tb", action="store_true", help="Deaktiver TensorBoard-logging")
 args = parser.parse_args()
 
 SYMBOL = args.symbol
@@ -142,9 +128,7 @@ def main():
 
     feature_dir = PROJECT_ROOT / "outputs" / "feature_data"
     os.makedirs(feature_dir, exist_ok=True)
-    feature_output = (
-        f"{feature_dir}/{SYMBOL.lower()}_{INTERVAL}_features_{FEATURE_VERSION}.csv"
-    )
+    feature_output = f"{feature_dir}/{SYMBOL.lower()}_{INTERVAL}_features_{FEATURE_VERSION}.csv"
     feature_cmd = [
         PYTHON,
         "features/feature_engineering.py",

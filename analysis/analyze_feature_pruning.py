@@ -48,9 +48,7 @@ def get_feature_ranking(X, y):
     # Træn fuld model, brug klassisk importance til sortering
     model = RandomForestClassifier(n_estimators=50, random_state=42)
     model.fit(X, y)
-    feat_df = pd.DataFrame(
-        {"feature": X.columns, "importance": model.feature_importances_}
-    )
+    feat_df = pd.DataFrame({"feature": X.columns, "importance": model.feature_importances_})
     feat_df = feat_df.sort_values("importance", ascending=False)
     return feat_df["feature"].tolist(), feat_df
 
@@ -104,9 +102,7 @@ def save_pruning_report(run_id, df, plot_path, output_dir=OUTPUT_DIR):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Auto feature-pruning/backtest pipeline"
-    )
+    parser = argparse.ArgumentParser(description="Auto feature-pruning/backtest pipeline")
     parser.add_argument(
         "--steps",
         nargs="+",
@@ -125,9 +121,7 @@ def main():
 
     print(f"[{run_id}] Feature ranking: {ranking}")
 
-    df, csv_path = prune_and_evaluate(
-        X, y, ranking, args.steps, run_id, output_dir=OUTPUT_DIR
-    )
+    df, csv_path = prune_and_evaluate(X, y, ranking, args.steps, run_id, output_dir=OUTPUT_DIR)
     plot_path = plot_pruning_results(df, run_id, output_dir=OUTPUT_DIR)
     save_pruning_report(run_id, df, plot_path, output_dir=OUTPUT_DIR)
 

@@ -48,9 +48,7 @@ def ensure_dir_exists(path: Path):
     path.mkdir(parents=True, exist_ok=True)
 
 
-def make_dummy_df(
-    rows: int = 60, start: str = "2024-01-01", freq: str = "h"
-) -> pd.DataFrame:
+def make_dummy_df(rows: int = 60, start: str = "2024-01-01", freq: str = "h") -> pd.DataFrame:
     """Opret et deterministisk dummy-DF med OHLCV + timestamp."""
     return pd.DataFrame(
         {
@@ -175,9 +173,7 @@ def test_timestamp_invalid_values_raise_even_with_coerce():
     df = make_dummy_df(5)
     df.loc[2, "timestamp"] = "INVALID"
     with pytest.raises(ValueError):
-        generate_features(
-            df, feature_config={"coerce_timestamps": True, "patterns_enabled": False}
-        )
+        generate_features(df, feature_config={"coerce_timestamps": True, "patterns_enabled": False})
 
 
 # ---------------------------------------------------------------------
@@ -209,9 +205,7 @@ def test_include_exclude_and_keep_labels():
 def test_dropna_removes_rows_when_nan_present():
     df = make_dummy_df(10)
     df.loc[0, "close"] = np.nan  # fremprovokér NaN i features
-    out = generate_features(
-        df, feature_config={"patterns_enabled": False, "dropna": True}
-    )
+    out = generate_features(df, feature_config={"patterns_enabled": False, "dropna": True})
     assert len(out) < len(df), "dropna=True burde reducere antal rækker ved NaN"
 
 
@@ -265,9 +259,7 @@ def test_target_modes(mode):
 def test_invalid_target_mode_raises():
     df = make_dummy_df(20)
     with pytest.raises(ValueError):
-        generate_features(
-            df, feature_config={"patterns_enabled": False, "target_mode": "weird"}
-        )
+        generate_features(df, feature_config={"patterns_enabled": False, "target_mode": "weird"})
 
 
 # ---------------------------------------------------------------------
@@ -335,9 +327,7 @@ def test_generate_features_from_csv_like_flow(tmp_path):
     raw_df.to_csv(data_path, index=False)
 
     df_loaded = pd.read_csv(data_path)
-    features_df = generate_features(
-        df_loaded, feature_config={"patterns_enabled": False}
-    )
+    features_df = generate_features(df_loaded, feature_config={"patterns_enabled": False})
     assert "ema_9" in features_df.columns
     assert not features_df.isna().any().any()
 
@@ -389,9 +379,7 @@ def test_load_features_latest_when_multiple_versions_exist():
 
 def test_save_features_returns_path_and_creates_file():
     ensure_dir_exists(FEATURE_DIR)
-    df = generate_features(
-        make_dummy_df(20), feature_config={"patterns_enabled": False}
-    )
+    df = generate_features(make_dummy_df(20), feature_config={"patterns_enabled": False})
     version_ts = make_version_with_timestamp("return_path_ok")
     out_path = save_features(df, "SOL", "4h", version_ts)
     p = Path(out_path)

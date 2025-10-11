@@ -15,10 +15,10 @@ from dotenv import load_dotenv
 
 # --- Broker (Paper) ---
 from bot.brokers.paper import PaperBroker  # én kanonisk broker
+
 # --- Data + features + model ---
 from data.live_feed import fetch_ohlcv_df
-from engines.inference import (load_feature_order, load_scaler,
-                               load_torch_model, run_inference)
+from engines.inference import load_feature_order, load_scaler, load_torch_model, run_inference
 from features.compute import compute_features
 
 # =========================
@@ -61,9 +61,7 @@ def _append_csv(path: Path, header: List[str], rows: List[List[object]]) -> None
         if write_header:
             f.write(",".join(header) + "\n")
         for r in rows:
-            safe = [
-                str(_finite(x) if isinstance(x, (float, np.floating)) else x) for x in r
-            ]
+            safe = [str(_finite(x) if isinstance(x, (float, np.floating)) else x) for x in r]
             f.write(",".join(map(str, safe)) + "\n")
 
 
@@ -129,9 +127,7 @@ def _map_non_numeric(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _build_model_frame(
-    feats_all: pd.DataFrame, feature_order: Optional[List[str]]
-) -> pd.DataFrame:
+def _build_model_frame(feats_all: pd.DataFrame, feature_order: Optional[List[str]]) -> pd.DataFrame:
     """
     Returnér en DataFrame med nøjagtigt de kolonner modellen forventer.
     - Hvis feature_order findes, bruger vi den (udfylder manglende med 0.0).
@@ -185,17 +181,13 @@ def _calc_and_upsert_daily_metrics(date_str: str) -> None:
                 d = df[df["date"] == date_str].copy()
                 if not d.empty:
                     if "pnl_realized" in d.columns:
-                        pnl = pd.to_numeric(d["pnl_realized"], errors="coerce").fillna(
-                            0.0
-                        )
+                        pnl = pd.to_numeric(d["pnl_realized"], errors="coerce").fillna(0.0)
                         gross = float(pnl.sum())
                         wins = int((pnl > 0).sum())
                         closed = int((pnl != 0).sum())
                     if "commission" in d.columns:
                         commissions = float(
-                            pd.to_numeric(d["commission"], errors="coerce")
-                            .fillna(0.0)
-                            .sum()
+                            pd.to_numeric(d["commission"], errors="coerce").fillna(0.0).sum()
                         )
         except Exception:
             pass
@@ -206,12 +198,7 @@ def _calc_and_upsert_daily_metrics(date_str: str) -> None:
             if {"ts", "signal"}.issubset(s.columns):
                 s["date"] = s["ts"].astype(str).str[:10]
                 d = s[s["date"] == date_str].copy().sort_values("ts")
-                sig = (
-                    pd.to_numeric(d["signal"], errors="coerce")
-                    .fillna(0)
-                    .astype(int)
-                    .to_numpy()
-                )
+                sig = pd.to_numeric(d["signal"], errors="coerce").fillna(0).astype(int).to_numpy()
                 closed = int(((sig[:-1] == 1) & (sig[1:] == 0)).sum())
         except Exception:
             pass
@@ -420,16 +407,12 @@ def main():
                 )
 
                 # 5) Log signal til CSV + JSON (til GUI)
-                _append_csv(
-                    SIGNALS_CSV, ["ts", "signal"], [[_ts_iso(bar_ts), last_sig]]
-                )
+                _append_csv(SIGNALS_CSV, ["ts", "signal"], [[_ts_iso(bar_ts), last_sig]])
                 try:
                     hist = []
                     if SIM_SIGNALS_JSON.exists():
                         try:
-                            hist = json.loads(
-                                SIM_SIGNALS_JSON.read_text(encoding="utf-8")
-                            )
+                            hist = json.loads(SIM_SIGNALS_JSON.read_text(encoding="utf-8"))
                             if not isinstance(hist, list):
                                 hist = []
                         except Exception:
@@ -466,9 +449,7 @@ def main():
                     if last_prob < threshold:
                         eff_sig = 1 if st.get("mode") == "LONG" else 0
                     # PaperBroker håndterer selv, om der faktisk åbnes/lukkes
-                    broker.exec_signal(
-                        signal=int(eff_sig), price=float(price), ts=ts_iso
-                    )
+                    broker.exec_signal(signal=int(eff_sig), price=float(price), ts=ts_iso)
                 else:
                     # (Fremtidig B): CCXT execution (ikke del af A)
                     if last_prob >= threshold:

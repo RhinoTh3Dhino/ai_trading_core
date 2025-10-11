@@ -15,9 +15,7 @@ def test_balance_target_accepts_X_and_target_keyword():
             "target": np.r_[np.zeros(80, dtype=int), np.ones(20, dtype=int)],
         }
     )
-    X_bal, y_bal = balance_target(
-        X=df, target="target", method="oversample", random_state=0
-    )
+    X_bal, y_bal = balance_target(X=df, target="target", method="oversample", random_state=0)
     # Forvent cirka lige fordeling
     vc = y_bal.value_counts()
     assert abs(vc.loc[0] - vc.loc[1]) <= max(1, 0.05 * len(y_bal))

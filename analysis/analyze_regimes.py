@@ -38,9 +38,7 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (
-            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
-        )
+        win_rate = (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
         profit_pct = group["profit"].sum() if "profit" in group.columns else 0
         drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {

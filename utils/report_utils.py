@@ -49,7 +49,9 @@ def update_bot_status(
 
 def log_to_changelog(run_id, version, notes, changelog_path="CHANGELOG.md"):
     """Tilføjer en entry til CHANGELOG.md."""
-    entry = f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M')} - v{version} - {run_id}\n- {notes}\n"
+    entry = (
+        f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M')} - v{version} - {run_id}\n- {notes}\n"
+    )
     with open(changelog_path, "a", encoding="utf-8") as f:
         f.write(entry)
     print(f"[INFO] CHANGELOG.md opdateret: {changelog_path}")
@@ -71,9 +73,7 @@ def print_status(
     return table
 
 
-def build_telegram_summary(
-    run_id, portfolio_metrics_path, version="v1.0.0", extra_msg=None
-):
+def build_telegram_summary(run_id, portfolio_metrics_path, version="v1.0.0", extra_msg=None):
     """Bygger en Telegram-besked baseret på metrics."""
     if not os.path.exists(portfolio_metrics_path):
         return "Ingen status tilgængelig."
@@ -159,9 +159,7 @@ if __name__ == "__main__":
     # Hurtig selvtest for coverage
     dummy_metrics = PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"
     os.makedirs(dummy_metrics.parent, exist_ok=True)
-    pd.DataFrame([{"Navn": "BTCUSDT", "Balance": 1000}]).to_csv(
-        dummy_metrics, index=False
-    )
+    pd.DataFrame([{"Navn": "BTCUSDT", "Balance": 1000}]).to_csv(dummy_metrics, index=False)
 
     update_bot_status("BotStatus.md", "test-run", dummy_metrics, force_dummy=False)
     log_to_changelog("test-run", "1.0.0", "Test note")

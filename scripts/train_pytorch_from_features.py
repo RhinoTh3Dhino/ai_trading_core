@@ -62,11 +62,7 @@ def load_dataframe(features_path: str) -> pd.DataFrame:
         df = df.rename(columns={"datetime": "timestamp"})
     if "timestamp" in df.columns:
         df["timestamp"] = _ensure_datetime(df["timestamp"])
-        df = (
-            df.dropna(subset=["timestamp"])
-            .sort_values("timestamp")
-            .reset_index(drop=True)
-        )
+        df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
     return df
 
 
@@ -85,9 +81,7 @@ def pick_feature_columns(df: pd.DataFrame):
         "signal_ensemble",
     }
     num_cols = [
-        c
-        for c in df.columns
-        if c not in drop_cols and np.issubdtype(df[c].dtype, np.number)
+        c for c in df.columns if c not in drop_cols and np.issubdtype(df[c].dtype, np.number)
     ]
     # hvis "regime" findes men ikke er numerisk: map den til -1/0/1 (som engine)
     if "regime" in df.columns and not np.issubdtype(df["regime"].dtype, np.number):
@@ -132,24 +126,13 @@ def train(
     lr: float = 1e-3,
 ):
     # klargør X/y (ingen skalering – matcher engine inference)
-    X = (
-        df[feature_cols]
-        .apply(pd.to_numeric, errors="coerce")
-        .fillna(0.0)
-        .values.astype(np.float32)
-    )
+    X = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0).values.astype(np.float32)
     if "target" in df.columns:
-        y = (
-            pd.to_numeric(df["target"], errors="coerce")
-            .fillna(0)
-            .values.astype(np.int64)
-        )
+        y = pd.to_numeric(df["target"], errors="coerce").fillna(0).values.astype(np.int64)
         # sikkerhed: clamp til {0,1}
         y = np.clip(y, 0, 1)
     else:
-        raise ValueError(
-            "Din CSV mangler 'target' kolonnen. Tilføj den eller lav labels først."
-        )
+        raise ValueError("Din CSV mangler 'target' kolonnen. Tilføj den eller lav labels først.")
 
     # kronologisk split (undgå lækage i tidsserier)
     (X_tr, y_tr), (X_va, y_va) = chronological_split(X, y, val_ratio=0.2)
@@ -243,9 +226,7 @@ def main():
     )
     ap.add_argument("--symbol", type=str, default="BTCUSDT")
     ap.add_argument("--interval", type=str, default="1h")
-    ap.add_argument(
-        "--device", type=str, default=None, help="'cuda' eller 'cpu' (auto hvis None)"
-    )
+    ap.add_argument("--device", type=str, default=None, help="'cuda' eller 'cpu' (auto hvis None)")
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--lr", type=float, default=1e-3)

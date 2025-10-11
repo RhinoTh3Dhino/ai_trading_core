@@ -8,13 +8,15 @@ import numpy as np
 import pandas as pd
 
 from ensemble.ensemble_predict import ensemble_predict
-from strategies.advanced_strategies import (add_adaptive_sl_tp,
-                                            ema_crossover_strategy,
-                                            ema_rsi_adx_strategy,
-                                            ema_rsi_regime_strategy,
-                                            regime_ensemble,
-                                            rsi_mean_reversion,
-                                            voting_ensemble)
+from strategies.advanced_strategies import (
+    add_adaptive_sl_tp,
+    ema_crossover_strategy,
+    ema_rsi_adx_strategy,
+    ema_rsi_regime_strategy,
+    regime_ensemble,
+    rsi_mean_reversion,
+    voting_ensemble,
+)
 from strategies.ema_cross_strategy import ema_cross_signals
 from strategies.gridsearch_strategies import grid_search_sl_tp_ema
 from strategies.macd_strategy import macd_cross_signals
@@ -28,9 +30,13 @@ from utils.telegram_utils import send_image, send_message
 
 # === Monitoring-parametre fra config ===
 try:
-    from config.monitoring_config import (ALARM_THRESHOLDS, ALERT_ON_DRAWNDOWN,
-                                          ALERT_ON_PROFIT, ALERT_ON_WINRATE,
-                                          ENABLE_MONITORING)
+    from config.monitoring_config import (
+        ALARM_THRESHOLDS,
+        ALERT_ON_DRAWNDOWN,
+        ALERT_ON_PROFIT,
+        ALERT_ON_WINRATE,
+        ENABLE_MONITORING,
+    )
 except ImportError:
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 0.20, "profit": -10}
     ALERT_ON_DRAWNDOWN = True
@@ -104,9 +110,7 @@ def compute_regime(
 
 
 def regime_filter(signals, regime_col, active_regimes=["bull"]):
-    return [
-        sig if reg in active_regimes else 0 for sig, reg in zip(signals, regime_col)
-    ]
+    return [sig if reg in active_regimes else 0 for sig, reg in zip(signals, regime_col)]
 
 
 def regime_performance(trades_df, regime_col="regime"):
@@ -116,9 +120,7 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (
-            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0.0
-        )
+        win_rate = (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0.0
         profit_pct = group["profit"].sum() if "profit" in group.columns else 0.0
         drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {
@@ -132,11 +134,7 @@ def regime_performance(trades_df, regime_col="regime"):
 
 def get_git_hash():
     try:
-        return (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .decode()
-            .strip()
-        )
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
     except Exception:
         return "unknown"
 
@@ -354,9 +352,7 @@ def run_backtest(
     # --- Drawdown (i %) med clamp til [-100, 0]
     if not balance_df.empty:
         bal = (
-            pd.to_numeric(
-                balance_df.get("balance", balance_df.get("equity")), errors="coerce"
-            )
+            pd.to_numeric(balance_df.get("balance", balance_df.get("equity")), errors="coerce")
             .ffill()
             .bfill()
         )
@@ -393,9 +389,7 @@ def run_backtest(
         # sørg for 'balance' findes (alias fra equity)
         if "balance" not in balance_df.columns or balance_df["balance"].isna().all():
             if "equity" in balance_df.columns:
-                balance_df["balance"] = pd.to_numeric(
-                    balance_df["equity"], errors="coerce"
-                )
+                balance_df["balance"] = pd.to_numeric(balance_df["equity"], errors="coerce")
 
     # Debug prints
     print("TRADES DF (head):\n", trades_df.head())
@@ -524,9 +518,7 @@ def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000.0):
     out = {
         "profit_pct": float(metrics.get("profit_pct", 0.0)),
         "win_rate": float(metrics.get("win_rate", 0.0)),
-        "drawdown_pct": float(
-            metrics.get("max_drawdown", metrics.get("drawdown_pct", 0.0))
-        ),
+        "drawdown_pct": float(metrics.get("max_drawdown", metrics.get("drawdown_pct", 0.0))),
         "num_trades": (
             int(len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])]))
             if trades_df is not None
@@ -564,21 +556,15 @@ def parse_args():
     parser.add_argument(
         "--feature_path",
         type=str,
-        default=PROJECT_ROOT
-        / "outputs"
-        / "feature_data/btc_1h_features_v_test_20250610.csv",
+        default=PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv",
     )
     parser.add_argument(
         "--results_path",
         type=str,
         default=PROJECT_ROOT / "data" / "backtest_results.csv",
     )
-    parser.add_argument(
-        "--balance_path", type=str, default=PROJECT_ROOT / "data" / "balance.csv"
-    )
-    parser.add_argument(
-        "--trades_path", type=str, default=PROJECT_ROOT / "data" / "trades.csv"
-    )
+    parser.add_argument("--balance_path", type=str, default=PROJECT_ROOT / "data" / "balance.csv")
+    parser.add_argument("--trades_path", type=str, default=PROJECT_ROOT / "data" / "trades.csv")
     parser.add_argument(
         "--strategy",
         type=str,
@@ -593,9 +579,7 @@ def parse_args():
         choices=["majority", "weighted", "sum"],
     )
     parser.add_argument("--debug_ensemble", action="store_true")
-    parser.add_argument(
-        "--walkforward", action="store_true", help="Aktiver walk-forward analyse"
-    )
+    parser.add_argument("--walkforward", action="store_true", help="Aktiver walk-forward analyse")
     parser.add_argument("--train_size", type=float, default=0.6)
     parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument("--step_size", type=float, default=0.1)
@@ -688,9 +672,7 @@ def main():
             )
             try:
                 if trades_df.empty:
-                    send_message(
-                        f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}"
-                    )
+                    send_message(f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}")
                 else:
                     send_message(summary)
             except Exception:

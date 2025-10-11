@@ -24,14 +24,15 @@ from pipeline.core import run_pipeline
 from utils.backup import make_backup
 from utils.botstatus import update_bot_status
 from utils.changelog import append_to_changelog
+
 # Ensemble params (threshold + weights)
 from utils.ensemble_utils import load_best_ensemble_params
 from utils.project_path import PROJECT_ROOT
 from utils.report_utils import log_performance_to_history
 from utils.robust_utils import safe_run
+
 # Telegram utils importeres, men vi wrapper kald så de er no-op når ikke konfigureret
-from utils.telegram_utils import (generate_trend_graph, send_message,
-                                  send_trend_graph)
+from utils.telegram_utils import generate_trend_graph, send_message, send_trend_graph
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Miljø & konfiguration
@@ -145,9 +146,7 @@ def main_trading_cycle():
 
     # Log til historikfil (MVP-krav)
     try:
-        log_performance_to_history(
-            PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"
-        )
+        log_performance_to_history(PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv")
     except Exception as e:
         print(f"❌ Fejl i log_performance_to_history: {e}")
 

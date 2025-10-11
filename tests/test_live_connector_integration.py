@@ -1,5 +1,6 @@
 # tests/test_live_connector_integration.py
 import asyncio
+
 # IMPORT EFTER vi har monkeypatch'et modulattributter
 import importlib
 import json
@@ -150,14 +151,10 @@ async def test_end_to_end_parquet(tmp_path, monkeypatch):
 
         md = pq.read_table(f).schema.metadata
         assert b"schema_version" in md
-        assert md[b"schema_version"].decode() == os.getenv(
-            "LIVE_SCHEMA_VERSION", "stream-mvp-1"
-        )
+        assert md[b"schema_version"].decode() == os.getenv("LIVE_SCHEMA_VERSION", "stream-mvp-1")
     except Exception:
         # fallback meta sidecar
         sidecar = Path(str(f) + ".meta.json")
         if sidecar.exists():
             meta = json.loads(sidecar.read_text(encoding="utf-8"))
-            assert meta.get("schema_version") == os.getenv(
-                "LIVE_SCHEMA_VERSION", "stream-mvp-1"
-            )
+            assert meta.get("schema_version") == os.getenv("LIVE_SCHEMA_VERSION", "stream-mvp-1")

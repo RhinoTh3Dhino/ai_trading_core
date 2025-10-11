@@ -27,8 +27,7 @@ except ImportError:
 
 # --- Importer MLflow-utilities hvis muligt ---
 try:
-    from utils.mlflow_utils import (end_mlflow_run, setup_mlflow,
-                                    start_mlflow_run)
+    from utils.mlflow_utils import end_mlflow_run, setup_mlflow, start_mlflow_run
 
     MLUTILS_AVAILABLE = True
 except ImportError:
@@ -123,11 +122,7 @@ def train_xgboost_model(
     print(f"[INFO] Train: {len(X_train)}, Val: {len(X_val)}")
     print(
         "[INFO] Train slutter:",
-        (
-            df.iloc[split_idx - 1]["timestamp"]
-            if "timestamp" in df.columns
-            else split_idx - 1
-        ),
+        (df.iloc[split_idx - 1]["timestamp"] if "timestamp" in df.columns else split_idx - 1),
     )
     print(
         "[INFO] Val starter:",
@@ -241,24 +236,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Træn XGBoost-model til trading + MLflow logging + Early stopping"
     )
-    parser.add_argument(
-        "--data", type=str, required=True, help="Sti til features-data (.csv)"
-    )
-    parser.add_argument(
-        "--target", type=str, default="target", help="Navn på target-kolonne"
-    )
+    parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
+    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--test_size", type=float, default=0.2, help="Test split")
     parser.add_argument("--max_depth", type=int, default=6, help="Max tree depth")
-    parser.add_argument(
-        "--n_estimators", type=int, default=100, help="Antal træer (estimators)"
-    )
-    parser.add_argument(
-        "--learning_rate", type=float, default=0.1, help="Learning rate"
-    )
+    parser.add_argument("--n_estimators", type=int, default=100, help="Antal træer (estimators)")
+    parser.add_argument("--learning_rate", type=float, default=0.1, help="Learning rate")
     parser.add_argument("--subsample", type=float, default=1.0, help="Subsample ratio")
-    parser.add_argument(
-        "--colsample_bytree", type=float, default=1.0, help="Colsample bytree"
-    )
+    parser.add_argument("--colsample_bytree", type=float, default=1.0, help="Colsample bytree")
     parser.add_argument(
         "--early_stopping_rounds",
         type=int,

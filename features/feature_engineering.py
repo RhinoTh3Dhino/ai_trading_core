@@ -13,13 +13,19 @@ from utils.project_path import PROJECT_ROOT
 
 # --- Versionsinfo fra versions.py ---
 try:
-    from versions import (ENGINE_COMMIT, ENGINE_VERSION, FEATURE_VERSION,
-                          LABEL_STRATEGY, MODEL_VERSION, PIPELINE_COMMIT,
-                          PIPELINE_VERSION)
+    from versions import (
+        ENGINE_COMMIT,
+        ENGINE_VERSION,
+        FEATURE_VERSION,
+        LABEL_STRATEGY,
+        MODEL_VERSION,
+        PIPELINE_COMMIT,
+        PIPELINE_VERSION,
+    )
 except ImportError:
-    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = (
-        ENGINE_COMMIT
-    ) = MODEL_VERSION = LABEL_STRATEGY = "unknown"
+    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = (
+        MODEL_VERSION
+    ) = LABEL_STRATEGY = "unknown"
 
 # === Hvis der findes en features-liste fra tidligere model, loades denne ===
 # AUTO PATH CONVERTED
@@ -93,9 +99,7 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
         lstm_features = pd.read_csv(LSTM_FEATURES_PATH, header=None)[0].tolist()
         missing = [col for col in lstm_features if col not in df.columns]
         if missing:
-            print(
-                f"‼️ ADVARSEL: Følgende features mangler og bliver fyldt med 0: {missing}"
-            )
+            print(f"‼️ ADVARSEL: Følgende features mangler og bliver fyldt med 0: {missing}")
             for col in missing:
                 df[col] = (
                     0.0  # Udfyld manglende features med 0 (alternativ: np.nan eller fill f.eks. med mean)
@@ -135,9 +139,7 @@ def main():
         required=False,
         help="Input-CSV med rå data (finder selv nyeste hvis ikke angivet)",
     )
-    parser.add_argument(
-        "--output", type=str, required=True, help="Output-CSV med features"
-    )
+    parser.add_argument("--output", type=str, required=True, help="Output-CSV med features")
     parser.add_argument(
         "--version",
         type=str,
@@ -148,9 +150,7 @@ def main():
 
     input_path = args.input
     if not input_path or not os.path.exists(input_path):
-        print(
-            f"⚠️ Inputfil ikke angivet eller ikke fundet. Søger efter nyeste datafil i 'data/'..."
-        )
+        print(f"⚠️ Inputfil ikke angivet eller ikke fundet. Søger efter nyeste datafil i 'data/'...")
         latest = find_latest_datafile()
         if latest:
             print(f"➡️  Bruger nyeste datafil: {latest}")
@@ -162,9 +162,7 @@ def main():
     df = pd.read_csv(input_path)
     print("🔎 Kolonner i rå data:", list(df.columns))
     if "close" not in df.columns:
-        print(
-            f"❌ Inputfilen '{input_path}' mangler kolonnen 'close'. Tjek din rå data!"
-        )
+        print(f"❌ Inputfilen '{input_path}' mangler kolonnen 'close'. Tjek din rå data!")
         return
 
     df_feat = add_features(df)

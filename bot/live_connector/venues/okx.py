@@ -3,9 +3,11 @@ import json
 import time
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
-from bot.live_connector.metrics import (inc_feed_bars_total,
-                                        observe_bar_close_lag_ms,
-                                        observe_transport_latency_ms)
+from bot.live_connector.metrics import (
+    inc_feed_bars_total,
+    observe_bar_close_lag_ms,
+    observe_transport_latency_ms,
+)
 
 from .base import BaseConnector
 
@@ -16,9 +18,7 @@ SymbolResolver = Callable[[str], str]
 SymbolMapOrResolver = Union[SymbolMap, SymbolResolver]
 
 
-def _resolve_internal_symbol(
-    symbol_map_or_resolver: SymbolMapOrResolver, inst_id: str
-) -> str:
+def _resolve_internal_symbol(symbol_map_or_resolver: SymbolMapOrResolver, inst_id: str) -> str:
     """
     Returnér internt symbol for et OKX instId.
     Understøtter både dict-symbolmap og en resolver-funktion (callable).
@@ -124,15 +124,10 @@ class OKXConnector(BaseConnector):
     ):
         if on_kline is None:
             on_kline = lambda _evt: None  # no-op i tests
-        super().__init__(
-            cfg=cfg, symbol_map=symbol_map, on_kline=on_kline, ws_client=ws_client
-        )
+        super().__init__(cfg=cfg, symbol_map=symbol_map, on_kline=on_kline, ws_client=ws_client)
 
     async def _subscribe(self, ws):
-        subs = [
-            {"channel": s["channel"], "instId": s["instId"]}
-            for s in self.cfg["ws"]["subs"]
-        ]
+        subs = [{"channel": s["channel"], "instId": s["instId"]} for s in self.cfg["ws"]["subs"]]
         await ws.send(json.dumps({"op": "subscribe", "args": subs}))
 
     async def _read_loop(self, ws):

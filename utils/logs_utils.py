@@ -109,9 +109,7 @@ def rotate_csv_streaming(
     # deque af chunks; hold samlet antal rækker ~ keep_last_rows
     frames: deque[pd.DataFrame] = deque()
     total_rows = 0
-    for chunk in pd.read_csv(
-        p, chunksize=chunk_rows, on_bad_lines="skip", low_memory=False
-    ):
+    for chunk in pd.read_csv(p, chunksize=chunk_rows, on_bad_lines="skip", low_memory=False):
         frames.append(chunk)
         total_rows += len(chunk)
         # Fjern ældste chunk(s) så vi maksimalt holder ~ keep_last_rows + 1 chunk i RAM
@@ -146,9 +144,7 @@ def _expand_targets(
     if globs:
         for pattern in globs:
             base = (
-                Path(pattern).parent
-                if any(ch in pattern for ch in ["*", "?", "["])
-                else Path(".")
+                Path(pattern).parent if any(ch in pattern for ch in ["*", "?", "["]) else Path(".")
             )
             base = base if str(base) not in ("", ".") else Path(".")
             for candidate in base.rglob("*" if recursive else "*"):
@@ -185,22 +181,16 @@ def _cli() -> None:
         nargs="+",
         help="Én eller flere CSV-filer (fx logs/fills.csv logs/signals.csv)",
     )
-    ap.add_argument(
-        "--glob", nargs="+", help="Globs, fx 'logs/*.csv' 'outputs/*_signals.csv'"
-    )
+    ap.add_argument("--glob", nargs="+", help="Globs, fx 'logs/*.csv' 'outputs/*_signals.csv'")
     ap.add_argument("--dir", help="Mappe at scanne for *.csv")
     ap.add_argument(
         "--recursive",
         action="store_true",
         help="Scan mapper rekursivt (med --dir eller --glob)",
     )
-    ap.add_argument(
-        "--keep", type=int, default=50_000, help="Behold sidste N rækker (default 50k)"
-    )
+    ap.add_argument("--keep", type=int, default=50_000, help="Behold sidste N rækker (default 50k)")
 
-    ap.add_argument(
-        "--dry-run", action="store_true", help="Vis kun hvad der ville blive trimmed"
-    )
+    ap.add_argument("--dry-run", action="store_true", help="Vis kun hvad der ville blive trimmed")
     ap.add_argument("--verbose", action="store_true", help="Udskriv ekstra status")
     ap.add_argument(
         "--size-threshold-mb",
@@ -230,9 +220,7 @@ def _cli() -> None:
             use_stream = size_mb >= float(args.size_threshold_mb)
 
             if args.dry_run:
-                print(
-                    f"[DRY-RUN] {p} -> {'streaming' if use_stream else 'pandas.tail'}"
-                )
+                print(f"[DRY-RUN] {p} -> {'streaming' if use_stream else 'pandas.tail'}")
                 continue
 
             if use_stream:
@@ -255,9 +243,7 @@ def _cli() -> None:
             print(f"[FEJL] {p}: {e}")
             failed += 1
 
-    print(
-        f"Færdig: trimmed={trimmed}, skip={skipped}, fejl={failed}, total={len(targets)}"
-    )
+    print(f"Færdig: trimmed={trimmed}, skip={skipped}, fejl={failed}, total={len(targets)}")
 
 
 if __name__ == "__main__":

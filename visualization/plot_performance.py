@@ -42,9 +42,7 @@ def _normalize_drawdown(dd: pd.Series) -> pd.Series:
 def _compute_drawdown_from_equity(eq: pd.Series) -> pd.Series:
     if eq is None or len(eq) == 0:
         return pd.Series([], dtype=float)
-    eq = (
-        pd.to_numeric(eq, errors="coerce").fillna(method="ffill").fillna(method="bfill")
-    )
+    eq = pd.to_numeric(eq, errors="coerce").fillna(method="ffill").fillna(method="bfill")
     peak = eq.cummax().replace(0, np.nan)
     dd = (eq - peak) / peak
     return dd.fillna(0.0) * 100.0
@@ -60,15 +58,11 @@ def _nearest_balance_for_timestamps(
     if len(query_ts) == 0 or len(balance_ts) == 0:
         return pd.Series([np.nan] * len(query_ts))
     # merge_asof kræver sortering
-    bdf = (
-        pd.DataFrame({"ts": balance_ts, "bal": balance_vals}).dropna().sort_values("ts")
-    )
+    bdf = pd.DataFrame({"ts": balance_ts, "bal": balance_vals}).dropna().sort_values("ts")
     qdf = pd.DataFrame({"ts": query_ts}).dropna().sort_values("ts")
     if bdf.empty or qdf.empty:
         return pd.Series([np.nan] * len(query_ts))
-    joined = pd.merge_asof(
-        qdf, bdf, on="ts", direction="nearest", tolerance=pd.Timedelta("3650D")
-    )
+    joined = pd.merge_asof(qdf, bdf, on="ts", direction="nearest", tolerance=pd.Timedelta("3650D"))
     # tilbage til original rækkefølge
     idx_map = pd.Series(range(len(qdf)), index=qdf["ts"])
     order = query_ts.map(idx_map)
@@ -119,18 +113,14 @@ def plot_performance(
         else:
             bdf["timestamp"] = bdf.index
     bdf["timestamp"] = _ensure_datetime(bdf["timestamp"])
-    bdf = (
-        bdf.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
-    )
+    bdf = bdf.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
 
     # --- Equity/Bal ---
     eq_col = _choose_equity_col(bdf)
     if eq_col not in bdf.columns:
         raise ValueError("balance_df skal indeholde 'balance' eller 'equity'.")
     bdf[eq_col] = (
-        pd.to_numeric(bdf[eq_col], errors="coerce")
-        .fillna(method="ffill")
-        .fillna(method="bfill")
+        pd.to_numeric(bdf[eq_col], errors="coerce").fillna(method="ffill").fillna(method="bfill")
     )
 
     # --- Drawdown (i %) ---
@@ -218,17 +208,11 @@ def plot_performance(
             sls = tdf[types == "SL"]
 
             if len(buys):
-                ax1.scatter(
-                    buys["timestamp"], buys["__y__"], marker="^", label="BUY", zorder=5
-                )
+                ax1.scatter(buys["timestamp"], buys["__y__"], marker="^", label="BUY", zorder=5)
             if len(tps):
-                ax1.scatter(
-                    tps["timestamp"], tps["__y__"], marker="o", label="TP", zorder=5
-                )
+                ax1.scatter(tps["timestamp"], tps["__y__"], marker="o", label="TP", zorder=5)
             if len(sls):
-                ax1.scatter(
-                    sls["timestamp"], sls["__y__"], marker="v", label="SL", zorder=5
-                )
+                ax1.scatter(sls["timestamp"], sls["__y__"], marker="v", label="SL", zorder=5)
 
     # --- Titel & legender ---
     title = f"{symbol} | {model_name.upper() if model_name else 'Model'} | Performance"
@@ -269,12 +253,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Plot performance for AI trading bot")
-    parser.add_argument(
-        "--balance", type=str, required=True, help="Path til balance_df (CSV)"
-    )
-    parser.add_argument(
-        "--trades", type=str, default=None, help="Path til trades_df (CSV)"
-    )
+    parser.add_argument("--balance", type=str, required=True, help="Path til balance_df (CSV)")
+    parser.add_argument("--trades", type=str, default=None, help="Path til trades_df (CSV)")
     parser.add_argument("--symbol", type=str, default="BTCUSDT")
     parser.add_argument("--model_name", type=str, default="AI Model")
     parser.add_argument("--title_extra", type=str, default=None)

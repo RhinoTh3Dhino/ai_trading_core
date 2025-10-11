@@ -48,9 +48,7 @@ def _import_class(dotted: str):
     try:
         cls = getattr(mod, cls_name)
     except AttributeError as e:
-        raise ImportError(
-            f"Kunne ikke finde klasse {cls_name!r} i modul {mod_name!r}"
-        ) from e
+        raise ImportError(f"Kunne ikke finde klasse {cls_name!r} i modul {mod_name!r}") from e
     return cls
 
 
@@ -116,9 +114,7 @@ def _find_state_dict(obj: Any) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _try_load_as_torchscript(
-    path: Path, device: str
-) -> Optional[torch.jit.ScriptModule]:
+def _try_load_as_torchscript(path: Path, device: str) -> Optional[torch.jit.ScriptModule]:
     try:
         m = torch.jit.load(str(path), map_location=device)
         m.eval()
@@ -144,9 +140,7 @@ def _make_example(
         return None
 
     sep = "x" if "x" in example_shape.lower() else ","
-    shape = tuple(
-        int(s) for s in example_shape.replace("X", "x").split(sep) if s.strip()
-    )
+    shape = tuple(int(s) for s in example_shape.replace("X", "x").split(sep) if s.strip())
     if not shape:
         return None
 
@@ -249,9 +243,7 @@ def export_to_torchscript(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description="Eksportér PyTorch checkpoint til TorchScript (.ts)"
-    )
+    ap = argparse.ArgumentParser(description="Eksportér PyTorch checkpoint til TorchScript (.ts)")
     ap.add_argument(
         "--arch",
         required=False,
@@ -294,9 +286,7 @@ def main() -> int:
         default=None,
         help="Sti til .npy med eksempel-input til trace/validering",
     )
-    ap.add_argument(
-        "--strict-load", action="store_true", help="Brug strict=True i load_state_dict"
-    )
+    ap.add_argument("--strict-load", action="store_true", help="Brug strict=True i load_state_dict")
     ap.add_argument("--device", default="cpu", help="cpu/cuda (hvis tilgængelig)")
     args = ap.parse_args()
 

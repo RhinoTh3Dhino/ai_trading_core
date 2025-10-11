@@ -43,9 +43,7 @@ def test_calculate_drawdown_basic_and_empty():
 def test_run_and_score_uses_backtest_and_counts_trades(monkeypatch):
     # monkeypatch run_backtest + calc_backtest_metrics inde i metrics-modulet
     def fake_run(df, signals):
-        trades = pd.DataFrame(
-            {"type": ["TP", "SL", "OPEN"], "balance": [1000, 1010, 1005]}
-        )
+        trades = pd.DataFrame({"type": ["TP", "SL", "OPEN"], "balance": [1000, 1010, 1005]})
         balance = pd.DataFrame(
             {
                 "timestamp": pd.date_range("2024-01-01", periods=3, freq="h"),

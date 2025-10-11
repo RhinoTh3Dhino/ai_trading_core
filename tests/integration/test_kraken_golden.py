@@ -181,12 +181,7 @@ def test_kraken_golden_replay(monkeypatch: pytest.MonkeyPatch):
     e1 = out[1]
     assert e1["symbol"] == "BTCUSDT"
     assert e1["close_time"] == 1730572860 * 1000
-    assert (
-        e1["o"] == 65050.0
-        and e1["h"] == 65120.0
-        and e1["l"] == 65010.0
-        and e1["c"] == 65100.0
-    )
+    assert e1["o"] == 65050.0 and e1["h"] == 65120.0 and e1["l"] == 65010.0 and e1["c"] == 65100.0
 
     # ETH-bar
     e2 = out[2]

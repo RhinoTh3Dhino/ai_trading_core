@@ -8,6 +8,7 @@ Træner en LightGBM-model til trading-signaler (klassifikation)
 
 import os
 import sys
+
 # Sikrer korrekt sys.path – projektroden lægges ind først
 from pathlib import Path
 
@@ -46,9 +47,7 @@ def train_lightgbm_model(
     df = load_csv_auto(data_path)
 
     if target_col not in df.columns:
-        print(
-            f"[ADVARSEL] Target-kolonne '{target_col}' ikke fundet – dummy target oprettes."
-        )
+        print(f"[ADVARSEL] Target-kolonne '{target_col}' ikke fundet – dummy target oprettes.")
         df[target_col] = 0  # Dummy target, kun til pipeline-test
 
     X = df.drop(columns=[target_col, "timestamp"], errors="ignore").select_dtypes(
@@ -60,9 +59,7 @@ def train_lightgbm_model(
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
 
-    print(
-        f"[INFO] Træner model på {len(X_train)} samples, validerer på {len(X_val)} samples"
-    )
+    print(f"[INFO] Træner model på {len(X_train)} samples, validerer på {len(X_val)} samples")
 
     model = lgb.LGBMClassifier(
         n_estimators=n_estimators, learning_rate=learning_rate, class_weight="balanced"
@@ -90,9 +87,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Træn LightGBM baseline-model til trading-signaler"
     )
-    parser.add_argument(
-        "--data", type=str, required=True, help="Path til features-data (.csv)"
-    )
+    parser.add_argument("--data", type=str, required=True, help="Path til features-data (.csv)")
     parser.add_argument("--target", type=str, default="target", help="Target-kolonne")
     parser.add_argument("--n_estimators", type=int, default=100)
     parser.add_argument("--learning_rate", type=float, default=0.1)

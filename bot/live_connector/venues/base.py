@@ -8,9 +8,7 @@ log = logging.getLogger(__name__)
 class BaseConnector:
     venue: str = "base"
 
-    def __init__(
-        self, cfg: dict, symbol_map: dict, on_kline: Callable[[dict], None], ws_client
-    ):
+    def __init__(self, cfg: dict, symbol_map: dict, on_kline: Callable[[dict], None], ws_client):
         self.cfg = cfg
         self.symbol_map = symbol_map
         self.on_kline = on_kline

@@ -176,11 +176,7 @@ class StreamingFeaturePipeline:
         def _clean(x: float) -> Optional[float]:
             return (
                 None
-                if (
-                    x is None
-                    or isinstance(x, float)
-                    and (math.isnan(x) or math.isinf(x))
-                )
+                if (x is None or isinstance(x, float) and (math.isnan(x) or math.isinf(x)))
                 else float(x)
             )
 

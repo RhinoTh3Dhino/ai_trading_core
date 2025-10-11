@@ -35,9 +35,7 @@ def generate_trend_graph(
         try:
             df = pd.read_csv(history_path)
         except Exception as e:
-            print(
-                f"[WARN] Kunne ikke indlæse {history_path}: {e}. Opretter dummy-graf."
-            )
+            print(f"[WARN] Kunne ikke indlæse {history_path}: {e}. Opretter dummy-graf.")
             df = pd.DataFrame(
                 {
                     "timestamp": [pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")],
@@ -46,9 +44,7 @@ def generate_trend_graph(
                 }
             )
         # Sikring mod tom fil eller manglende kolonner
-        if df.empty or not all(
-            col in df.columns for col in ["timestamp", "Balance", "Navn"]
-        ):
+        if df.empty or not all(col in df.columns for col in ["timestamp", "Balance", "Navn"]):
             print(
                 "[WARN] Mangler nødvendige kolonner i performance_history.csv – opretter dummy-graf."
             )

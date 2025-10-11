@@ -62,9 +62,7 @@ def grid_search_sl_tp_ema(
 
                     # Simpel backtest
                     balance, trades_df = paper_trade_simple(strat_df, sl=sl, tp=tp)
-                    perf = calculate_performance_metrics(
-                        trades_df["balance"], trades_df
-                    )
+                    perf = calculate_performance_metrics(trades_df["balance"], trades_df)
                     perf.update(
                         {
                             "sl": sl,
@@ -102,9 +100,7 @@ def paper_trade_simple(df, sl=0.02, tp=0.04, start_balance=10000, fee=0.0005):
         if signal == 1 and position == 0:
             position = 1
             entry_price = price
-            trades.append(
-                {"time": ts, "type": "BUY", "price": entry_price, "balance": balance}
-            )
+            trades.append({"time": ts, "type": "BUY", "price": entry_price, "balance": balance})
         if position == 1:
             pnl = (price - entry_price) / entry_price
             if signal == -1 or pnl <= -sl or pnl >= tp:

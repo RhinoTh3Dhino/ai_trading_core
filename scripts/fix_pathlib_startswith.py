@@ -34,9 +34,7 @@ def fix_pathlib_startswith_in_file(filepath):
                     changed = True
 
         if original_line != line:
-            print(
-                f"[RETTER] {filepath} ({i+1}): {original_line.strip()} --> {line.strip()}"
-            )
+            print(f"[RETTER] {filepath} ({i+1}): {original_line.strip()} --> {line.strip()}")
         new_lines.append(line)
 
     if changed:

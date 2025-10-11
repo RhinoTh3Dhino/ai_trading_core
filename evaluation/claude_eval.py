@@ -71,8 +71,7 @@ def build_context(max_rows: int = 100) -> str:
             sel = [
                 c
                 for c in df_f.columns
-                if c.lower()
-                in {"timestamp", "type", "price", "qty", "balance", "profit", "side"}
+                if c.lower() in {"timestamp", "type", "price", "qty", "balance", "profit", "side"}
             ]
             if sel:
                 parts.append("Recent fills (tail):\n" + df_f[sel].to_csv(index=False))
@@ -253,13 +252,11 @@ def validate_payload(obj: Dict[str, Any]) -> bool:
         if not REQUIRED_KEYS.issubset(obj.keys()):
             return False
         if not (
-            isinstance(obj["edge_score"], (int, float))
-            and 0.0 <= float(obj["edge_score"]) <= 1.0
+            isinstance(obj["edge_score"], (int, float)) and 0.0 <= float(obj["edge_score"]) <= 1.0
         ):
             return False
         if not (
-            isinstance(obj["confidence"], (int, float))
-            and 0.0 <= float(obj["confidence"]) <= 1.0
+            isinstance(obj["confidence"], (int, float)) and 0.0 <= float(obj["confidence"]) <= 1.0
         ):
             return False
         if obj["action"] not in ACTIONS:
@@ -290,9 +287,7 @@ def run_once(prompt_id: str, *, dry_run: bool, model: str) -> Dict[str, Any]:
 def main():
     ap = argparse.ArgumentParser(description="Claude smoke-eval (returns JSON).")
     ap.add_argument("--prompt", choices=list(PROMPTS.keys()), default="p1")
-    ap.add_argument(
-        "--dry-run", action="store_true", help="Tving mock/fallback (ingen API-kald)."
-    )
+    ap.add_argument("--dry-run", action="store_true", help="Tving mock/fallback (ingen API-kald).")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument(
         "--smoke",

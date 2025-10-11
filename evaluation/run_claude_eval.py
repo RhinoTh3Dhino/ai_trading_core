@@ -7,8 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from .claude_eval import \
-    ANTHROPIC_API_KEY  # for auto-dry-run hvis nøgle mangler
+from .claude_eval import ANTHROPIC_API_KEY  # for auto-dry-run hvis nøgle mangler
 from .claude_eval import call_claude, validate_payload
 from .loaders import load_recent_trades, summarize_for_prompt
 
@@ -27,24 +26,12 @@ def _read_prompt_template(root: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description="Run Claude eval against recent trades and save JSON."
-    )
-    ap.add_argument(
-        "--root", default=".", help="Projektrod (hvor data/prompts ligger)."
-    )
-    ap.add_argument(
-        "--model", default="claude-3-haiku-20240307", help="Claude modelnavn."
-    )
-    ap.add_argument(
-        "--out", default="outputs/evals/last_eval.json", help="Output JSON-fil."
-    )
-    ap.add_argument(
-        "--n", type=int, default=20, help="Antal nyeste trades der hentes til prompt."
-    )
-    ap.add_argument(
-        "--dry-run", action="store_true", help="Tving mock (ingen eksternt API-kald)."
-    )
+    ap = argparse.ArgumentParser(description="Run Claude eval against recent trades and save JSON.")
+    ap.add_argument("--root", default=".", help="Projektrod (hvor data/prompts ligger).")
+    ap.add_argument("--model", default="claude-3-haiku-20240307", help="Claude modelnavn.")
+    ap.add_argument("--out", default="outputs/evals/last_eval.json", help="Output JSON-fil.")
+    ap.add_argument("--n", type=int, default=20, help="Antal nyeste trades der hentes til prompt.")
+    ap.add_argument("--dry-run", action="store_true", help="Tving mock (ingen eksternt API-kald).")
     args = ap.parse_args()
 
     root = Path(args.root).resolve()

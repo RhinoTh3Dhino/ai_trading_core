@@ -50,7 +50,5 @@ def test_okx_golden_replay():
         assert k is not None
         out.append(k)
 
-    assert all(
-        b["venue"] == "okx" and b["symbol"] in ("BTCUSDT", "ETHUSDT") for b in out
-    )
+    assert all(b["venue"] == "okx" and b["symbol"] in ("BTCUSDT", "ETHUSDT") for b in out)
     assert len(out) == len(frames)

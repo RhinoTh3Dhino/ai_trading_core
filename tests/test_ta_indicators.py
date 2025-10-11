@@ -55,9 +55,7 @@ def test_add_ta_indicators_generates_expected_columns():
     assert not result.isna().any().any(), "Resultat indeholder NaN"
 
     # Idempotens/ingen mutation af input
-    assert (
-        set(df.columns) == orig_cols
-    ), "Input DataFrame må ikke blive muteret i kolonner"
+    assert set(df.columns) == orig_cols, "Input DataFrame må ikke blive muteret i kolonner"
 
 
 def test_add_ta_indicators_handles_force_no_supertrend():

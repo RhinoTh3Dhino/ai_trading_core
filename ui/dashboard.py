@@ -152,9 +152,7 @@ def _detect_pnl_col(df: pd.DataFrame) -> Optional[str]:
     return None
 
 
-def compute_kpis(
-    equity: pd.DataFrame, fills: pd.DataFrame
-) -> Tuple[float, float, float, int]:
+def compute_kpis(equity: pd.DataFrame, fills: pd.DataFrame) -> Tuple[float, float, float, int]:
     pnl_pct = 0.0
     win_rate = 0.0
     dd_pct = 0.0
@@ -200,10 +198,7 @@ if equity_df.empty:
     st.info(f"Ingen data endnu i {EQUITY_CSV}")
 else:
     plot_df = (
-        equity_df[["timestamp", "equity"]]
-        .copy()
-        .sort_values("timestamp")
-        .set_index("timestamp")
+        equity_df[["timestamp", "equity"]].copy().sort_values("timestamp").set_index("timestamp")
     )
     st.line_chart(plot_df)
 

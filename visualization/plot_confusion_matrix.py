@@ -78,9 +78,7 @@ def plot_confusion_matrix(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Plot confusion matrix for AI trading bot"
-    )
+    parser = argparse.ArgumentParser(description="Plot confusion matrix for AI trading bot")
     parser.add_argument(
         "--y_true",
         type=str,

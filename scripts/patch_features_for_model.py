@@ -126,9 +126,7 @@ def write_meta_csv(path: Path, meta: Optional[dict], df: pd.DataFrame) -> None:
         df.to_csv(f, index=False)
 
 
-def ensure_timestamp(
-    df: pd.DataFrame, freq: str, end_utc: Optional[str]
-) -> pd.DataFrame:
+def ensure_timestamp(df: pd.DataFrame, freq: str, end_utc: Optional[str]) -> pd.DataFrame:
     """
     Sørger for at 'timestamp' findes og er datetime64[ns].
     Hvis den mangler, konstrueres en syntetisk tidsakse med given frekvens.
@@ -144,9 +142,9 @@ def ensure_timestamp(
         df.rename(columns={have: "timestamp"}, inplace=True)
 
     if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(
-            df["timestamp"], errors="coerce", utc=True
-        ).dt.tz_convert(None)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True).dt.tz_convert(
+            None
+        )
         # Hvis alt blev NaT (helt ubrugeligt), generér nyt
         if df["timestamp"].isna().all():
             have = None
@@ -171,9 +169,7 @@ def ensure_positive_series(s: pd.Series, eps: float) -> pd.Series:
     return s.clip(lower=eps)
 
 
-def compute_robust_atr(
-    high: pd.Series, low: pd.Series, close: pd.Series, n: int = 14
-) -> pd.Series:
+def compute_robust_atr(high: pd.Series, low: pd.Series, close: pd.Series, n: int = 14) -> pd.Series:
     """ATR(14) robust mod 0 og dårlige værdier."""
     h = ensure_positive_series(high, EPS_PRICE)
     l = ensure_positive_series(low, EPS_PRICE)
@@ -192,9 +188,7 @@ def compute_robust_atr(
 
 # ----------------------------- main patching -----------------------------
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description="Patch features to match model expectations."
-    )
+    ap = argparse.ArgumentParser(description="Patch features to match model expectations.")
     ap.add_argument("--in", dest="inp", required=True, help="Input CSV med features")
     ap.add_argument("--out", dest="out", required=True, help="Output CSV (overskrives)")
     ap.add_argument(
@@ -242,11 +236,7 @@ def main() -> int:
 
     # 2) Afledte kolonner
     # macd_hist
-    if (
-        "macd" in df.columns
-        and "macd_signal" in df.columns
-        and "macd_hist" not in df.columns
-    ):
+    if "macd" in df.columns and "macd_signal" in df.columns and "macd_hist" not in df.columns:
         df["macd_hist"] = pd.to_numeric(df["macd"], errors="coerce") - pd.to_numeric(
             df["macd_signal"], errors="coerce"
         )
@@ -260,9 +250,7 @@ def main() -> int:
         df["rsi_28"] = rsi(df["close"], 28)
 
     # Bollinger bands (20, 2)
-    if "close" in df.columns and (
-        ("bb_upper" not in df.columns) or ("bb_lower" not in df.columns)
-    ):
+    if "close" in df.columns and (("bb_upper" not in df.columns) or ("bb_lower" not in df.columns)):
         c = pd.to_numeric(df["close"], errors="coerce")
         m = c.rolling(20, min_periods=10).mean()
         sd = c.rolling(20, min_periods=10).std(ddof=0)
@@ -283,9 +271,7 @@ def main() -> int:
 
     # zscore_20 (over close)
     if "zscore_20" not in df.columns and "close" in df.columns:
-        df["zscore_20"] = rolling_zscore(
-            pd.to_numeric(df["close"], errors="coerce"), 20
-        )
+        df["zscore_20"] = rolling_zscore(pd.to_numeric(df["close"], errors="coerce"), 20)
 
     # return (pct change på close)
     if "return" not in df.columns and "close" in df.columns:
@@ -342,9 +328,7 @@ def main() -> int:
         if base in df.columns:
             col = df[base]
             if col.dtype == "O":  # fx regime som tekst
-                col = pd.Series(
-                    pd.factorize(col, sort=True)[0], index=col.index, dtype=float
-                )
+                col = pd.Series(pd.factorize(col, sort=True)[0], index=col.index, dtype=float)
             df[zname] = zscore(col)
         else:
             df[zname] = 0.0

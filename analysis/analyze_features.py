@@ -73,12 +73,8 @@ def classic_feature_importance(model, feature_names, run_id, output_dir=OUTPUT_D
 
 # === FEATURE IMPORTANCE: PERMUTATION (sklearn, ML og NN) ===
 def permutation_feature_importance(model, X, y, run_id, output_dir=OUTPUT_DIR):
-    result = permutation_importance(
-        model, X, y, n_repeats=10, random_state=42, n_jobs=-1
-    )
-    feat_df = pd.DataFrame(
-        {"feature": X.columns, "importance": result.importances_mean}
-    )
+    result = permutation_importance(model, X, y, n_repeats=10, random_state=42, n_jobs=-1)
+    feat_df = pd.DataFrame({"feature": X.columns, "importance": result.importances_mean})
     feat_df = feat_df.sort_values("importance", ascending=False)
     csv_path = os.path.join(output_dir, f"feature_importance_{run_id}_permutation.csv")
     feat_df.to_csv(csv_path, index=False)
@@ -126,9 +122,7 @@ def save_feature_report(
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(f"# Feature Importance Rapport ({run_id})\n\n")
         if classic_png:
-            f.write(
-                f"## Classic importance\n\n![classic]({os.path.basename(classic_png)})\n\n"
-            )
+            f.write(f"## Classic importance\n\n![classic]({os.path.basename(classic_png)})\n\n")
         if permutation_png:
             f.write(
                 f"## Permutation importance\n\n![permutation]({os.path.basename(permutation_png)})\n\n"
@@ -139,9 +133,7 @@ def save_feature_report(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Feature-importance analyse og visualisering"
-    )
+    parser = argparse.ArgumentParser(description="Feature-importance analyse og visualisering")
     parser.add_argument(
         "--mode",
         type=str,
@@ -171,12 +163,8 @@ def main():
     if args.mode in ["shap", "all"]:
         shap_png = shap_feature_importance(model, X, run_id, output_dir=OUTPUT_DIR)
 
-    save_feature_report(
-        run_id, classic_png, permutation_png, shap_png, output_dir=OUTPUT_DIR
-    )
-    print(
-        f"Feature-importance analyse gennemført ({args.mode}). Se alle outputs i: {OUTPUT_DIR}"
-    )
+    save_feature_report(run_id, classic_png, permutation_png, shap_png, output_dir=OUTPUT_DIR)
+    print(f"Feature-importance analyse gennemført ({args.mode}). Se alle outputs i: {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":

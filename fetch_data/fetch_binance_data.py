@@ -10,9 +10,7 @@ from binance.client import Client
 from utils.telegram_utils import send_message
 
 
-def fetch_binance_ohlcv(
-    symbol="BTCUSDT", interval="1h", lookback_days=30, rolling_window=None
-):
+def fetch_binance_ohlcv(symbol="BTCUSDT", interval="1h", lookback_days=30, rolling_window=None):
     client = Client(api_key=None, api_secret=None)
     end = datetime.now()
     start = end - timedelta(days=lookback_days)
@@ -100,18 +98,12 @@ def fetch_and_save(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Hent og gem rå OHLCV-data fra Binance til CSV."
-    )
+    parser = argparse.ArgumentParser(description="Hent og gem rå OHLCV-data fra Binance til CSV.")
     parser.add_argument(
         "--symbol", type=str, default="BTCUSDT", help="Symbol, fx BTCUSDT, ETHUSDT osv."
     )
-    parser.add_argument(
-        "--interval", type=str, default="1h", help="Tidsinterval, fx 1h, 4h, 1d"
-    )
-    parser.add_argument(
-        "--outdir", type=str, default="data", help="Output-mappe for CSV"
-    )
+    parser.add_argument("--interval", type=str, default="1h", help="Tidsinterval, fx 1h, 4h, 1d")
+    parser.add_argument("--outdir", type=str, default="data", help="Output-mappe for CSV")
     parser.add_argument(
         "--lookback",
         type=int,
@@ -129,11 +121,7 @@ if __name__ == "__main__":
 
     # Håndter alias for --days
     lookback_days = (
-        args.lookback
-        if args.lookback is not None
-        else args.days if args.days is not None else 30
+        args.lookback if args.lookback is not None else args.days if args.days is not None else 30
     )
 
-    df = fetch_and_save(
-        args.symbol, args.interval, args.outdir, lookback_days, args.rolling_window
-    )
+    df = fetch_and_save(args.symbol, args.interval, args.outdir, lookback_days, args.rolling_window)

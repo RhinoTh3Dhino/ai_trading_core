@@ -45,9 +45,7 @@ def insert_import(content):
     insert_idx = 0
     for idx, line in enumerate(lines):
         if not (
-            str(line).startswith("import")
-            or str(line).startswith("from")
-            or line.strip() == ""
+            str(line).startswith("import") or str(line).startswith("from") or line.strip() == ""
         ):
             insert_idx = idx
             break

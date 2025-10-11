@@ -216,7 +216,4 @@ def test_send_text_path_with_dummy_bot(monkeypatch):
             # accepter single-send; chunking er implementeringsafhængig
             assert isinstance(dummy_bot.sent[0][1], str)
         else:
-            assert all(
-                isinstance(t, str) and 1 <= len(t) <= max_len
-                for _, t, _ in dummy_bot.sent
-            )
+            assert all(isinstance(t, str) and 1 <= len(t) <= max_len for _, t, _ in dummy_bot.sent)

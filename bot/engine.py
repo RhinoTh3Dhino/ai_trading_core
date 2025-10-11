@@ -66,8 +66,7 @@ except Exception:  # pragma: no cover
 # Prometheus
 try:
     from prometheus_client import CONTENT_TYPE_LATEST  # type: ignore
-    from prometheus_client import (REGISTRY, Counter, Gauge, Histogram,
-                                   generate_latest)
+    from prometheus_client import REGISTRY, Counter, Gauge, Histogram, generate_latest
 except Exception:  # pragma: no cover
     REGISTRY = None  # type: ignore
     generate_latest = None  # type: ignore
@@ -85,8 +84,7 @@ except Exception:  # pragma: no cover
 
 # live metrics modul (failsafe import)
 try:
-    from bot.live_connector import \
-        metrics as m  # ensure_registered / bootstrap_core_metrics
+    from bot.live_connector import metrics as m  # ensure_registered / bootstrap_core_metrics
 except Exception:  # pragma: no cover
 
     class _DummyM:
@@ -124,9 +122,7 @@ def _ensure_test_core_metrics() -> None:
     except Exception:
         pass
     try:
-        Histogram(
-            "feature_compute_ms", "Feature computation time (ms)", registry=REGISTRY
-        )
+        Histogram("feature_compute_ms", "Feature computation time (ms)", registry=REGISTRY)
     except Exception:
         pass
 
@@ -317,9 +313,7 @@ except Exception:
         alloc_pct = float(os.getenv("ENGINE_ALLOC_PCT", "0.10") or 0.10)
         commission_bp = float(os.getenv("ENGINE_COMMISSION_BP", "2") or 2.0)
         slippage_bp = float(os.getenv("ENGINE_SLIPPAGE_BP", "1") or 1.0)
-        daily_loss_limit_pct = float(
-            os.getenv("ENGINE_DAILY_LOSS_LIMIT_PCT", "5") or 5.0
-        )
+        daily_loss_limit_pct = float(os.getenv("ENGINE_DAILY_LOSS_LIMIT_PCT", "5") or 5.0)
         telegram = _FallbackTelegram()
         alerts = _FallbackAlerts()
 
@@ -475,19 +469,23 @@ ENV_DAILY_LOSS_LIMIT_PCT = _env_float(
     "DAILY_LOSS_LIMIT_PCT", getattr(CFG, "daily_loss_limit_pct", 5.0)
 )
 
-_TELEGRAM_DAILY_REPORT = os.getenv(
-    "TELEGRAM_DAILY_REPORT", "last"
-).lower()  # none|daily|last
+_TELEGRAM_DAILY_REPORT = os.getenv("TELEGRAM_DAILY_REPORT", "last").lower()  # none|daily|last
 
 # --- Versions (failsafe) ------------------------------------------------------
 try:
     from versions import ENGINE_VERSION  # type: ignore
-    from versions import (ENGINE_COMMIT, FEATURE_VERSION, LABEL_STRATEGY,
-                          MODEL_VERSION, PIPELINE_COMMIT, PIPELINE_VERSION)
+    from versions import (
+        ENGINE_COMMIT,
+        FEATURE_VERSION,
+        LABEL_STRATEGY,
+        MODEL_VERSION,
+        PIPELINE_COMMIT,
+        PIPELINE_VERSION,
+    )
 except Exception:
-    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = (
-        ENGINE_COMMIT
-    ) = MODEL_VERSION = LABEL_STRATEGY = "unknown"
+    PIPELINE_VERSION = PIPELINE_COMMIT = FEATURE_VERSION = ENGINE_VERSION = ENGINE_COMMIT = (
+        MODEL_VERSION
+    ) = LABEL_STRATEGY = "unknown"
 
 # --- PyTorch (failsafe) -------------------------------------------------------
 try:
@@ -501,8 +499,7 @@ except Exception:
 # [F4] Persistens helpers
 # =========================
 try:
-    from utils.artifacts import (ensure_dir, symlink_latest,  # type: ignore
-                                 write_json)
+    from utils.artifacts import ensure_dir, symlink_latest, write_json  # type: ignore
 except Exception:
 
     def ensure_dir(path: str) -> None:
@@ -512,9 +509,7 @@ except Exception:
         obj: dict, out_dir: str, prefix: str, version: str, with_time: bool = False
     ) -> str:
         ensure_dir(out_dir)
-        ts = datetime.now().strftime(
-            "%Y%m%d" + ("_%H%M%S" if with_time else "")
-        )  # noqa: E501
+        ts = datetime.now().strftime("%Y%m%d" + ("_%H%M%S" if with_time else ""))  # noqa: E501
         p = Path(out_dir) / f"{prefix}_{version}_{ts}.json"
         with open(p, "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=2)
@@ -569,16 +564,13 @@ def persist_after_run(
     try:
         prefix = f"strategy_metrics_{symbol.lower()}_{timeframe}"
         mjson = _jsonify_metrics(metrics or {})
-        metrics_path = write_json(
-            mjson, "outputs/metrics", prefix, version, with_time=False
-        )
+        metrics_path = write_json(mjson, "outputs/metrics", prefix, version, with_time=False)
         symlink_latest(metrics_path, f"outputs/metrics/{prefix}_latest.json")
 
         if balance_plot_path and os.path.exists(balance_plot_path):
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             dst = (
-                Path("outputs/charts")
-                / f"{symbol.lower()}_{timeframe}_balance_{version}_{ts}.png"
+                Path("outputs/charts") / f"{symbol.lower()}_{timeframe}_balance_{version}_{ts}.png"
             )
             ensure_dir(dst.parent.as_posix())
             try:
@@ -635,9 +627,7 @@ else:
 
     class TradingNet:  # type: ignore
         def __init__(self, *a, **k):
-            raise ImportError(
-                "PyTorch ikke tilgængelig – kan ikke instantiere TradingNet."
-            )
+            raise ImportError("PyTorch ikke tilgængelig – kan ikke instantiere TradingNet.")
 
 
 def build_model(**kwargs: Any) -> TradingNet:
@@ -662,9 +652,7 @@ try:
     from backtest.backtest import run_backtest  # type: ignore
 except Exception:
 
-    def run_backtest(
-        df: pd.DataFrame, signals: np.ndarray
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def run_backtest(df: pd.DataFrame, signals: np.ndarray) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Simpel fallback-backtest:
         - Long qty=1 ved signal=1; flad ved signal=0.
@@ -726,9 +714,7 @@ except Exception:
                 entry_px = None
 
             equity = cash + position * px
-            balances.append(
-                {"timestamp": str(df["__ts__"].iat[i]), "balance": float(equity)}
-            )
+            balances.append({"timestamp": str(df["__ts__"].iat[i]), "balance": float(equity)})
 
         trades_df = (
             pd.DataFrame(trades)
@@ -736,9 +722,7 @@ except Exception:
             else pd.DataFrame(columns=["idx", "ts", "type", "price", "profit"])
         )
         balance_df = (
-            pd.DataFrame(balances)
-            if balances
-            else pd.DataFrame(columns=["timestamp", "balance"])
+            pd.DataFrame(balances) if balances else pd.DataFrame(columns=["timestamp", "balance"])
         )
         return trades_df, balance_df
 
@@ -820,9 +804,7 @@ def _backtest_is_useless(trades_df: pd.DataFrame, balance_df: pd.DataFrame) -> b
     return False
 
 
-def _run_bt_with_rescue(
-    df: pd.DataFrame, sig: np.ndarray
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Kør standard backtest; hvis ubrugelig → brug rescue og fix timestamp-kolonne."""
     t, b = run_backtest(df, sig)
     if _backtest_is_useless(t, b):
@@ -831,9 +813,7 @@ def _run_bt_with_rescue(
     # Align timestamp fra source hvis mangler
     if "timestamp" not in b.columns and "timestamp" in df.columns:
         b = b.copy()
-        b["timestamp"] = (
-            pd.to_datetime(df["timestamp"]).astype(str).iloc[: len(b)].values
-        )
+        b["timestamp"] = pd.to_datetime(df["timestamp"]).astype(str).iloc[: len(b)].values
     return t, b
 
 
@@ -859,15 +839,11 @@ def _normalize_bt_frames(
 
     # ekstra safety: hvis balance stadig mangler timestamp, align på src_df
     if not b.empty and "timestamp" not in b.columns and "timestamp" in src_df.columns:
-        b["timestamp"] = (
-            pd.to_datetime(src_df["timestamp"], errors="coerce").iloc[: len(b)].values
-        )
+        b["timestamp"] = pd.to_datetime(src_df["timestamp"], errors="coerce").iloc[: len(b)].values
     return t, b
 
 
-def _simple_metrics_from_balance(
-    trades_df: pd.DataFrame, balance_df: pd.DataFrame
-) -> dict:
+def _simple_metrics_from_balance(trades_df: pd.DataFrame, balance_df: pd.DataFrame) -> dict:
     """
     Minimal fallback-metrik hvis advanced_performance_metrics fejler:
     - profit_pct fra første/sidste equity/balance
@@ -940,9 +916,7 @@ try:
     from strategies.rsi_strategy import rsi_rule_based_signals  # type: ignore
 except Exception:
 
-    def rsi_rule_based_signals(
-        df: pd.DataFrame, low: int = 45, high: int = 55
-    ) -> np.ndarray:
+    def rsi_rule_based_signals(df: pd.DataFrame, low: int = 45, high: int = 55) -> np.ndarray:
         ema = df["close"].ewm(span=10, adjust=False).mean()
         return (df["close"] > ema).astype(int).to_numpy()
 
@@ -966,16 +940,12 @@ except Exception:
             if self.equity_log_path:
                 Path(self.equity_log_path).parent.mkdir(parents=True, exist_ok=True)
                 if not os.path.exists(self.equity_log_path):
-                    with open(
-                        self.equity_log_path, "w", newline="", encoding="utf-8"
-                    ) as f:
+                    with open(self.equity_log_path, "w", newline="", encoding="utf-8") as f:
                         csv.writer(f).writerow(["date", "equity"])
             if self.fills_log_path:
                 Path(self.fills_log_path).parent.mkdir(parents=True, exist_ok=True)
                 if not os.path.exists(self.fills_log_path):
-                    with open(
-                        self.fills_log_path, "w", newline="", encoding="utf-8"
-                    ) as f:
+                    with open(self.fills_log_path, "w", newline="", encoding="utf-8") as f:
                         csv.writer(f).writerow(
                             [
                                 "ts",
@@ -994,13 +964,9 @@ except Exception:
                 return price + slip if side == "BUY" else price - slip
             return price
 
-        def mark_to_market(
-            self, prices: Dict[str, float], ts: Optional[datetime] = None
-        ):
+        def mark_to_market(self, prices: Dict[str, float], ts: Optional[datetime] = None):
             self._last_px.update(prices)
-            equity = self.cash + sum(
-                self.positions.get(s, 0.0) * p for s, p in prices.items()
-            )
+            equity = self.cash + sum(self.positions.get(s, 0.0) * p for s, p in prices.items())
             if self.equity_log_path:
                 with open(self.equity_log_path, "a", newline="", encoding="utf-8") as f:
                     d = (ts or datetime.utcnow()).strftime("%Y-%m-%d")
@@ -1085,17 +1051,13 @@ try:
     from features.auto_features import ensure_latest  # type: ignore
 except Exception:
 
-    def ensure_latest(
-        symbol: str = "BTCUSDT", timeframe: str = "1h", min_rows: int = 200
-    ):
+    def ensure_latest(symbol: str = "BTCUSDT", timeframe: str = "1h", min_rows: int = 200):
         outdir = Path(PROJECT_ROOT) / "outputs" / "feature_data"
         outdir.mkdir(parents=True, exist_ok=True)
         candidate = outdir / f"{symbol}_{timeframe}_latest.csv"
         if candidate.exists():
             return candidate
-        alts = sorted(
-            outdir.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True
-        )
+        alts = sorted(outdir.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
         if alts:
             return alts[0]
         raise FileNotFoundError(
@@ -1147,9 +1109,7 @@ def load_trained_feature_list() -> Optional[List[str]]:
         print(f"[INFO] Loader LSTM feature-liste fra model: {features}")
         return features
     else:
-        print(
-            "[ADVARSEL] Ingen feature-liste fundet – bruger alle numeriske features fra input."
-        )
+        print("[ADVARSEL] Ingen feature-liste fundet – bruger alle numeriske features fra input.")
         return None
 
 
@@ -1169,9 +1129,7 @@ def load_ml_model():
 def reconcile_features(df: pd.DataFrame, feature_list: List[str]) -> pd.DataFrame:
     missing = [col for col in feature_list if col not in df.columns]
     if missing:
-        print(
-            f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}"
-        )
+        print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
         for col in missing:
             df[col] = 0.0
     return df[feature_list]
@@ -1186,9 +1144,7 @@ def load_pytorch_model(
     cand = Path(model_path)
     ts_alt = cand.with_suffix(".ts")
     paths_to_try = (
-        [cand, ts_alt]
-        if cand.suffix.lower() != ".ts"
-        else [cand, cand.with_suffix(".pt")]
+        [cand, ts_alt] if cand.suffix.lower() != ".ts" else [cand, cand.with_suffix(".pt")]
     )
 
     for p in paths_to_try:
@@ -1275,9 +1231,7 @@ def keras_lstm_predict(
         print(f"❌ Keras LSTM-model ikke fundet: {model_path}")
         return np.zeros(len(df), dtype=int)
 
-    if not (
-        os.path.exists(LSTM_SCALER_MEAN_PATH) and os.path.exists(LSTM_SCALER_SCALE_PATH)
-    ):
+    if not (os.path.exists(LSTM_SCALER_MEAN_PATH) and os.path.exists(LSTM_SCALER_SCALE_PATH)):
         print("❌ Mangler scaler-filer til LSTM – bruger nuller.")
         return np.zeros(len(df), dtype=int)
 
@@ -1346,9 +1300,7 @@ def _get_current_qty(broker, symbol: str) -> float:
     pos_container = getattr(broker, "positions", None)
     if pos_container is None:
         return 0.0
-    pos = (
-        pos_container.get(symbol) if isinstance(pos_container, dict) else pos_container
-    )
+    pos = pos_container.get(symbol) if isinstance(pos_container, dict) else pos_container
     if pos is None:
         return 0.0
     if isinstance(pos, (int, float)):
@@ -1389,9 +1341,7 @@ def run_pipeline(
     if "timestamp" not in df.columns and "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
     if "timestamp" not in df.columns:
-        raise ValueError(
-            "Input CSV skal indeholde 'timestamp' eller 'datetime' kolonne."
-        )
+        raise ValueError("Input CSV skal indeholde 'timestamp' eller 'datetime' kolonne.")
 
     df["timestamp"] = _ensure_datetime(df["timestamp"])
     if df["timestamp"].isna().any():
@@ -1408,8 +1358,7 @@ def run_pipeline(
     trades, balance = run_backtest(df, signals=signals)
 
     try:
-        from utils.metrics_utils import \
-            advanced_performance_metrics as _apm  # type: ignore
+        from utils.metrics_utils import advanced_performance_metrics as _apm  # type: ignore
 
         metrics = _apm(trades, balance)
         if "max_drawdown" in metrics and "drawdown_pct" not in metrics:
@@ -1426,9 +1375,7 @@ def run_pipeline(
         metrics = {
             "profit_pct": pnl * 100.0,
             "drawdown_pct": 0.0,
-            "num_trades": (
-                int((trades["type"] == "OPEN").sum()) if "type" in trades else 0
-            ),
+            "num_trades": (int((trades["type"] == "OPEN").sum()) if "type" in trades else 0),
         }
 
     sig_df = pd.DataFrame({"timestamp": df["timestamp"], "signal": signals.astype(int)})
@@ -1483,17 +1430,13 @@ def _calc_daily_metrics_for_date(date_str: str) -> Dict[str, float]:
             d = df_f[df_f["date"] == date_str]
             if not d.empty:
                 if "pnl_realized" in d.columns:
-                    pnl_series = pd.to_numeric(
-                        d["pnl_realized"], errors="coerce"
-                    ).fillna(0.0)
+                    pnl_series = pd.to_numeric(d["pnl_realized"], errors="coerce").fillna(0.0)
                     gross = float(pnl_series.sum())
                     wins = int((pnl_series > 0).sum())
                     closed = int((pnl_series != 0).sum())
                 if "commission" in d.columns:
                     commissions = float(
-                        pd.to_numeric(d["commission"], errors="coerce")
-                        .fillna(0.0)
-                        .sum()
+                        pd.to_numeric(d["commission"], errors="coerce").fillna(0.0).sum()
                     )
 
     if closed == 0 and EQUITY_CSV.exists():
@@ -1630,16 +1573,11 @@ def _generate_ensemble_signals_for_df(
         print(f"[ADVARSEL] DL fallback-features: {fallback_cols}")
 
     lstm_ok = bool(use_lstm) and all(
-        os.path.exists(p)
-        for p in (LSTM_MODEL_PATH, LSTM_SCALER_MEAN_PATH, LSTM_SCALER_SCALE_PATH)
+        os.path.exists(p) for p in (LSTM_MODEL_PATH, LSTM_SCALER_MEAN_PATH, LSTM_SCALER_SCALE_PATH)
     )
     if lstm_ok:
-        feature_cols = (
-            trained_features if trained_features is not None else list(X_dl.columns)
-        )
-        dl_signals = keras_lstm_predict(
-            df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PATH
-        )
+        feature_cols = trained_features if trained_features is not None else list(X_dl.columns)
+        dl_signals = keras_lstm_predict(df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PATH)
     elif use_lstm:
         missing = [
             p
@@ -1690,9 +1628,7 @@ def run_paper_trading(
     persist: bool = True,
     persist_version: str = os.getenv("MODEL_VERSION", "v1"),
 ) -> None:
-    features_path = _resolve_features_path(
-        features_path, symbol, interval, min_rows=200
-    )
+    features_path = _resolve_features_path(features_path, symbol, interval, min_rows=200)
 
     print(f"🔄 Indlæser features til paper: {features_path}")
     df = read_features_auto(features_path)
@@ -1705,9 +1641,7 @@ def run_paper_trading(
     if "close" not in df.columns:
         raise ValueError("Features skal have 'close' kolonne.")
 
-    ens_signals = _generate_ensemble_signals_for_df(
-        df.copy(), threshold, device_str, use_lstm
-    )
+    ens_signals = _generate_ensemble_signals_for_df(df.copy(), threshold, device_str, use_lstm)
     if len(ens_signals) > 0:  # Luk sidste bar → realiser PnL
         ens_signals[-1] = 0
     df["signal_ens"] = ens_signals
@@ -1746,9 +1680,7 @@ def run_paper_trading(
         ALERTS.evaluate_and_notify(_send)
 
         if dstr != current_day:
-            _upsert_daily_metrics(
-                current_day, {"signal_count": int(daily_signal_count)}
-            )
+            _upsert_daily_metrics(current_day, {"signal_count": int(daily_signal_count)})
             m_ = _calc_daily_metrics_for_date(current_day)
             _upsert_daily_metrics(current_day, m_)
             _send(
@@ -1803,9 +1735,7 @@ def run_paper_trading(
                 symbol=symbol,
                 timeframe=interval,
                 version=persist_version,
-                metrics=(
-                    {"paper_daily": m_} if current_day is not None else {"paper": True}
-                ),
+                metrics=({"paper_daily": m_} if current_day is not None else {"paper": True}),
                 balance_plot_path=None,
                 model_path=None,
             )
@@ -1869,14 +1799,10 @@ def main(
     allow_short: bool = False,
     alloc_pct: float = ENV_ALLOC_PCT,
     # [F4] CLI flags
-    persist: bool = (
-        os.getenv("PERSIST", "true").lower() in {"1", "true", "yes", "on"}
-    ),
+    persist: bool = (os.getenv("PERSIST", "true").lower() in {"1", "true", "yes", "on"}),
     persist_version: str = os.getenv("MODEL_VERSION", "v1"),
 ) -> None:
-    device_str = device_str or (
-        "cuda" if (torch and torch.cuda.is_available()) else "cpu"
-    )
+    device_str = device_str or ("cuda" if (torch and torch.cuda.is_available()) else "cpu")
     _ = log_device_status(
         context="engine",
         extra={
@@ -1922,9 +1848,7 @@ def main(
     writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
 
     try:
-        features_path_final = _resolve_features_path(
-            features_path, symbol, interval, min_rows=200
-        )
+        features_path_final = _resolve_features_path(features_path, symbol, interval, min_rows=200)
         print("🔄 Indlæser features:", features_path_final)
         df = read_features_auto(features_path_final)
         print(f"✅ Data indlæst ({len(df)} rækker)")
@@ -1947,8 +1871,7 @@ def main(
         trades_ml, balance_ml = _run_bt_with_rescue(df, ml_signals)
         trades_ml, balance_ml = _normalize_bt_frames(trades_ml, balance_ml, df)
         try:
-            from utils.metrics_utils import \
-                advanced_performance_metrics as _apm  # type: ignore
+            from utils.metrics_utils import advanced_performance_metrics as _apm  # type: ignore
 
             metrics_ml = _apm(trades_ml, balance_ml)
         except Exception:
@@ -1975,9 +1898,7 @@ def main(
         )
         if lstm_ok:
             print("✅ Bruger Keras LSTM til inference.")
-            feature_cols = (
-                trained_features if trained_features is not None else list(X_dl.columns)
-            )
+            feature_cols = trained_features if trained_features is not None else list(X_dl.columns)
             dl_signals = keras_lstm_predict(
                 df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PATH
             )
@@ -2000,9 +1921,7 @@ def main(
         else:
             model = load_pytorch_model(feature_dim=X_dl.shape[1], device_str=device_str)
             if model is not None and torch is not None:
-                dl_preds, dl_probas = pytorch_predict(
-                    model, X_dl, device_str=device_str
-                )
+                dl_preds, dl_probas = pytorch_predict(model, X_dl, device_str=device_str)
                 dl_signals = (dl_probas[:, 1] > threshold).astype(int)
                 print("✅ PyTorch DL-inference klar!")
             else:
@@ -2016,8 +1935,7 @@ def main(
         trades_dl, balance_dl = _run_bt_with_rescue(df, dl_signals)
         trades_dl, balance_dl = _normalize_bt_frames(trades_dl, balance_dl, df)
         try:
-            from utils.metrics_utils import \
-                advanced_performance_metrics as _apm  # type: ignore
+            from utils.metrics_utils import advanced_performance_metrics as _apm  # type: ignore
 
             metrics_dl = _apm(trades_dl, balance_dl)
         except Exception:
@@ -2042,8 +1960,7 @@ def main(
         trades_ens, balance_ens = _run_bt_with_rescue(df, ensemble_signals)
         trades_ens, balance_ens = _normalize_bt_frames(trades_ens, balance_ens, df)
         try:
-            from utils.metrics_utils import \
-                advanced_performance_metrics as _apm  # type: ignore
+            from utils.metrics_utils import advanced_performance_metrics as _apm  # type: ignore
 
             metrics_ens = _apm(trades_ens, balance_ens)
         except Exception:
@@ -2090,8 +2007,7 @@ def main(
         comparison_png = f"{GRAPH_DIR}/model_comparison.png"
 
         try:
-            from visualization.plot_performance import \
-                plot_performance  # type: ignore
+            from visualization.plot_performance import plot_performance  # type: ignore
 
             os.makedirs(GRAPH_DIR, exist_ok=True)
             plot_performance(
@@ -2117,14 +2033,11 @@ def main(
             perf_ens_png = None  # kan mangle
 
         try:
-            from visualization.plot_comparison import \
-                plot_comparison  # type: ignore
+            from visualization.plot_comparison import plot_comparison  # type: ignore
 
             metric_keys = ["profit_pct", "max_drawdown", "sharpe", "sortino"]
             os.makedirs(GRAPH_DIR, exist_ok=True)
-            plot_comparison(
-                metrics_dict, metric_keys=metric_keys, save_path=comparison_png
-            )
+            plot_comparison(metrics_dict, metric_keys=metric_keys, save_path=comparison_png)
             print(f"[INFO] Sammenlignings-graf gemt til {comparison_png}")
             try:
                 send_image(comparison_png, caption="ML vs. DL vs. ENSEMBLE performance")
@@ -2273,9 +2186,7 @@ if __name__ == "__main__":
             interval=args.interval,
             threshold=args.threshold,
             weights=(
-                list(args.weights)
-                if isinstance(args.weights, (list, tuple))
-                else [1.0, 1.0, 0.7]
+                list(args.weights) if isinstance(args.weights, (list, tuple)) else [1.0, 1.0, 0.7]
             ),
             device_str=args.device,
             use_lstm=args.use_lstm,

@@ -21,8 +21,12 @@ import types
 import pytest
 
 import utils.telegram_utils as tg  # modulreference til monkeypatch af LOG_PATH/requests
-from utils.telegram_utils import (log_telegram, send_message,
-                                  send_telegram_heartbeat, telegram_enabled)
+from utils.telegram_utils import (
+    log_telegram,
+    send_message,
+    send_telegram_heartbeat,
+    telegram_enabled,
+)
 
 
 # ---------------------------------------------------------------------

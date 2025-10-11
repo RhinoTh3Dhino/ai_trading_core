@@ -24,17 +24,13 @@ MULTI_CONFIG = [
     {
         "symbol": "ethusdt",
         "timeframe": "1h",
-        "features_path": PROJECT_ROOT
-        / "outputs"
-        / "feature_data/ethusdt_1h_features_latest.csv",
+        "features_path": PROJECT_ROOT / "outputs" / "feature_data/ethusdt_1h_features_latest.csv",
         "n_rows": 500,
     },
     {
         "symbol": "dogeusdt",
         "timeframe": "1h",
-        "features_path": PROJECT_ROOT
-        / "outputs"
-        / "feature_data/dogeusdt_1h_features_latest.csv",
+        "features_path": PROJECT_ROOT / "outputs" / "feature_data/dogeusdt_1h_features_latest.csv",
         "n_rows": 500,
     },
     # Tilføj flere coins/timeframes her!
@@ -49,9 +45,7 @@ def status_text(symbol, timeframe, metrics, for_console=False):
     if not isinstance(metrics, dict) or metrics.get("profit_pct") is None:
         err = metrics.get("error", "-") if isinstance(metrics, dict) else "-"
         if for_console:
-            return (
-                f"{symbol.upper()} {timeframe}: FEJL eller ingen metrics retur ({err})"
-            )
+            return f"{symbol.upper()} {timeframe}: FEJL eller ingen metrics retur ({err})"
         return f"⚠️ {symbol.upper()} {timeframe}: FEJL eller ingen metrics retur ({err})"
     base = (
         f"{symbol.upper()} {timeframe} | "
@@ -76,12 +70,8 @@ def multi_live_simulation(configs=MULTI_CONFIG, n_rows_override=None):
         symbol = conf.get("symbol")
         timeframe = conf.get("timeframe")
         features_path = conf.get("features_path")
-        n_rows = (
-            n_rows_override if n_rows_override is not None else conf.get("n_rows", 300)
-        )
-        print(
-            f"\n=== Kører live-simulering for {symbol.upper()} {timeframe} ({n_rows} rækker) ==="
-        )
+        n_rows = n_rows_override if n_rows_override is not None else conf.get("n_rows", 300)
+        print(f"\n=== Kører live-simulering for {symbol.upper()} {timeframe} ({n_rows} rækker) ===")
         try:
             # Kald single live_simulator for hvert symbol/timeframe
             metrics = run_live_sim(

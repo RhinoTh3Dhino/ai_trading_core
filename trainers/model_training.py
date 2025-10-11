@@ -22,13 +22,17 @@ import shap  # noqa: E402
 from sklearn.ensemble import RandomForestClassifier  # noqa: E402
 from sklearn.inspection import permutation_importance  # noqa: E402
 from sklearn.metrics import accuracy_score  # noqa: E402
-from sklearn.metrics import (classification_report, confusion_matrix, f1_score,
-                             precision_score, recall_score)
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from sklearn.model_selection import train_test_split  # noqa: E402
 
 from utils.feature_logging import log_top_features_csv  # noqa: E402
-from utils.feature_logging import (log_top_features_to_md,
-                                   send_top_features_telegram)
+from utils.feature_logging import log_top_features_to_md, send_top_features_telegram
 from utils.project_path import PROJECT_ROOT  # noqa: E402
 from utils.robust_utils import safe_run  # noqa: E402
 from utils.telegram_utils import send_image, send_message  # noqa: E402
@@ -67,11 +71,7 @@ def to_str(x) -> str:
 
 def get_git_hash() -> str:
     try:
-        return (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .decode()
-            .strip()
-        )
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
     except Exception:
         return "unknown"
 
@@ -220,11 +220,7 @@ def plot_feature_importance(
 def calculate_permutation_importance(
     model, X_val: pd.DataFrame, y_val: pd.Series
 ) -> Tuple[list[str], list[float]]:
-    X_val = (
-        X_val.apply(pd.to_numeric, errors="coerce")
-        .select_dtypes(include=[np.number])
-        .fillna(0)
-    )
+    X_val = X_val.apply(pd.to_numeric, errors="coerce").select_dtypes(include=[np.number]).fillna(0)
     X_val = X_val.astype("float64")
     result = permutation_importance(model, X_val, y_val, n_repeats=10, random_state=42)
     importance_scores = np.atleast_1d(result.importances_mean)
@@ -238,14 +234,8 @@ def calculate_permutation_importance(
     ]
 
 
-def calculate_shap_importance(
-    model, X_val: pd.DataFrame
-) -> Tuple[list[str], list[float]]:
-    X_val = (
-        X_val.apply(pd.to_numeric, errors="coerce")
-        .select_dtypes(include=[np.number])
-        .fillna(0)
-    )
+def calculate_shap_importance(model, X_val: pd.DataFrame) -> Tuple[list[str], list[float]]:
+    X_val = X_val.apply(pd.to_numeric, errors="coerce").select_dtypes(include=[np.number]).fillna(0)
     X_val = X_val.astype("float64")
     explainer = shap.Explainer(model, X_val)
     shap_values = explainer(X_val, check_additivity=False)
@@ -271,9 +261,7 @@ def calculate_shap_importance(
         feature_names.shape[0] == shap_imp.shape[0]
     ), f"Mismatch mellem features og SHAP importance: {feature_names.shape[0]} vs {shap_imp.shape[0]}"
     sorted_idx = shap_imp.argsort()[::-1]
-    return [to_str(x) for x in feature_names[sorted_idx]], [
-        float(x) for x in shap_imp[sorted_idx]
-    ]
+    return [to_str(x) for x in feature_names[sorted_idx]], [float(x) for x in shap_imp[sorted_idx]]
 
 
 def plot_shap_importance(
@@ -531,9 +519,7 @@ def main():
     features_path = args.features
     if not features_path or not Path(features_path).exists():
         print("➡️ Finder nyeste features-CSV i outputs/feature_data/")
-        features_glob = str(
-            PROJECT_ROOT / "outputs" / "feature_data" / "btcusdt_1h_features*.csv"
-        )
+        features_glob = str(PROJECT_ROOT / "outputs" / "feature_data" / "btcusdt_1h_features*.csv")
         import glob
 
         feature_files = sorted(glob.glob(features_glob))

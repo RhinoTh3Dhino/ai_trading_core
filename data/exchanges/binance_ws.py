@@ -20,9 +20,7 @@ async def subscribe(symbols: List[str], interval: str = "1m") -> AsyncIterator[B
         stream = _stream_name(sym, interval)
         url = f"{BINANCE_WS}"
         async with websockets.connect(url, ping_interval=20, close_timeout=1) as ws:
-            await ws.send(
-                json.dumps({"method": "SUBSCRIBE", "params": [stream], "id": 1})
-            )
+            await ws.send(json.dumps({"method": "SUBSCRIBE", "params": [stream], "id": 1}))
             async for raw in ws:
                 msg = json.loads(raw)
                 k = msg.get("k")

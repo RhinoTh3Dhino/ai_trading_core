@@ -53,25 +53,23 @@ except Exception:
 from backtest.backtest import run_backtest
 from features.features_pipeline import generate_features, load_features
 from utils.metrics_utils import advanced_performance_metrics
+
 # Projekt-imports
 from utils.project_path import PROJECT_ROOT
 
 # Strategi-impls (valgfrit – falder tilbage til interne)
 try:
-    from strategies.rsi_strategy import \
-        rsi_rule_based_signals as _rsi_signals_lib  # type: ignore
+    from strategies.rsi_strategy import rsi_rule_based_signals as _rsi_signals_lib  # type: ignore
 except Exception:
     _rsi_signals_lib = None
 
 try:
-    from strategies.ema_cross_strategy import \
-        ema_cross_signals as _ema_signals_lib  # type: ignore
+    from strategies.ema_cross_strategy import ema_cross_signals as _ema_signals_lib  # type: ignore
 except Exception:
     _ema_signals_lib = None
 
 try:
-    from strategies.macd_strategy import \
-        macd_cross_signals as _macd_signals_lib  # type: ignore
+    from strategies.macd_strategy import macd_cross_signals as _macd_signals_lib  # type: ignore
 except Exception:
     _macd_signals_lib = None
 
@@ -109,15 +107,9 @@ def _robust_read_csv(path: Path) -> pd.DataFrame:
             with path.open("r", encoding="utf-8", errors="ignore") as f:
                 lines = []
                 for ln in f:
-                    if (
-                        ("," in ln)
-                        or ln.lower().startswith("date")
-                        or ln.lower().startswith("ts")
-                    ):
+                    if ("," in ln) or ln.lower().startswith("date") or ln.lower().startswith("ts"):
                         lines.append(ln)
-            return pd.read_csv(
-                StringIO("".join(lines)), engine="python", on_bad_lines="skip"
-            )
+            return pd.read_csv(StringIO("".join(lines)), engine="python", on_bad_lines="skip")
         except Exception:
             return pd.DataFrame()
 
@@ -132,11 +124,7 @@ def _ensure_ts(df: pd.DataFrame) -> pd.DataFrame:
                 break
     if "timestamp" in out.columns:
         out["timestamp"] = pd.to_datetime(out["timestamp"], errors="coerce")
-        out = (
-            out.dropna(subset=["timestamp"])
-            .sort_values("timestamp")
-            .reset_index(drop=True)
-        )
+        out = out.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
     return out
 
 
@@ -144,9 +132,7 @@ def _ema(series: pd.Series, span: int) -> pd.Series:
     return series.ewm(span=span, adjust=False).mean()
 
 
-def _atr(
-    high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14
-) -> pd.Series:
+def _atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
     high_low = high - low
     high_close = (high - close.shift()).abs()
     low_close = (low - close.shift()).abs()
@@ -212,18 +198,11 @@ def _apply_filters(
         for i in range(n):
             if sig[i] == 1 and not bool(long_ok.iloc[i]):
                 sig[i] = 0
-            if (
-                i > 0
-                and raw_sig[i] == 0
-                and raw_sig[i - 1] == 1
-                and not bool(short_ok.iloc[i])
-            ):
+            if i > 0 and raw_sig[i] == 0 and raw_sig[i - 1] == 1 and not bool(short_ok.iloc[i]):
                 sig[i] = 1
 
     if min_atr_pct and "atr_14" in df.columns:
-        atr_pct = (df["atr_14"].astype(float) / df["close"].astype(float)).fillna(
-            0.0
-        ) * 100.0
+        atr_pct = (df["atr_14"].astype(float) / df["close"].astype(float)).fillna(0.0) * 100.0
         for i in range(1, n):
             flipped = sig[i] != sig[i - 1]
             if flipped and atr_pct.iloc[i] < float(min_atr_pct):
@@ -444,16 +423,12 @@ def _plot_equity(balance: pd.DataFrame, title: str = "Equity curve") -> plt.Figu
     return fig
 
 
-def _save_artifacts(
-    trades: pd.DataFrame, balance: pd.DataFrame, metrics: Dict, tag: str
-) -> Path:
+def _save_artifacts(trades: pd.DataFrame, balance: pd.DataFrame, metrics: Dict, tag: str) -> Path:
     outdir = Path(PROJECT_ROOT) / "outputs" / "gui" / tag
     outdir.mkdir(parents=True, exist_ok=True)
     trades.to_csv(outdir / "trades.csv", index=False)
     balance.to_csv(outdir / "balance.csv", index=False)
-    (outdir / "metrics.json").write_text(
-        json.dumps(metrics, indent=2, ensure_ascii=False)
-    )
+    (outdir / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False))
     return outdir
 
 
@@ -467,9 +442,7 @@ if _HAS_ST:
         if not _HAS_REQ:
             return None, "requests ikke installeret"
         try:
-            r = requests.get(
-                url, timeout=GUI_HTTP_TIMEOUT, headers={"accept": "application/json"}
-            )
+            r = requests.get(url, timeout=GUI_HTTP_TIMEOUT, headers={"accept": "application/json"})
             if not r.ok:
                 return None, f"HTTP {r.status_code}"
             # prøv JSON først – ellers tekst→JSON
@@ -512,9 +485,7 @@ if _HAS_ST:
         return pd.DataFrame(columns=["date", "equity"]), "Ingen equity-data."
 
     @st.cache_data(ttl=2.0, show_spinner=False)
-    def lm_load_metrics(
-        api_base: str, limit: int = 30
-    ) -> Tuple[pd.DataFrame, Optional[str]]:
+    def lm_load_metrics(api_base: str, limit: int = 30) -> Tuple[pd.DataFrame, Optional[str]]:
         data, err = _http_get_json(f"{api_base}/metrics/daily?limit={limit}")
         if isinstance(data, list):
             try:
@@ -545,9 +516,7 @@ if _HAS_ST:
         return [], "Ingen signaler."
 
     @st.cache_data(ttl=2.0, show_spinner=False)
-    def lm_load_fills(
-        api_base: str, limit: int = 50
-    ) -> Tuple[pd.DataFrame, Optional[str]]:
+    def lm_load_fills(api_base: str, limit: int = 50) -> Tuple[pd.DataFrame, Optional[str]]:
         """
         Hent seneste handler.
         1) Prøver API: /fills?limit=N (hvis tilgængeligt).
@@ -608,9 +577,7 @@ if _HAS_ST:
     def lm_ai_explain(
         api_base: str, i: int = 0, context_bars: int = 60
     ) -> Tuple[str, Optional[str]]:
-        data, err = _http_get_json(
-            f"{api_base}/ai/explain_trade?i={i}&context_bars={context_bars}"
-        )
+        data, err = _http_get_json(f"{api_base}/ai/explain_trade?i={i}&context_bars={context_bars}")
         if isinstance(data, dict) and "text" in data:
             return str(data["text"]), None
         return "", err or "Intet AI-svar."
@@ -639,25 +606,19 @@ if _HAS_ST:
 def _normalize_signals_df(sigs: List[Dict]) -> pd.DataFrame:
     """Normaliserer signaler til DataFrame med: when, symbol, side, confidence, price, regime."""
     if not sigs:
-        return pd.DataFrame(
-            columns=["when", "symbol", "side", "confidence", "price", "regime"]
-        )
+        return pd.DataFrame(columns=["when", "symbol", "side", "confidence", "price", "regime"])
     df = pd.DataFrame(sigs).copy()
 
     # parse tidspunkt
     when = None
     if "ts" in df.columns:
         with contextlib.suppress(Exception):
-            when = pd.to_datetime(df["ts"], errors="coerce", utc=True).dt.tz_convert(
-                None
-            )
+            when = pd.to_datetime(df["ts"], errors="coerce", utc=True).dt.tz_convert(None)
     if when is None and "timestamp" in df.columns:
         try:
             s = pd.to_numeric(df["timestamp"], errors="coerce")
             unit = "ms" if s.dropna().max() and float(s.dropna().max()) > 1e11 else "s"
-            when = pd.to_datetime(
-                s, errors="coerce", unit=unit, utc=True
-            ).dt.tz_convert(None)
+            when = pd.to_datetime(s, errors="coerce", unit=unit, utc=True).dt.tz_convert(None)
         except Exception:
             when = pd.Series([pd.NaT] * len(df))
     if when is None:
@@ -670,23 +631,17 @@ def _normalize_signals_df(sigs: List[Dict]) -> pd.DataFrame:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
     out_cols = ["when"] + [
-        c
-        for c in ["symbol", "side", "confidence", "price", "regime"]
-        if c in df.columns
+        c for c in ["symbol", "side", "confidence", "price", "regime"] if c in df.columns
     ]
     out = df[out_cols].copy()
-    out = out.sort_values("when", ascending=False, na_position="last").reset_index(
-        drop=True
-    )
+    out = out.sort_values("when", ascending=False, na_position="last").reset_index(drop=True)
     return out
 
 
 def _render_live_monitor():
     st.subheader("📡 Live Monitor (Paper Trading)")
     api_default = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
-    api_base = st.text_input(
-        "API base URL", value=st.session_state.get("api_base", api_default)
-    )
+    api_base = st.text_input("API base URL", value=st.session_state.get("api_base", api_default))
     st.session_state["api_base"] = api_base
     interval = st.slider("Auto-refresh (sek.)", 1, 10, 3, 1)
     st_autorefresh(interval=interval * 1000, key="live_refresh_v2")
@@ -802,9 +757,7 @@ def _render_backtest():
         with cols[1]:
             timeframe = st.text_input("Timeframe", "1h")
         with cols[2]:
-            strategy = st.selectbox(
-                "Strategi", ["RSI", "EMA Cross", "MACD", "Ensemble"]
-            )
+            strategy = st.selectbox("Strategi", ["RSI", "EMA Cross", "MACD", "Ensemble"])
 
         st.markdown("#### 🎛️ Strategi-parametre")
         if strategy == "RSI":
@@ -845,13 +798,9 @@ def _render_backtest():
         st.markdown("#### 🧠 Globale filtre")
         colf1, colf2, colf3, colf4 = st.columns(4)
         with colf1:
-            position_mode = st.selectbox(
-                "Positionstype", ["Long & Short", "Kun Long", "Kun Short"]
-            )
+            position_mode = st.selectbox("Positionstype", ["Long & Short", "Kun Long", "Kun Short"])
         with colf2:
-            regime = st.selectbox(
-                "Regime-filter", ["Ingen", "Pris vs EMA200", "EMA200-slope"]
-            )
+            regime = st.selectbox("Regime-filter", ["Ingen", "Pris vs EMA200", "EMA200-slope"])
         with colf3:
             cooldown = st.slider("Vent N bar efter flip (debounce)", 0, 10, 2, 1)
         with colf4:
@@ -894,9 +843,7 @@ def _render_backtest():
                 try:
                     df_features = _cached_latest(symbol, timeframe)
                     st.session_state.df_features = df_features
-                    st.info(
-                        f"Indlæst seneste features fra disk: {len(df_features)} rækker"
-                    )
+                    st.info(f"Indlæst seneste features fra disk: {len(df_features)} rækker")
                 except Exception as e:
                     st.warning(f"Kunne ikke indlæse seneste features: {e}")
     else:
@@ -1022,9 +969,7 @@ def _render_backtest():
 
 
 def run_streamlit():
-    st.set_page_config(
-        page_title="AI Trading – Live & Backtest", page_icon="📈", layout="wide"
-    )
+    st.set_page_config(page_title="AI Trading – Live & Backtest", page_icon="📈", layout="wide")
     st.title("📈 AI Trading – Live Monitor & Backtest")
     tabs = st.tabs(["Live Monitor", "Backtest"])
     with tabs[0]:
@@ -1081,9 +1026,7 @@ def run_cli():
     if args.features:
         df = pd.read_csv(args.features, engine="python", on_bad_lines="skip")
     else:
-        df = _silent_read(
-            load_features, args.symbol, args.timeframe, version_prefix=None
-        )
+        df = _silent_read(load_features, args.symbol, args.timeframe, version_prefix=None)
 
     df = _ensure_ts(df)
     df = _prepare_indicators(df)
@@ -1142,7 +1085,9 @@ def run_cli():
     print("\n=== Metrics ===")
     print(json.dumps(metrics, indent=2, ensure_ascii=False))
 
-    tag = f"{args.symbol}_{args.timeframe}_{args.strategy}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    tag = (
+        f"{args.symbol}_{args.timeframe}_{args.strategy}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    )
     outdir = _save_artifacts(trades, balance, metrics, tag)
     print(f"\nArtefakter gemt i: {outdir}")
 

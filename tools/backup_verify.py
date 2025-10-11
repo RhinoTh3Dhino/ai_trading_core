@@ -68,17 +68,13 @@ def _verify_one(
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(
-        description="Verificér/restore backups og log til BotStatus.md"
-    )
+    ap = argparse.ArgumentParser(description="Verificér/restore backups og log til BotStatus.md")
     ap.add_argument("--backups", required=True, help="Mappe med backup_*.zip")
     ap.add_argument("--botstatus", required=True, help="Sti til BotStatus.md")
     ap.add_argument("--restore", default=None, help="(Valgfri) mappe til test-restore")
     ap.add_argument("--pattern", default="*.zip", help="Glob pattern (default: *.zip)")
     ap.add_argument("--dry-run", action="store_true", help="Log uden faktisk restore")
-    ap.add_argument(
-        "--fail-fast", action="store_true", help="Stop ved første KORRUPT/FEJL"
-    )
+    ap.add_argument("--fail-fast", action="store_true", help="Stop ved første KORRUPT/FEJL")
     args = ap.parse_args(argv)
 
     backups_dir = Path(args.backups).expanduser().resolve()

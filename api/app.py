@@ -15,9 +15,9 @@ from fastapi import FastAPI, Query, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 # ⬇️ NYT: Prometheus-klient til /metrics
-from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Gauge,
-                               generate_latest)
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Gauge, generate_latest
 from pydantic import BaseModel
 
 # ---------------------------
@@ -132,17 +132,11 @@ def _read_csv(path: Path) -> pd.DataFrame:
                 lines = []
                 for ln in f:
                     # behold header + alle linjer der har mindst ét komma
-                    if (
-                        ("," in ln)
-                        or ln.lower().startswith("date")
-                        or ln.lower().startswith("ts")
-                    ):
+                    if ("," in ln) or ln.lower().startswith("date") or ln.lower().startswith("ts"):
                         lines.append(ln)
             if not lines:
                 return pd.DataFrame()
-            return pd.read_csv(
-                StringIO("".join(lines)), engine="python", on_bad_lines="skip"
-            )
+            return pd.read_csv(StringIO("".join(lines)), engine="python", on_bad_lines="skip")
         except Exception:
             return pd.DataFrame()
 
@@ -293,9 +287,7 @@ def get_daily_metrics(limit: int = Query(30, ge=1, le=90)):
     for c in num_cols:
         if c in df.columns:
             df[c] = (
-                pd.to_numeric(df[c], errors="coerce")
-                .replace([np.inf, -np.inf], np.nan)
-                .fillna(0.0)
+                pd.to_numeric(df[c], errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0.0)
             )
             if c in {"signal_count", "trades"}:
                 df[c] = df[c].astype(int)
@@ -348,27 +340,19 @@ def get_fills(limit: int = Query(20, ge=1, le=500)):
     try:
         df = _read_csv(p)
     except Exception as e:
-        return JSONResponse(
-            content={"error": f"Kan ikke læse fills.csv: {e}"}, status_code=500
-        )
+        return JSONResponse(content={"error": f"Kan ikke læse fills.csv: {e}"}, status_code=500)
 
     # Normaliser tid => 'ts' som datetime (senere til ISO)
     if "ts" in df.columns:
         with contextlib.suppress(Exception):
-            df["ts"] = pd.to_datetime(
-                df["ts"], errors="coerce", utc=True
-            ).dt.tz_convert(None)
+            df["ts"] = pd.to_datetime(df["ts"], errors="coerce", utc=True).dt.tz_convert(None)
     elif "timestamp" in df.columns:
         with contextlib.suppress(Exception):
             s = pd.to_numeric(df["timestamp"], errors="coerce")
             unit = "ms" if s.dropna().max() and float(s.dropna().max()) > 1e11 else "s"
-            df["ts"] = pd.to_datetime(
-                s, errors="coerce", unit=unit, utc=True
-            ).dt.tz_convert(None)
+            df["ts"] = pd.to_datetime(s, errors="coerce", unit=unit, utc=True).dt.tz_convert(None)
 
-    df = df.sort_values("ts", ascending=False, na_position="last").reset_index(
-        drop=True
-    )
+    df = df.sort_values("ts", ascending=False, na_position="last").reset_index(drop=True)
     if limit:
         df = df.head(limit)
 
@@ -400,9 +384,7 @@ def get_status():
     # win-rate (7d gennemsnit)
     win7 = 0.0
     if not df_m.empty and "win_rate" in df_m.columns:
-        wr = pd.to_numeric(df_m["win_rate"], errors="coerce").replace(
-            [np.inf, -np.inf], np.nan
-        )
+        wr = pd.to_numeric(df_m["win_rate"], errors="coerce").replace([np.inf, -np.inf], np.nan)
         tail = wr.tail(7)
         if not tail.isna().all():
             win7 = _safe_float(tail.mean(), 0.0)
@@ -511,12 +493,8 @@ def ai_explain_trade(i: int = 0, context_bars: int = 60):
 
     if "ts" in fills.columns:
         with contextlib.suppress(Exception):
-            fills["ts"] = pd.to_datetime(
-                fills["ts"], errors="coerce", utc=True
-            ).dt.tz_convert(None)
-    fills = fills.sort_values("ts", ascending=False, na_position="last").reset_index(
-        drop=True
-    )
+            fills["ts"] = pd.to_datetime(fills["ts"], errors="coerce", utc=True).dt.tz_convert(None)
+    fills = fills.sort_values("ts", ascending=False, na_position="last").reset_index(drop=True)
     if len(fills) == 0:
         return {"text": "Ingen handler at forklare."}
 
@@ -545,10 +523,7 @@ def ai_explain_trade(i: int = 0, context_bars: int = 60):
     }
     safe_payload = _sanitize_json(payload)
 
-    system = (
-        "Du er en nøgtern trading-assistent. "
-        "Svar korte bullets, ingen hype, ingen pynt."
-    )
+    system = "Du er en nøgtern trading-assistent. " "Svar korte bullets, ingen hype, ingen pynt."
     user = (
         "Forklar den udvalgte handel i højst 6 bullets (hvad, hvorfor, timing). "
         "Afslut med 2 konkrete risikonoter. Data (JSON):\n\n"
@@ -584,10 +559,7 @@ def ai_summary(limit_days: int = Query(7, ge=1, le=30)):
     }
     safe_payload = _sanitize_json(payload)
 
-    system = (
-        "Du er en kortfattet assistent for en trader. "
-        "Opsummer nøgletal og momentum kort."
-    )
+    system = "Du er en kortfattet assistent for en trader. " "Opsummer nøgletal og momentum kort."
     user = (
         "Lav en kort status (3–5 bullets) for trading-systemet, baseret på data (JSON):\n\n"
         + json.dumps(safe_payload, ensure_ascii=False)[:12000]

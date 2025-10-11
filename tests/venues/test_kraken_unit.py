@@ -1,8 +1,7 @@
 # tests/venues/test_kraken_unit.py
 import time
 
-from bot.live_connector.venues.kraken import (KrakenConnector,
-                                              parse_kraken_candle_payload)
+from bot.live_connector.venues.kraken import KrakenConnector, parse_kraken_candle_payload
 
 
 def test_symbol_map_to_internal():

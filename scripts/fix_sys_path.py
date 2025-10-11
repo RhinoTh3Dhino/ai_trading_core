@@ -42,9 +42,7 @@ def fix_sys_path_in_file(filepath):
 def main():
     n_fixed = 0
     for root, dirs, files in os.walk("."):
-        if any(
-            skip in root for skip in [".venv", "__pycache__", "backups", "env", ".git"]
-        ):
+        if any(skip in root for skip in [".venv", "__pycache__", "backups", "env", ".git"]):
             continue
         for fname in files:
             if fname.endswith(".py"):

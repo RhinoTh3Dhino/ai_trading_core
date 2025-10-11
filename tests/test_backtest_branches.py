@@ -44,9 +44,7 @@ def test_long_tp_and_sl_and_close_on_last_bar():
     # Close i sidste bar (entry på sidste bar)
     df_close = _df([100.0, 100.5])
     trades_close, _ = bt.run_backtest(df_close, signals=[0, 1])
-    assert any(
-        trades_close["type"].eq("CLOSE")
-    ), "Åben position skal lukkes i sidste bar"
+    assert any(trades_close["type"].eq("CLOSE")), "Åben position skal lukkes i sidste bar"
 
 
 def test_short_tp_and_sl_paths():
@@ -68,9 +66,7 @@ def test_force_dummy_trades_and_drawdown_interpolation(monkeypatch):
     try:
         monkeypatch.setattr(bt, "FORCE_DUMMY_TRADES", True, raising=True)
         trades_df, balance_df = bt.run_backtest(df, signals=[0, 0, 0, 0])
-        assert not trades_df.empty and {"BUY", "TP", "SL"}.issubset(
-            set(trades_df["type"])
-        )
+        assert not trades_df.empty and {"BUY", "TP", "SL"}.issubset(set(trades_df["type"]))
         # drawdown interpoleres ind i trades_df
         assert "drawdown" in trades_df.columns
         assert trades_df["drawdown"].notna().any()

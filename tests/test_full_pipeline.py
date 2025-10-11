@@ -85,9 +85,7 @@ def _has_any_column(df: pd.DataFrame, cols) -> bool:
 
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
-def test_full_pipeline_genererer_outputs(
-    dummy_csv_path, clean_outputs, timestamp_regex
-):
+def test_full_pipeline_genererer_outputs(dummy_csv_path, clean_outputs, timestamp_regex):
     """
     Kør fuld pipeline via engine-entrypoint med:
       data_path=dummy_csv_path
@@ -132,26 +130,18 @@ def test_full_pipeline_genererer_outputs(
     # Basistjek af signals.csv
     sig = pd.read_csv(signals_path)
     assert len(sig) >= 1, "signals.csv er tom"
-    assert _has_any_column(
-        sig, ["timestamp", "datetime"]
-    ), "signals.csv mangler timestamp/datetime"
-    assert _has_any_column(
-        sig, ["signal", "action"]
-    ), "signals.csv mangler signal/action"
+    assert _has_any_column(sig, ["timestamp", "datetime"]), "signals.csv mangler timestamp/datetime"
+    assert _has_any_column(sig, ["signal", "action"]), "signals.csv mangler signal/action"
 
     # Basistjek af portfolio_metrics.json
     with metrics_path.open("r", encoding="utf-8") as f:
         metrics = json.load(f)
     assert isinstance(metrics, dict) and metrics, "portfolio_metrics.json er tom"
     assert _maybe_keys(metrics, "pnl", "profit_pct"), "metrics mangler pnl/profit_pct"
-    assert _maybe_keys(
-        metrics, "max_drawdown", "drawdown_pct"
-    ), "metrics mangler drawdown"
+    assert _maybe_keys(metrics, "max_drawdown", "drawdown_pct"), "metrics mangler drawdown"
     # Win-rate valgfri, men hvis til stede, skal den være tal
     if "win_rate" in metrics:
-        assert isinstance(
-            metrics["win_rate"], (int, float)
-        ), "win_rate er ikke numerisk"
+        assert isinstance(metrics["win_rate"], (int, float)), "win_rate er ikke numerisk"
 
     # --- Backupmappe med timestamp ---
     backups = [d for d in Path(backups_dir).iterdir() if d.is_dir()]
@@ -163,9 +153,7 @@ def test_full_pipeline_genererer_outputs(
 
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
-def test_full_pipeline_konsekvent_metrics_schema_ved_gentagelse(
-    dummy_csv_path, clean_outputs
-):
+def test_full_pipeline_konsekvent_metrics_schema_ved_gentagelse(dummy_csv_path, clean_outputs):
     """
     Kør pipelinen to gange og verificér at 'portfolio_metrics.json' eksisterer efter hver run
     samt at nøglefelter (pnl/drawdown) findes begge gange.

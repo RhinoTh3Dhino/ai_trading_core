@@ -17,9 +17,7 @@ def send_daily_status():
     msg = build_telegram_summary(
         run_id="AUTO",
         # AUTO PATH CONVERTED
-        portfolio_metrics_path=PROJECT_ROOT
-        / "outputs"
-        / "portfolio_metrics_latest.csv",
+        portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv",
     )
     bot = Bot(token=TELEGRAM_TOKEN)
     bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode="HTML")

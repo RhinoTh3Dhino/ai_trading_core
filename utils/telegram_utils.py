@@ -33,10 +33,12 @@ except Exception:  # pragma: no cover
 # Live-metrics helpers (fail-safe import)
 # ----------------------------------------------------------------------------------------
 try:
-    from utils.monitoring_utils import (calculate_live_metrics,
-                                        check_drawdown_alert,
-                                        check_profit_alert,
-                                        check_winrate_alert)
+    from utils.monitoring_utils import (
+        calculate_live_metrics,
+        check_drawdown_alert,
+        check_profit_alert,
+        check_winrate_alert,
+    )
 except Exception:  # pragma: no cover
     # Minimal fallback hvis monitoring_utils ikke findes
     def calculate_live_metrics(trades_df, balance_df):
@@ -54,9 +56,7 @@ except Exception:  # pragma: no cover
             if isinstance(balance_df, pd.DataFrame) and "balance" in balance_df:
                 bal = pd.to_numeric(balance_df["balance"], errors="coerce").dropna()
                 if len(bal) >= 2 and float(bal.iloc[0]) != 0:
-                    metrics["profit_pct"] = (
-                        float(bal.iloc[-1]) / float(bal.iloc[0]) - 1.0
-                    ) * 100.0
+                    metrics["profit_pct"] = (float(bal.iloc[-1]) / float(bal.iloc[0]) - 1.0) * 100.0
                 if len(bal) > 0:
                     roll_max = bal.cummax()
                     dd = (bal / roll_max - 1.0) * 100.0
@@ -65,9 +65,7 @@ except Exception:  # pragma: no cover
                 if ret.std(ddof=0) > 1e-12:
                     metrics["sharpe"] = float(ret.mean() / ret.std(ddof=0))
             if trades_df is not None:
-                metrics["num_trades"] = int(
-                    getattr(trades_df, "__len__", lambda: 0)() or 0
-                )
+                metrics["num_trades"] = int(getattr(trades_df, "__len__", lambda: 0)() or 0)
                 if "profit" in getattr(trades_df, "columns", []):
                     pf = trades_df["profit"]
                     wins = (pf > 0).sum()
@@ -77,9 +75,7 @@ except Exception:  # pragma: no cover
                     gross_win = float(pf[pf > 0].sum() or 0.0)
                     gross_loss = float(-pf[pf < 0].sum() or 0.0)
                     metrics["profit_factor"] = (
-                        float(gross_win / gross_loss)
-                        if gross_loss > 0
-                        else (gross_win and 999.0)
+                        float(gross_win / gross_loss) if gross_loss > 0 else (gross_win and 999.0)
                     )
         except Exception:
             pass
@@ -127,9 +123,7 @@ LOG_PATH = LOG_DIR / "telegram_log.txt"
 
 # Verbosity: understøt både TELEGRAM_VERBOSE og TELEGRAM_VERBOSITY
 _env_verbose = (
-    (os.getenv("TELEGRAM_VERBOSE") or os.getenv("TELEGRAM_VERBOSITY") or "1")
-    .strip()
-    .lower()
+    (os.getenv("TELEGRAM_VERBOSE") or os.getenv("TELEGRAM_VERBOSITY") or "1").strip().lower()
 )
 VERBOSE = _env_verbose not in ("0", "false", "no", "off", "none")
 
@@ -199,9 +193,7 @@ def log_telegram(msg: str):
         _eprint(f"[ADVARSEL] Telegram-log fejlede: {msg}")
 
 
-def _decision_log(
-    action: str, reason: str, *, symbol: Optional[str] = None, extra: str = ""
-):
+def _decision_log(action: str, reason: str, *, symbol: Optional[str] = None, extra: str = ""):
     if not LOG_DECISIONS:
         return
     sym = symbol or "-"
@@ -222,12 +214,8 @@ def _get_creds() -> Tuple[str, str]:
       - TELEGRAM_TOKEN eller TELEGRAM_BOT_TOKEN
       - TELEGRAM_CHAT_ID eller TELEGRAM_CHATID
     """
-    token = (
-        os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or ""
-    ).strip()
-    chat_id = (
-        os.getenv("TELEGRAM_CHAT_ID") or os.getenv("TELEGRAM_CHATID") or ""
-    ).strip()
+    token = (os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat_id = (os.getenv("TELEGRAM_CHAT_ID") or os.getenv("TELEGRAM_CHATID") or "").strip()
     return token, chat_id
 
 
@@ -365,9 +353,7 @@ def _split_text_preserving_lines(
 def split_text(
     text: str, *, max_len: Optional[int] = None, max_length: Optional[int] = None
 ) -> Iterable[str]:
-    yield from _split_text_preserving_lines(
-        text, max_len=max_len, max_length=max_length
-    )
+    yield from _split_text_preserving_lines(text, max_len=max_len, max_length=max_length)
 
 
 # ----------------------------------------------------------------------------------------
@@ -466,13 +452,9 @@ def _send_text_chunked_via_requests(
             safe = _as_html_pre(chunk)
             resp2 = _send_text_request(token, chat_id, safe, "HTML", **opts)
             ok2, resp2_json = _resp_ok(resp2)
-            last_resp_json = (
-                resp2_json if isinstance(resp2_json, dict) else last_resp_json
-            )
+            last_resp_json = resp2_json if isinstance(resp2_json, dict) else last_resp_json
             if not ok2:  # pragma: no cover
-                _eprint(
-                    f"[FEJL] Telegram parse & fallback fejlede: {getattr(resp2, 'text', '')}"
-                )
+                _eprint(f"[FEJL] Telegram parse & fallback fejlede: {getattr(resp2, 'text', '')}")
                 log_telegram(f"Fallback parse-fejl: {getattr(resp2, 'text', '')}")
         else:
             _eprint(
@@ -485,9 +467,7 @@ def _send_text_chunked_via_requests(
 # ----------------------------------------------------------------------------------------
 # Tekst-beskeder (Bot-stien – bruges i prod eller tests med monkeypatch)
 # ----------------------------------------------------------------------------------------
-def _send_text_chunked_via_bot(
-    bot, chat_id: str, text: str, parse_mode: Optional[str], **opts
-):
+def _send_text_chunked_via_bot(bot, chat_id: str, text: str, parse_mode: Optional[str], **opts):
     """
     Minimal chunk-send via Bot API. Håndterer async metoder uden warnings.
     """
@@ -926,9 +906,7 @@ def send_trend_graph(
 ):
     try:
         if generate_trend_graph:
-            img_path = Path(
-                generate_trend_graph(history_path=history_path, img_path=img_path)
-            )
+            img_path = Path(generate_trend_graph(history_path=history_path, img_path=img_path))
             if img_path and img_path.exists():
                 send_image(
                     str(img_path),
@@ -978,9 +956,7 @@ def send_live_metrics(
         f"Profit factor: <b>{metrics.get('profit_factor', 0)}</b>\n"
         f"Sharpe: <b>{metrics.get('sharpe', 0)}</b>\n"
     )
-    send_message(
-        msg, chat_id=chat_id, parse_mode="HTML", message_thread_id=message_thread_id
-    )
+    send_message(msg, chat_id=chat_id, parse_mode="HTML", message_thread_id=message_thread_id)
 
     if thresholds:
         alarms: List[str] = []
@@ -1019,14 +995,10 @@ if __name__ == "__main__":  # pragma: no cover
     send_message("Testbesked fra din AI trading bot!")
 
     # High-prio gennem gating
-    send_signal_message(
-        "ENTRY: BTCUSDT LONG 0.10 @ 60.00", symbol="BTCUSDT", priority="high"
-    )
+    send_signal_message("ENTRY: BTCUSDT LONG 0.10 @ 60.00", symbol="BTCUSDT", priority="high")
 
     # Duplikat (bliver SUPPRESS’et under DEDUPE_TTL_SEC)
-    send_signal_message(
-        "ENTRY: BTCUSDT LONG 0.10 @ 60.00", symbol="BTCUSDT", priority="high"
-    )
+    send_signal_message("ENTRY: BTCUSDT LONG 0.10 @ 60.00", symbol="BTCUSDT", priority="high")
 
     # Low-prio buffer + flush
     for i in range(5):

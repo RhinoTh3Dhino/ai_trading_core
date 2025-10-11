@@ -46,15 +46,8 @@ def regime_performance(trades_df, regime_col="regime"):
         )
         return {}
     # Håndter evt. numeriske regime-værdier efter merge
-    if (
-        trades_df[regime_col]
-        .dropna()
-        .apply(lambda x: isinstance(x, (int, float)))
-        .any()
-    ):
-        trades_df[regime_col] = (
-            trades_df[regime_col].map(regime_map).fillna(trades_df[regime_col])
-        )
+    if trades_df[regime_col].dropna().apply(lambda x: isinstance(x, (int, float))).any():
+        trades_df[regime_col] = trades_df[regime_col].map(regime_map).fillna(trades_df[regime_col])
     if trades_df[regime_col].dropna().empty:
         print(f"❌ Ingen regime-values i trades_df! Ingen regime-analyse mulig.")
         return {}
@@ -67,9 +60,7 @@ def regime_performance(trades_df, regime_col="regime"):
         win_rate = tp_count / (tp_count + sl_count) if (tp_count + sl_count) > 0 else 0
         num_trades = len(sub)
         profit_pct = (
-            (sub["balance"].iloc[-1] - sub["balance"].iloc[0])
-            / sub["balance"].iloc[0]
-            * 100
+            (sub["balance"].iloc[-1] - sub["balance"].iloc[0]) / sub["balance"].iloc[0] * 100
             if num_trades > 1
             else 0
         )
@@ -119,9 +110,7 @@ def evaluate_strategies(
                 trades_df_regime["timestamp"], errors="coerce"
             )
             regime_lookup = df[["timestamp", "regime"]].copy()
-            regime_lookup["timestamp"] = pd.to_datetime(
-                regime_lookup["timestamp"], errors="coerce"
-            )
+            regime_lookup["timestamp"] = pd.to_datetime(regime_lookup["timestamp"], errors="coerce")
 
             # merge_asof matcher nærmeste timestamp med tolerance
             trades_df_regime = pd.merge_asof(
@@ -138,9 +127,7 @@ def evaluate_strategies(
                 trades_df_regime.drop(columns=["regime_feat"], inplace=True)
             n_na = trades_df_regime["regime"].isna().sum()
             if n_na > 0:
-                print(
-                    f"⚠️ Regime-merge: {n_na} handler havde ikke match og sættes til 'ukendt'."
-                )
+                print(f"⚠️ Regime-merge: {n_na} handler havde ikke match og sættes til 'ukendt'.")
                 trades_df_regime["regime"].fillna("ukendt", inplace=True)
             if (
                 "regime" not in trades_df_regime.columns

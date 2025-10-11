@@ -44,9 +44,7 @@ def check_feature_match(feature_file, verbose=True):
     # Sammenlign
     missing = [f for f in features_trained if f not in features_actual]
     extra = [f for f in features_actual if f not in features_trained]
-    order_mismatch = features_trained != [
-        col for col in features_actual if col in features_trained
-    ]
+    order_mismatch = features_trained != [col for col in features_actual if col in features_trained]
 
     if verbose:
         print("\n=== Feature Match Report ===")

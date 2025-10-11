@@ -25,9 +25,7 @@ for i in range(7):
     time.sleep(0.2)
 
 # 2) Backtest & chart (dummy)
-open("outputs/backtests/backtest_btc_1h_v2_20250101.csv", "w").write(
-    "date,pnl\n2025-01-01,10\n"
-)
+open("outputs/backtests/backtest_btc_1h_v2_20250101.csv", "w").write("date,pnl\n2025-01-01,10\n")
 open("outputs/charts/btc_1h_balance_v2_20250101.png", "wb").write(b"\x89PNG\r\n\x1a\n")
 
 # 3) Models (to stk. for at teste latest)
@@ -39,8 +37,6 @@ symlink_latest(
 )
 
 # 4) Feature/labels (dummy)
-open("outputs/feature_data/btc_1h_features_v1.0_20250101.csv", "w").write(
-    "f1,f2\n1,2\n"
-)
+open("outputs/feature_data/btc_1h_features_v1.0_20250101.csv", "w").write("f1,f2\n1,2\n")
 np.save("outputs/labels/btc_1h_labels_v1.0_20250101.npy", np.array([0, 1, 0, 1]))
 print("✅ Dummy outputs generated")

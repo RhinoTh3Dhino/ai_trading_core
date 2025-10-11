@@ -19,12 +19,8 @@ class PositionState:
     qty: float = 0.0  # aktuel beholdning (BTC)
     entry_price: float = 0.0  # gennemsnitlig indpris for aktiv position
     entry_commission: float = 0.0  # kommission betalt ved indgang
-    cum_realized: float = (
-        0.0  # akkumuleret realiseret PnL (inkl. alle kommissioner ved åbne/lukke)
-    )
-    last_bar_ts: Optional[str] = (
-        None  # sidste bar (ISO) vi har behandlet (anti-duplikering)
-    )
+    cum_realized: float = 0.0  # akkumuleret realiseret PnL (inkl. alle kommissioner ved åbne/lukke)
+    last_bar_ts: Optional[str] = None  # sidste bar (ISO) vi har behandlet (anti-duplikering)
     last_mtm_ts: Optional[str] = None  # sidste mark-to-market snapshot (ISO)
 
 
@@ -196,9 +192,7 @@ class PaperBroker:
 
     # ---------- Offentlig API ----------
 
-    def exec_signal(
-        self, signal: int, price: float, ts: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def exec_signal(self, signal: int, price: float, ts: Optional[str] = None) -> Dict[str, Any]:
         """
         Udfør ordrelogik baseret på signal og skriv fills/equity.
         signal: 1=BUY, 0=SELL

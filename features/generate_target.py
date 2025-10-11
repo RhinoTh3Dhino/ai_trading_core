@@ -75,9 +75,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generér target-kolonner til AI trading pipeline – flere TP/SL på én gang!"
     )
-    parser.add_argument(
-        "--input", type=str, default=str(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv")
-    )
+    parser.add_argument("--input", type=str, default=str(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv"))
     parser.add_argument(
         "--output",
         type=str,

@@ -24,8 +24,7 @@ import time
 from contextlib import contextmanager
 from typing import Any, Dict, Optional, Union
 
-from prometheus_client import (REGISTRY, Counter, Gauge, Histogram,
-                               make_asgi_app)
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram, make_asgi_app
 
 # Multiprocess flag: Hvis du kører uvicorn med --workers>1 og sætter
 # PROMETHEUS_MULTIPROC_DIR, vælger vi passende aggregationsmodus for Gauges.
@@ -236,9 +235,7 @@ def bootstrap_core_metrics(venue: str = "binance", symbol: str = "TESTUSDT") -> 
 # --- Helper API (kalder defensivt ensure_registered) -------------------------
 
 
-def observe_transport_latency(
-    venue: str, symbol: str, event_ts_ms: Optional[Union[int, float]]
-):
+def observe_transport_latency(venue: str, symbol: str, event_ts_ms: Optional[Union[int, float]]):
     """
     Observer transport-latens fra event_ts (ms eller sekunder): now_ms - event_ts_ms.
     """

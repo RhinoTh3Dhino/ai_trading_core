@@ -71,9 +71,7 @@ def _exit_mask(trades_df: pd.DataFrame) -> pd.Series:
     if "type" in trades_df.columns:
         types = trades_df["type"].astype(str).str.upper()
         return types.isin(["TP", "SL", "CLOSE"])
-    return pd.to_numeric(
-        trades_df.get("profit", pd.Series(dtype=float)), errors="coerce"
-    ).notna()
+    return pd.to_numeric(trades_df.get("profit", pd.Series(dtype=float)), errors="coerce").notna()
 
 
 def _exit_profits(trades_df: pd.DataFrame) -> pd.Series:
@@ -151,9 +149,7 @@ def profit_factor(trades_df: pd.DataFrame) -> float:
     return round(gross_profit / gross_loss, 4)
 
 
-def sharpe_ratio(
-    balance_df: pd.DataFrame, annualization_factor: float = 252.0
-) -> float:
+def sharpe_ratio(balance_df: pd.DataFrame, annualization_factor: float = 252.0) -> float:
     """Sharpe-ratio baseret på pct_change i equity (annualiseret)."""
     eq = _equity_series(balance_df)
     rets = _returns_from_equity(eq)
@@ -165,9 +161,7 @@ def sharpe_ratio(
     return round((float(rets.mean()) / std) * np.sqrt(annualization_factor), 4)
 
 
-def sortino_ratio(
-    balance_df: pd.DataFrame, annualization_factor: float = 252.0
-) -> float:
+def sortino_ratio(balance_df: pd.DataFrame, annualization_factor: float = 252.0) -> float:
     """Sortino-ratio baseret på pct_change i equity (annualiseret)."""
     eq = _equity_series(balance_df)
     rets = _returns_from_equity(eq)
@@ -250,9 +244,7 @@ def advanced_performance_metrics(
         "win_rate": wr,  # i %
         "best_trade": bt,  # i %
         "worst_trade": wt,  # i %
-        "max_consec_losses": int(
-            max_consecutive_losses(trades_df) if not pr.empty else 0
-        ),
+        "max_consec_losses": int(max_consecutive_losses(trades_df) if not pr.empty else 0),
         "recovery_bars": int(recovery_bars(balance_df)),
         "profit_factor": float(pf) if pf == pf else float("nan"),
         "sharpe": float(sharpe),

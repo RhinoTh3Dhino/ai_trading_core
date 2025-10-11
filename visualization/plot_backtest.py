@@ -20,9 +20,7 @@ def plot_backtest(
         balance_df = balance_csv.copy()
 
     if balance_df.empty or "timestamp" not in balance_df or "balance" not in balance_df:
-        print(
-            "❌ balance_df mangler nødvendige kolonner ('timestamp', 'balance') eller er tom."
-        )
+        print("❌ balance_df mangler nødvendige kolonner ('timestamp', 'balance') eller er tom.")
         return None
 
     # Konverter timestamp til datetime, hvis muligt

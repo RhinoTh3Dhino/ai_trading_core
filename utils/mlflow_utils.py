@@ -35,19 +35,13 @@ def setup_mlflow(
         # Opret (eller hent) eksperiment
         exp = mlflow.get_experiment_by_name(experiment_name)
         if exp is None:
-            exp_id = mlflow.create_experiment(
-                experiment_name, artifact_location=artifact_location
-            )
+            exp_id = mlflow.create_experiment(experiment_name, artifact_location=artifact_location)
             if print_status:
-                print(
-                    f"[MLflow] Oprettede nyt experiment: {experiment_name} (ID: {exp_id})"
-                )
+                print(f"[MLflow] Oprettede nyt experiment: {experiment_name} (ID: {exp_id})")
         else:
             exp_id = exp.experiment_id
             if print_status:
-                print(
-                    f"[MLflow] Bruger eksisterende experiment: {experiment_name} (ID: {exp_id})"
-                )
+                print(f"[MLflow] Bruger eksisterende experiment: {experiment_name} (ID: {exp_id})")
         mlflow.set_experiment(experiment_name)
     else:
         mlflow.set_experiment(experiment_name)

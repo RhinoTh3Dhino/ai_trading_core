@@ -21,8 +21,7 @@ ALL_FEATURES = list(dict.fromkeys(ALL_FEATURES))  # Unique, original rækkefølg
 
 # === Coin/strategi-opsætning fra coins_config.py (fallback hvis ikke fundet) ===
 try:
-    from config.coins_config import (COIN_CONFIGS, ENABLED_COINS,
-                                     ENABLED_TIMEFRAMES)
+    from config.coins_config import COIN_CONFIGS, ENABLED_COINS, ENABLED_TIMEFRAMES
 except ImportError:
     COIN_CONFIGS = {}
     ENABLED_COINS = ["BTCUSDT"]

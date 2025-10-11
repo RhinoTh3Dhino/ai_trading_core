@@ -119,14 +119,10 @@ if __name__ == "__main__":
     dl = np.array([1, 1, 0, 0])
     rsi = np.array([0, 0, 1, 1])
 
-    print(
-        "Majority voting:", ensemble_predict(ml, dl, rsi, voting="majority", debug=True)
-    )
+    print("Majority voting:", ensemble_predict(ml, dl, rsi, voting="majority", debug=True))
     print(
         "Weighted voting:",
-        ensemble_predict(
-            ml, dl, rsi, weights=[1, 1, 0.7], voting="weighted", debug=True
-        ),
+        ensemble_predict(ml, dl, rsi, weights=[1, 1, 0.7], voting="weighted", debug=True),
     )
     print(
         "Sum voting:",

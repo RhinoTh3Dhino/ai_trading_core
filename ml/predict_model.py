@@ -29,9 +29,7 @@ def load_trained_model(model_path: str):
     return model
 
 
-def predict_with_model(
-    df: pd.DataFrame, model_path: str, seq_length: int = 48
-) -> np.ndarray:
+def predict_with_model(df: pd.DataFrame, model_path: str, seq_length: int = 48) -> np.ndarray:
     """
     Forbereder data og laver prediktioner med den trænede model.
     Args:

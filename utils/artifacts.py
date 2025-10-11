@@ -22,9 +22,7 @@ def stamp_name(prefix: str, version: str, ext: str, with_time: bool = False) -> 
     return f"{prefix}_{version}_{t}.{ext.lstrip('.')}"
 
 
-def write_json(
-    obj: dict, out_dir: str, prefix: str, version: str, with_time=False
-) -> str:
+def write_json(obj: dict, out_dir: str, prefix: str, version: str, with_time=False) -> str:
     ensure_dir(out_dir)
     fn = stamp_name(prefix, version, "json", with_time)
     p = os.path.join(out_dir, fn)

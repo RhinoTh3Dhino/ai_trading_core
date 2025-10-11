@@ -112,9 +112,7 @@ class ResourceMonitor:
         except Exception:
             return 0.0, 0.0
 
-    def _log_row(
-        self, ts_str: str, ram: float, cpu: float, gpu: float, gpu_temp: float
-    ) -> None:
+    def _log_row(self, ts_str: str, ram: float, cpu: float, gpu: float, gpu_temp: float) -> None:
         if not self.log_path:
             return
         try:
@@ -149,9 +147,7 @@ class ResourceMonitor:
             try:
                 # cpu_percent kan blokere for prøveperioden
                 ram_pct = float(psutil.virtual_memory().percent)
-                cpu_pct = float(
-                    psutil.cpu_percent(interval=self.cpu_sample_interval_sec)
-                )
+                cpu_pct = float(psutil.cpu_percent(interval=self.cpu_sample_interval_sec))
                 gpu_pct, gpu_temp = self._get_gpu_stats()
 
                 if self.verbose:

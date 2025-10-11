@@ -33,9 +33,7 @@ import pandas as pd
 # ---------- Hjælpefunktioner ----------
 
 
-def _as_series(
-    y: Union[pd.Series, np.ndarray, list], name: str = "target"
-) -> pd.Series:
+def _as_series(y: Union[pd.Series, np.ndarray, list], name: str = "target") -> pd.Series:
     if isinstance(y, pd.Series):
         return y
     return pd.Series(np.asarray(y), name=name)
@@ -111,12 +109,7 @@ def balance_classes(
             ved undersample ned til minority*ratio.
     """
     # Lille hjælp: hvis ingen y/target, men X har "target"-kolonnen, brug den.
-    if (
-        y is None
-        and target is None
-        and isinstance(X, pd.DataFrame)
-        and "target" in X.columns
-    ):
+    if y is None and target is None and isinstance(X, pd.DataFrame) and "target" in X.columns:
         target = "target"
 
     if y is None:
@@ -131,9 +124,7 @@ def balance_classes(
 
     method_norm = method.lower().strip()
     if method_norm not in {"oversample", "undersample"}:
-        raise ValueError(
-            f"Ukendt metode '{method}'. Brug 'oversample' eller 'undersample'."
-        )
+        raise ValueError(f"Ukendt metode '{method}'. Brug 'oversample' eller 'undersample'.")
 
     if method_norm == "oversample":
         idx = _upsample_indices(y_s, ratio=ratio, random_state=random_state)
@@ -164,9 +155,7 @@ def balance_df(
     method: "oversample" eller "undersample" (default er "undersample").
     """
     if target not in df.columns:
-        raise KeyError(
-            f"Target '{target}' findes ikke i df! Kolonner: {list(df.columns)}"
-        )
+        raise KeyError(f"Target '{target}' findes ikke i df! Kolonner: {list(df.columns)}")
 
     if verbose:
         print(f"Før balancering: {dict(df[target].value_counts())}")
@@ -224,13 +213,9 @@ def balance_target(*args, **kwargs):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Balancer target-klasser i feature-CSV."
-    )
+    parser = argparse.ArgumentParser(description="Balancer target-klasser i feature-CSV.")
     parser.add_argument("--input", type=str, required=True, help="Sti til input-CSV")
-    parser.add_argument(
-        "--target", type=str, default="target", help="Target-kolonne (fx 'target')"
-    )
+    parser.add_argument("--target", type=str, default="target", help="Target-kolonne (fx 'target')")
     parser.add_argument(
         "--method",
         type=str,
@@ -247,18 +232,14 @@ def main():
             "undersample ned til minority*ratio (ved undersample)."
         ),
     )
-    parser.add_argument(
-        "--output", type=str, required=True, help="Sti til output-CSV (balanceret)"
-    )
+    parser.add_argument("--output", type=str, required=True, help="Sti til output-CSV (balanceret)")
     parser.add_argument("--seed", type=int, default=42, help="Random state/seed")
     args = parser.parse_args()
 
     print(f"[INFO] Indlæser: {args.input}")
     df = pd.read_csv(args.input)
     if args.target not in df.columns:
-        print(
-            f"❌ FEJL: Target '{args.target}' findes ikke i data! Kolonner: {list(df.columns)}"
-        )
+        print(f"❌ FEJL: Target '{args.target}' findes ikke i data! Kolonner: {list(df.columns)}")
         return
 
     balanced = balance_df(

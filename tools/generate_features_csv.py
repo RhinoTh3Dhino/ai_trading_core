@@ -157,9 +157,9 @@ def make_features(raw: pd.DataFrame) -> pd.DataFrame:
     df["return"] = pd.to_numeric(df["close"], errors="coerce").pct_change().fillna(0.0)
 
     # pv_ratio: prisændring * volume, normaliseret af rolling std for skala
-    pv_raw = pd.to_numeric(df["close"], errors="coerce").diff().fillna(
-        0.0
-    ) * pd.to_numeric(df["volume"], errors="coerce").fillna(0.0)
+    pv_raw = pd.to_numeric(df["close"], errors="coerce").diff().fillna(0.0) * pd.to_numeric(
+        df["volume"], errors="coerce"
+    ).fillna(0.0)
     pv_std = pv_raw.rolling(20, min_periods=1).std(ddof=0).replace(0, np.nan)
     df["pv_ratio"] = (pv_raw / pv_std).fillna(0.0)
 
@@ -229,9 +229,7 @@ def make_features(raw: pd.DataFrame) -> pd.DataFrame:
         "atr_14_z",
         "ema_21_z",
     ]
-    cols = [c for c in ordered if c in df.columns] + [
-        c for c in df.columns if c not in ordered
-    ]
+    cols = [c for c in ordered if c in df.columns] + [c for c in df.columns if c not in ordered]
     return df[cols]
 
 

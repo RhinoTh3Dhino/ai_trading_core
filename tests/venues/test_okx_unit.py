@@ -7,8 +7,7 @@ Letvægts unit-tests uden eksterne dependencies (ingen jsonschema-krav).
 - Tester at parseren producerer de forventede keys/typer
 """
 
-from bot.live_connector.venues.okx import (OKXConnector,
-                                           parse_okx_candle_payload)
+from bot.live_connector.venues.okx import OKXConnector, parse_okx_candle_payload
 
 
 def test_symbol_map_to_internal():
@@ -21,9 +20,7 @@ def test_symbol_map_to_internal():
 def test_parse_okx_candle_payload_minimal():
     msg = {
         "arg": {"channel": "candle1m", "instId": "BTC-USDT"},
-        "data": [
-            ["1730572800000", "65000", "65100", "64900", "65050", "10", "0", "0", "1"]
-        ],
+        "data": [["1730572800000", "65000", "65100", "64900", "65050", "10", "0", "0", "1"]],
     }
     events = parse_okx_candle_payload(msg, lambda s: "BTCUSDT")
     assert len(events) == 1

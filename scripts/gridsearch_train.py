@@ -20,8 +20,7 @@ import os
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier, early_stopping, log_evaluation
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix)
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 
 from utils.project_path import PROJECT_ROOT
@@ -40,24 +39,14 @@ def balance_df(df, target, method="undersample", random_state=42, verbose=True):
         n = min_class
         for c in classes:
             dfs.append(df[df[target] == c].sample(n=n, random_state=random_state))
-        balanced = (
-            pd.concat(dfs)
-            .sample(frac=1, random_state=random_state)
-            .reset_index(drop=True)
-        )
+        balanced = pd.concat(dfs).sample(frac=1, random_state=random_state).reset_index(drop=True)
         if verbose:
             print(f"Undersamplet alle klasser til: {n}")
     elif method == "oversample":
         n = max_class
         for c in classes:
-            dfs.append(
-                df[df[target] == c].sample(n=n, replace=True, random_state=random_state)
-            )
-        balanced = (
-            pd.concat(dfs)
-            .sample(frac=1, random_state=random_state)
-            .reset_index(drop=True)
-        )
+            dfs.append(df[df[target] == c].sample(n=n, replace=True, random_state=random_state))
+        balanced = pd.concat(dfs).sample(frac=1, random_state=random_state).reset_index(drop=True)
         if verbose:
             print(f"Oversamplet alle klasser til: {n}")
     else:
@@ -106,9 +95,7 @@ def train_and_eval(df, feature_cols, target_col, test_size=0.4, class_weights=No
     print(pd.Series(y).value_counts(dropna=False))
 
     y = y.astype(int)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, shuffle=False
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, shuffle=False)
     print("\nDEBUG – y_train fordeling:")
     print(pd.Series(y_train).value_counts(dropna=False))
     print("DEBUG – y_test fordeling:")
@@ -148,12 +135,8 @@ def train_and_eval(df, feature_cols, target_col, test_size=0.4, class_weights=No
     # --- EKSPORT AF Y_TEST OG PREDS ---
     outputs_dir = os.path.join(PROJECT_ROOT, "outputs")
     os.makedirs(outputs_dir, exist_ok=True)
-    pd.Series(y_test).to_csv(
-        os.path.join(outputs_dir, "y_test.csv"), index=False, header=False
-    )
-    pd.Series(preds).to_csv(
-        os.path.join(outputs_dir, "y_preds.csv"), index=False, header=False
-    )
+    pd.Series(y_test).to_csv(os.path.join(outputs_dir, "y_test.csv"), index=False, header=False)
+    pd.Series(preds).to_csv(os.path.join(outputs_dir, "y_preds.csv"), index=False, header=False)
     print(f"[OK] Gemte sanity check-filer: {outputs_dir}/y_test.csv & y_preds.csv")
 
     return accuracy, winrate, sharpe, n_1, n_0, n_test
@@ -263,9 +246,7 @@ def main():
 
     results_df = pd.DataFrame(results)
     if not results_df.empty:
-        results_df = results_df.sort_values(
-            by=["winrate", "sharpe"], ascending=[False, False]
-        )
+        results_df = results_df.sort_values(by=["winrate", "sharpe"], ascending=[False, False])
         print("\n=== Gridsearch resultater (top 5) ===")
         print(results_df.head(5))
         results_df.to_csv(args.output, index=False)

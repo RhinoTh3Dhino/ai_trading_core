@@ -30,12 +30,10 @@ _TG_SEND_MESSAGE = None
 _TG_SEND_DOCUMENT = None
 try:
     # Typisk eksisterer dette som utils/telegram_utils.py i dit repo
-    from utils.telegram_utils import \
-        send_message as _TG_SEND_MESSAGE  # type: ignore
+    from utils.telegram_utils import send_message as _TG_SEND_MESSAGE  # type: ignore
 
     try:
-        from utils.telegram_utils import \
-            send_document as _TG_SEND_DOCUMENT  # type: ignore
+        from utils.telegram_utils import send_document as _TG_SEND_DOCUMENT  # type: ignore
     except Exception:
         _TG_SEND_DOCUMENT = None
 except Exception:

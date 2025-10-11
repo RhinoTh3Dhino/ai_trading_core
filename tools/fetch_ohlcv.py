@@ -44,9 +44,7 @@ _TF_KRAKEN = {"1m": 1, "5m": 5, "15m": 15, "30m": 30, "1h": 60, "4h": 240, "1d":
 
 
 def _to_iso(ts_ms: int) -> str:
-    return datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    return datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def fetch_okx(symbol: str, timeframe: str, limit: int = 1000):
@@ -65,11 +63,7 @@ def fetch_okx(symbol: str, timeframe: str, limit: int = 1000):
     for item in reversed(data.get("data", [])):
         ts = int(item[0])
         o, h, l, c = map(float, item[1:5])
-        vol = (
-            float(item[6])
-            if len(item) > 6 and item[6] not in ("", None)
-            else float(item[5])
-        )
+        vol = float(item[6]) if len(item) > 6 and item[6] not in ("", None) else float(item[5])
         rows.append([_to_iso(ts), o, h, l, c, vol])
     return rows
 

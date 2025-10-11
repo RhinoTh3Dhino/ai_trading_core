@@ -37,9 +37,7 @@ def main():
     parser.add_argument(
         "--bins", type=int, default=50, help="Antal bins i histogrammer (default: 50)"
     )
-    parser.add_argument(
-        "--out_dir", type=str, default=None, help="Output-mappe for plots"
-    )
+    parser.add_argument("--out_dir", type=str, default=None, help="Output-mappe for plots")
     args = parser.parse_args()
 
     df = pd.read_csv(args.input)

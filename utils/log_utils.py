@@ -70,9 +70,7 @@ def _get_device_info() -> DeviceInfo:
             if torch.cuda.is_available():
                 name = torch.cuda.get_device_name(0)
                 alloc = int(torch.cuda.memory_allocated(0) // (1024**2))
-                total = int(
-                    torch.cuda.get_device_properties(0).total_memory // (1024**2)
-                )
+                total = int(torch.cuda.get_device_properties(0).total_memory // (1024**2))
                 return DeviceInfo("cuda", name, alloc, total)
         except Exception:
             pass
@@ -112,9 +110,7 @@ def log_device_status(
         with open(botstatus_path, "a", encoding="utf-8") as f:
             f.write(line + "\n")
     except Exception as e:
-        print(
-            f"[ADVARSEL] Kunne ikke skrive til {botstatus_path}: {e}", file=sys.stderr
-        )
+        print(f"[ADVARSEL] Kunne ikke skrive til {botstatus_path}: {e}", file=sys.stderr)
     log_to_file(line, log_path=log_path)
     if telegram_func:
         try:
@@ -136,9 +132,7 @@ def log_device_status(
     }
 
 
-def rotate_text_log(
-    log_path: str | os.PathLike, keep_last_lines: int = 100_000
-) -> None:
+def rotate_text_log(log_path: str | os.PathLike, keep_last_lines: int = 100_000) -> None:
     p = Path(log_path)
     if not p.exists():
         return

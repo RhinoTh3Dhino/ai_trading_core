@@ -95,11 +95,7 @@ def compute_features(ohlcv: pd.DataFrame) -> pd.DataFrame:
     tr = np.maximum(h - l, np.maximum((h - c.shift()).abs(), (l - c.shift()).abs()))
     atr = tr.rolling(14, min_periods=1).mean()
     df["atr_14"] = (
-        atr.replace([0, np.inf, -np.inf], np.nan)
-        .bfill()
-        .ffill()
-        .fillna(1e-6)
-        .clip(lower=1e-6)
+        atr.replace([0, np.inf, -np.inf], np.nan).bfill().ffill().fillna(1e-6).clip(lower=1e-6)
     )
     # Bollinger 20,2
     m = c.rolling(20, min_periods=10).mean()
@@ -109,9 +105,7 @@ def compute_features(ohlcv: pd.DataFrame) -> pd.DataFrame:
     # VWAP
     tp = (h + l + c) / 3.0
     vol = pd.to_numeric(df["volume"], errors="coerce").fillna(0.0)
-    df["vwap"] = (
-        ((tp * vol).cumsum() / vol.cumsum().replace(0, np.nan)).bfill().fillna(c)
-    )
+    df["vwap"] = ((tp * vol).cumsum() / vol.cumsum().replace(0, np.nan)).bfill().fillna(c)
     # zscore_20 + return
     df["zscore_20"] = _rolling_z(c, 20)
     df["return"] = c.pct_change().fillna(0.0)

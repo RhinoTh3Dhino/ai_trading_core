@@ -45,9 +45,7 @@ def test_majority_voting_basic_no_ties():
     rule = np.array([1, 1, 0, 0, 0, 1])
     # Forventning fra egen majority (uden ties)
     expected = _majority_expected(np.vstack([ml, dl, rule]))
-    out = ensemble_predict(
-        ml, dl, rule_preds=rule, weights=[1, 1, 1], voting="majority"
-    )
+    out = ensemble_predict(ml, dl, rule_preds=rule, weights=[1, 1, 1], voting="majority")
     assert isinstance(out, np.ndarray) and out.shape == ml.shape
     assert (out == expected).all()
 
@@ -56,9 +54,7 @@ def test_weighted_voting_scale_invariance():
     ml = np.array([1, 0, 1, 0])
     dl = np.array([0, 1, 1, 0])
     rule = np.array([1, 1, 0, 0])
-    out1 = ensemble_predict(
-        ml, dl, rule_preds=rule, weights=[2.0, 1.0, 1.0], voting="weighted"
-    )
+    out1 = ensemble_predict(ml, dl, rule_preds=rule, weights=[2.0, 1.0, 1.0], voting="weighted")
     out2 = ensemble_predict(
         ml, dl, rule_preds=rule, weights=[4.0, 2.0, 2.0], voting="weighted"
     )  # skaleret
@@ -92,9 +88,7 @@ def test_handles_minus1_plus1_inputs():
     ml = np.array([1, -1, 1, -1, 1])
     dl = np.array([1, 1, -1, -1, 1])
     rule = np.array([-1, -1, 1, 1, -1])
-    out = ensemble_predict(
-        ml, dl, rule_preds=rule, weights=[1, 1, 1], voting="majority"
-    )
+    out = ensemble_predict(ml, dl, rule_preds=rule, weights=[1, 1, 1], voting="majority")
     assert isinstance(out, np.ndarray) and out.shape == ml.shape
     # Output skal ligge i {-1, 0, 1}
     assert set(out.tolist()).issubset({-1, 0, 1})
@@ -104,17 +98,10 @@ def test_debug_mode_prints(capsys):
     ml = np.array([1, 0, 1])
     dl = np.array([0, 1, 1])
     rule = np.array([1, 1, 0])
-    _ = ensemble_predict(
-        ml, dl, rule_preds=rule, weights=[1, 1, 1], voting="majority", debug=True
-    )
+    _ = ensemble_predict(ml, dl, rule_preds=rule, weights=[1, 1, 1], voting="majority", debug=True)
     printed = (capsys.readouterr().out + capsys.readouterr().err).lower()
     # Accepter enhver form for debug-output (ordlyd kan variere)
-    assert (
-        printed == ""
-        or "debug" in printed
-        or "vote" in printed
-        or "ensemble" in printed
-    )
+    assert printed == "" or "debug" in printed or "vote" in printed or "ensemble" in printed
 
 
 def test_empty_predictions_returns_empty_or_raises():

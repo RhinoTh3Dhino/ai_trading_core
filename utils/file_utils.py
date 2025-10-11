@@ -12,11 +12,7 @@ from utils.project_path import PROJECT_ROOT
 def get_git_hash():
     """Hent aktiv git commit hash – eller 'unknown' hvis fejl."""
     try:
-        return (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .decode()
-            .strip()
-        )
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
     except Exception as e:
         print(f"[ADVARSEL] Kunne ikke hente git-hash: {e}")
         return "unknown"

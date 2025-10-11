@@ -33,9 +33,7 @@ def test_extract_json_tolerates_wrapped_and_trailing_commas():
 def test_dry_run_returns_valid_json(monkeypatch: pytest.MonkeyPatch):
     """Dry-run bruger mock: skal returnere gyldig JSON og passere validatoren."""
     # Gør konteksten stabil og med ord der trigger mock-warnings
-    monkeypatch.setattr(
-        ce, "build_context", lambda max_rows=100: "drawdown slippage commission"
-    )
+    monkeypatch.setattr(ce, "build_context", lambda max_rows=100: "drawdown slippage commission")
     r = ce.run_once("p1", dry_run=True, model=ce.DEFAULT_MODEL)
     assert r["valid"] is True
     obj = r["json"]

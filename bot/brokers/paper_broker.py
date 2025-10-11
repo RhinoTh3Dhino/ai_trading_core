@@ -148,9 +148,7 @@ class PaperBroker:
         if not self.equity_log_path.exists():
             with self.equity_log_path.open("w", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
-                w.writerow(
-                    ["date", "equity", "cash", "positions_value", "drawdown_pct"]
-                )
+                w.writerow(["date", "equity", "cash", "positions_value", "drawdown_pct"])
 
     def _append_fill(self, fill: Fill) -> None:
         with self.fills_log_path.open("a", newline="", encoding="utf-8") as f:
@@ -306,8 +304,7 @@ class PaperBroker:
             # LIMIT: ved submit — afvis kun under min_notional hvis flag er True
             if (
                 self.min_notional > 0.0
-                and abs(order.qty) * float(order.limit_price) + 1e-12
-                < self.min_notional
+                and abs(order.qty) * float(order.limit_price) + 1e-12 < self.min_notional
             ):
                 if self.reject_below_min:
                     order.status = "rejected"
@@ -347,9 +344,7 @@ class PaperBroker:
         self.open_orders = kept
         return cancelled
 
-    def close_position(
-        self, symbol: str, ts: Optional[datetime] = None
-    ) -> Optional[Order]:
+    def close_position(self, symbol: str, ts: Optional[datetime] = None) -> Optional[Order]:
         """Luk hele netto-positionen i markedet (market ordre). Returnerer ordren, eller None hvis ingen position."""
         pos = self.positions.get(symbol)
         if not pos or abs(pos.qty) < 1e-12:
@@ -357,9 +352,7 @@ class PaperBroker:
         side = "SELL" if pos.qty > 0 else "BUY"
         return self.submit_order(symbol, side, abs(pos.qty), "market", ts=ts)
 
-    def mark_to_market(
-        self, prices: Dict[str, float], ts: Optional[datetime] = None
-    ) -> Dict:
+    def mark_to_market(self, prices: Dict[str, float], ts: Optional[datetime] = None) -> Dict:
         """
         Opdater markedspriser og forsøg at fylde limit-ordrer, beregn equity/drawdown,
         og skriv et snapshot til equity-loggen.
@@ -380,9 +373,7 @@ class PaperBroker:
         equity = self._equity(self._last_prices)
         self.peak_equity = max(self.peak_equity, equity)
         dd_pct = (
-            0.0
-            if self.peak_equity <= 0
-            else (equity - self.peak_equity) / self.peak_equity * 100.0
+            0.0 if self.peak_equity <= 0 else (equity - self.peak_equity) / self.peak_equity * 100.0
         )
 
         self._append_equity_snapshot(
@@ -407,9 +398,7 @@ class PaperBroker:
             "trading_halted": self.trading_halted,
         }
 
-    def pnl_snapshot(
-        self, prices: Optional[Dict[str, float]] = None
-    ) -> Dict[str, float]:
+    def pnl_snapshot(self, prices: Optional[Dict[str, float]] = None) -> Dict[str, float]:
         """Returnér kort PnL-oversigt. Opdaterer ikke logs."""
         px = prices or self._last_prices
         return {
@@ -451,9 +440,7 @@ class PaperBroker:
             return min(last_px, float(order.limit_price))
         return max(last_px, float(order.limit_price))
 
-    def _try_fill_limit_now(
-        self, order: Order, last_px: float, ts: Optional[datetime]
-    ) -> None:
+    def _try_fill_limit_now(self, order: Order, last_px: float, ts: Optional[datetime]) -> None:
         """
         Forsøg at fylde en limit-ordre, når touch-betingelsen er opfyldt.
         - Brug rå eksekveringspris (min/max af last og limit afh. af side).
@@ -472,9 +459,7 @@ class PaperBroker:
             order.status = "open"
             order.reason = None  # åben ordre bærer ikke reject-reason
 
-    def _execute_fill(
-        self, order: Order, raw_price: float, ts: Optional[datetime] = None
-    ) -> None:
+    def _execute_fill(self, order: Order, raw_price: float, ts: Optional[datetime] = None) -> None:
         """
         Udfør en handel til pris med slippage/commission, opdater konti/positioner, log fill.
 
@@ -491,11 +476,7 @@ class PaperBroker:
 
         # --- slippage-pris til bogføring/cash/PnL
         slip = self.slippage_bp / 10_000.0
-        exec_price = (
-            raw_price * (1.0 + slip)
-            if order.side == "BUY"
-            else raw_price * (1.0 - slip)
-        )
+        exec_price = raw_price * (1.0 + slip) if order.side == "BUY" else raw_price * (1.0 - slip)
         exec_price = self._r(exec_price, self.price_decimals)
 
         qty = self._r(order.qty, self.qty_decimals)
@@ -507,10 +488,7 @@ class PaperBroker:
             return
 
         # --- min_notional ved fill mod rå pris
-        if (
-            self.min_notional > 0.0
-            and abs(qty * check_price) + 1e-12 < self.min_notional
-        ):
+        if self.min_notional > 0.0 and abs(qty * check_price) + 1e-12 < self.min_notional:
             order.status = "rejected"
             order.reason = "Ordre under min_notional"
             return
@@ -518,9 +496,7 @@ class PaperBroker:
         # Affordability for BUY (inkl. commission) — regnes mod exec_price
         if order.side == "BUY" and not self.allow_short:
             per_unit_total = exec_price * (1.0 + self.commission_bp / 10_000.0)
-            max_affordable_qty = (
-                self.cash / per_unit_total if per_unit_total > 0 else 0.0
-            )
+            max_affordable_qty = self.cash / per_unit_total if per_unit_total > 0 else 0.0
             if max_affordable_qty <= 1e-12:
                 order.status = "rejected"
                 order.reason = "Ikke nok kontantdækning"
@@ -559,9 +535,7 @@ class PaperBroker:
             # Samme retning (tilføj)
             new_qty = pos.qty + side_mult * qty
             if abs(new_qty) > 1e-12:
-                pos.avg_price = (abs(pos.qty) * pos.avg_price + qty * exec_price) / abs(
-                    new_qty
-                )
+                pos.avg_price = (abs(pos.qty) * pos.avg_price + qty * exec_price) / abs(new_qty)
             pos.qty = new_qty
         else:
             # Modsat retning → luk helt/delvist og evt. flip
@@ -658,11 +632,7 @@ class PaperBroker:
             ts = self._now()
         elif ts.tzinfo is None:
             ts = self.tz.localize(ts)
-        return (
-            ts.astimezone(timezone.utc)
-            .isoformat(timespec="seconds")
-            .replace("+00:00", "Z")
-        )
+        return ts.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
     def _dt(self, ts: Optional[datetime]) -> datetime:
         if ts is None:

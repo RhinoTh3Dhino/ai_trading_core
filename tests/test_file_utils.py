@@ -36,9 +36,7 @@ def test_file_utils_resolve_and_mkdir_and_write(tmp_path):
             if "~" not in str(home)
             else resolve_fn("~/some/file.txt")
         )
-        assert str(resolved).startswith(
-            str(home)
-        ), f"{resolve_name} udvider ikke til HOME"
+        assert str(resolved).startswith(str(home)), f"{resolve_name} udvider ikke til HOME"
 
     # 2) ensure_dir / safe_makedirs / mkdir_p
     ensure_dir_fn, _ = _first_callable(
@@ -58,12 +56,8 @@ def test_file_utils_resolve_and_mkdir_and_write(tmp_path):
         assert target_dir.exists() and target_dir.is_dir()
 
     # 3) write_text/save_text og optional read_text
-    write_fn, _ = _first_callable(
-        fu, ("write_text", "save_text", "write_file", "save_file")
-    )
-    read_fn, _ = _first_callable(
-        fu, ("read_text", "load_text", "read_file", "load_file")
-    )
+    write_fn, _ = _first_callable(fu, ("write_text", "save_text", "write_file", "save_file"))
+    read_fn, _ = _first_callable(fu, ("read_text", "load_text", "read_file", "load_file"))
     file_path = tmp_path / "hello.txt"
     if write_fn:
         write_fn(file_path, "hej med dig")
@@ -78,13 +72,9 @@ def test_file_utils_resolve_and_mkdir_and_write(tmp_path):
 
 def test_file_utils_permission_error_is_surface(tmp_path, monkeypatch):
     fu = _get_module()
-    write_fn, _ = _first_callable(
-        fu, ("write_text", "save_text", "write_file", "save_file")
-    )
+    write_fn, _ = _first_callable(fu, ("write_text", "save_text", "write_file", "save_file"))
     if not write_fn:
-        pytest.skip(
-            "Ingen write-funktion eksponeret i utils.file_utils – springer edge-case over."
-        )
+        pytest.skip("Ingen write-funktion eksponeret i utils.file_utils – springer edge-case over.")
 
     # Gør builtins.open til at kaste PermissionError for at simulere IO-fejl
     def _boom(*a, **k):

@@ -69,12 +69,8 @@ def optuna_objective(trial, data_path, target, test_size):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Optuna-tuner til PyTorch trading-model"
-    )
-    parser.add_argument(
-        "--data", type=str, required=True, help="Path til feature-data (CSV)"
-    )
+    parser = argparse.ArgumentParser(description="Optuna-tuner til PyTorch trading-model")
+    parser.add_argument("--data", type=str, required=True, help="Path til feature-data (CSV)")
     parser.add_argument("--target", type=str, default="target", help="Target-kolonne")
     parser.add_argument("--trials", type=int, default=20, help="Antal trials")
     parser.add_argument("--test_size", type=float, default=0.2, help="Test split")
@@ -119,9 +115,7 @@ def main():
         save_model=True,
     )
     print(f"✅ Bedste model trænet og gemt til: {MODEL_PATH} (val_acc={final_acc:.4f})")
-    send_message(
-        f"✅ Bedste model trænet og gemt til {MODEL_PATH}\nVal_acc={final_acc:.4f}"
-    )
+    send_message(f"✅ Bedste model trænet og gemt til {MODEL_PATH}\nVal_acc={final_acc:.4f}")
 
 
 if __name__ == "__main__":

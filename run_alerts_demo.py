@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
 
 import utils.telegram_utils as tg  # noqa: E402
 from alerts.alert_manager import AlertManager  # noqa: E402
+
 # Lokale imports
 from alerts.signal_router import Decision, SignalRouter  # noqa: E402
 from core.state import PosSide, PosState  # noqa: E402
@@ -242,9 +243,7 @@ def main():
         decision: Decision = router.on_signal(sig)
 
         if decision.action == "NOTIFY":
-            print(
-                color(f" -> Decision: {decision.action} ({decision.reason})", "green")
-            )
+            print(color(f" -> Decision: {decision.action} ({decision.reason})", "green"))
             send_payload(decision.payload or {}, dry_run=not args.send)
         else:
             print(color(f" -> Decision: {decision.action} ({decision.reason})", "red"))

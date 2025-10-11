@@ -57,25 +57,17 @@ def analyze_target_distribution(df, target_col, output_dir=None, show_plot=True)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Analysér target-fordeling i feature-fil."
-    )
+    parser = argparse.ArgumentParser(description="Analysér target-fordeling i feature-fil.")
     parser.add_argument("--input", type=str, required=True, help="Sti til feature-CSV")
-    parser.add_argument(
-        "--target", type=str, default="target", help="Navn på target-kolonne"
-    )
-    parser.add_argument(
-        "--output_dir", type=str, default=None, help="Mappe til eksport af CSV"
-    )
+    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
+    parser.add_argument("--output_dir", type=str, default=None, help="Mappe til eksport af CSV")
     parser.add_argument("--no_plot", action="store_true", help="Skjul plot")
     args = parser.parse_args()
 
     print(f"[INFO] Indlæser data: {args.input}")
     df = pd.read_csv(args.input)
     if args.target not in df.columns:
-        print(
-            f"❌ FEJL: Target '{args.target}' findes ikke i data! Kolonner: {list(df.columns)}"
-        )
+        print(f"❌ FEJL: Target '{args.target}' findes ikke i data! Kolonner: {list(df.columns)}")
         return
 
     analyze_target_distribution(

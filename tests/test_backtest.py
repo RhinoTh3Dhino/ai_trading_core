@@ -51,9 +51,7 @@ def _has_any_column(df: pd.DataFrame, candidates):
 # ------------------- walk_forward_splits -------------------
 def test_walk_forward_splits_basic():
     df = _make_price_df(100)
-    splits = bt.walk_forward_splits(
-        df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20
-    )
+    splits = bt.walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20)
     # For n=100: der bør være mindst ét vindue
     assert isinstance(splits, list) and len(splits) >= 1
     for tr_idx, te_idx in splits:
@@ -86,9 +84,7 @@ def test_compute_regime_and_filter():
     # Hvis ingen bull-ticks, giver det 0'ere – her tjekker vi kun længde og type
     assert len(filtered) == len(signals)
 
-    filtered2 = bt.regime_filter(
-        signals, out["regime"], active_regimes=["bull", "neutral"]
-    )
+    filtered2 = bt.regime_filter(signals, out["regime"], active_regimes=["bull", "neutral"])
     assert len(filtered2) == len(signals)
 
 
@@ -256,6 +252,4 @@ def test_load_csv_auto_with_and_without_meta(tmp_path, capsys):
 if __name__ == "__main__":
     import pytest
 
-    pytest.main(
-        [__file__, "-vv", "--cov=backtest.backtest", "--cov-report=term-missing"]
-    )
+    pytest.main([__file__, "-vv", "--cov=backtest.backtest", "--cov-report=term-missing"])

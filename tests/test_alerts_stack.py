@@ -182,9 +182,7 @@ def test_signal_router_and_alert_manager():
         "notional": 100.0,
     }
     d1 = router.on_signal(sig_lo)
-    assert (
-        isinstance(d1, Decision) and d1.action == "SUPPRESS"
-    ), f"forventede SUPPRESS, fik {d1}"
+    assert isinstance(d1, Decision) and d1.action == "SUPPRESS", f"forventede SUPPRESS, fik {d1}"
 
     # 2) Under min_notional → SUPPRESS
     sig_notional = {
@@ -257,9 +255,7 @@ def test_telegram_utils_chunk_and_fallback(tmp_path: Path | None = None):
         long_text = "A" * 5000
         tg.send_message(long_text, parse_mode=None, silent=True)
         msg_calls = [x for x in sent if x[0] == "msg"]
-        assert (
-            len(msg_calls) >= 2
-        ), f"Forventede chunking til >=2 kald, fik {len(msg_calls)}"
+        assert len(msg_calls) >= 2, f"Forventede chunking til >=2 kald, fik {len(msg_calls)}"
 
         # 2) Fallback: MarkdownV2 → vi simulerer parse-fejl → fallback til HTML <pre>
         sent.clear()
@@ -311,43 +307,25 @@ def test_tg_dedupe_and_cooldown_and_lowprio_batch():
 
     try:
         # 1) Første high-prio -> sendes
-        r1 = tg.send_signal_message(
-            "HELLO", symbol="BTCUSDT", priority="high", silent=True
-        )
+        r1 = tg.send_signal_message("HELLO", symbol="BTCUSDT", priority="high", silent=True)
         assert r1 is not None
 
         # 2) Samme tekst/key inden TTL -> duplicate suppress
-        r2 = tg.send_signal_message(
-            "HELLO", symbol="BTCUSDT", priority="high", silent=True
-        )
-        assert (
-            isinstance(r2, dict)
-            and r2.get("suppressed")
-            and r2["reason"] == "duplicate"
-        )
+        r2 = tg.send_signal_message("HELLO", symbol="BTCUSDT", priority="high", silent=True)
+        assert isinstance(r2, dict) and r2.get("suppressed") and r2["reason"] == "duplicate"
 
         # 3) Ny tekst men inden global cooldown -> cooldown suppress
-        r3 = tg.send_signal_message(
-            "OTHER", symbol="BTCUSDT", priority="high", silent=True
-        )
+        r3 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
         assert r3.get("suppressed") and r3["reason"] == "cooldown"
 
         # 4) Efter cooldown -> stadig duplicate (fordi dedupe blev registreret i (3))
         clk.sleep(tg.COOLDOWN_GLOBAL_SEC + 0.01)
-        r4 = tg.send_signal_message(
-            "OTHER", symbol="BTCUSDT", priority="high", silent=True
-        )
-        assert (
-            isinstance(r4, dict)
-            and r4.get("suppressed")
-            and r4["reason"] == "duplicate"
-        )
+        r4 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
+        assert isinstance(r4, dict) and r4.get("suppressed") and r4["reason"] == "duplicate"
 
         # 5) Når dedupe TTL er gået -> kan sendes OK
         clk.sleep(tg.DEDUPE_TTL_SEC + 0.01)
-        r5 = tg.send_signal_message(
-            "OTHER", symbol="BTCUSDT", priority="high", silent=True
-        )
+        r5 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
         assert not (
             isinstance(r5, dict) and r5.get("suppressed")
         ), f"forventede send efter TTL, fik: {r5}"

@@ -26,16 +26,12 @@ def create_lstm_sequences(X, y, seq_length=48):
 def build_lstm_model(input_shape, n_classes=2):
     """Bygger en LSTM til klassifikation."""
     model = Sequential()
-    model.add(
-        LSTM(64, activation="tanh", return_sequences=True, input_shape=input_shape)
-    )
+    model.add(LSTM(64, activation="tanh", return_sequences=True, input_shape=input_shape))
     model.add(Dropout(0.2))
     model.add(LSTM(32, activation="tanh"))
     model.add(Dropout(0.2))
     model.add(Dense(n_classes, activation="softmax"))  # Klassifikation
-    model.compile(
-        optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
-    )
+    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
     return model
 
 
@@ -110,9 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     # AUTO PATH CONVERTED
-    parser.add_argument(
-        "--model_out", type=str, default=PROJECT_ROOT / "models" / "lstm_model.h5"
-    )
+    parser.add_argument("--model_out", type=str, default=PROJECT_ROOT / "models" / "lstm_model.h5")
     args = parser.parse_args()
 
     # Indlæs data
@@ -122,9 +116,7 @@ if __name__ == "__main__":
     # Robust: find feature-kolonner som i feature engineering!
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     feature_cols = [
-        col
-        for col in num_cols
-        if col not in [args.target, "future_return", "timestamp"]
+        col for col in num_cols if col not in [args.target, "future_return", "timestamp"]
     ]
     print(f"Træner på features: {feature_cols}")
 

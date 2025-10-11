@@ -16,9 +16,7 @@ def test_torch_import_and_device_smoke(capsys=None):
     - Skipper hvis torch ikke er installeret (så "lette" CI-jobs kan køre uden PyTorch).
     - Fejler ikke hvis CUDA ikke er tilgængelig (CPU er OK).
     """
-    torch = pytest.importorskip(
-        "torch", reason="torch not installed; skipping torch device test"
-    )
+    torch = pytest.importorskip("torch", reason="torch not installed; skipping torch device test")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

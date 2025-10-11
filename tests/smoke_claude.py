@@ -14,9 +14,7 @@ def get(path):
     r.raise_for_status()
     # Tjek at charset sættes korrekt af vores middleware
     ct = r.headers.get("content-type", "")
-    assert (
-        "application/json" in ct and "charset" in ct.lower()
-    ), f"Content-Type uden charset: {ct}"
+    assert "application/json" in ct and "charset" in ct.lower(), f"Content-Type uden charset: {ct}"
     return r.json()
 
 
@@ -62,9 +60,7 @@ def main():
     if code == 0:
         print("\nALL GOOD ✅  (live AI svarer uden fallback)")
     elif s == "fallback" or e == "fallback":
-        print(
-            "\nAI FALLBACK MODE ⚠️  (ANTHROPIC_API_KEY mangler eller AI_FORCE_FALLBACK=1)"
-        )
+        print("\nAI FALLBACK MODE ⚠️  (ANTHROPIC_API_KEY mangler eller AI_FORCE_FALLBACK=1)")
     else:
         print("\nAI TIMEOUT/ERROR ⚠️  (øgn AI_HTTP_TIMEOUT eller tjek netværk/nøgle)")
     sys.exit(code)

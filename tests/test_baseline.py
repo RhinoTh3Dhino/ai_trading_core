@@ -78,9 +78,7 @@ def test_baseline_smoke(tmp_path: Path | None = None) -> None:
     plt.savefig(plot_path)
     plt.close()
 
-    assert (
-        plot_path.exists() and plot_path.stat().st_size > 0
-    ), "Plot blev ikke gemt korrekt"
+    assert plot_path.exists() and plot_path.stat().st_size > 0, "Plot blev ikke gemt korrekt"
 
     # Ikke-kritisk info: feature-importance billede (kun log)
     fi_img = OUT_DIR / "feature_importance_baseline.png"

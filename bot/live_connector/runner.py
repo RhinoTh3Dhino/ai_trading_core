@@ -10,14 +10,25 @@ from typing import Any, Dict, Optional
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
+
 # Prometheus endpoint/registry (ingen ny-registrering af metrics her!)
-from prometheus_client import (CONTENT_TYPE_LATEST, REGISTRY,
-                               CollectorRegistry, generate_latest,
-                               multiprocess)
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    REGISTRY,
+    CollectorRegistry,
+    generate_latest,
+    multiprocess,
+)
 
 # Projekt-metrics helpers (metrics er registreret i bot/live_connector/metrics.py)
-from .metrics import (inc_bars, inc_reconnect, observe_transport_latency,
-                      set_bar_close_lag, set_queue_depth, time_feature)
+from .metrics import (
+    inc_bars,
+    inc_reconnect,
+    observe_transport_latency,
+    set_bar_close_lag,
+    set_queue_depth,
+    time_feature,
+)
 
 # Label guard (valgfri)
 try:
@@ -43,8 +54,14 @@ except Exception:  # pragma: no cover
 
 # Feature-API (best effort)
 try:  # pragma: no cover
-    from .features import (compute_all_features, compute_atr14, compute_ema14,
-                           compute_ema50, compute_rsi14, compute_vwap)
+    from .features import (
+        compute_all_features,
+        compute_atr14,
+        compute_ema14,
+        compute_ema50,
+        compute_rsi14,
+        compute_vwap,
+    )
 except Exception:  # pragma: no cover
     compute_all_features = None
     compute_ema14 = compute_ema50 = compute_rsi14 = compute_vwap = compute_atr14 = None
@@ -138,9 +155,7 @@ async def healthz() -> JSONResponse:
 @app.get("/ready")
 async def ready() -> JSONResponse:
     if not _last_bar_ts_ms:
-        return JSONResponse(
-            {"ready": False, "reason": "no-bars-seen-yet"}, status_code=503
-        )
+        return JSONResponse({"ready": False, "reason": "no-bars-seen-yet"}, status_code=503)
     now_ms = int(time.time() * 1000)
     newest = max(_last_bar_ts_ms.values())
     lag_ms = now_ms - newest
@@ -156,9 +171,7 @@ async def status() -> JSONResponse:
             "symbols": len(_last_bar_ts_ms),
             "last_bar_ts_ms": _last_bar_ts_ms,
             "queue_depth": (
-                _main_queue.qsize()
-                if _main_queue and hasattr(_main_queue, "qsize")
-                else None
+                _main_queue.qsize() if _main_queue and hasattr(_main_queue, "qsize") else None
             ),
             "quiet": QUIET,
         }
@@ -246,8 +259,7 @@ async def _bg_status_task() -> None:
                     lag_ms = int(time.time() * 1000) - newest if newest else None
                     LOG.info(
                         "STATUS venues=%s symbols=%d lag_ms=%s queue=%s",
-                        ",".join(sorted(k for k, v in _active_venues.items() if v))
-                        or "-",
+                        ",".join(sorted(k for k, v in _active_venues.items() if v)) or "-",
                         len(_last_bar_ts_ms),
                         lag_ms if lag_ms is not None else "-",
                         (
@@ -285,9 +297,7 @@ _bg_tasks: list[asyncio.Task] = []
 
 @app.on_event("startup")
 async def _on_startup() -> None:
-    LOG.info(
-        "Live Connector startup (QUIET=%s, STATUS_MIN_SECS=%s)", QUIET, STATUS_MIN_SECS
-    )
+    LOG.info("Live Connector startup (QUIET=%s, STATUS_MIN_SECS=%s)", QUIET, STATUS_MIN_SECS)
 
     # Prime nogle metrics via helpers (ingen ny-registrering)
     set_queue_depth(0, "live")

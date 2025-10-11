@@ -19,9 +19,7 @@ def fix_abspath_join_in_file(filepath):
         if pattern.search(line):
             line_fixed = pattern.sub(replacement, line)
             if line != line_fixed:
-                print(
-                    f"[RETTER] {filepath} (linje {i+1}): {line.strip()} → {line_fixed.strip()}"
-                )
+                print(f"[RETTER] {filepath} (linje {i+1}): {line.strip()} → {line_fixed.strip()}")
                 changed = True
             new_lines.append(line_fixed)
         else:

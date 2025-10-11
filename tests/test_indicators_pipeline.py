@@ -55,9 +55,7 @@ def atr_wilder(high, low, close, period=14):
     close = np.array(close, dtype=float)
     prev_close = np.roll(close, 1)
     prev_close[0] = close[0]
-    tr = np.maximum.reduce(
-        [high - low, np.abs(high - prev_close), np.abs(low - prev_close)]
-    )
+    tr = np.maximum.reduce([high - low, np.abs(high - prev_close), np.abs(low - prev_close)])
     atr = np.zeros_like(tr)
     atr[period] = tr[1 : period + 1].mean()
     for i in range(period + 1, len(tr)):

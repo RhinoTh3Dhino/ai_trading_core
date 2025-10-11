@@ -17,9 +17,14 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from utils.report_utils import (backup_file, build_telegram_summary,
-                                export_trade_journal, log_to_changelog,
-                                print_status, update_bot_status)
+from utils.report_utils import (
+    backup_file,
+    build_telegram_summary,
+    export_trade_journal,
+    log_to_changelog,
+    print_status,
+    update_bot_status,
+)
 
 
 # ---------------------------------------------------------------------
@@ -44,9 +49,7 @@ def _make_empty_csv(path: Path) -> Path:
 # ---------------------------------------------------------------------
 # print_status
 # ---------------------------------------------------------------------
-def test_print_status_and_update_bot_status(
-    tmp_path: Path, capsys: pytest.CaptureFixture
-):
+def test_print_status_and_update_bot_status(tmp_path: Path, capsys: pytest.CaptureFixture):
     csv_path = _make_test_csv(tmp_path / "portfolio_metrics_latest.csv")
 
     # Skal ikke raise fejl – og bør printe noget brugbart
@@ -140,14 +143,10 @@ def test_build_telegram_summary_when_missing_file(tmp_path: Path):
     Implementationen kan være 'graceful' og returnere en generisk tekst uden run/version.
     """
     missing = tmp_path / "nope.csv"
-    msg = build_telegram_summary(
-        run_id="RUN000", portfolio_metrics_path=missing, version="v0"
-    )
+    msg = build_telegram_summary(run_id="RUN000", portfolio_metrics_path=missing, version="v0")
     assert isinstance(msg, str) and len(msg) > 0
     # Accepter begge varianter: (1) indeholder metadata, eller (2) generisk fallback
-    assert ("RUN000" in msg and "v0" in msg) or (
-        "Ingen status" in msg or "ikke tilgængelig" in msg
-    )
+    assert ("RUN000" in msg and "v0" in msg) or ("Ingen status" in msg or "ikke tilgængelig" in msg)
 
 
 # ---------------------------------------------------------------------

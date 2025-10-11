@@ -32,9 +32,7 @@ class AlertManager:
         # Equity-tilstand
         self._start_equity: Optional[float] = None
         self._peak_equity: Optional[float] = None
-        self._cur_equity: Optional[float] = (
-            None  # <- VIGTIG: aktuel equity (fix af tidligere bug)
-        )
+        self._cur_equity: Optional[float] = None  # <- VIGTIG: aktuel equity (fix af tidligere bug)
 
         # Winrate-tilstand
         self._wins: int = 0
@@ -117,9 +115,7 @@ class AlertManager:
         dd = self._dd_pct()
         if dd is not None and dd <= -abs(self.th.dd_pct):
             if self._cooldown_ok("dd"):
-                send_fn(
-                    "alert", f"🔻 Drawdown {dd:.2f}% (grænse {self.th.dd_pct:.2f}%)"
-                )
+                send_fn("alert", f"🔻 Drawdown {dd:.2f}% (grænse {self.th.dd_pct:.2f}%)")
 
         # Winrate (kræver minimum antal handler for at undgå støj)
         wr = self._winrate()

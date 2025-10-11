@@ -94,9 +94,7 @@ def _expand_schedule(total: int, blocks: List[Tuple[str, int]]) -> List[str]:
 def _minutes_for_freq(freq: str) -> int:
     f = freq.lower()
     if f not in _FREQ_TO_MIN:
-        raise ValueError(
-            f"Ukendt frekvens '{freq}'. Vælg én af: {', '.join(_FREQ_TO_MIN)}"
-        )
+        raise ValueError(f"Ukendt frekvens '{freq}'. Vælg én af: {', '.join(_FREQ_TO_MIN)}")
     return _FREQ_TO_MIN[f]
 
 
@@ -210,12 +208,10 @@ def gen_candles(
         # Wick generering – proportional med spread og en lille ekstra amplitude
         wick = reg.wick_amp
         hi = max(o, c) * (
-            1.0
-            + max(0.0, 0.25 * (base_spread / max(o, 1.0)) + random.uniform(0.0, wick))
+            1.0 + max(0.0, 0.25 * (base_spread / max(o, 1.0)) + random.uniform(0.0, wick))
         )
         lo = min(o, c) * (
-            1.0
-            - max(0.0, 0.25 * (base_spread / max(o, 1.0)) + random.uniform(0.0, wick))
+            1.0 - max(0.0, 0.25 * (base_spread / max(o, 1.0)) + random.uniform(0.0, wick))
         )
         lo = _bounded(lo)  # undgå negative priser
 
@@ -237,16 +233,10 @@ def gen_candles(
 # ---------- CLI ----------
 def main():
     ap = argparse.ArgumentParser(description="Syntetiske OHLCV-candles med regimer")
-    ap.add_argument(
-        "--out", default="data/candles_btcusdt_1h.csv", help="Output CSV-sti"
-    )
+    ap.add_argument("--out", default="data/candles_btcusdt_1h.csv", help="Output CSV-sti")
     ap.add_argument("--rows", type=int, default=2000, help="Antal bars at generere")
-    ap.add_argument(
-        "--freq", default="1h", choices=list(_FREQ_TO_MIN.keys()), help="Bar-frekvens"
-    )
-    ap.add_argument(
-        "--start", default="2024-01-01 00:00:00", help="Starttid (ISO, lokal uden TZ)"
-    )
+    ap.add_argument("--freq", default="1h", choices=list(_FREQ_TO_MIN.keys()), help="Bar-frekvens")
+    ap.add_argument("--start", default="2024-01-01 00:00:00", help="Starttid (ISO, lokal uden TZ)")
     ap.add_argument("--seed", type=int, default=42, help="Random seed")
     ap.add_argument("--start-price", type=float, default=40000.0, help="Startpris")
     ap.add_argument(
@@ -275,9 +265,7 @@ def main():
         default=0.0,
         help="Sideways gennemsnitlig log-ret pr. bar",
     )
-    ap.add_argument(
-        "--sigma", type=float, default=0.0020, help="Std.dev for log-ret pr. bar"
-    )
+    ap.add_argument("--sigma", type=float, default=0.0020, help="Std.dev for log-ret pr. bar")
     ap.add_argument(
         "--wick-amp",
         type=float,
@@ -300,21 +288,11 @@ def main():
     )
 
     # Volumen
-    ap.add_argument(
-        "--vol-base-lo", type=float, default=30.0, help="Basis minimumsvolumen"
-    )
-    ap.add_argument(
-        "--vol-base-hi", type=float, default=800.0, help="Basis maksimumsvolumen"
-    )
-    ap.add_argument(
-        "--vol-bull-mult", type=float, default=1.1, help="Bull volumemultiplikator"
-    )
-    ap.add_argument(
-        "--vol-bear-mult", type=float, default=1.2, help="Bear volumemultiplikator"
-    )
-    ap.add_argument(
-        "--vol-side-mult", type=float, default=1.0, help="Sideways volumemultiplikator"
-    )
+    ap.add_argument("--vol-base-lo", type=float, default=30.0, help="Basis minimumsvolumen")
+    ap.add_argument("--vol-base-hi", type=float, default=800.0, help="Basis maksimumsvolumen")
+    ap.add_argument("--vol-bull-mult", type=float, default=1.1, help="Bull volumemultiplikator")
+    ap.add_argument("--vol-bear-mult", type=float, default=1.2, help="Bear volumemultiplikator")
+    ap.add_argument("--vol-side-mult", type=float, default=1.0, help="Sideways volumemultiplikator")
 
     args = ap.parse_args()
 

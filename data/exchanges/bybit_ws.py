@@ -7,8 +7,7 @@ import logging
 from typing import AsyncIterator, Dict, List, Optional
 
 import websockets
-from websockets.exceptions import (ConnectionClosed, ConnectionClosedError,
-                                   ConnectionClosedOK)
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError, ConnectionClosedOK
 
 from data.schemas import Bar
 
@@ -181,24 +180,18 @@ async def subscribe(
         async for bar in _stream_from_url(chosen, symbols, interval, include_partials):
             yield bar  # LINEAR virker → fortsæt på LINEAR
     except asyncio.TimeoutError:
-        log.warning(
-            "Bybit LINEAR gav ingen data på ~%ss → forsøger SPOT", PROBE_TIMEOUT_SEC
-        )
+        log.warning("Bybit LINEAR gav ingen data på ~%ss → forsøger SPOT", PROBE_TIMEOUT_SEC)
         chosen = fallback_url
     except (ConnectionClosed, ConnectionClosedOK, ConnectionClosedError, OSError) as e:
         log.warning("Bybit (%s) lukket under probe: %r → prøver samme igen", chosen, e)
     except Exception as e:
-        log.warning(
-            "Bybit ukendt fejl under probe (%s): %r → prøver samme igen", chosen, e
-        )
+        log.warning("Bybit ukendt fejl under probe (%s): %r → prøver samme igen", chosen, e)
 
     # Hovedloop (reconnect + backoff)
     backoff = 1
     while True:
         try:
-            async for bar in _stream_from_url(
-                chosen, symbols, interval, include_partials
-            ):
+            async for bar in _stream_from_url(chosen, symbols, interval, include_partials):
                 yield bar
             # Hvis stream stopper uden exception, tving en reconnect
             raise ConnectionClosedError(None, None, None)

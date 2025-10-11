@@ -7,9 +7,7 @@ from typing import Optional
 from data.live_feed import make_exchange
 
 
-def market_qty_for_quote(
-    price: float, quote_amount: float, step: float = 0.0001
-) -> float:
+def market_qty_for_quote(price: float, quote_amount: float, step: float = 0.0001) -> float:
     if price <= 0:
         return 0.0
     qty = quote_amount / price
@@ -26,9 +24,7 @@ class CcxtBroker:
         live: bool,
     ):
         self.live = live
-        self.ex = make_exchange(
-            exchange_id, api_key if live else None, secret if live else None
-        )
+        self.ex = make_exchange(exchange_id, api_key if live else None, secret if live else None)
 
     def market_buy(self, symbol: str, quote_amount: float):
         ticker = self.ex.fetch_ticker(symbol)

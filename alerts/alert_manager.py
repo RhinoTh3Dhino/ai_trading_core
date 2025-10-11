@@ -194,8 +194,7 @@ class AlertManager:
 
         # byg en enkel tekst
         sym_str = ", ".join(
-            f"{s}×{n}"
-            for s, n in sorted(per_symbol.items(), key=lambda x: (-x[1], x[0]))
+            f"{s}×{n}" for s, n in sorted(per_symbol.items(), key=lambda x: (-x[1], x[0]))
         )
         side_str = ", ".join(
             f"{s}×{n}" for s, n in sorted(per_side.items(), key=lambda x: (-x[1], x[0]))

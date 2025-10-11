@@ -21,21 +21,15 @@ def auto_detect_sep(filepath):
 
 def main():
     parser = argparse.ArgumentParser(description="Generér features fra rå OHLCV-data.")
-    parser.add_argument(
-        "--input", type=str, required=True, help="Sti til rå OHLCV-data (CSV)"
-    )
+    parser.add_argument("--input", type=str, required=True, help="Sti til rå OHLCV-data (CSV)")
     parser.add_argument(
         "--output",
         type=str,
         default=None,
         help="Sti til output-CSV (fx data/BTCUSDT_1h_features.csv)",
     )
-    parser.add_argument(
-        "--symbol", type=str, default="BTCUSDT", help="Symbol (fx BTCUSDT)"
-    )
-    parser.add_argument(
-        "--timeframe", type=str, default="1h", help="Timeframe (fx 1h, 4h)"
-    )
+    parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Symbol (fx BTCUSDT)")
+    parser.add_argument("--timeframe", type=str, default="1h", help="Timeframe (fx 1h, 4h)")
     parser.add_argument("--version", type=str, default="v1", help="Feature-version")
     parser.add_argument(
         "--sep",
@@ -67,10 +61,7 @@ def main():
     for col in ["open", "high", "low", "close", "volume"]:
         if col in raw_df.columns:
             raw_df[col] = (
-                raw_df[col]
-                .astype(str)
-                .str.replace(",", ".", regex=False)
-                .replace("nan", "")
+                raw_df[col].astype(str).str.replace(",", ".", regex=False).replace("nan", "")
             )
             raw_df[col] = pd.to_numeric(raw_df[col], errors="coerce")
 
@@ -97,9 +88,7 @@ def main():
 
     print("Rækker efter generate_features():", len(features))
     if len(features) == 0:
-        print(
-            "❌ FEJL: Ingen rækker efter feature-pipeline! Tjek input og rolling windows."
-        )
+        print("❌ FEJL: Ingen rækker efter feature-pipeline! Tjek input og rolling windows.")
         print("Eksempel på input-data til pipeline:\n", raw_df.head())
         sys.exit(1)
     else:

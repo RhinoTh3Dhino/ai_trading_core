@@ -41,17 +41,13 @@ def test_make_backup_creates_folder_and_dummy(tmp_path):
     assert path.exists() and path.is_dir(), f"Backup-mappe findes ikke: {path}"
 
     # backup-mappenavn matcher backup_*
-    assert re.search(
-        r"backup_\d{2}-\d{2}-\d{2}$", path.name
-    ), f"Uventet mappenavn: {path.name}"
+    assert re.search(r"backup_\d{2}-\d{2}-\d{2}$", path.name), f"Uventet mappenavn: {path.name}"
 
     # dummy-fil skal ligge i mappen
     dummy = path / "dummy_backup.txt"
     assert dummy.exists() and dummy.is_file(), "Dummy-fil blev ikke oprettet"
     txt = dummy.read_text(encoding="utf-8").strip()
-    assert (
-        txt.startswith("Ingen af de forventede") or len(txt) > 0
-    ), "Uventet dummy-indhold"
+    assert txt.startswith("Ingen af de forventede") or len(txt) > 0, "Uventet dummy-indhold"
 
 
 def test_make_backup_copies_real_file_and_directory(tmp_path):
@@ -114,9 +110,7 @@ def test_cleanup_old_backups_limits_per_day_and_days(tmp_path):
     assert not old_day.exists(), "Gammel dagsmappe blev ikke slettet"
     # Den nye dag skal blive, men kun 1 backup-mappe må være tilbage
     assert new_day.exists(), "Ny dagsmappe blev fejlagtigt slettet"
-    remaining = [
-        p for p in new_day.iterdir() if p.is_dir() and p.name.startswith("backup_")
-    ]
+    remaining = [p for p in new_day.iterdir() if p.is_dir() and p.name.startswith("backup_")]
     assert len(remaining) == 1, f"For mange backups tilbage for ny dag: {remaining}"
     assert isinstance(
         deleted, list

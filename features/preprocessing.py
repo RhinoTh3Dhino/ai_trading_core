@@ -42,9 +42,7 @@ def normalize_zscore(df: pd.DataFrame, columns: list) -> pd.DataFrame:
         if col in df.columns:
             df[col + "_z"] = _zscore(df[col])
         else:
-            print(
-                f"[normalize_zscore] Kolonne {col} ikke fundet i DataFrame – springer over."
-            )
+            print(f"[normalize_zscore] Kolonne {col} ikke fundet i DataFrame – springer over.")
     return df
 
 
@@ -96,9 +94,7 @@ def clean_and_normalize(
 
     if not features:
         if verbose:
-            print(
-                "[clean_and_normalize] Ingen features at normalisere – returnerer kopi."
-            )
+            print("[clean_and_normalize] Ingen features at normalisere – returnerer kopi.")
         return df
 
     # 2) Drop NaN hvis ønsket (kun i de features vi arbejder på)
@@ -121,9 +117,7 @@ def clean_and_normalize(
     # 4) Skalering
     scaler_key = scaler.strip().lower()
     if scaler_key not in {"zscore", "minmax", "none"}:
-        raise ValueError(
-            f"Ukendt scaler '{scaler}'. Brug 'zscore', 'minmax' eller 'none'."
-        )
+        raise ValueError(f"Ukendt scaler '{scaler}'. Brug 'zscore', 'minmax' eller 'none'.")
 
     if scaler_key == "zscore":
         for col in features:
@@ -229,9 +223,7 @@ def prepare_ml_data(
     # Check feature cols findes
     missing_cols = [col for col in feature_cols if col not in df.columns]
     if missing_cols:
-        raise ValueError(
-            f"Følgende feature kolonner mangler i DataFrame: {missing_cols}"
-        )
+        raise ValueError(f"Følgende feature kolonner mangler i DataFrame: {missing_cols}")
 
     # Lav target som fremtidig prisændring (pct. ændring)
     df["target"] = df[target_col].pct_change(periods=-target_shift).shift(-target_shift)

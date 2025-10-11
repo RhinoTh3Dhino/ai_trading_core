@@ -17,15 +17,11 @@ def _ensure_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
         if "timestamp" in df.columns:
             df = df.set_index(pd.to_datetime(df["timestamp"]))
         else:
-            df = df.set_index(
-                pd.date_range(start="2000-01-01", periods=len(df), freq="D")
-            )
+            df = df.set_index(pd.date_range(start="2000-01-01", periods=len(df), freq="D"))
     return df
 
 
-def add_ta_indicators(
-    df: pd.DataFrame, force_no_supertrend: bool = False
-) -> pd.DataFrame:
+def add_ta_indicators(df: pd.DataFrame, force_no_supertrend: bool = False) -> pd.DataFrame:
     """
     Tilføjer tekniske indikatorer til et DataFrame vha. 'ta'-biblioteket (ikke pandas_ta).
     - EMA(9/21/50/200), MACD, RSI(14/28), ATR(14), Bollinger(20,2),
@@ -50,18 +46,10 @@ def add_ta_indicators(
     vol = df["volume"]
 
     # EMA'er
-    df["ema_9"] = ta.trend.EMAIndicator(
-        close=close, window=9, fillna=False
-    ).ema_indicator()
-    df["ema_21"] = ta.trend.EMAIndicator(
-        close=close, window=21, fillna=False
-    ).ema_indicator()
-    df["ema_50"] = ta.trend.EMAIndicator(
-        close=close, window=50, fillna=False
-    ).ema_indicator()
-    df["ema_200"] = ta.trend.EMAIndicator(
-        close=close, window=200, fillna=False
-    ).ema_indicator()
+    df["ema_9"] = ta.trend.EMAIndicator(close=close, window=9, fillna=False).ema_indicator()
+    df["ema_21"] = ta.trend.EMAIndicator(close=close, window=21, fillna=False).ema_indicator()
+    df["ema_50"] = ta.trend.EMAIndicator(close=close, window=50, fillna=False).ema_indicator()
+    df["ema_200"] = ta.trend.EMAIndicator(close=close, window=200, fillna=False).ema_indicator()
 
     # MACD
     macd_ind = ta.trend.MACD(
@@ -81,9 +69,7 @@ def add_ta_indicators(
     ).average_true_range()
 
     # Bollinger Bands (20, 2)
-    bb = ta.volatility.BollingerBands(
-        close=close, window=20, window_dev=2, fillna=False
-    )
+    bb = ta.volatility.BollingerBands(close=close, window=20, window_dev=2, fillna=False)
     df["bb_upper"] = bb.bollinger_hband()
     df["bb_middle"] = bb.bollinger_mavg()
     df["bb_lower"] = bb.bollinger_lband()

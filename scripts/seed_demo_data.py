@@ -31,9 +31,7 @@ np.random.seed(42)
 n_days = 60
 start_equity = 100_000.0
 dates = [date.today() - timedelta(days=n_days - 1 - i) for i in range(n_days)]
-daily_ret = np.random.normal(
-    loc=0.0004, scale=0.006, size=n_days
-)  # syntetisk drift/vol
+daily_ret = np.random.normal(loc=0.0004, scale=0.006, size=n_days)  # syntetisk drift/vol
 equity = [start_equity]
 for r in daily_ret[1:]:
     equity.append(equity[-1] * (1 + r))
@@ -123,8 +121,6 @@ for k in range(40):
         }
     )
 signals.reverse()
-(API_DIR / "sim_signals.json").write_text(
-    json.dumps(signals, indent=2), encoding="utf-8"
-)
+(API_DIR / "sim_signals.json").write_text(json.dumps(signals, indent=2), encoding="utf-8")
 
 print("✅ Seedet: logs/ + api/sim_signals.json")

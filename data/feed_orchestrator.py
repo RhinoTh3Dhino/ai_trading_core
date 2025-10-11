@@ -86,9 +86,7 @@ class FeedOrchestrator:
         # Telemetri og status
         all_vs = list(PRIMARY) + list(BACKUP)
         self.p99: Dict[str, P99Tracker] = {v: P99Tracker() for v in all_vs}
-        self.last_bar_ts: Dict[str, int] = (
-            {}
-        )  # key: f"{venue}:{symbol}" (bar close time)
+        self.last_bar_ts: Dict[str, int] = {}  # key: f"{venue}:{symbol}" (bar close time)
         self.last_seen_wall_ms: Dict[str, int] = (
             {}
         )  # key: venue -> seneste modtagelsestid (wall clock)
@@ -163,9 +161,7 @@ class FeedOrchestrator:
                         gap = int(bar.ts) - int(last)
                         if gap > self.bar_ms + 1:
                             missing_since = last + self.bar_ms
-                            limit = min(
-                                max(5, int(gap / self.bar_ms)), self.rest_lookback_bars
-                            )
+                            limit = min(max(5, int(gap / self.bar_ms)), self.rest_lookback_bars)
                             try:
                                 for b in rest_catchup(
                                     bar.symbol,

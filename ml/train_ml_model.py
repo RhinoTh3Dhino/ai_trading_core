@@ -18,9 +18,7 @@ def main():
         description="Træn ML-model (RandomForest) på feature-CSV og gem til disk."
     )
     parser.add_argument("--data", type=str, required=True, help="Sti til feature-CSV")
-    parser.add_argument(
-        "--target", type=str, default="target", help="Target-kolonne (fx 'target')"
-    )
+    parser.add_argument("--target", type=str, default="target", help="Target-kolonne (fx 'target')")
     # AUTO PATH CONVERTED
     parser.add_argument(
         "--model_out", type=str, default=PROJECT_ROOT / "models" / "best_ml_model.pkl"
@@ -60,9 +58,7 @@ def main():
     # Ekstra: advarsel hvis nogen kolonner mangler fra tidligere feature set
     missing = [col for col in feature_cols if col not in df.columns]
     if missing:
-        print(
-            f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}"
-        )
+        print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
         for col in missing:
             df[col] = 0.0
 
@@ -78,9 +74,7 @@ def main():
     X_train, X_val, X_test = X[:train_end], X[train_end:val_end], X[val_end:]
     y_train, y_val, y_test = y[:train_end], y[train_end:val_end], y[val_end:]
 
-    clf = RandomForestClassifier(
-        n_estimators=args.n_estimators, random_state=42, n_jobs=-1
-    )
+    clf = RandomForestClassifier(n_estimators=args.n_estimators, random_state=42, n_jobs=-1)
     clf.fit(X_train, y_train)
     val_preds = clf.predict(X_val)
     print("\nVal Accuracy:", accuracy_score(y_val, val_preds))
@@ -97,9 +91,7 @@ def main():
         pickle.dump(clf, f)
     with open(args.features_out, "w") as f:
         json.dump(feature_cols, f)
-    print(
-        f"[INFO] ML-model og feature-liste gemt til '{args.model_out}', '{args.features_out}'"
-    )
+    print(f"[INFO] ML-model og feature-liste gemt til '{args.model_out}', '{args.features_out}'")
 
     # Backup/versionering hvis ønsket
     if args.backup:

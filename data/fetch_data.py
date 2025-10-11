@@ -1,4 +1,5 @@
 import os
+
 # ---- Relativt import-trick: Sikrer at 'utils' kan importeres uanset hvorfra scriptet køres ----
 import sys
 from datetime import datetime
@@ -23,9 +24,7 @@ def hent_binance_data(
 
     # Hent data fra Binance
     ohlcv = binance.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
-    df = pd.DataFrame(
-        ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"]
-    )
+    df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
     df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
     df.set_index("datetime", inplace=True)
     df.drop(columns=["timestamp"], inplace=True)

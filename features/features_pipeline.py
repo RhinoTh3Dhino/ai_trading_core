@@ -37,9 +37,7 @@ def _to_timestamp(df: pd.DataFrame, coerce: bool) -> pd.DataFrame:
     if "timestamp" not in out.columns:
         # Validering fanges i _ensure_required_columns; her undgås KeyError
         return out
-    out["timestamp"] = pd.to_datetime(
-        out["timestamp"], errors="coerce" if coerce else "raise"
-    )
+    out["timestamp"] = pd.to_datetime(out["timestamp"], errors="coerce" if coerce else "raise")
     if out["timestamp"].isna().any():
         raise ValueError("Ugyldige timestamp-værdier fundet.")
     out = out.sort_values("timestamp").reset_index(drop=True)
@@ -84,9 +82,7 @@ def _macd(
     return macd, macd_signal
 
 
-def _atr(
-    high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14
-) -> pd.Series:
+def _atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
     high_low = high - low
     high_close = (high - close.shift()).abs()
     low_close = (low - close.shift()).abs()
@@ -149,9 +145,7 @@ def _normalize_minmax(df: pd.DataFrame, skip_cols: Iterable[str] = ()) -> pd.Dat
 # ============================================================
 
 
-def generate_features(
-    df: pd.DataFrame, feature_config: dict | None = None
-) -> pd.DataFrame:
+def generate_features(df: pd.DataFrame, feature_config: dict | None = None) -> pd.DataFrame:
     """
     Samlet pipeline til at beregne tekniske indikatorer + pattern-features.
 
@@ -220,9 +214,7 @@ def generate_features(
 
     out["macd"], out["macd_signal"] = _macd(out["close"])
     # VWAP (kumulativ, robust ift. 0-division)
-    out["vwap"] = (out["close"] * out["volume"]).cumsum() / (
-        out["volume"].cumsum() + 1e-9
-    )
+    out["vwap"] = (out["close"] * out["volume"]).cumsum() / (out["volume"].cumsum() + 1e-9)
 
     out["atr_14"] = _atr(out["high"], out["low"], out["close"], window=14)
     out["return"] = out["close"].pct_change().fillna(0.0)
@@ -290,9 +282,7 @@ def generate_features(
     return out
 
 
-def save_features(
-    df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1"
-) -> str:
+def save_features(df: pd.DataFrame, symbol: str, timeframe: str, version: str = "v1") -> str:
     """
     Gemmer både:
       1) Kanonisk CSV til bagudkompatibilitet med load_features()
@@ -322,9 +312,7 @@ def save_features(
     except Exception as e:
         # Robust fallback: skriv CSV men behold .parquet suffix, så testen (filnavn/eksistens) passer
         df.to_csv(parquet_path, index=False)
-        print(
-            f"[WARN] Kunne ikke skrive parquet ({e!s}) – skrev CSV til {parquet_path} i stedet."
-        )
+        print(f"[WARN] Kunne ikke skrive parquet ({e!s}) – skrev CSV til {parquet_path} i stedet.")
 
     # Returnér parquet-stien for at matche testens forventning
     return str(parquet_path)
@@ -350,22 +338,16 @@ def load_features(
 
     # Seneste version ønskes?
     if version_prefix in (None, "", "latest"):
-        candidates = [
-            f for f in folder.iterdir() if f.is_file() and f.name.startswith(base)
-        ]
+        candidates = [f for f in folder.iterdir() if f.is_file() and f.name.startswith(base)]
         if not candidates:
-            raise FileNotFoundError(
-                f"Ingen feature-filer fundet for {symbol} {timeframe} (latest)"
-            )
+            raise FileNotFoundError(f"Ingen feature-filer fundet for {symbol} {timeframe} (latest)")
         chosen = max(candidates, key=lambda p: p.stat().st_mtime)
         print(f"📥 Indlæser features: {chosen}")
         return pd.read_csv(chosen)
 
     # Ellers filtrér på præfix
     files = [
-        f
-        for f in folder.iterdir()
-        if f.is_file() and f.name.startswith(f"{base}{version_prefix}")
+        f for f in folder.iterdir() if f.is_file() and f.name.startswith(f"{base}{version_prefix}")
     ]
     if not files:
         raise FileNotFoundError(

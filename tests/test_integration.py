@@ -28,9 +28,7 @@ def test_performance_history_grows():
     history_path = PROJECT_ROOT / "outputs" / "performance_history.csv"
     os.makedirs("outputs", exist_ok=True)
     if not os.path.exists(history_path):
-        df = pd.DataFrame(
-            [{"Navn": "BTC", "Balance": 1000, "timestamp": "2025-07-07T23:00:00"}]
-        )
+        df = pd.DataFrame([{"Navn": "BTC", "Balance": 1000, "timestamp": "2025-07-07T23:00:00"}])
         df.to_csv(history_path, index=False)
         print("[SETUP] performance_history.csv blev oprettet for test.")
     df = pd.read_csv(history_path)

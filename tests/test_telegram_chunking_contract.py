@@ -27,9 +27,5 @@ def test_telegram_chunking_contract():
     text = "A" * 12000  # 12k tegn → skal chunks ≤4096
     chunks = list(chunker(text)) if callable(chunker) else []
     assert chunks, "Chunker skal returnere mindst 1 chunk"
-    assert all(
-        len(c) <= 4096 for c in chunks
-    ), "En eller flere chunks overstiger 4096 tegn"
-    assert sum(len(c) for c in chunks) == len(
-        text
-    ), "Samlet længde af chunks ≠ original længde"
+    assert all(len(c) <= 4096 for c in chunks), "En eller flere chunks overstiger 4096 tegn"
+    assert sum(len(c) for c in chunks) == len(text), "Samlet længde af chunks ≠ original længde"

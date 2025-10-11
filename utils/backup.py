@@ -73,9 +73,7 @@ def create_backup(src_dir: str | Path, backups_dir: str | Path) -> str:
     manifest: Dict[str, object] = {"created_utc": ts, "files": []}
 
     try:
-        with zipfile.ZipFile(
-            str(zip_path), "w", compression=zipfile.ZIP_DEFLATED
-        ) as zf:
+        with zipfile.ZipFile(str(zip_path), "w", compression=zipfile.ZIP_DEFLATED) as zf:
             for root, _, files in os.walk(src):
                 for fn in files:
                     full = Path(root) / fn
@@ -83,12 +81,8 @@ def create_backup(src_dir: str | Path, backups_dir: str | Path) -> str:
                     with open(full, "rb") as fh:
                         data = fh.read()
                     zf.writestr(rel, data)
-                    (manifest["files"]).append(
-                        {"path": rel, "sha256": _sha256_bytes(data)}
-                    )
-            zf.writestr(
-                "manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2)
-            )
+                    (manifest["files"]).append({"path": rel, "sha256": _sha256_bytes(data)})
+            zf.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
         return str(zip_path)
     except Exception as e:
         raise BackupError(f"Kunne ikke oprette backup: {e}") from e
@@ -296,9 +290,7 @@ def cleanup_old_backups(
         if not datedir.is_dir():
             continue
 
-        backups = [
-            d for d in datedir.iterdir() if d.is_dir() and d.name.startswith("backup_")
-        ]
+        backups = [d for d in datedir.iterdir() if d.is_dir() and d.name.startswith("backup_")]
         # nyeste først (navn indeholder klokkeslæt HH-MM-SS)
         backups.sort(key=lambda p: p.name, reverse=True)
 

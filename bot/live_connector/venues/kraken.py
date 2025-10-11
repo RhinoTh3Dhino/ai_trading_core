@@ -5,9 +5,11 @@ import json
 import time
 from typing import Any, Callable, Dict, Optional
 
-from bot.live_connector.metrics import (inc_feed_bars_total,
-                                        observe_bar_close_lag_ms,
-                                        observe_transport_latency_ms)
+from bot.live_connector.metrics import (
+    inc_feed_bars_total,
+    observe_bar_close_lag_ms,
+    observe_transport_latency_ms,
+)
 
 from .base import BaseConnector
 
@@ -126,18 +128,14 @@ class KrakenConnector(BaseConnector):
     ):
         if on_kline is None:
             on_kline = lambda _evt: None
-        super().__init__(
-            cfg=cfg, symbol_map=symbol_map, on_kline=on_kline, ws_client=ws_client
-        )
+        super().__init__(cfg=cfg, symbol_map=symbol_map, on_kline=on_kline, ws_client=ws_client)
 
     async def _subscribe(self, ws):
         """
         Forventet cfg["ws"]["subs"] ala:
           [{"channel":"ohlc-1","pair":"XBT/USDT"}, ...]
         """
-        subs = [
-            {"channel": s["channel"], "pair": s["pair"]} for s in self.cfg["ws"]["subs"]
-        ]
+        subs = [{"channel": s["channel"], "pair": s["pair"]} for s in self.cfg["ws"]["subs"]]
         await ws.send(json.dumps({"op": "subscribe", "args": subs}))
 
     async def _read_loop(self, ws):

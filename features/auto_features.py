@@ -63,9 +63,7 @@ def _find_raw_csv_on_disk(symbol: str, timeframe: str) -> Optional[Path]:
 
 def _generate_from_raw(raw_path: Path) -> pd.DataFrame:
     if generate_features is None:
-        raise RuntimeError(
-            "features.features_pipeline.generate_features ikke tilgængelig."
-        )
+        raise RuntimeError("features.features_pipeline.generate_features ikke tilgængelig.")
     raw_df = pd.read_csv(raw_path)
     df_features = generate_features(
         raw_df,
@@ -93,19 +91,13 @@ def _fetch_ohlcv_binance(
         raise RuntimeError("ccxt ikke installeret – kan ikke hente OHLCV fra Binance.")
     ex = ccxt.binance()
     # map symbol: 'BTCUSDT' → 'BTC/USDT'
-    sym = (
-        f"{symbol[:-4]}/{symbol[-4:]}"
-        if symbol.endswith(("USDT", "USDC", "BUSD"))
-        else symbol
-    )
+    sym = f"{symbol[:-4]}/{symbol[-4:]}" if symbol.endswith(("USDT", "USDC", "BUSD")) else symbol
     now_ms = ex.milliseconds()
     since_ms = now_ms - lookback_days * 24 * 60 * 60 * 1000
     all_rows: List[List] = []
     last = None
     while True:
-        rows = ex.fetch_ohlcv(
-            sym, timeframe=timeframe, since=since_ms, limit=limit_per_call
-        )
+        rows = ex.fetch_ohlcv(sym, timeframe=timeframe, since=since_ms, limit=limit_per_call)
         if not rows:
             break
         if last is not None and rows and rows[0][0] == last:
@@ -120,9 +112,7 @@ def _fetch_ohlcv_binance(
             break
     if not all_rows:
         raise RuntimeError("Ingen OHLCV-data modtaget fra Binance.")
-    df = pd.DataFrame(
-        all_rows, columns=["timestamp_ms", "open", "high", "low", "close", "volume"]
-    )
+    df = pd.DataFrame(all_rows, columns=["timestamp_ms", "open", "high", "low", "close", "volume"])
     df["timestamp"] = pd.to_datetime(df["timestamp_ms"], unit="ms", utc=True)
     df = df.drop(columns=["timestamp_ms"])
     return df[["timestamp", "open", "high", "low", "close", "volume"]]

@@ -20,9 +20,7 @@ def calculate_sharpe(returns, risk_free_rate=0):
     return sharpe_ratio
 
 
-def train_lightgbm_run(
-    df, feature_cols, params, threshold=0.5, test_size=0.4, random_state=42
-):
+def train_lightgbm_run(df, feature_cols, params, threshold=0.5, test_size=0.4, random_state=42):
     df = df.copy()
     df.columns = df.columns.str.strip().str.lower()
     df.dropna(subset=["target"], inplace=True)
@@ -31,9 +29,7 @@ def train_lightgbm_run(
     X = df[feature_cols_clean]
     y = df["target"]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, shuffle=False
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, shuffle=False)
 
     lgb_train = lgb.Dataset(X_train, y_train)
     lgb_test = lgb.Dataset(X_test, y_test, reference=lgb_train)
@@ -128,9 +124,7 @@ def gridsearch_baseline(filepath, feature_cols):
         lgb.plot_importance(best_run["model"])
         plt.title("Feature Importance - Baseline Model (Gridsearch)")
         plt.tight_layout()
-        plt.savefig(
-            PROJECT_ROOT / "outputs" / "feature_importance_baseline_gridsearch.png"
-        )
+        plt.savefig(PROJECT_ROOT / "outputs" / "feature_importance_baseline_gridsearch.png")
         plt.close()
         print(f"✅ Feature importance gemt i outputs/")
         # Telegram summary

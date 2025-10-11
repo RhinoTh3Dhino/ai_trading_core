@@ -106,15 +106,11 @@ class SignalRouter:
         # --- konfig med aliaser + namespaces ---
         self.cooldown = int(_resolve_cfg(self.cfg, ["cooldown_sec", "cooldown"], 60))
         self.min_conf = float(
-            _resolve_cfg(
-                self.cfg, ["min_confidence", "min_conf", "confidence_min"], 0.0
-            )
+            _resolve_cfg(self.cfg, ["min_confidence", "min_conf", "confidence_min"], 0.0)
         )
         self.min_qty = float(_resolve_cfg(self.cfg, ["min_qty", "qty_min"], 0.0))
         self.min_notional = float(
-            _resolve_cfg(
-                self.cfg, ["min_notional", "min_notional_usd", "notional_min"], 0.0
-            )
+            _resolve_cfg(self.cfg, ["min_notional", "min_notional_usd", "notional_min"], 0.0)
         )
         self.px_dec = int(_resolve_cfg(self.cfg, ["price_decimals", "px_decimals"], 2))
         self.qty_dec = int(_resolve_cfg(self.cfg, ["qty_decimals"], 8))
@@ -141,9 +137,7 @@ class SignalRouter:
             return Decision("SUPPRESS", reason, None)
 
         # 4) Dedupe — brug AlertManager hvis tilgængelig (men IKKE dens cooldown her)
-        if self.alert_manager is not None and hasattr(
-            self.alert_manager, "is_duplicate"
-        ):
+        if self.alert_manager is not None and hasattr(self.alert_manager, "is_duplicate"):
             try:
                 if self.alert_manager.is_duplicate(norm):
                     return Decision("SUPPRESS", "Duplicate", None)
@@ -230,11 +224,7 @@ class SignalRouter:
         # notional
         notional = out.get("notional")
         if notional is None:
-            px = (
-                out["limit_price"]
-                if typ == "limit"
-                else (out["mkt_price"] or out["limit_price"])
-            )
+            px = out["limit_price"] if typ == "limit" else (out["mkt_price"] or out["limit_price"])
             if px is not None:
                 notional = abs(qty) * float(px)
 
@@ -294,10 +284,7 @@ class SignalRouter:
         conf = s.get("confidence")
         notional = s.get("notional")
         ts_utc = (
-            s["ts"]
-            .astimezone(timezone.utc)
-            .isoformat(timespec="seconds")
-            .replace("+00:00", "Z")
+            s["ts"].astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
         )
 
         px_part = ""
