@@ -1,18 +1,50 @@
+# .pre-commit-config.yaml
+default_language_version:
+  python: python3.11
+
+# Ignorér auto-genererede / tunge mapper
+exclude: >
+  ^(
+    outputs/|
+    logs/|
+    backups/|
+    mlruns/|
+    ops/alertmanager/|
+    ops/prometheus/
+  )
+
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v6.0.0
-  hooks:
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
-    - id: check-yaml
-    - id: check-json
-    - id: check-added-large-files
-      args: ["--maxkb=500"]
-- repo: https://github.com/psf/black
-  rev: 25.9.0
-  hooks:
-    - id: black
-- repo: https://github.com/PyCQA/isort
-  rev: 6.1.0
-  hooks:
-    - id: isort
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    # behold din nyere serie; virker fint med nedenstående hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]          # tving LF, matcher .gitattributes
+      - id: check-yaml
+      - id: check-json
+      - id: check-ast             # Python syntaks-check
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: requirements-txt-fixer
+      - id: detect-private-key
+      - id: debug-statements
+
+  - repo: https://github.com/psf/black
+    # pin til en stabil udgave der matcher pyproject.toml (py311)
+    rev: 24.8.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        # bruger profile=black fra pyproject.toml; ingen args nødvendige
+        additional_dependencies: []  # placeholder hvis du får env-issues på Windows
+
+# (Valgfrit) pre-commit.ci automatiske opdateringer – kan du slå til senere
+# ci:
+#   autofix_prs: true
+#   autoupdate_schedule: weekly
