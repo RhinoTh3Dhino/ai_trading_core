@@ -4,27 +4,32 @@ name: "Connector CI"
 on:
   push:
     branches:
-      - main
-      - master
-      - feat/**                 # kør også på feature-branches
+      - ai_bot_dev
+      - ai_bot_test
+      - ai_bot_pro
+      - epic/**
+      - feat/**
+      - release/**
     paths:
       - "bot/live_connector/**"
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
       - ".github/workflows/connector-ci.yml"
+      - ".github/workflows/connector_ci.yml"
   pull_request:
     branches:
-      - main
-      - master
-      - feat/**
+      - ai_bot_dev
+      - ai_bot_test
+      - ai_bot_pro
     paths:
       - "bot/live_connector/**"
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
       - ".github/workflows/connector-ci.yml"
-  workflow_dispatch: {}         # mulighed for manuel kørsel fra Actions UI
+      - ".github/workflows/connector_ci.yml"
+  workflow_dispatch: {}   # kør fra Actions UI når som helst
 
 concurrency:
   group: connector-ci-${{ github.ref }}
@@ -38,6 +43,9 @@ jobs:
     name: Pytests (venues + integration)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}   # sikrer imports matcher lokal adfærd
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,8 +62,6 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run pytest (venues + integration)
-        env:
-          PYTHONUNBUFFERED: "1"
         run: |
           pytest -q tests/venues tests/integration
 
