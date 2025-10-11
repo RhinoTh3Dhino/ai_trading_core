@@ -1,0 +1,60 @@
+# pyproject.toml — læg denne i projektroden
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = """
+/(
+  \.git
+| \.venv
+| \.pytest_cache
+| build
+| dist
+| outputs
+| logs
+| backups
+| mlruns
+| ops/alertmanager
+| ops/prometheus
+)/
+"""
+
+[tool.isort]
+profile = "black"
+line_length = 100
+# Hjælper isort med at kende "first-party" pakker i dit repo:
+known_first_party = [
+  "bot", "utils", "backtest", "features", "trainers",
+  "analysis", "api", "services", "data", "evaluation", "gui", "config"
+]
+# Sorter grupper (stdlib → tredje part → first party → lokale)
+default_section = "THIRDPARTY"
+sections = ["FUTURE","STDLIB","THIRDPARTY","FIRSTPARTY","LOCALFOLDER"]
+skip_gitignore = true
+# Undgå at rode i auto-genererede/artefakt-mapper
+skip = ["outputs", "logs", "backups", "mlruns"]
+
+# (Valgfrit) Flake8, hvis du vil have let lint i samme fil:
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203","W503"]
+exclude = [".git","__pycache__",".venv","outputs","logs","backups","mlruns"]
+
+# (Valgfrit) Pytest standarder – matcher din struktur:
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests/venues","tests/integration"]
+python_files = ["test_*.py","*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+# (Valgfrit) MyPy basisopsætning, hvis du vil slå typecheck til i CI senere:
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+exclude = '(^\.venv|^outputs|^logs|^backups|^mlruns)'
