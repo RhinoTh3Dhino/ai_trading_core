@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 20
     env:
       PYTHONUNBUFFERED: "1"
-      PYTHONPATH: ${{ github.workspace }}   # sikrer imports matcher lokal adfærd
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,23 +70,28 @@ jobs:
 
       - name: Install dependencies
         run: |
+          set -euo pipefail
           python -m pip install -U pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # sikr coverage plugin er tilgængeligt selv hvis det ikke er i requirements
-          pip install -q pytest pytest-cov
+          # Ensure pytest+coverage plugins are available even if not pinned
+          pip install -q pytest pytest-cov coverage
 
       - name: Create reports dir
         run: mkdir -p reports
 
-      - name: Run pytest (venues + integration) with CI-specific coverage
+      - name: Run pytest (venues + integration) with coverage
         run: |
+          set -euo pipefail
           pytest tests/venues tests/integration \
-            -o addopts="-q -ra --maxfail=1 --disable-warnings --timeout=30 --durations=10 --color=yes \
-            --cov=bot.live_connector --cov-report=term-missing:skip-covered \
-            --cov-report=html --cov-report=xml:reports/coverage.xml \
-            --cov-branch --cov-context=test --cov-fail-under=40 \
+            -q -ra --maxfail=1 --disable-warnings --timeout=30 --durations=10 --color=yes \
+            --cov=. \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=html \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-branch --cov-context=test \
+            --cov-fail-under=40 \
             --junitxml=reports/junit.xml \
-            -k 'not heavy and not talib and not pandas_ta'"
+            -k "not heavy and not talib and not pandas_ta"
 
   promtool:
     name: Prometheus rule tests
