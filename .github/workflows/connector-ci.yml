@@ -41,7 +41,7 @@ on:
       - ".editorconfig"
       - ".github/workflows/connector-ci.yml"
       - ".github/workflows/connector_ci.yml"
-  workflow_dispatch: {}   # kør fra Actions UI når som helst
+  workflow_dispatch: {}
 
 concurrency:
   group: connector-ci-${{ github.ref }}
@@ -73,9 +73,21 @@ jobs:
           python -m pip install -U pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run pytest (venues + integration)
+      - name: Create reports dir
+        run: mkdir -p reports
+
+      - name: Run pytest (venues + integration) with CI-specific coverage
         run: |
-          pytest -q tests/venues tests/integration
+          pytest tests/venues tests/integration \
+            -o addopts="-q -ra --maxfail=1 --disable-warnings --timeout=30 --durations=10 --color=yes \
+            --cov=bot.live_connector.venues --cov=bot.live_connector.metrics \
+            --cov-branch --cov-context=test \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=html \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-fail-under=40 \
+            --junitxml=reports/junit.xml \
+            -k 'not heavy and not talib and not pandas_ta'"
 
   promtool:
     name: Prometheus rule tests
