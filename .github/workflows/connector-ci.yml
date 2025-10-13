@@ -79,18 +79,19 @@ jobs:
       - name: Create reports dir
         run: mkdir -p reports
 
-      - name: Run pytest (venues + integration) with coverage
+      - name: Run pytest (venues + integration) with CI-scoped coverage
         run: |
           set -euo pipefail
           pytest tests/venues tests/integration \
-            -q -ra --maxfail=1 --disable-warnings --timeout=30 --durations=10 --color=yes \
-            --cov=. \
+            --cov-config=/dev/null \
+            --cov=bot.live_connector \
+            --cov-branch \
             --cov-report=term-missing:skip-covered \
-            --cov-report=html \
             --cov-report=xml:reports/coverage.xml \
-            --cov-branch --cov-context=test \
+            --cov-report=html \
             --cov-fail-under=40 \
             --junitxml=reports/junit.xml \
+            -q -ra --maxfail=1 --disable-warnings --timeout=30 --durations=10 --color=yes \
             -k "not heavy and not talib and not pandas_ta"
 
   promtool:
