@@ -8,6 +8,12 @@ on:
       - "tools/**"
       - "utils/**"
       - "outputs/**"
+      - "tests/persistence/**"
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
       - ".github/workflows/persist-hygiejne.yml"
   pull_request:
     branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro ]
@@ -15,6 +21,12 @@ on:
       - "tools/**"
       - "utils/**"
       - "outputs/**"
+      - "tests/persistence/**"
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
       - ".github/workflows/persist-hygiejne.yml"
   workflow_dispatch: {}
 
@@ -46,16 +58,21 @@ jobs:
 
       - name: Install deps (minimal)
         run: |
+          set -euo pipefail
           python -m pip install -U pip
+          # utils.artifacts importerer pandas/pyarrow → sørg for at de findes
+          pip install "pandas>=2,<3" "pyarrow>=14"
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Rotate outputs
         run: |
+          set -euo pipefail
           # Kør som modul, så relative imports (utils/...) virker
           python -m tools.rotate_outputs
 
       - name: Make archive
         run: |
+          set -euo pipefail
           mkdir -p artifacts
           TS="$(date -u +'%Y%m%dT%H%M%SZ')"
           # Sikr at outputs/ findes så zip ikke fejler

@@ -15,6 +15,13 @@ on:
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      # test/coverage/config updates should also trigger this workflow
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      # the workflow files themselves
       - ".github/workflows/connector-ci.yml"
       - ".github/workflows/connector_ci.yml"
   pull_request:
@@ -27,6 +34,11 @@ on:
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
       - ".github/workflows/connector-ci.yml"
       - ".github/workflows/connector_ci.yml"
   workflow_dispatch: {}   # kør fra Actions UI når som helst
