@@ -240,3 +240,6 @@ ai_summary.txt
 # TILLADELSE: MARKDOWN ALTID
 # =========================
 !*.md
+
+__pycache__/
+*.pyc
