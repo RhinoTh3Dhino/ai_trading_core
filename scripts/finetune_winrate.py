@@ -1,11 +1,13 @@
 # scripts/finetune_winrate.py
 
-import pandas as pd
-import numpy as np
 import argparse
+
 import lightgbm as lgb
-from sklearn.model_selection import train_test_split
+import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
+
 from utils.project_path import PROJECT_ROOT
 from utils.telegram_utils import send_telegram_message
 
@@ -21,12 +23,8 @@ def main():
         help="Input-feature-fil",
     )
     parser.add_argument("--test_size", type=float, default=0.4, help="Test split")
-    parser.add_argument(
-        "--min_winrate", type=float, default=0.55, help="Min winrate til alarm"
-    )
-    parser.add_argument(
-        "--telegram", action="store_true", help="Send summary til Telegram"
-    )
+    parser.add_argument("--min_winrate", type=float, default=0.55, help="Min winrate til alarm")
+    parser.add_argument("--telegram", action="store_true", help="Send summary til Telegram")
     args = parser.parse_args()
 
     # === Features og targets du vil afprøve ===
@@ -37,9 +35,7 @@ def main():
         ["close", "rsi_14", "ema_9", "macd", "macd_signal", "vwap", "atr_14"],
     ]
     TARGET_COLS = [
-        c
-        for c in pd.read_csv(args.input, nrows=1).columns
-        if str(c).startswith("target_")
+        c for c in pd.read_csv(args.input, nrows=1).columns if str(c).startswith("target_")
     ]
 
     df = pd.read_csv(args.input)
@@ -60,9 +56,7 @@ def main():
             model.fit(X_train, y_train)
             preds = model.predict(X_test)
             acc = accuracy_score(y_test, preds)
-            report = classification_report(
-                y_test, preds, output_dict=True, zero_division=0
-            )
+            report = classification_report(y_test, preds, output_dict=True, zero_division=0)
             winrate = report["1"]["recall"] if "1" in report else 0.0
             n_1 = np.sum(preds == 1)
             n_0 = np.sum(preds == 0)

@@ -4,10 +4,10 @@ from __future__ import annotations
 import json
 import os
 import threading
+from collections.abc import MutableMapping as _MutableMappingABC
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, MutableMapping
-from collections.abc import MutableMapping as _MutableMappingABC
 
 
 def _ensure_utc(dt: datetime) -> datetime:

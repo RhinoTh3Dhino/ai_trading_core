@@ -24,8 +24,8 @@ from __future__ import annotations
 import io
 import json
 import socket
-from typing import List, Dict, Optional, Mapping, Any
-from urllib import request, error, parse
+from typing import Any, Dict, List, Mapping, Optional
+from urllib import error, parse, request
 
 from .errors import APIError
 
@@ -170,7 +170,11 @@ def request_json(
         try:
             body = e.read()  # type: ignore[attr-defined]
             # prøv at dekode – vi kender ikke charset i dette branch
-            body_txt = body.decode("utf-8", errors="replace") if isinstance(body, (bytes, bytearray)) else str(body)
+            body_txt = (
+                body.decode("utf-8", errors="replace")
+                if isinstance(body, (bytes, bytearray))
+                else str(body)
+            )
         except Exception:
             body_txt = "<no body>"
         raise APIError(f"HTTPError {e.code}: {body_txt[:200]}") from None

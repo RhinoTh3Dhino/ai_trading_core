@@ -1,41 +1,40 @@
 # backtest/backtest.py
-from utils.project_path import PROJECT_ROOT
-
-import os
-import pandas as pd
-import numpy as np
-import datetime
-import subprocess
 import argparse
+import datetime
+import os
+import subprocess
 
-from utils.file_utils import save_with_metadata
-from utils.robust_utils import safe_run
-from utils.telegram_utils import send_message, send_image
-from utils.log_utils import log_device_status
+import numpy as np
+import pandas as pd
 
 from ensemble.ensemble_predict import ensemble_predict
-from strategies.rsi_strategy import rsi_rule_based_signals
-from strategies.macd_strategy import macd_cross_signals
-from strategies.ema_cross_strategy import ema_cross_signals
 from strategies.advanced_strategies import (
-    ema_crossover_strategy,
-    ema_rsi_regime_strategy,
-    ema_rsi_adx_strategy,
-    rsi_mean_reversion,
-    regime_ensemble,
-    voting_ensemble,
     add_adaptive_sl_tp,
+    ema_crossover_strategy,
+    ema_rsi_adx_strategy,
+    ema_rsi_regime_strategy,
+    regime_ensemble,
+    rsi_mean_reversion,
+    voting_ensemble,
 )
+from strategies.ema_cross_strategy import ema_cross_signals
 from strategies.gridsearch_strategies import grid_search_sl_tp_ema
+from strategies.macd_strategy import macd_cross_signals
+from strategies.rsi_strategy import rsi_rule_based_signals
+from utils.file_utils import save_with_metadata
+from utils.log_utils import log_device_status
 from utils.metrics_utils import advanced_performance_metrics
+from utils.project_path import PROJECT_ROOT
+from utils.robust_utils import safe_run
+from utils.telegram_utils import send_image, send_message
 
 # === Monitoring-parametre fra config ===
 try:
     from config.monitoring_config import (
         ALARM_THRESHOLDS,
         ALERT_ON_DRAWNDOWN,
-        ALERT_ON_WINRATE,
         ALERT_ON_PROFIT,
+        ALERT_ON_WINRATE,
         ENABLE_MONITORING,
     )
 except ImportError:
@@ -49,10 +48,25 @@ from utils.monitoring_utils import send_live_metrics
 
 FORCE_DEBUG = False
 FORCE_DUMMY_TRADES = False
+
+# Simple model: investér hele balancen ved entry, flad når ingen position
 FEE = 0.0004
 SL_PCT = 0.006
 TP_PCT = 0.012
 ALLOW_SHORT = True
+
+
+# ------------------------------
+# Hjælpefunktioner
+# ------------------------------
+def _to_datetime(s):
+    """Robust konvertering til datetime (accepterer str/int/np.datetime64)."""
+    try:
+        if np.issubdtype(pd.Series(s).dtype, np.number):
+            return pd.to_datetime(s, unit="s", errors="coerce")
+        return pd.to_datetime(s, errors="coerce")
+    except Exception:
+        return pd.to_datetime(s, errors="coerce")
 
 
 def walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_train=20):
@@ -74,18 +88,16 @@ def walk_forward_splits(df, train_size=0.6, test_size=0.2, step_size=0.1, min_tr
 def compute_regime(
     df: pd.DataFrame, ema_col: str = "ema_200", price_col: str = "close"
 ) -> pd.DataFrame:
-    """Tilføj/returnér 'regime' kolonne (bull/bear/neutral) med fallback hvis ema_200 mangler."""
+    """Tilføj/returnér 'regime' kolonne (bull/bear/neutral) – med fallback hvis EMA mangler."""
     out = df.copy()
     if "regime" in out.columns:
         return out
 
     local_ema_col = ema_col
     if local_ema_col not in out.columns:
-        # Fallbacks for robusthed i tests/data, men samme semantik (langt EMA som trendfilter)
         if "ema_50" in out.columns:
             local_ema_col = "ema_50"
         else:
-            # Beregn en glidende EMA(200) hvis intet andet – sikrer stabil regime
             out[ema_col] = out[price_col].ewm(span=200, adjust=False).mean()
             local_ema_col = ema_col
 
@@ -98,262 +110,296 @@ def compute_regime(
 
 
 def regime_filter(signals, regime_col, active_regimes=["bull"]):
-    return [
-        sig if reg in active_regimes else 0 for sig, reg in zip(signals, regime_col)
-    ]
+    return [sig if reg in active_regimes else 0 for sig, reg in zip(signals, regime_col)]
 
 
 def regime_performance(trades_df, regime_col="regime"):
-    if regime_col not in trades_df.columns:
+    if trades_df is None or trades_df.empty or regime_col not in trades_df.columns:
         return {}
     grouped = trades_df.groupby(regime_col)
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (
-            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
-        )
-        profit_pct = group["profit"].sum() if "profit" in group.columns else 0
+        win_rate = (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0.0
+        profit_pct = group["profit"].sum() if "profit" in group.columns else 0.0
         drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {
-            "num_trades": n,
-            "win_rate": win_rate,
-            "profit_pct": profit_pct,
-            "drawdown_pct": drawdown_pct,
+            "num_trades": int(n),
+            "win_rate": float(win_rate),
+            "profit_pct": float(profit_pct),
+            "drawdown_pct": None if drawdown_pct is None else float(drawdown_pct),
         }
     return results
 
 
 def get_git_hash():
     try:
-        return (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .decode()
-            .strip()
-        )
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
     except Exception:
         return "unknown"
 
 
 def force_trade_signals(length):
-    signals = []
-    for i in range(length):
-        signals.append(1 if i % 2 == 0 else -1)
-    return np.array(signals)
+    return np.array([1 if i % 2 == 0 else -1 for i in range(length)], dtype=int)
 
 
 def clean_signals(signals, length):
+    """Sørger for korrekt længde + caster til int. Tillader {1,0} og {1,-1}."""
     if isinstance(signals, pd.Series):
         signals = signals.values
-    signals = np.array(signals).astype(int)
-    if len(signals) != length:
+    sig = np.asarray(signals).astype(int)
+    if len(sig) != length:
         print(
-            f"[ADVARSEL] Signal-længde ({len(signals)}) matcher ikke data-længde ({length}) – tilpasser med 0."
+            f"[ADVARSEL] Signal-længde ({len(sig)}) matcher ikke data-længde ({length}) – padder med 0."
         )
         out = np.zeros(length, dtype=int)
-        out[: min(len(signals), length)] = signals[: min(len(signals), length)]
+        out[: min(len(sig), length)] = sig[: min(len(sig), length)]
         return out
-    return signals
+    return sig
 
 
+def _interpolate_to(trades_df, x_from_ts, y_vals):
+    """Sikker interpolation af drawdown til trades tidsstempler."""
+    try:
+        x_from = pd.to_datetime(x_from_ts, errors="coerce").astype("int64")
+        x_tr = pd.to_datetime(trades_df["timestamp"], errors="coerce").astype("int64")
+        return np.interp(x_tr, x_from, y_vals)
+    except Exception:
+        return np.full(len(trades_df), np.nan)
+
+
+# ------------------------------
+# Backtest
+# ------------------------------
 def run_backtest(
     df: pd.DataFrame,
-    signals: list = None,
-    initial_balance: float = 1000,
+    signals: list | np.ndarray | pd.Series | None = None,
+    initial_balance: float = 1000.0,
     fee: float = FEE,
     sl_pct: float = SL_PCT,
     tp_pct: float = TP_PCT,
-) -> tuple:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Simpel long/short/flat-backtest:
+    - Signal  1 = long, -1 = short (hvis ALLOW_SHORT=True), 0 = flat.
+    - Hele balancen "investeres" ved entry (procent-PnL på konto).
+    - Fee fratrækkes ved både entry og exit (multiplicativt).
+    - Lukker position ved:
+        * Stop-loss / Take-profit
+        * Skift til 0 (flat) eller modsat signal
+        * Sidste bar
+    Returnerer:
+      trades_df: kolonner ['timestamp','type','price','balance','regime','profit','drawdown','side']
+                 profit i DECIMAL (fx 0.012 = +1.2%)
+      balance_df: kolonner ['timestamp','balance','equity','close','drawdown']
+    """
     df = df.copy()
+
+    # --- timestamps & kolonne-sikring
     if "timestamp" not in df.columns and "datetime" in df.columns:
         df.rename(columns={"datetime": "timestamp"}, inplace=True)
-    for col in ["timestamp", "close"]:
+    for col in ("timestamp", "close"):
         if col not in df.columns:
             raise ValueError(
                 f"❌ Mangler kolonnen '{col}' i DataFrame til backtest! ({list(df.columns)})"
             )
+    df["timestamp"] = _to_datetime(df["timestamp"])
+    df = df.dropna(subset=["timestamp", "close"]).reset_index(drop=True)
+
+    # --- signaler
     if signals is not None:
-        signals = clean_signals(signals, len(df))
-        df["signal"] = signals
+        df["signal"] = clean_signals(signals, len(df))
     elif "signal" not in df.columns:
         raise ValueError("Ingen signaler angivet til backtest!")
-    if "ema_200" in df.columns and df[["close", "ema_200"]].isnull().any().any():
-        raise ValueError("❌ DataFrame indeholder NaN i 'close' eller 'ema_200'!")
+    # Accepter {0,1} → behandle som long/flat
+    unique_sig = set(pd.Series(df["signal"]).dropna().unique().tolist())
+    if unique_sig.issubset({0, 1}):
+        allow_short_here = False
+    else:
+        allow_short_here = bool(ALLOW_SHORT)
+
+    # --- regime
     df = compute_regime(df)
-    trades, balance_log = [], []
-    balance = initial_balance
-    position, entry_price, entry_time, entry_regime, direction = (
-        None,
-        0,
-        None,
-        None,
-        None,
-    )
+
+    trades: list[dict] = []
+    balance_logs: list[dict] = []
+
+    balance = float(initial_balance)
+    position_open = False
+    direction = None  # 'long'/'short'
+    entry_price = None
+    entry_regime = None
 
     for i, row in df.iterrows():
-        price, signal, timestamp = row["close"], row["signal"], row["timestamp"]
-        regime = row["regime"] if "regime" in row else "unknown"
+        ts = row["timestamp"]
+        price = float(row["close"])
+        sig = int(row["signal"])
+        reg = row.get("regime", "unknown")
 
-        if FORCE_DEBUG:
-            signal = 1 if i % 2 == 0 else -1
-
-        # EXIT-LOGIK FOR AKTIV POSITION
-        if position is not None:
+        # EXIT: hvis vi har position
+        if position_open:
+            # Prisbaseret ændring (decimal)
             change = (
                 (price - entry_price) / entry_price
                 if direction == "long"
                 else (entry_price - price) / entry_price
             )
-            if direction == "long":
-                if change <= -sl_pct:
-                    balance *= 1 - fee
-                    trades.append(
-                        {
-                            "timestamp": timestamp,
-                            "type": "SL",
-                            "price": price,
-                            "balance": balance,
-                            "regime": entry_regime,
-                            "profit": change,
-                            "drawdown": None,
-                            "side": "long",
-                        }
-                    )
-                    position = None
-                elif change >= tp_pct:
-                    balance *= 1 - fee
-                    trades.append(
-                        {
-                            "timestamp": timestamp,
-                            "type": "TP",
-                            "price": price,
-                            "balance": balance,
-                            "regime": entry_regime,
-                            "profit": change,
-                            "drawdown": None,
-                            "side": "long",
-                        }
-                    )
-                    position = None
-            elif direction == "short":
-                if change <= -sl_pct:
-                    balance *= 1 - fee
-                    trades.append(
-                        {
-                            "timestamp": timestamp,
-                            "type": "SL",
-                            "price": price,
-                            "balance": balance,
-                            "regime": entry_regime,
-                            "profit": change,
-                            "drawdown": None,
-                            "side": "short",
-                        }
-                    )
-                    position = None
-                elif change >= tp_pct:
-                    balance *= 1 - fee
-                    trades.append(
-                        {
-                            "timestamp": timestamp,
-                            "type": "TP",
-                            "price": price,
-                            "balance": balance,
-                            "regime": entry_regime,
-                            "profit": change,
-                            "drawdown": None,
-                            "side": "short",
-                        }
-                    )
-                    position = None
 
-        # ENTRY LOGIK
-        if position is None:
-            if signal == 1:
-                entry_price, entry_time = price, timestamp
-                entry_regime = regime
-                position = "open"
-                direction = "long"
+            hit_sl = change <= -sl_pct
+            hit_tp = change >= tp_pct
+            sig_close = (
+                (sig == 0)
+                or (direction == "long" and sig < 0)
+                or (direction == "short" and sig > 0)
+            )
+
+            if hit_sl or hit_tp or sig_close or (i == df.index[-1]):
+                # exit-fee
                 balance *= 1 - fee
+                # realiser PnL
+                balance *= 1 + change
                 trades.append(
                     {
-                        "timestamp": timestamp,
+                        "timestamp": ts,
+                        "type": "TP" if hit_tp else ("SL" if hit_sl else "CLOSE"),
+                        "price": price,
+                        "balance": balance,
+                        "regime": entry_regime,
+                        "profit": float(change),
+                        "drawdown": None,
+                        "side": direction,
+                    }
+                )
+                position_open = False
+                direction = None
+                entry_price = None
+                entry_regime = None
+
+        # ENTRY: hvis ingen position
+        if not position_open:
+            if sig == 1:
+                direction = "long"
+                entry_price = price
+                entry_regime = reg
+                position_open = True
+                balance *= 1 - fee  # entry-fee
+                trades.append(
+                    {
+                        "timestamp": ts,
                         "type": "BUY",
                         "price": price,
                         "balance": balance,
-                        "regime": regime,
-                        "profit": 0,
+                        "regime": reg,
+                        "profit": 0.0,
                         "drawdown": None,
                         "side": "long",
                     }
                 )
-            elif signal == -1 and ALLOW_SHORT:
-                entry_price, entry_time = price, timestamp
-                entry_regime = regime
-                position = "open"
+            elif sig == -1 and allow_short_here:
                 direction = "short"
+                entry_price = price
+                entry_regime = reg
+                position_open = True
                 balance *= 1 - fee
                 trades.append(
                     {
-                        "timestamp": timestamp,
+                        "timestamp": ts,
                         "type": "SELL",
                         "price": price,
                         "balance": balance,
-                        "regime": regime,
-                        "profit": 0,
+                        "regime": reg,
+                        "profit": 0.0,
                         "drawdown": None,
                         "side": "short",
                     }
                 )
 
-        if position is not None and i == df.index[-1]:
-            pct = (
-                (price - entry_price) / entry_price
-                if direction == "long"
-                else (entry_price - price) / entry_price
-            )
-            balance *= 1 + pct - fee
-            trades.append(
-                {
-                    "timestamp": timestamp,
-                    "type": "CLOSE",
-                    "price": price,
-                    "balance": balance,
-                    "regime": entry_regime,
-                    "profit": pct,
-                    "drawdown": None,
-                    "side": direction,
-                }
-            )
-            position = None
-        balance_log.append({"timestamp": timestamp, "balance": balance, "close": price})
+        # Log balance for hver bar
+        balance_logs.append(
+            {"timestamp": ts, "balance": balance, "equity": balance, "close": price}
+        )
+
+    # Hvis stadig åben på sidste bar (edge-case)
+    if position_open:
+        ts = df["timestamp"].iloc[-1]
+        price = float(df["close"].iloc[-1])
+        change = (
+            (price - entry_price) / entry_price
+            if direction == "long"
+            else (entry_price - price) / entry_price
+        )
+        balance *= 1 - fee
+        balance *= 1 + change
+        trades.append(
+            {
+                "timestamp": ts,
+                "type": "CLOSE",
+                "price": price,
+                "balance": balance,
+                "regime": entry_regime,
+                "profit": float(change),
+                "drawdown": None,
+                "side": direction,
+            }
+        )
+        balance_logs.append(
+            {"timestamp": ts, "balance": balance, "equity": balance, "close": price}
+        )
 
     trades_df = pd.DataFrame(trades)
-    balance_df = pd.DataFrame(balance_log)
+    balance_df = pd.DataFrame(balance_logs)
 
-    # --- Tilføj drawdown ---
+    # --- Drawdown (i %) med clamp til [-100, 0]
     if not balance_df.empty:
-        peak = balance_df["balance"].cummax()
-        dd = (balance_df["balance"] - peak) / peak
-        balance_df["drawdown"] = dd * 100
+        bal = (
+            pd.to_numeric(balance_df.get("balance", balance_df.get("equity")), errors="coerce")
+            .ffill()
+            .bfill()
+        )
+        peak = bal.cummax().replace(0, np.nan)
+        dd_pct = ((bal / peak) - 1.0) * 100.0
+        balance_df["drawdown"] = dd_pct.fillna(0.0).clip(lower=-100.0, upper=0.0)
+        # Interpolér drawdown ind i trades_df
         if not trades_df.empty:
-            trades_df["drawdown"] = np.interp(
-                pd.to_datetime(trades_df["timestamp"]).astype("int64"),
-                pd.to_datetime(balance_df["timestamp"]).astype("int64"),
-                balance_df["drawdown"].values,
+            trades_df["drawdown"] = _interpolate_to(
+                trades_df, balance_df["timestamp"], balance_df["drawdown"].values
             )
 
-    # Sikrer alle kolonner
-    for col in ["timestamp", "type", "price", "balance", "regime", "side"]:
+    # --- Kolonne-sikring & typer
+    for col in [
+        "timestamp",
+        "type",
+        "price",
+        "balance",
+        "regime",
+        "profit",
+        "drawdown",
+        "side",
+    ]:
         if col not in trades_df.columns:
-            trades_df[col] = None
-    for col in ["timestamp", "close"]:
-        if col not in balance_df.columns:
-            balance_df[col] = None
+            trades_df[col] = np.nan
+    if not trades_df.empty:
+        trades_df["timestamp"] = _to_datetime(trades_df["timestamp"])
 
-    # === Dummy-trades til test/debug (robusthed B: genberegn drawdown bagefter) ===
+    for col in ["timestamp", "balance", "equity", "close", "drawdown"]:
+        if col not in balance_df.columns:
+            balance_df[col] = np.nan
+    if not balance_df.empty:
+        balance_df["timestamp"] = _to_datetime(balance_df["timestamp"])
+        # sørg for 'balance' findes (alias fra equity)
+        if "balance" not in balance_df.columns or balance_df["balance"].isna().all():
+            if "equity" in balance_df.columns:
+                balance_df["balance"] = pd.to_numeric(balance_df["equity"], errors="coerce")
+
+    # Debug prints
+    print("TRADES DF (head):\n", trades_df.head())
+    print("BALANCE DF (head):\n", balance_df.head())
+    if len(trades_df) < 2:
+        print("‼️ ADVARSEL: Få eller ingen handler genereret!")
+
+    # === Dummy fallback til test/debug ===
     if FORCE_DUMMY_TRADES and (trades_df.empty or trades_df.shape[0] < 2):
-        print("‼️ FORCE DEBUG: Ingen rigtige handler fundet – genererer dummy trades for test!")
+        print("‼️ FORCE DEBUG: Genererer dummy trades for test!")
         trades_df = pd.DataFrame(
             [
                 {
@@ -362,7 +408,7 @@ def run_backtest(
                     "price": df.iloc[0]["close"],
                     "balance": initial_balance,
                     "regime": df.iloc[0]["regime"],
-                    "profit": 0,
+                    "profit": 0.0,
                     "drawdown": None,
                     "side": "long",
                 },
@@ -393,52 +439,96 @@ def run_backtest(
                 {
                     "timestamp": df.iloc[0]["timestamp"],
                     "balance": initial_balance,
+                    "equity": initial_balance,
                     "close": df.iloc[0]["close"],
                 },
                 {
                     "timestamp": df.iloc[-1]["timestamp"],
                     "balance": initial_balance * 1.1,
+                    "equity": initial_balance * 1.1,
                     "close": df.iloc[-1]["close"],
                 },
                 {
                     "timestamp": df.iloc[-1]["timestamp"],
                     "balance": initial_balance * 1.05,
+                    "equity": initial_balance * 1.05,
                     "close": df.iloc[-1]["close"],
                 },
             ]
         )
-        # Genberegn drawdown og interpolér ind i trades_df (Løsning B)
-        try:
-            peak = balance_df["balance"].cummax()
-            dd = (balance_df["balance"] - peak) / peak
-            balance_df["drawdown"] = dd * 100
-            trades_df["drawdown"] = np.interp(
-                pd.to_datetime(trades_df["timestamp"]).astype("int64"),
-                pd.to_datetime(balance_df["timestamp"]).astype("int64"),
-                balance_df["drawdown"].values,
-            )
-        except Exception as e:
-            print(f"[WARN] Dummy drawdown-beregning fejlede: {e}")
+        # genberegn drawdown
+        bal = pd.to_numeric(balance_df["balance"], errors="coerce")
+        dd = ((bal / bal.cummax().replace(0, np.nan)) - 1.0) * 100.0
+        balance_df["drawdown"] = dd.fillna(0.0).clip(lower=-100.0, upper=0.0)
+        trades_df["drawdown"] = _interpolate_to(
+            trades_df, balance_df["timestamp"], balance_df["drawdown"].values
+        )
 
-    print("TRADES DF:\n", trades_df)
-    print("BALANCE DF:\n", balance_df)
-    if len(trades_df) < 2:
-        print("‼️ ADVARSEL: Få eller ingen handler genereret!")
     return trades_df, balance_df
 
 
-def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000):
-    metrics = advanced_performance_metrics(trades_df, balance_df, initial_balance)
+# ------------------------------
+# Metrics & persist
+# ------------------------------
+def calc_backtest_metrics(trades_df, balance_df, initial_balance=1000.0):
+    """
+    Wrapper der kalder advanced_performance_metrics og normaliserer output.
+    """
+    try:
+        metrics = advanced_performance_metrics(trades_df, balance_df, initial_balance)
+    except Exception as e:
+        print(f"[WARN] advanced_performance_metrics fejlede: {e}")
+        # simpel fallback: fra første/sidste balance
+        if balance_df is None or balance_df.empty:
+            return {
+                "profit_pct": 0.0,
+                "win_rate": 0.0,
+                "drawdown_pct": 0.0,
+                "num_trades": 0,
+                "max_consec_losses": 0,
+                "recovery_bars": -1,
+                "profit_factor": "N/A",
+                "sharpe": 0.0,
+                "sortino": 0.0,
+            }
+        col = "balance" if "balance" in balance_df.columns else "equity"
+        bal = pd.to_numeric(balance_df[col], errors="coerce").dropna()
+        if bal.size < 2:
+            prof = 0.0
+        else:
+            prof = (bal.iloc[-1] / max(bal.iloc[0], 1e-9) - 1.0) * 100.0
+        dd_series = (bal / bal.cummax() - 1.0) * 100.0
+        dd_min = float(dd_series.min()) if len(dd_series) else 0.0
+        return {
+            "profit_pct": float(prof),
+            "win_rate": 0.0,
+            "drawdown_pct": float(max(dd_min, -100.0)),
+            "num_trades": (
+                int(len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])]))
+                if trades_df is not None
+                else 0
+            ),
+            "max_consec_losses": 0,
+            "recovery_bars": -1,
+            "profit_factor": "N/A",
+            "sharpe": 0.0,
+            "sortino": 0.0,
+        }
+
     out = {
-        "profit_pct": metrics.get("profit_pct", 0),
-        "win_rate": metrics.get("win_rate", 0),
-        "drawdown_pct": metrics.get("max_drawdown", 0),
-        "num_trades": len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])]),
-        "max_consec_losses": metrics.get("max_consec_losses", 0),
-        "recovery_bars": metrics.get("recovery_bars", -1),
+        "profit_pct": float(metrics.get("profit_pct", 0.0)),
+        "win_rate": float(metrics.get("win_rate", 0.0)),
+        "drawdown_pct": float(metrics.get("max_drawdown", metrics.get("drawdown_pct", 0.0))),
+        "num_trades": (
+            int(len(trades_df[trades_df["type"].isin(["TP", "SL", "CLOSE"])]))
+            if trades_df is not None
+            else 0
+        ),
+        "max_consec_losses": int(metrics.get("max_consec_losses", 0) or 0),
+        "recovery_bars": int(metrics.get("recovery_bars", -1) or -1),
         "profit_factor": metrics.get("profit_factor", "N/A"),
-        "sharpe": metrics.get("sharpe", 0),
-        "sortino": metrics.get("sortino", 0),
+        "sharpe": float(metrics.get("sharpe", 0.0)),
+        "sortino": float(metrics.get("sortino", 0.0)),
     }
     return out
 
@@ -458,6 +548,9 @@ def save_backtest_results(
     print(f"✅ Backtest-metrics logget til: {csv_path}")
 
 
+# ------------------------------
+# CLI & main
+# ------------------------------
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -470,12 +563,8 @@ def parse_args():
         type=str,
         default=PROJECT_ROOT / "data" / "backtest_results.csv",
     )
-    parser.add_argument(
-        "--balance_path", type=str, default=PROJECT_ROOT / "data" / "balance.csv"
-    )
-    parser.add_argument(
-        "--trades_path", type=str, default=PROJECT_ROOT / "data" / "trades.csv"
-    )
+    parser.add_argument("--balance_path", type=str, default=PROJECT_ROOT / "data" / "balance.csv")
+    parser.add_argument("--trades_path", type=str, default=PROJECT_ROOT / "data" / "trades.csv")
     parser.add_argument(
         "--strategy",
         type=str,
@@ -490,9 +579,7 @@ def parse_args():
         choices=["majority", "weighted", "sum"],
     )
     parser.add_argument("--debug_ensemble", action="store_true")
-    parser.add_argument(
-        "--walkforward", action="store_true", help="Aktiver walk-forward analyse"
-    )
+    parser.add_argument("--walkforward", action="store_true", help="Aktiver walk-forward analyse")
     parser.add_argument("--train_size", type=float, default=0.6)
     parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument("--step_size", type=float, default=0.1)
@@ -518,12 +605,12 @@ def main():
     args = parse_args()
     log_device_status(
         context="backtest",
-        extra={"strategy": args.strategy, "feature_file": args.feature_path},
+        extra={"strategy": args.strategy, "feature_file": str(args.feature_path)},
         telegram_func=send_message,
     )
 
     df = load_csv_auto(args.feature_path)
-    if "datetime" in df.columns:
+    if "datetime" in df.columns and "timestamp" not in df.columns:
         df.rename(columns={"datetime": "timestamp"}, inplace=True)
     print("Indlæst data med kolonner:", list(df.columns))
     df = compute_regime(df)
@@ -572,32 +659,44 @@ def main():
                 )
             sig_dist = pd.Series(signals).value_counts().to_dict()
             print(f"Signal dist vindue {i+1}: {sig_dist}")
-            send_message(f"Signal dist vindue {i+1}: {sig_dist}")
+            try:
+                send_message(f"Signal dist vindue {i+1}: {sig_dist}")
+            except Exception:
+                pass
             df_test["signal"] = signals
             trades_df, balance_df = run_backtest(df_test, signals=signals)
             metrics = calc_backtest_metrics(trades_df, balance_df)
             all_metrics.append(metrics)
-            summary = f"Walk-forward vindue {i+1}:\n" + "\n".join([f"{k}: {v}" for k, v in metrics.items()])
-            if trades_df.empty:
-                send_message(f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}")
-            else:
-                send_message(summary)
-            # === Monitoring/alarmer på test-vindue
+            summary = f"Walk-forward vindue {i+1}:\n" + "\n".join(
+                [f"{k}: {v}" for k, v in metrics.items()]
+            )
+            try:
+                if trades_df.empty:
+                    send_message(f"‼️ Ingen handler i vindue {i+1}! Signal dist: {sig_dist}")
+                else:
+                    send_message(summary)
+            except Exception:
+                pass
+            # Monitoring per vindue
             if ENABLE_MONITORING:
-                send_live_metrics(
-                    trades_df,
-                    balance_df,
-                    symbol="WALKFORWARD",
-                    timeframe=f"win{i+1}",
-                    thresholds=ALARM_THRESHOLDS,
-                    alert_on_drawdown=ALERT_ON_DRAWNDOWN,
-                    alert_on_winrate=ALERT_ON_WINRATE,
-                    alert_on_profit=ALERT_ON_PROFIT,
-                )
+                try:
+                    send_live_metrics(
+                        trades_df,
+                        balance_df,
+                        symbol="WALKFORWARD",
+                        timeframe=f"win{i+1}",
+                        thresholds=ALARM_THRESHOLDS,
+                        alert_on_drawdown=ALERT_ON_DRAWNDOWN,
+                        alert_on_winrate=ALERT_ON_WINRATE,
+                        alert_on_profit=ALERT_ON_PROFIT,
+                    )
+                except Exception:
+                    pass
         metrics_df = pd.DataFrame(all_metrics)
         try:
             import matplotlib
-            matplotlib.use("Agg")  # headless i tests/CI
+
+            matplotlib.use("Agg")
             import matplotlib.pyplot as plt
 
             os.makedirs("outputs", exist_ok=True)
@@ -614,7 +713,8 @@ def main():
             print(f"❌ Plot-fejl: {e}")
         return
 
-    if FORCE_DEBUG:
+    # === Fuldt run ===
+    if FORCE_DEBUG or args.force_trades:
         print("‼️ DEBUG: Forcerer skiftevis BUY/SELL på hele datasættet")
         signals = force_trade_signals(len(df))
     else:
@@ -643,20 +743,18 @@ def main():
             signals = rsi_rule_based_signals(df)
         print("Signal distribution:", pd.Series(signals).value_counts().to_dict())
 
-    filtered_signals = signals
-    df["signal"] = filtered_signals
-
-    trades_df, balance_df = run_backtest(df, signals=filtered_signals)
+    df["signal"] = clean_signals(signals, len(df))
+    trades_df, balance_df = run_backtest(df, signals=df["signal"].values)
     metrics = calc_backtest_metrics(trades_df, balance_df)
     save_backtest_results(metrics, version="v1.7.0", csv_path=args.results_path)
     print("Backtest-metrics:", metrics)
     save_with_metadata(balance_df, args.balance_path, version="v1.7.0")
     save_with_metadata(trades_df, args.trades_path, version="v1.7.0")
+
     reg_stats = regime_performance(trades_df)
     print("Regime performance:", reg_stats)
     try:
         send_message(f"📊 Regime-performance:\n{reg_stats}")
-        # === Monitoring/alarmer på fuld run
         if ENABLE_MONITORING:
             send_live_metrics(
                 trades_df,

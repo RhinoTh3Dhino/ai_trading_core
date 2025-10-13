@@ -22,12 +22,7 @@ def fix_project_root_in_file(filepath):
         # Find linjer med PROJECT_ROOT = ...
         if re.search(r"PROJECT_ROOT\s*=", line):
             # Fang forskellige "forkerte" måder:
-            if (
-                "os.path" in line
-                or "os.path.abspath" in line
-                or '"' in line
-                or "'" in line
-            ):
+            if "os.path" in line or "os.path.abspath" in line or '"' in line or "'" in line:
                 # Erstat med ny version
                 print(f"[RETTER] {filepath} - linje {idx+1}: {line.strip()}")
                 new_lines.append(REPLACEMENT + "\n")

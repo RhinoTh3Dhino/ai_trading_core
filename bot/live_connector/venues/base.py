@@ -1,7 +1,9 @@
-import asyncio, logging
-from typing import Callable, Dict, Any
+import asyncio
+import logging
+from typing import Any, Callable, Dict
 
 log = logging.getLogger(__name__)
+
 
 class BaseConnector:
     venue: str = "base"
@@ -17,7 +19,7 @@ class BaseConnector:
         backoff = 1
         while not self._stop:
             try:
-                async with (await self.ws_client.connect(self.cfg["ws"]["url"])) as ws:
+                async with await self.ws_client.connect(self.cfg["ws"]["url"]) as ws:
                     await self._subscribe(ws)
                     backoff = 1
                     async for msg in self._read_loop(ws):

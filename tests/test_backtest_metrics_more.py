@@ -26,9 +26,10 @@ def test_evaluate_strategies_uses_provided_trades_balance_and_merges_regime():
     trades_df = pd.DataFrame(
         {
             "timestamp": [
-                df["timestamp"].iloc[2],   # ~02:00 → match
-                df["timestamp"].iloc[7],   # ~07:00 → match
-                df["timestamp"].iloc[-1] + pd.Timedelta("10H"),  # udenfor tolerance → NaN → 'ukendt'
+                df["timestamp"].iloc[2],  # ~02:00 → match
+                df["timestamp"].iloc[7],  # ~07:00 → match
+                df["timestamp"].iloc[-1]
+                + pd.Timedelta("10H"),  # udenfor tolerance → NaN → 'ukendt'
             ],
             "type": ["BUY", "TP", "SL"],
             "balance": [1000.0, 1010.0, 1000.0],
@@ -67,7 +68,10 @@ def test_evaluate_strategies_skips_regime_when_missing_on_df():
 
     trades_df = pd.DataFrame(
         {
-            "timestamp": [pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 01:00:00")],
+            "timestamp": [
+                pd.Timestamp("2024-01-01 00:00:00"),
+                pd.Timestamp("2024-01-01 01:00:00"),
+            ],
             "type": ["BUY", "TP"],
             "balance": [1000.0, 1010.0],
         }

@@ -4,19 +4,19 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import pytest
-
 # Headless backend (virker i CI og uden display)
 import matplotlib
+import pytest
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-
 
 # Robust PROJECT_ROOT:
 # 1) Prøv utils.project_path.PROJECT_ROOT
 # 2) Fald tilbage til repo-roden (to niveauer op fra denne fil)
 try:
     from utils.project_path import PROJECT_ROOT as _PRJ
+
     PROJECT_ROOT = Path(_PRJ).resolve()
 except Exception:
     PROJECT_ROOT = Path(__file__).resolve().parents[1]

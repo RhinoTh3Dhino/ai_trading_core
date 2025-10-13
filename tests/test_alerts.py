@@ -1,5 +1,6 @@
 from utils.alerts import AlertManager, AlertThresholds
 
+
 def test_alert_cooldown():
     """
     Tester at AlertManager ikke sender dubletter, når evaluate_and_notify kaldes to gange i træk.
@@ -14,6 +15,7 @@ def test_alert_cooldown():
     )
 
     msgs = []
+
     def send(kind, text):
         msgs.append((kind, text))
 

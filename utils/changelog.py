@@ -1,5 +1,5 @@
-from datetime import datetime
 import os
+from datetime import datetime
 
 
 def append_to_changelog(message, changelog_file="CHANGELOG.md"):

@@ -50,7 +50,10 @@ def validate_config(cfg: dict) -> None:
 
     # data.paths
     data = cfg["data"]
-    _ensure("paths" in data and isinstance(data["paths"], dict), "data.paths skal være et dict.")
+    _ensure(
+        "paths" in data and isinstance(data["paths"], dict),
+        "data.paths skal være et dict.",
+    )
     for path_key in ("raw", "processed"):
         value = data["paths"].get(path_key)
         _ensure(
@@ -60,7 +63,16 @@ def validate_config(cfg: dict) -> None:
 
     # trading.risk.max_position
     trading = cfg["trading"]
-    _ensure("risk" in trading and isinstance(trading["risk"], dict), "trading.risk skal være et dict.")
+    _ensure(
+        "risk" in trading and isinstance(trading["risk"], dict),
+        "trading.risk skal være et dict.",
+    )
     mp = trading["risk"].get("max_position", None)
-    _ensure(isinstance(mp, (int, float)), "trading.risk.max_position skal være et tal (int/float).")
-    _ensure(0 <= float(mp) <= 1, "trading.risk.max_position skal være mellem 0 og 1 (inkl.).")
+    _ensure(
+        isinstance(mp, (int, float)),
+        "trading.risk.max_position skal være et tal (int/float).",
+    )
+    _ensure(
+        0 <= float(mp) <= 1,
+        "trading.risk.max_position skal være mellem 0 og 1 (inkl.).",
+    )

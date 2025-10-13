@@ -6,18 +6,18 @@ Dette projekt er fundamentet for en avanceret, robust og modulær AI trading bot
 
 ## 🧠 **Standard Commit Guide**
 
-1. Tilføj ændringer  
+1. Tilføj ændringer
    `git add .`
 
-2. Commit med beskrivende besked  
+2. Commit med beskrivende besked
    `git commit -m "feat: Tilføjet strategi-score og ensemble-evaluering"`
 
 3. (Ekstra) Tilføj detaljeret changelog i næste linjer.
 
-4. Push til korrekt branch  
+4. Push til korrekt branch
    `git push origin ai_bot_dev`
 
-**Tips:**  
+**Tips:**
 - Commit ofte, men meningsfuldt – hver commit skal kunne forklares.
 - Brug branches konsekvent: `ai_bot_dev`, `ai_bot_test`, `ai_trading_pro`.
 - Husk at merge dev → test → prod, og brug GitHub Actions til auto-tests og backup.
@@ -50,7 +50,7 @@ Nyere versioner af protobuf kan give problemer med visse ML-workflows.
 - Hvis du ikke bruger Google Cloud APIs (BigQuery, Vertex AI, etc.), kan du ignorere denne advarsel.
 
 - Hvis du får fejl med Google-tjenester, kan det være nødvendigt at oprette et separat miljø med nyere protobuf-version – eller kontakt projektets maintainer.
-  
+
 **Kort sagt:**
 Projektet kører stabilt med denne opsætning, og du kan ignorere pip-advarslen så længe alt fungerer som forventet.
 
@@ -92,7 +92,7 @@ Projektet kører stabilt med denne opsætning, og du kan ignorere pip-advarslen 
 
 - **2. Opsæt din .env med TELEGRAM_TOKEN og TELEGRAM_CHAT_ID**
 - (se eksempel i .env.example)
-  
+
 - **3. Kør botten:**
 - python main.py
 - Eller én kørsel til test/CI:
@@ -129,7 +129,7 @@ Projektet kører stabilt med denne opsætning, og du kan ignorere pip-advarslen 
 
 - **Kør trading-cyklus og Telegram-rapportering:**
 - python main.py
-  
+
 - **Kør backtest eller retrain:**
 - python bot/engine.py --backtest
 - python bot/engine.py --train
@@ -269,7 +269,7 @@ Projektet kører stabilt med denne opsætning, og du kan ignorere pip-advarslen 
 - `outputs/walkforward/walkforward_summary_<timestamp>_top5_splits.csv/xlsx/json` – Top-5 bedste splits
 - `outputs/walkforward/walkforward_plot_<symbol>_<tf>_<timestamp>.png` – Performance-grafer
 
-**Backup af alle eksportfiler findes i**  
+**Backup af alle eksportfiler findes i**
 `outputs/walkforward/backup/`
 
 ### Felt- og kolonneoversigt (CSV/Excel/JSON)

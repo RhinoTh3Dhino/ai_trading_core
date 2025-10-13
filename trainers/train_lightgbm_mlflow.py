@@ -9,16 +9,17 @@ from utils.project_path import ensure_project_root
 
 ensure_project_root()
 
+import argparse
 import os
 import sys
-import argparse
-import pandas as pd
-import numpy as np
 from datetime import datetime
+
 import lightgbm as lgb
-from sklearn.metrics import accuracy_score, classification_report
 import mlflow
 import mlflow.lightgbm
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, classification_report
 
 from utils.telegram_utils import send_message
 

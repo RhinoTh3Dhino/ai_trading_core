@@ -9,6 +9,7 @@ Dækker backtest/metrics.py:
 
 import sys
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -43,7 +44,12 @@ def test_run_and_score_uses_backtest_and_counts_trades(monkeypatch):
     # monkeypatch run_backtest + calc_backtest_metrics inde i metrics-modulet
     def fake_run(df, signals):
         trades = pd.DataFrame({"type": ["TP", "SL", "OPEN"], "balance": [1000, 1010, 1005]})
-        balance = pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=3, freq="h"), "balance": [1000, 1010, 1005]})
+        balance = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=3, freq="h"),
+                "balance": [1000, 1010, 1005],
+            }
+        )
         return trades, balance
 
     def fake_calc(trades, balance):
@@ -52,7 +58,12 @@ def test_run_and_score_uses_backtest_and_counts_trades(monkeypatch):
     monkeypatch.setattr(m, "run_backtest", fake_run)
     monkeypatch.setattr(m, "calc_backtest_metrics", fake_calc)
 
-    df = pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=5, freq="h"), "close": [1, 2, 3, 4, 5]})
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=5, freq="h"),
+            "close": [1, 2, 3, 4, 5],
+        }
+    )
     sig = [0, 1, 0, -1, 0]
     out = m.run_and_score(df, sig)
     assert out["profit_pct"] == 12.0

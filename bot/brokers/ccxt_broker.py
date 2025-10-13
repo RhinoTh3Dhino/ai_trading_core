@@ -1,17 +1,28 @@
 # bot/brokers/ccxt_broker.py
 from __future__ import annotations
+
 import math
 from typing import Optional
+
 from data.live_feed import make_exchange
 
-def market_qty_for_quote(price: float, quote_amount: float, step: float=0.0001) -> float:
-    if price<=0: return 0.0
-    qty = quote_amount/price
+
+def market_qty_for_quote(price: float, quote_amount: float, step: float = 0.0001) -> float:
+    if price <= 0:
+        return 0.0
+    qty = quote_amount / price
     # rund ned til step
-    return math.floor(qty/step)*step
+    return math.floor(qty / step) * step
+
 
 class CcxtBroker:
-    def __init__(self, exchange_id: str, api_key: Optional[str], secret: Optional[str], live: bool):
+    def __init__(
+        self,
+        exchange_id: str,
+        api_key: Optional[str],
+        secret: Optional[str],
+        live: bool,
+    ):
         self.live = live
         self.ex = make_exchange(exchange_id, api_key if live else None, secret if live else None)
 

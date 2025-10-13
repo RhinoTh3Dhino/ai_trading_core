@@ -1,7 +1,7 @@
 # tests/test_plot_comparison.py
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Sikrer projekt-roden er på sys.path
@@ -11,11 +11,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 # Brug Agg backend i testmiljø for at undgå GUI-afhængigheder (Tkinter)
 import matplotlib
+
 matplotlib.use("Agg")
 
 import shutil
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from visualization.plot_comparison import plot_comparison
 
@@ -64,4 +66,5 @@ def test_plot_comparison_runs_without_errors(tmp_path):
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__])

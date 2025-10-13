@@ -12,8 +12,8 @@ Funktioner:
 from __future__ import annotations
 
 import os
-import time
 import threading
+import time
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -36,7 +36,7 @@ class ResourceMonitor:
         gpu_max: float = 90,
         gpu_temp_max: float = 85,
         check_interval: int = 10,
-        action: str = "pause",          # 'pause' | 'kill' | 'warn'
+        action: str = "pause",  # 'pause' | 'kill' | 'warn'
         log_file: Optional[str | Path] = None,
         verbose: bool = True,
         cpu_sample_interval_sec: float = 1.0,  # hvor længe cpu_percent må blokere i hvert tjek

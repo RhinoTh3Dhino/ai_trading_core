@@ -3,9 +3,7 @@
 from datetime import datetime
 
 
-def update_bot_status(
-    status="✅ Succes", backup_path=None, error_msg=None, extra_fields=None
-):
+def update_bot_status(status="✅ Succes", backup_path=None, error_msg=None, extra_fields=None):
     """
     Opdaterer BotStatus.md med status for sidste kørsel.
     Skriver de vigtigste felter og kan udvides med flere felter via extra_fields (dict).

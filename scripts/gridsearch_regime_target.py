@@ -5,13 +5,14 @@ Kører alle feature-kombinationer og finder højeste winrate.
 """
 
 import argparse
-import pandas as pd
-import numpy as np
 import itertools
-import lightgbm as lgb
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import os
+
+import lightgbm as lgb
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 from utils.project_path import PROJECT_ROOT
 from utils.telegram_utils import send_telegram_message
@@ -29,9 +30,7 @@ def calculate_sharpe(returns, risk_free_rate=0):
 def train_and_eval(df, feature_cols, target_col, test_size=0.4):
     X = df[feature_cols]
     y = df[target_col]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, shuffle=False
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, shuffle=False)
     params = {"objective": "binary", "metric": "binary_logloss", "verbosity": -1}
     lgb_train = lgb.Dataset(X_train, y_train)
     lgb_test = lgb.Dataset(X_test, y_test, reference=lgb_train)
@@ -58,9 +57,7 @@ def train_and_eval(df, feature_cols, target_col, test_size=0.4):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Gridsearch regime-adaptiv target med LightGBM."
-    )
+    parser = argparse.ArgumentParser(description="Gridsearch regime-adaptiv target med LightGBM.")
     parser.add_argument(
         "--input",
         type=str,
@@ -79,9 +76,7 @@ def main():
         default="close,rsi_14,ema_9,macd,macd_signal,vwap,atr_14,regime",
         help="Kommasepareret feature-liste.",
     )
-    parser.add_argument(
-        "--max_features", type=int, default=7, help="Max features i kombination."
-    )
+    parser.add_argument("--max_features", type=int, default=7, help="Max features i kombination.")
     parser.add_argument("--test_size", type=float, default=0.4, help="Test split.")
     parser.add_argument(
         "--output",
@@ -124,9 +119,7 @@ def main():
                 print(f"[FEJL] {feats}: {e}")
 
     results_df = pd.DataFrame(results)
-    results_df = results_df.sort_values(
-        by=["winrate", "sharpe"], ascending=[False, False]
-    )
+    results_df = results_df.sort_values(by=["winrate", "sharpe"], ascending=[False, False])
     print("\n=== Gridsearch resultater (top 10) ===")
     print(results_df.head(10))
 

@@ -13,8 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from bot.brokers.paper_broker import PaperBroker  # noqa: E402
 import pytz  # bruges i tidsstempel-test
+
+from bot.brokers.paper_broker import PaperBroker  # noqa: E402
 
 
 # ---------- små hjælpere ----------
@@ -48,6 +49,7 @@ def read_last_csv_row(path: Path):
 
 
 # ---------- TESTS ----------
+
 
 def test_market_buy_sell_roundtrip():
     logs = tmp_logs()
@@ -149,7 +151,7 @@ def test_slippage_and_commission_accounting():
     b = PaperBroker(
         starting_cash=1000.0,
         commission_bp=100.0,  # 1%
-        slippage_bp=100.0,    # 1%
+        slippage_bp=100.0,  # 1%
         allow_short=False,
         equity_log_path=logs.equity,
         fills_log_path=logs.fills,
@@ -271,6 +273,7 @@ def test_limit_sell_cannot_oversell_no_short():
 
 
 # ---------- simple testrunner ----------
+
 
 def main():
     tests = [

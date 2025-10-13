@@ -1,18 +1,19 @@
-import sys
 import os
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
+# 📌 Sikrer korrekt sys.path til projektroden
+import os
+import sys
 from pathlib import Path
+
 from utils.project_path import PROJECT_ROOT
 
 # tests/test_walkforward.py
 
-# 📌 Sikrer korrekt sys.path til projektroden
-import os
-import sys
 
 PROJECT_ROOT = Path(__file__).parent.parent  # AUTO-FIXED PATHLIB
 if PROJECT_ROOT not in sys.path:
@@ -20,24 +21,25 @@ if PROJECT_ROOT not in sys.path:
 
 # ✅ Korrekte imports
 import glob
-import traceback
 import shutil
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import traceback
 from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 # === Centralt styrede konfigurationer ===
 try:
     from config.monitoring_config import (
+        ALARM_THRESHOLDS,
         COINS,
+        ENABLE_MONITORING,
         TIMEFRAMES,
         WALKFORWARD_DEFAULT_WINDOW_SIZE,
         WALKFORWARD_MIN_WINDOW_SIZE,
         WALKFORWARD_STEP_SIZE,
         WALKFORWARD_TRAIN_SIZE,
-        ENABLE_MONITORING,
-        ALARM_THRESHOLDS,
     )
 except ImportError:
     COINS = ["BTCUSDT", "ETHUSDT", "DOGEUSDT"]
@@ -49,21 +51,20 @@ except ImportError:
     ENABLE_MONITORING = True
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
 
+from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.advanced_strategies import (
     ema_crossover_strategy,
     ema_rsi_regime_strategy,
     voting_ensemble,
 )
-from bot.paper_trader import paper_trade as paper_trade_advanced
 from strategies.gridsearch_strategies import paper_trade_simple
 from utils.performance import (
     calculate_performance_metrics,
+    calculate_regime_drawdown,
     calculate_rolling_sharpe,
     calculate_trade_duration,
-    calculate_regime_drawdown,
 )
-from utils.telegram_utils import send_image, send_document
-
+from utils.telegram_utils import send_document, send_image
 
 # --- WALKFORWARD PARAMS (hentet fra config hvis muligt) ---
 DEFAULT_WINDOW_SIZE = WALKFORWARD_DEFAULT_WINDOW_SIZE
@@ -134,7 +135,9 @@ def plot_walkforward_results(results_df, symbol, tf):
     plt.xlabel("Walkforward Window")
     plt.legend()
     plt.tight_layout()
-    filename = f"{OUTPUT_DIR}walkforward_plot_{symbol}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+    filename = (
+        f"{OUTPUT_DIR}walkforward_plot_{symbol}_{tf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+    )
     plt.savefig(filename)
     plt.close()
     print(f"✅ Walkforward performance-graf gemt som {filename}")
@@ -152,9 +155,7 @@ if __name__ == "__main__":
         for tf in TIMEFRAMES:
             feature_path = get_latest_feature_file(symbol, tf)
             if not feature_path:
-                print(
-                    f"❌ Feature-fil mangler for {symbol} {tf} i outputs/feature_data/"
-                )
+                print(f"❌ Feature-fil mangler for {symbol} {tf} i outputs/feature_data/")
                 continue
 
             print(f"\n=== Walkforward Validation: {symbol} {tf} ===")
@@ -168,9 +169,7 @@ if __name__ == "__main__":
             splits = 0
             window_size = min(DEFAULT_WINDOW_SIZE, n) if n >= MIN_WINDOW_SIZE else 0
             if window_size < MIN_WINDOW_SIZE:
-                print(
-                    f"⚠️ Ikke nok data ({n} rækker) til walkforward på {symbol} {tf}. Skipper..."
-                )
+                print(f"⚠️ Ikke nok data ({n} rækker) til walkforward på {symbol} {tf}. Skipper...")
                 continue
 
             for train_df, test_df, start, end in walkforward_split(
@@ -185,9 +184,7 @@ if __name__ == "__main__":
                     test_balance, test_trades = PAPER_TRADE_FUNC(test_df)
 
                     if len(train_trades) == 0 or len(test_trades) == 0:
-                        print(
-                            f"⚠️ Split {start}-{end} har ingen handler. Skipper split."
-                        )
+                        print(f"⚠️ Split {start}-{end} har ingen handler. Skipper split.")
                         continue
 
                     train_metrics = calculate_performance_metrics(
@@ -277,9 +274,7 @@ if __name__ == "__main__":
                     result.update(test_metrics)
                     all_results.append(result)
 
-                    print(
-                        f"[{symbol} {tf} Window {start}-{end}] Strategy: {STRATEGY.__name__}"
-                    )
+                    print(f"[{symbol} {tf} Window {start}-{end}] Strategy: {STRATEGY.__name__}")
                     print(
                         f"  Train Sharpe: {train_metrics.get('train_sharpe', np.nan):.2f}, Test Sharpe: {test_metrics.get('test_sharpe', np.nan):.2f}"
                     )
@@ -309,11 +304,7 @@ if __name__ == "__main__":
             print(f"  ➡️ Antal splits for {symbol} {tf}: {splits}")
 
             results_df = pd.DataFrame(
-                [
-                    r
-                    for r in all_results
-                    if r["symbol"] == symbol and r["timeframe"] == tf
-                ]
+                [r for r in all_results if r["symbol"] == symbol and r["timeframe"] == tf]
             )
             if not results_df.empty:
                 plot_path = plot_walkforward_results(results_df, symbol, tf)
@@ -420,13 +411,9 @@ if __name__ == "__main__":
             "is_top5_split",
         ]
         show_cols = [col for col in cols_to_show if col in results_df.columns]
-        print(
-            results_df.sort_values("test_sharpe", ascending=False).head(10)[show_cols]
-        )
+        print(results_df.sort_values("test_sharpe", ascending=False).head(10)[show_cols])
     else:
-        print(
-            "Ingen walkforward-resultater blev genereret. Tjek feature-filer og pipeline."
-        )
+        print("Ingen walkforward-resultater blev genereret. Tjek feature-filer og pipeline.")
 
     print("\n--- Split count (vinduer pr. coin/timeframe): ---")
     for k, v in splits_count.items():

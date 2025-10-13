@@ -1,12 +1,14 @@
 import importlib
 import math
+
 import pytest
 
 CANDIDATES = [
     # (modul, attr-navn) – test leder efter et af disse "kontrakt"-kald
-    ("bot.engine", "compute_attribution_frame"),   # forventet: DataFrame m. kolonner
-    ("bot.engine", "reconcile_attribution"),       # forventet: dict/obj m. summer
+    ("bot.engine", "compute_attribution_frame"),  # forventet: DataFrame m. kolonner
+    ("bot.engine", "reconcile_attribution"),  # forventet: dict/obj m. summer
 ]
+
 
 def _find_api():
     for mod, attr in CANDIDATES:
@@ -17,6 +19,7 @@ def _find_api():
         except Exception:
             continue
     return None, None
+
 
 @pytest.mark.contract
 def test_pnl_attribution_sums_to_gross():
@@ -41,10 +44,13 @@ def test_pnl_attribution_sums_to_gross():
     assert gross is not None, "Kontrakt kræver en 'gross'-nøgle/kolonne"
 
     total_attr = (
-        sums.get("gap", 0.0) + sums.get("directional", 0.0) +
-        sums.get("fees", 0.0) + sums.get("slippage", 0.0) +
-        sums.get("funding", 0.0) + sums.get("theta", 0.0) +
-        sums.get("residual", 0.0)
+        sums.get("gap", 0.0)
+        + sums.get("directional", 0.0)
+        + sums.get("fees", 0.0)
+        + sums.get("slippage", 0.0)
+        + sums.get("funding", 0.0)
+        + sums.get("theta", 0.0)
+        + sums.get("residual", 0.0)
     )
     assert math.isfinite(total_attr) and math.isfinite(gross)
     assert abs(total_attr - gross) < 1e-6, f"Sum(attr)={total_attr} != gross={gross}"

@@ -23,9 +23,7 @@ def weighted_vote_ensemble(*signals_list, weights=None):
     Returnerer: np.ndarray med ensemble-signaler (-1, 0, 1)
     """
     if not signals_list or any(len(sig) == 0 for sig in signals_list):
-        raise ValueError(
-            "Alle signal-lister skal være ikke-tomme og have samme længde."
-        )
+        raise ValueError("Alle signal-lister skal være ikke-tomme og have samme længde.")
     # Konverter alt til numpy arrays og check længde
     arrs = [np.asarray(sig, dtype=np.int8) for sig in signals_list]
     n = len(arrs[0])
@@ -47,9 +45,7 @@ def weighted_vote_ensemble(*signals_list, weights=None):
     # Vægtet sum af signaler pr. række
     vote_scores = np.dot(signals_arr, weights)
     # Voting: >0 = BUY, <0 = SELL, 0 = HOLD
-    final_signals = np.where(
-        vote_scores > 0, 1, np.where(vote_scores < 0, -1, 0)
-    ).astype(np.int8)
+    final_signals = np.where(vote_scores > 0, 1, np.where(vote_scores < 0, -1, 0)).astype(np.int8)
     return final_signals
 
 

@@ -17,14 +17,14 @@ Modulet understøtter to spor:
 """
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import os
 import shutil
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 from .errors import BackupError
 
@@ -129,7 +129,11 @@ def rotate_backups(backups_dir: str | Path, keep_last: int = 5) -> int:
     if not bdir.exists():
         return 0
 
-    files = [f for f in bdir.iterdir() if f.is_file() and f.name.startswith("backup_") and f.suffix == ".zip"]
+    files = [
+        f
+        for f in bdir.iterdir()
+        if f.is_file() and f.name.startswith("backup_") and f.suffix == ".zip"
+    ]
     # Navn indeholder UTC timestamp -> sortering giver nyeste først
     files.sort(key=lambda p: p.name, reverse=True)
     to_delete = files[keep_last:]
@@ -151,10 +155,7 @@ def append_botstatus(botstatus_path: str | Path, entry: Dict[str, str]) -> None:
     entry forventer nøgler: date_utc, action, result, details
     """
     botstatus = Path(botstatus_path)
-    header = (
-        "| dato_utc | handling | resultat | detaljer |\n"
-        "|---|---|---|---|\n"
-    )
+    header = "| dato_utc | handling | resultat | detaljer |\n" "|---|---|---|---|\n"
     row = (
         f"| {entry.get('date_utc')} | {entry.get('action')} | "
         f"{entry.get('result')} | {entry.get('details','')} |\n"

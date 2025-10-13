@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import shelve
 from pathlib import Path
-from typing import Any, MutableMapping, Iterator
+from typing import Any, Iterator, MutableMapping
 
 
 class ShelveStore(MutableMapping[str, Any]):

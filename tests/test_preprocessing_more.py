@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from features import preprocessing as prep
 
 
@@ -16,7 +17,9 @@ def test_normalize_zscore_std_zero_and_missing_col():
 def test_clean_dataframe_outlier_clip_and_normalize_true():
     # indeholder inf + grove outliers; vi beder også om normalize=True grenen
     df = pd.DataFrame({"x": [0, 0, 10, 0, 0], "y": [1, 1, 1, 1, 100], "z": [np.inf, 2, 3, 4, 5]})
-    out = prep.clean_dataframe(df, features=["x", "y", "z"], outlier_z=3.0, dropna=True, normalize=True)
+    out = prep.clean_dataframe(
+        df, features=["x", "y", "z"], outlier_z=3.0, dropna=True, normalize=True
+    )
     # inf-rækken og outliers bør være væk og kolonnerne skalerede
     assert len(out) < len(df)
     assert {"x", "y", "z"}.issubset(out.columns)

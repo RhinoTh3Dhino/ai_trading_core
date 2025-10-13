@@ -1,13 +1,13 @@
+from datetime import datetime
+from time import sleep
+
+import pandas as pd
+
+from config.config import COINS, TIMEFRAMES
 from utils.project_path import PROJECT_ROOT
 
 # fetch_data/binance_downloader.py
 
-import pandas as pd
-from datetime import datetime
-from time import sleep
-
-
-from config.config import COINS, TIMEFRAMES
 
 # Prøv at importere Binance-klienten
 try:

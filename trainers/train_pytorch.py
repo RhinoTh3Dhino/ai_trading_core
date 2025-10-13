@@ -9,20 +9,19 @@ Træner en PyTorch neural net model til trading-signaler (klassifikation)
 - Early stopping, checkpointing og mixed precision (AMP/fp16)!
 """
 
-import os
-
 import argparse
 import json
-import pandas as pd
+import os
+import platform
+from datetime import datetime
+
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
-from datetime import datetime
-import platform
-
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
 # === MLflow: robust import og utils ===
@@ -36,7 +35,7 @@ except ImportError:
 
 # --- Importer MLflow-utilities ---
 try:
-    from utils.mlflow_utils import setup_mlflow, start_mlflow_run, end_mlflow_run
+    from utils.mlflow_utils import end_mlflow_run, setup_mlflow, start_mlflow_run
 
     MLUTILS_AVAILABLE = True
 except ImportError:
@@ -166,9 +165,7 @@ def train_pytorch_model(
         print("[ADVARSEL] Mixed precision kræver GPU (CUDA). Kører kun float32.")
         use_amp = False
 
-    log_device_status(
-        data_path, batch_size, epochs, learning_rate, mixed_precision=use_amp
-    )
+    log_device_status(data_path, batch_size, epochs, learning_rate, mixed_precision=use_amp)
     tb_run_name = f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     writer = SummaryWriter(log_dir=f"runs/{tb_run_name}")
 
@@ -219,9 +216,7 @@ def train_pytorch_model(
         print(f"[ADVARSEL] Ignorerer ikke-numeriske features: {ignored}")
     X = X_numeric
 
-    print(
-        f"[INFO] Features brugt til træning: {list(X.columns)} Antal: {len(X.columns)}"
-    )
+    print(f"[INFO] Features brugt til træning: {list(X.columns)} Antal: {len(X.columns)}")
     print(f"[INFO] Unikke targets: {sorted(y.unique())}")
     print(f"[INFO] Target distribution: \n{y.value_counts()}")
 
@@ -246,11 +241,7 @@ def train_pytorch_model(
 
     print(
         "[INFO] Train slutter:",
-        (
-            df.iloc[split_idx - 1]["timestamp"]
-            if "timestamp" in df.columns
-            else split_idx - 1
-        ),
+        (df.iloc[split_idx - 1]["timestamp"] if "timestamp" in df.columns else split_idx - 1),
     )
     print(
         "[INFO] Val starter:",
@@ -445,9 +436,7 @@ def optuna_objective(trial):
     return metric
 
 
-def run_optuna(
-    data_path, target="target", n_trials=20, test_size=0.2, mixed_precision=False
-):
+def run_optuna(data_path, target="target", n_trials=20, test_size=0.2, mixed_precision=False):
     if not OPTUNA_AVAILABLE:
         print("❌ Optuna ikke installeret! (pip install optuna)")
         return
@@ -491,12 +480,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Træn PyTorch-model til trading (GPU/CPU) + Optuna tuning + MLflow logging + Early stopping + Mixed Precision (AMP/fp16)"
     )
-    parser.add_argument(
-        "--data", type=str, required=True, help="Sti til features-data (.csv)"
-    )
-    parser.add_argument(
-        "--target", type=str, default="target", help="Navn på target-kolonne"
-    )
+    parser.add_argument("--data", type=str, required=True, help="Sti til features-data (.csv)")
+    parser.add_argument("--target", type=str, default="target", help="Navn på target-kolonne")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--epochs", type=int, default=30, help="Antal epochs")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
@@ -520,9 +505,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mlflow_exp", type=str, default="trading_ai", help="MLflow experiment name"
     )
-    parser.add_argument(
-        "--early_stopping", action="store_true", help="Aktiver early stopping"
-    )
+    parser.add_argument("--early_stopping", action="store_true", help="Aktiver early stopping")
     parser.add_argument(
         "--patience",
         type=int,

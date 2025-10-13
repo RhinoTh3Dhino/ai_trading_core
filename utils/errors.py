@@ -14,24 +14,29 @@ __all__ = [
 
 class EmptyCSVError(Exception):
     """Kastes når en CSV er tom."""
+
     pass
 
 
 class MissingColumnsError(Exception):
     """Kastes når krævede kolonner mangler i CSV."""
+
     pass
 
 
 class InvalidConfigError(Exception):
     """Kastes ved ugyldig konfiguration."""
+
     pass
 
 
 class APIError(Exception):
     """Kastes ved API-fejl (timeout/HTTP/JSON)."""
+
     pass
 
 
 class BackupError(Exception):
     """Kastes ved backup/restore-fejl."""
+
     pass

@@ -1,9 +1,10 @@
+import json
+import os
+
 from utils.project_path import PROJECT_ROOT
 
 # utils/ensemble_utils.py
 
-import json
-import os
 
 DEFAULT_ENSEMBLE_THRESHOLD = 0.7
 DEFAULT_ENSEMBLE_WEIGHTS = [1.0, 1.0, 0.7]
@@ -26,9 +27,7 @@ def load_best_ensemble_params():
             weights = params.get("weights", DEFAULT_ENSEMBLE_WEIGHTS)
             print(f"[ensemble_utils] Loader threshold/weights fra fil: {PARAMS_PATH}")
         except Exception as e:
-            print(
-                f"[ensemble_utils] Kunne ikke læse {PARAMS_PATH}: {e}. Bruger default."
-            )
+            print(f"[ensemble_utils] Kunne ikke læse {PARAMS_PATH}: {e}. Bruger default.")
     else:
         print(f"[ensemble_utils] Ingen {PARAMS_PATH} fundet. Bruger default.")
     return threshold, weights

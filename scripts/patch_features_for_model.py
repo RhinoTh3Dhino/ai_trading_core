@@ -4,23 +4,48 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Tuple, Optional, List
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-
 # De kolonner din model forventer:
 REQ_COLS: List[str] = [
-    "open", "high", "low", "close", "volume",
-    "ema_9", "ema_21", "ema_50", "ema_200",
-    "macd", "macd_signal", "macd_hist",
-    "rsi_14", "rsi_28", "atr_14",
-    "bb_upper", "bb_lower",
-    "vwap", "zscore_20", "return", "pv_ratio", "regime",
-    "rsi_28_z", "regime_z", "macd_z", "ema_200_z", "rsi_14_z",
-    "ema_9_z", "vwap_z", "zscore_20_z", "bb_upper_z", "bb_lower_z",
-    "ema_50_z", "atr_14_z", "ema_21_z",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "ema_9",
+    "ema_21",
+    "ema_50",
+    "ema_200",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "rsi_14",
+    "rsi_28",
+    "atr_14",
+    "bb_upper",
+    "bb_lower",
+    "vwap",
+    "zscore_20",
+    "return",
+    "pv_ratio",
+    "regime",
+    "rsi_28_z",
+    "regime_z",
+    "macd_z",
+    "ema_200_z",
+    "rsi_14_z",
+    "ema_9_z",
+    "vwap_z",
+    "zscore_20_z",
+    "bb_upper_z",
+    "bb_lower_z",
+    "ema_50_z",
+    "atr_14_z",
+    "ema_21_z",
 ]
 
 # Små ‘gulvtærskler’ så vi undgår 0-division downstream
@@ -83,7 +108,7 @@ def read_meta_csv(path: Path) -> Tuple[Optional[dict], pd.DataFrame]:
     df = pd.read_csv(
         path,
         skiprows=skiprows,
-        comment="#",              # <- vigtig: ignorer kommentartekstlinjer
+        comment="#",  # <- vigtig: ignorer kommentartekstlinjer
         encoding="utf-8",
     )
     # Fjern spøgelseskolonner (fx "Unnamed: 35")
@@ -117,7 +142,9 @@ def ensure_timestamp(df: pd.DataFrame, freq: str, end_utc: Optional[str]) -> pd.
         df.rename(columns={have: "timestamp"}, inplace=True)
 
     if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True).dt.tz_convert(None)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True).dt.tz_convert(
+            None
+        )
         # Hvis alt blev NaT (helt ubrugeligt), generér nyt
         if df["timestamp"].isna().all():
             have = None
@@ -149,7 +176,13 @@ def compute_robust_atr(high: pd.Series, low: pd.Series, close: pd.Series, n: int
     c = ensure_positive_series(close, EPS_PRICE)
     tr = np.maximum(h - l, np.maximum((h - c.shift()).abs(), (l - c.shift()).abs()))
     atr = tr.rolling(n, min_periods=1).mean()
-    atr = atr.replace([0, np.inf, -np.inf], np.nan).bfill().ffill().fillna(EPS_ATR).clip(lower=EPS_ATR)
+    atr = (
+        atr.replace([0, np.inf, -np.inf], np.nan)
+        .bfill()
+        .ffill()
+        .fillna(EPS_ATR)
+        .clip(lower=EPS_ATR)
+    )
     return atr
 
 
@@ -158,8 +191,16 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Patch features to match model expectations.")
     ap.add_argument("--in", dest="inp", required=True, help="Input CSV med features")
     ap.add_argument("--out", dest="out", required=True, help="Output CSV (overskrives)")
-    ap.add_argument("--freq", default="H", help="Frekvens til syntetisk timestamp hvis mangler (default: H)")
-    ap.add_argument("--end-utc", default=None, help="Sluttid i UTC til syntetisk timestamp (fx 2025-09-01 12:00)")
+    ap.add_argument(
+        "--freq",
+        default="H",
+        help="Frekvens til syntetisk timestamp hvis mangler (default: H)",
+    )
+    ap.add_argument(
+        "--end-utc",
+        default=None,
+        help="Sluttid i UTC til syntetisk timestamp (fx 2025-09-01 12:00)",
+    )
     args = ap.parse_args()
 
     inp = Path(args.inp)
@@ -172,9 +213,17 @@ def main() -> int:
 
     # 1) Rens primære numeriske kolonner
     for col, eps in [
-        ("open", EPS_PRICE), ("high", EPS_PRICE), ("low", EPS_PRICE), ("close", EPS_PRICE),
-        ("ema_9", EPS_PRICE), ("ema_21", EPS_PRICE), ("ema_50", EPS_PRICE), ("ema_200", EPS_PRICE),
-        ("macd", 0.0), ("macd_signal", 0.0), ("volume", EPS_VOL),
+        ("open", EPS_PRICE),
+        ("high", EPS_PRICE),
+        ("low", EPS_PRICE),
+        ("close", EPS_PRICE),
+        ("ema_9", EPS_PRICE),
+        ("ema_21", EPS_PRICE),
+        ("ema_50", EPS_PRICE),
+        ("ema_200", EPS_PRICE),
+        ("macd", 0.0),
+        ("macd_signal", 0.0),
+        ("volume", EPS_VOL),
     ]:
         if col in df.columns:
             if col == "volume":
@@ -188,7 +237,9 @@ def main() -> int:
     # 2) Afledte kolonner
     # macd_hist
     if "macd" in df.columns and "macd_signal" in df.columns and "macd_hist" not in df.columns:
-        df["macd_hist"] = pd.to_numeric(df["macd"], errors="coerce") - pd.to_numeric(df["macd_signal"], errors="coerce")
+        df["macd_hist"] = pd.to_numeric(df["macd"], errors="coerce") - pd.to_numeric(
+            df["macd_signal"], errors="coerce"
+        )
 
     # rsi_14
     if "rsi_14" not in df.columns and "close" in df.columns:
@@ -246,12 +297,29 @@ def main() -> int:
             df["atr_14"] = EPS_ATR
         else:
             s = pd.to_numeric(df["atr_14"], errors="coerce")
-            df["atr_14"] = s.replace([0, np.inf, -np.inf], np.nan).bfill().ffill().fillna(EPS_ATR).clip(lower=EPS_ATR)
+            df["atr_14"] = (
+                s.replace([0, np.inf, -np.inf], np.nan)
+                .bfill()
+                .ffill()
+                .fillna(EPS_ATR)
+                .clip(lower=EPS_ATR)
+            )
 
     # _z kolonner
     z_targets = [
-        "rsi_28", "regime", "macd", "ema_200", "rsi_14", "ema_9", "vwap",
-        "zscore_20", "bb_upper", "bb_lower", "ema_50", "atr_14", "ema_21",
+        "rsi_28",
+        "regime",
+        "macd",
+        "ema_200",
+        "rsi_14",
+        "ema_9",
+        "vwap",
+        "zscore_20",
+        "bb_upper",
+        "bb_lower",
+        "ema_50",
+        "atr_14",
+        "ema_21",
     ]
     for base in z_targets:
         zname = f"{base}_z"

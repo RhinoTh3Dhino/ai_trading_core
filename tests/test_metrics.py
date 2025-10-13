@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -7,9 +7,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(str(PROJECT_ROOT)))
 import numpy as np
 
-
 try:
-    from backtest.metrics import calculate_sharpe, calculate_drawdown
+    from backtest.metrics import calculate_drawdown, calculate_sharpe
 except ImportError as e:
     raise ImportError(f"Kunne ikke importere backtest.metrics: {e}")
 

@@ -11,9 +11,7 @@ def ema_cross_signals(df, fast_col="ema_9", slow_col="ema_21", allow_short=True)
         allow_short: Hvis False, returneres kun 1 (BUY) og 0 (HOLD)
     """
     if fast_col not in df.columns or slow_col not in df.columns:
-        raise ValueError(
-            f"Mangler '{fast_col}' eller '{slow_col}' i df: {list(df.columns)}"
-        )
+        raise ValueError(f"Mangler '{fast_col}' eller '{slow_col}' i df: {list(df.columns)}")
     signals = []
     for fast, slow in zip(df[fast_col], df[slow_col]):
         if np.isnan(fast) or np.isnan(slow):

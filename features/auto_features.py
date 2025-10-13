@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Tuple, Dict
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -80,7 +80,9 @@ def _generate_from_raw(raw_path: Path) -> pd.DataFrame:
     return df_features
 
 
-def _fetch_ohlcv_binance(symbol: str, timeframe: str, lookback_days: int = 180, limit_per_call: int = 1000) -> pd.DataFrame:
+def _fetch_ohlcv_binance(
+    symbol: str, timeframe: str, lookback_days: int = 180, limit_per_call: int = 1000
+) -> pd.DataFrame:
     """
     Henter OHLCV via ccxt.binance (hvis installeret). Returnerer DataFrame med
     ['timestamp','open','high','low','close','volume'] i UTC ms → ISO.

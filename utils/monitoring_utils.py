@@ -7,8 +7,8 @@ try:
     from config.monitoring_config import (
         ALARM_THRESHOLDS,
         ALERT_ON_DRAWNDOWN,
-        ALERT_ON_WINRATE,
         ALERT_ON_PROFIT,
+        ALERT_ON_WINRATE,
         ENABLE_MONITORING,
     )
 except ImportError:
@@ -40,9 +40,7 @@ def calculate_live_metrics(trades_df, balance_df, initial_balance=1000):
         }
 
     # Profit (pct)
-    final_balance = (
-        balance_df["balance"].iloc[-1] if not balance_df.empty else initial_balance
-    )
+    final_balance = balance_df["balance"].iloc[-1] if not balance_df.empty else initial_balance
     profit_pct = (final_balance - initial_balance) / initial_balance * 100
 
     # Win-rate (% af lukkede trades med positiv profit)
@@ -64,9 +62,7 @@ def calculate_live_metrics(trades_df, balance_df, initial_balance=1000):
     profit_factor = gross_profit / gross_loss if gross_loss > 0 else 0.0
 
     # Simpel “sharpe ratio” på daglige returns
-    returns = (
-        balance_df["balance"].pct_change().dropna() if not balance_df.empty else []
-    )
+    returns = balance_df["balance"].pct_change().dropna() if not balance_df.empty else []
     sharpe = (
         (returns.mean() / returns.std()) * np.sqrt(252)
         if len(returns) > 2 and returns.std() > 0
@@ -136,12 +132,8 @@ def send_live_metrics(
 
     # Brug thresholds og flags fra config hvis ikke angivet
     thresholds = thresholds or ALARM_THRESHOLDS
-    alert_on_drawdown = (
-        ALERT_ON_DRAWNDOWN if alert_on_drawdown is None else alert_on_drawdown
-    )
-    alert_on_winrate = (
-        ALERT_ON_WINRATE if alert_on_winrate is None else alert_on_winrate
-    )
+    alert_on_drawdown = ALERT_ON_DRAWNDOWN if alert_on_drawdown is None else alert_on_drawdown
+    alert_on_winrate = ALERT_ON_WINRATE if alert_on_winrate is None else alert_on_winrate
     alert_on_profit = ALERT_ON_PROFIT if alert_on_profit is None else alert_on_profit
 
     metrics = calculate_live_metrics(trades_df, balance_df)

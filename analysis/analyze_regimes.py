@@ -1,17 +1,17 @@
-import pandas as pd
-import numpy as np
 import matplotlib
+import numpy as np
+import pandas as pd
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 
 # Importér strategi- og ensemblefunktioner
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
-from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
+from strategies.rsi_strategy import rsi_rule_based_signals
 
 # === OUTPUT DIR ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,9 +38,7 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (
-            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
-        )
+        win_rate = (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
         profit_pct = group["profit"].sum() if "profit" in group.columns else 0
         drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {

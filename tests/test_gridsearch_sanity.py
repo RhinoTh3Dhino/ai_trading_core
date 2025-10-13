@@ -9,12 +9,13 @@ Automatiseret sanity check:
 Kør: python -m tests.test_gridsearch_sanity
 """
 
-import sys
 import os
-from pathlib import Path
 import subprocess
-import pandas as pd
+import sys
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import pytest
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -34,9 +35,7 @@ def ensure_features_file():
     """Sikrer at feature-filen altid findes og har target_regime_adapt."""
     # (1) Opret/overskriv feature-fil hvis den ikke findes
     if not DATA_FEATURES_PATH.exists():
-        print(
-            f"[SETUP] Features-fil mangler ({DATA_FEATURES_PATH}). Genererer fra rådata ..."
-        )
+        print(f"[SETUP] Features-fil mangler ({DATA_FEATURES_PATH}). Genererer fra rådata ...")
         try:
             from features.features_pipeline import generate_features
         except Exception as e:
@@ -59,10 +58,7 @@ def ensure_features_file():
         else:
             df = pd.read_csv(DATA_RAW_PATH, sep=";")
         features_df = generate_features(df)
-        if (
-            "regime" in features_df.columns
-            and "target_regime_adapt" not in features_df.columns
-        ):
+        if "regime" in features_df.columns and "target_regime_adapt" not in features_df.columns:
             features_df["target_regime_adapt"] = (
                 features_df["regime"].shift(-1) != features_df["regime"]
             ).astype(int)
@@ -74,9 +70,7 @@ def ensure_features_file():
         if "target_regime_adapt" not in features_df.columns:
             print("[SETUP] Tilføjer manglende kolonne 'target_regime_adapt'...")
             if "regime" not in features_df.columns:
-                print(
-                    "[FEJL] Kan ikke generere target_regime_adapt – mangler regime-kolonne!"
-                )
+                print("[FEJL] Kan ikke generere target_regime_adapt – mangler regime-kolonne!")
                 sys.exit(1)
             features_df["target_regime_adapt"] = (
                 features_df["regime"].shift(-1) != features_df["regime"]

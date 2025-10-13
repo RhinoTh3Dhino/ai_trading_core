@@ -1,9 +1,10 @@
 # tests/test_file_utils.py
+import builtins
 import importlib
 import os
-from pathlib import Path
-import builtins
 import types
+from pathlib import Path
+
 import pytest
 
 
@@ -30,13 +31,24 @@ def test_file_utils_resolve_and_mkdir_and_write(tmp_path):
     if resolve_fn:
         # "~" skal udvides til HOME
         home = Path.home()
-        resolved = resolve_fn(str(Path.home() / "some" / "file.txt")) if "~" not in str(home) else resolve_fn("~/some/file.txt")
+        resolved = (
+            resolve_fn(str(Path.home() / "some" / "file.txt"))
+            if "~" not in str(home)
+            else resolve_fn("~/some/file.txt")
+        )
         assert str(resolved).startswith(str(home)), f"{resolve_name} udvider ikke til HOME"
 
     # 2) ensure_dir / safe_makedirs / mkdir_p
     ensure_dir_fn, _ = _first_callable(
         fu,
-        ("ensure_dir", "ensure_directory", "ensure_parent_dir", "safe_makedirs", "mkdir_p", "make_dirs"),
+        (
+            "ensure_dir",
+            "ensure_directory",
+            "ensure_parent_dir",
+            "safe_makedirs",
+            "mkdir_p",
+            "make_dirs",
+        ),
     )
     target_dir = tmp_path / "nested" / "dir"
     if ensure_dir_fn:

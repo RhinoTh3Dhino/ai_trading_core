@@ -30,8 +30,8 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-
 # ---------- Hjælpefunktioner ----------
+
 
 def _as_series(y: Union[pd.Series, np.ndarray, list], name: str = "target") -> pd.Series:
     if isinstance(y, pd.Series):
@@ -87,12 +87,13 @@ def _undersample_indices(
 
 # ---------- Offentlige API-funktioner ----------
 
+
 def balance_classes(
     X: Optional[pd.DataFrame] = None,
     y: Optional[Union[pd.Series, np.ndarray, list]] = None,
     *,
     target: Optional[str] = None,
-    method: str = "oversample",          # "oversample" / "undersample"
+    method: str = "oversample",  # "oversample" / "undersample"
     ratio: float = 1.0,
     random_state: Optional[int] = 0,
 ) -> Union[pd.Series, Tuple[pd.DataFrame, pd.Series]]:
@@ -196,7 +197,12 @@ def balance_target(*args, **kwargs):
         random_state = kwargs.get("random_state", 42)
         verbose = kwargs.get("verbose", False)
         return balance_df(
-            df, target=target, method=method, random_state=random_state, ratio=ratio, verbose=verbose
+            df,
+            target=target,
+            method=method,
+            random_state=random_state,
+            ratio=ratio,
+            verbose=verbose,
         )
 
     # Faldbag: antag det er et y-input
@@ -204,6 +210,7 @@ def balance_target(*args, **kwargs):
 
 
 # ---------- CLI ----------
+
 
 def main():
     parser = argparse.ArgumentParser(description="Balancer target-klasser i feature-CSV.")

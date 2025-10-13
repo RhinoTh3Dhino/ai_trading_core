@@ -1,13 +1,16 @@
-import glob, json
-import pandas as pd
-import numpy as np
+import glob
+import json
+
 import matplotlib
+import numpy as np
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 
 # === LÆS COINS FRA config/coins.json (fallback til default) ===
 COINS_JSON_PATH = os.path.join("config", "coins.json")
@@ -36,8 +39,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # === Importér strategi og backtest utils fra dine egne moduler ===
 from ensemble.majority_vote_ensemble import majority_vote_ensemble
-from strategies.rsi_strategy import rsi_rule_based_signals
 from strategies.macd_strategy import macd_cross_signals
+from strategies.rsi_strategy import rsi_rule_based_signals
 
 
 def compute_regime(df, ema_col="ema_200", price_col="close"):
@@ -101,9 +104,7 @@ def regime_performance(trades_df, regime_col="regime"):
     results = {}
     for name, group in grouped:
         n = len(group)
-        win_rate = (
-            (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
-        )
+        win_rate = (group["profit"] > 0).mean() if n > 0 and "profit" in group.columns else 0
         profit_pct = group["profit"].sum() if "profit" in group.columns else 0
         drawdown_pct = group["drawdown"].min() if "drawdown" in group.columns else None
         results[name] = {
@@ -129,9 +130,7 @@ def aggregate_coin_metrics(coin, regime_stats_dict):
 
 
 def plot_portfolio_heatmap(df, run_id, output_dir=OUTPUT_DIR):
-    heatmap_df = df.set_index("Coin")[
-        [c for c in df.columns if str(c).endswith("_win")]
-    ]
+    heatmap_df = df.set_index("Coin")[[c for c in df.columns if str(c).endswith("_win")]]
     heatmap_df = heatmap_df.apply(pd.to_numeric, errors="coerce").fillna(0)
     import seaborn as sns
 

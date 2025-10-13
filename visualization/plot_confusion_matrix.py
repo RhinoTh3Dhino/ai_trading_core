@@ -1,10 +1,11 @@
 # visualization/plot_confusion_matrix.py
 
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 
 def plot_confusion_matrix(
@@ -77,9 +78,7 @@ def plot_confusion_matrix(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Plot confusion matrix for AI trading bot"
-    )
+    parser = argparse.ArgumentParser(description="Plot confusion matrix for AI trading bot")
     parser.add_argument(
         "--y_true",
         type=str,

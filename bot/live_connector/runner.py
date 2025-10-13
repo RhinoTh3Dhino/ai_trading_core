@@ -1,31 +1,31 @@
 # bot/live_connector/runner.py
 from __future__ import annotations
 
-import os
-import time
 import asyncio
 import logging
+import os
+import time
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
 
 # Prometheus endpoint/registry (ingen ny-registrering af metrics her!)
 from prometheus_client import (
-    CollectorRegistry,
-    multiprocess,
-    generate_latest,
     CONTENT_TYPE_LATEST,
     REGISTRY,
+    CollectorRegistry,
+    generate_latest,
+    multiprocess,
 )
 
 # Projekt-metrics helpers (metrics er registreret i bot/live_connector/metrics.py)
 from .metrics import (
-    observe_transport_latency,
-    set_bar_close_lag,
     inc_bars,
     inc_reconnect,
+    observe_transport_latency,
+    set_bar_close_lag,
     set_queue_depth,
     time_feature,
 )
@@ -34,6 +34,7 @@ from .metrics import (
 try:
     from .label_guard import LabelLimiter  # hvis tilgængelig i repo
 except Exception:  # pragma: no cover
+
     class LabelLimiter:  # no-op fallback
         def __init__(self, whitelist=None, max_items: int = 10_000):
             self.whitelist = set(whitelist or [])
@@ -55,11 +56,11 @@ except Exception:  # pragma: no cover
 try:  # pragma: no cover
     from .features import (
         compute_all_features,
+        compute_atr14,
         compute_ema14,
         compute_ema50,
         compute_rsi14,
         compute_vwap,
-        compute_atr14,
     )
 except Exception:  # pragma: no cover
     compute_all_features = None
@@ -78,7 +79,9 @@ QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
 READINESS_MAX_LAG_SECS = int(os.getenv("READINESS_MAX_LAG_SECS", "120"))
 
 # Label-guard setup
-_symbols_whitelist = [s.strip() for s in os.getenv("OBS_SYMBOLS_WHITELIST", "").split(",") if s.strip()]
+_symbols_whitelist = [
+    s.strip() for s in os.getenv("OBS_SYMBOLS_WHITELIST", "").split(",") if s.strip()
+]
 _symbols_max = int(os.getenv("OBS_SYMBOLS_MAX", "100"))
 SYMBOLS = LabelLimiter(whitelist=_symbols_whitelist or None, max_items=_symbols_max)
 
@@ -118,7 +121,9 @@ if PROMETHEUS_MULTIPROC_DIR:
     async def metrics_mp() -> Response:
         data = generate_latest(_registry)
         return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+
 else:
+
     @app.get("/metrics")
     async def metrics_sp() -> Response:
         data = generate_latest(REGISTRY)
@@ -141,9 +146,11 @@ _main_queue: Optional[Any] = None
 async def root() -> JSONResponse:
     return JSONResponse({"service": "live_connector", "status": "ok"})
 
+
 @app.get("/healthz")
 async def healthz() -> JSONResponse:
     return JSONResponse({"status": "ok"})
+
 
 @app.get("/ready")
 async def ready() -> JSONResponse:
@@ -155,15 +162,20 @@ async def ready() -> JSONResponse:
     ok = lag_ms <= READINESS_MAX_LAG_SECS * 1000
     return JSONResponse({"ready": ok, "lag_ms": lag_ms}, status_code=200 if ok else 503)
 
+
 @app.get("/status")
 async def status() -> JSONResponse:
-    return JSONResponse({
-        "venues": _active_venues,
-        "symbols": len(_last_bar_ts_ms),
-        "last_bar_ts_ms": _last_bar_ts_ms,
-        "queue_depth": _main_queue.qsize() if _main_queue and hasattr(_main_queue, "qsize") else None,
-        "quiet": QUIET,
-    })
+    return JSONResponse(
+        {
+            "venues": _active_venues,
+            "symbols": len(_last_bar_ts_ms),
+            "last_bar_ts_ms": _last_bar_ts_ms,
+            "queue_depth": (
+                _main_queue.qsize() if _main_queue and hasattr(_main_queue, "qsize") else None
+            ),
+            "quiet": QUIET,
+        }
+    )
 
 
 # ----------------------------------------------------------------------------------------
@@ -174,6 +186,7 @@ async def on_tick_or_kline(msg: Msg) -> None:
     if SYMBOLS.allow(msg.symbol):
         observe_transport_latency(msg.venue, msg.symbol, msg.event_ts_ms)
 
+
 async def on_bar_final(bar: Bar) -> None:
     if not bar.is_final:
         return
@@ -182,13 +195,16 @@ async def on_bar_final(bar: Bar) -> None:
         set_bar_close_lag(bar.venue, bar.symbol, bar.end_ms)
         inc_bars(bar.venue, bar.symbol, 1)
 
+
 def on_reconnect(venue: str) -> None:
     _active_venues[venue] = True
     inc_reconnect(venue)
 
+
 def register_main_queue(q: Any) -> None:
     global _main_queue
     _main_queue = q
+
 
 async def poll_queue_depth(q: Any) -> None:
     depth = q.qsize() if hasattr(q, "qsize") else None
@@ -246,7 +262,11 @@ async def _bg_status_task() -> None:
                         ",".join(sorted(k for k, v in _active_venues.items() if v)) or "-",
                         len(_last_bar_ts_ms),
                         lag_ms if lag_ms is not None else "-",
-                        _main_queue.qsize() if _main_queue and hasattr(_main_queue, 'qsize') else "-"
+                        (
+                            _main_queue.qsize()
+                            if _main_queue and hasattr(_main_queue, "qsize")
+                            else "-"
+                        ),
                     )
             await asyncio.sleep(max(5, STATUS_MIN_SECS))
         except asyncio.CancelledError:
@@ -254,6 +274,7 @@ async def _bg_status_task() -> None:
         except Exception as e:  # pragma: no cover
             LOG.warning("status task error: %s", e)
             await asyncio.sleep(5)
+
 
 async def _bg_queue_depth_task() -> None:
     while True:
@@ -272,6 +293,7 @@ async def _bg_queue_depth_task() -> None:
 # Lifespan hooks
 # ----------------------------------------------------------------------------------------
 _bg_tasks: list[asyncio.Task] = []
+
 
 @app.on_event("startup")
 async def _on_startup() -> None:
@@ -298,6 +320,7 @@ async def _on_startup() -> None:
 
     _bg_tasks.append(asyncio.create_task(_bg_status_task(), name="status"))
     _bg_tasks.append(asyncio.create_task(_bg_queue_depth_task(), name="queue-depth"))
+
 
 @app.on_event("shutdown")
 async def _on_shutdown() -> None:
@@ -337,4 +360,5 @@ def _debug_emit_sample() -> JSONResponse:
 # ----------------------------------------------------------------------------------------
 if __name__ == "__main__":  # pragma: no cover
     import uvicorn
+
     uvicorn.run("bot.live_connector.runner:app", host="0.0.0.0", port=8000, workers=1)

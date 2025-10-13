@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
@@ -95,9 +95,7 @@ def calculate_cci(df: pd.DataFrame, period: int = 20) -> pd.Series:
     return cci.fillna(0)
 
 
-def calculate_supertrend(
-    df: pd.DataFrame, period: int = 10, multiplier: float = 3.0
-) -> pd.Series:
+def calculate_supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> pd.Series:
     """Beregn Supertrend."""
     atr = calculate_atr(df, period)
     hl2 = (df["high"] + df["low"]) / 2
@@ -116,13 +114,9 @@ def calculate_supertrend(
         else:
             supertrend.append(supertrend[-1])
         if supertrend[-1]:
-            final_lowerband.iloc[i] = max(
-                lowerband.iloc[i], final_lowerband.iloc[i - 1]
-            )
+            final_lowerband.iloc[i] = max(lowerband.iloc[i], final_lowerband.iloc[i - 1])
         else:
-            final_upperband.iloc[i] = min(
-                upperband.iloc[i], final_upperband.iloc[i - 1]
-            )
+            final_upperband.iloc[i] = min(upperband.iloc[i], final_upperband.iloc[i - 1])
     return pd.Series(supertrend, index=df.index).astype(int)
 
 

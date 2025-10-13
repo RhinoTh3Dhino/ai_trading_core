@@ -44,9 +44,7 @@ def auto_fix_startswith_in_file(filepath):
                 start, end = m.span(1)
                 new_line = new_line[:start] + f"str({varname})" + new_line[end:]
             if new_line != line:
-                print(
-                    f"[RETTER] {filepath} ({i+1}): {line.strip()} → {new_line.strip()}"
-                )
+                print(f"[RETTER] {filepath} ({i+1}): {line.strip()} → {new_line.strip()}")
                 changed = True
             new_lines.append(new_line)
         else:
@@ -81,9 +79,7 @@ def main():
                     n_fixed += 1
                 if problems:
                     n_problems += len(problems)
-                    print(
-                        f"\n[ADVARSEL] Potentielt UGYLDIG eller MISTÆNKELIG kode i {fpath}:"
-                    )
+                    print(f"\n[ADVARSEL] Potentielt UGYLDIG eller MISTÆNKELIG kode i {fpath}:")
                     for lineno, snippet, pattern in problems:
                         print(f"  Linje {lineno}: {snippet}")
                         print(f"    ↳ Matcher mønster: {pattern}")

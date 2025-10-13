@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import socket
-from urllib import request, error
+from urllib import error, request
 
 import pytest
 

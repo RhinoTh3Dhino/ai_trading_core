@@ -21,6 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import io
 import os
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -148,7 +149,12 @@ def test_run_backtest_raises_on_missing_columns():
         bt.run_backtest(df, signals=[0] * len(df))  # 'close' mangler
 
     # 'datetime' skal mappes, og ema_200 kræves af compute_regime i mange implementeringer
-    df2 = pd.DataFrame({"datetime": pd.date_range("2024-01-01", periods=5, freq="h"), "close": [1, 2, 3, 4, 5]})
+    df2 = pd.DataFrame(
+        {
+            "datetime": pd.date_range("2024-01-01", periods=5, freq="h"),
+            "close": [1, 2, 3, 4, 5],
+        }
+    )
     df2["ema_200"] = pd.Series([1, 2, 3, 4, 5]).ewm(span=3, adjust=False).mean()
     # Virker trods 'datetime' (renames internt)
     trades, balance = bt.run_backtest(df2, signals=[0] * len(df2))
@@ -191,7 +197,12 @@ def test_calc_backtest_metrics_maps_fields(monkeypatch):
     monkeypatch.setattr(bt, "advanced_performance_metrics", lambda t, b, i: fake)
 
     trades = pd.DataFrame({"type": ["OPEN", "TP", "SL", "CLOSE", "INFO"]})
-    balance = pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=3, freq="h"), "balance": [1000, 1010, 1005]})
+    balance = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=3, freq="h"),
+            "balance": [1000, 1010, 1005],
+        }
+    )
     out = bt.calc_backtest_metrics(trades, balance, initial_balance=1000)
 
     assert out["profit_pct"] == 12.3

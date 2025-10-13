@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Iterable, Optional, List, Dict
+from typing import Dict, Iterable, List, Optional
 
 from .errors import EmptyCSVError, MissingColumnsError
 

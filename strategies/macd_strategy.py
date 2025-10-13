@@ -11,9 +11,7 @@ def macd_cross_signals(df, macd_col="macd", signal_col="macd_signal", allow_shor
         allow_short: Hvis False, returner kun 1 (BUY) og 0 (HOLD)
     """
     if macd_col not in df.columns or signal_col not in df.columns:
-        raise ValueError(
-            f"Mangler '{macd_col}' eller '{signal_col}' i df: {list(df.columns)}"
-        )
+        raise ValueError(f"Mangler '{macd_col}' eller '{signal_col}' i df: {list(df.columns)}")
     signals = []
     for macd, signal in zip(df[macd_col], df[signal_col]):
         if np.isnan(macd) or np.isnan(signal):

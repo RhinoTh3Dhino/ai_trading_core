@@ -5,9 +5,7 @@ import torch.nn as nn
 
 
 class MLPClassifier(nn.Module):
-    def __init__(
-        self, input_dim, hidden_dim=64, dropout=0.2, output_dim=1, activation="sigmoid"
-    ):
+    def __init__(self, input_dim, hidden_dim=64, dropout=0.2, output_dim=1, activation="sigmoid"):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
