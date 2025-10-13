@@ -33,6 +33,9 @@ logs/
 .tox/
 .pytest_cache/
 .ipynb_checkpoints/
+*.tmp
+*.temp
+*.bak
 
 # =========================
 # PERSISTENS & ARTEFAKTER (FASE 4)
@@ -166,6 +169,8 @@ eggs/
 *.spec
 .typings/
 .python-version
+.pyre/
+.pytype/
 
 # =========================
 # TEST / NOTEBOOKS / UDGANGE
@@ -184,6 +189,7 @@ output/
 .github/workflows/*.bak
 reports/
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
 
@@ -228,6 +234,7 @@ ops/compose/.env
 /DIT_TELEGRAM_BOT_TOKEN
 /7919277721
 DIT_*
+ai_summary.txt
 
 # =========================
 # TILLADELSE: MARKDOWN ALTID

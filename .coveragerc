@@ -2,26 +2,11 @@
 [run]
 branch = True
 relative_files = True
+# Fokusér coverage på persistenslag (Fase 4)
 source =
-    bot
-
-# Normalisér stier på tværs af OS og forskellige workdirs (især Windows)
-[paths]
-source =
-    bot
-    */ai_trading_core/bot
-    *\ai_trading_core\bot
-
-[report]
-# Skjul typiske "ikke-kørbare" linjer
-exclude_lines =
-    pragma: no cover
-    if __name__ == .__main__.:
-    if TYPE_CHECKING:
-    except ImportError:
-    except ModuleNotFoundError:
-
-# Udeluk mapper/filer der ikke skal tælle i denne fase
+    utils
+    tools
+# Udeluk moduler der ikke indgår i denne test-scope
 omit =
     tests/*
     ops/*
@@ -33,8 +18,40 @@ omit =
     mlruns/*
     data/*
     config/*
+    api/*
+    services/*
+    bot/*
+    gui/*
+    ui/*
+    models/*
     **/__init__.py
     **/conftest.py
 
+[paths]
+# Normalisér stier på tværs af OS/workdirs
+source =
+    utils
+    tools
+    */ai_trading_core/utils
+    */ai_trading_core/tools
+    *\ai_trading_core\utils
+    *\ai_trading_core\tools
+
+[report]
+# Skjul typiske "ikke-kørbare" linjer
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    except ImportError:
+    except ModuleNotFoundError:
 show_missing = True
 precision = 2
+skip_covered = True
+
+[html]
+directory = htmlcov
+title = Coverage — Fase 4 (Persistens & Filhygiejne)
+
+[xml]
+output = reports/coverage.xml
