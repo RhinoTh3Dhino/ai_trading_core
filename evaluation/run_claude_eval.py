@@ -7,15 +7,13 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
+from .claude_eval import ANTHROPIC_API_KEY  # for auto-dry-run hvis nøgle mangler
+from .claude_eval import call_claude, validate_payload
 from .loaders import load_recent_trades, summarize_for_prompt
-from .claude_eval import (
-    call_claude,
-    validate_payload,
-    ANTHROPIC_API_KEY,   # for auto-dry-run hvis nøgle mangler
-)
+
 
 def _read_prompt_template(root: Path) -> str:
-    p = (root / "prompts" / "claude_eval_v1.md")
+    p = root / "prompts" / "claude_eval_v1.md"
     if p.exists():
         return p.read_text(encoding="utf-8")
     # Fallback mini-skabelon hvis filen ikke findes
@@ -25,6 +23,7 @@ def _read_prompt_template(root: Path) -> str:
         "action {hold|scale_in|scale_out|exit}, confidence (0..1).\n"
         "Use the data below."
     )
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Run Claude eval against recent trades and save JSON.")

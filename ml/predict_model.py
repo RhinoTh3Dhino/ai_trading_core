@@ -1,6 +1,7 @@
 # ml/predict_model.py
 
 import os
+
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
@@ -28,9 +29,7 @@ def load_trained_model(model_path: str):
     return model
 
 
-def predict_with_model(
-    df: pd.DataFrame, model_path: str, seq_length: int = 48
-) -> np.ndarray:
+def predict_with_model(df: pd.DataFrame, model_path: str, seq_length: int = 48) -> np.ndarray:
     """
     Forbereder data og laver prediktioner med den trænede model.
     Args:

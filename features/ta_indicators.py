@@ -52,7 +52,9 @@ def add_ta_indicators(df: pd.DataFrame, force_no_supertrend: bool = False) -> pd
     df["ema_200"] = ta.trend.EMAIndicator(close=close, window=200, fillna=False).ema_indicator()
 
     # MACD
-    macd_ind = ta.trend.MACD(close=close, window_slow=26, window_fast=12, window_sign=9, fillna=False)
+    macd_ind = ta.trend.MACD(
+        close=close, window_slow=26, window_fast=12, window_sign=9, fillna=False
+    )
     df["macd"] = macd_ind.macd()
     df["macd_signal"] = macd_ind.macd_signal()
     df["macd_hist"] = macd_ind.macd_diff()
@@ -83,7 +85,9 @@ def add_ta_indicators(df: pd.DataFrame, force_no_supertrend: bool = False) -> pd
         df["vwap"] = npNaN
 
     # OBV
-    df["obv"] = ta.volume.OnBalanceVolumeIndicator(close=close, volume=vol, fillna=False).on_balance_volume()
+    df["obv"] = ta.volume.OnBalanceVolumeIndicator(
+        close=close, volume=vol, fillna=False
+    ).on_balance_volume()
 
     # ADX
     df["adx_14"] = ta.trend.ADXIndicator(

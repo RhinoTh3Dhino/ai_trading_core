@@ -1,0 +1,54 @@
+# pyproject.toml — læg i projektroden
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = '''
+/(
+  \.git
+| \.venv
+| \.pytest_cache
+| build
+| dist
+| outputs
+| logs
+| backups
+| mlruns
+| ops/alertmanager
+| ops/prometheus
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = [
+  "bot","utils","backtest","features","trainers",
+  "analysis","api","services","data","evaluation","gui","config"
+]
+default_section = "THIRDPARTY"
+sections = ["FUTURE","STDLIB","THIRDPARTY","FIRSTPARTY","LOCALFOLDER"]
+skip_gitignore = true
+skip = ["outputs","logs","backups","mlruns"]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203","W503"]
+exclude = [".git","__pycache__",".venv","outputs","logs","backups","mlruns"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests/venues","tests/integration"]
+python_files = ["test_*.py","*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+exclude = '(^\.venv|^outputs|^logs|^backups|^mlruns)'

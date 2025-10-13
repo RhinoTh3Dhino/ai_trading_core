@@ -1,43 +1,42 @@
-from utils.project_path import PROJECT_ROOT
-
-# bot/live_simulator.py
-
-
-import pandas as pd
-import numpy as np
+import argparse
 import glob
 from datetime import datetime
-import argparse
 
+import numpy as np
+import pandas as pd
 
+from backtest.backtest import run_backtest
+from bot.engine import load_ml_model, load_trained_feature_list, reconcile_features
+from utils.file_utils import save_with_metadata
 from utils.log_utils import log_device_status
-from utils.telegram_utils import send_message, send_strategy_metrics
 from utils.monitoring_utils import (
     calculate_live_metrics,
     check_drawdown_alert,
-    check_winrate_alert,
     check_profit_alert,
+    check_winrate_alert,
 )
-from utils.file_utils import save_with_metadata
-from backtest.backtest import run_backtest
-from bot.engine import load_ml_model, load_trained_feature_list, reconcile_features
+from utils.project_path import PROJECT_ROOT
+from utils.telegram_utils import send_message, send_strategy_metrics
+
+# bot/live_simulator.py
+
 
 # === Monitoring-parametre og thresholds fra central config ===
 try:
     from config.monitoring_config import (
         ALARM_THRESHOLDS,
         ALERT_ON_DRAWNDOWN,
-        ALERT_ON_WINRATE,
         ALERT_ON_PROFIT,
+        ALERT_ON_WINRATE,
         ENABLE_MONITORING,
+        LIVE_SIM_CHAT_ID,
+        LIVE_SIM_FEATURES_DIR,
         LIVE_SIM_FEATURES_PATH,
         LIVE_SIM_INITIAL_BALANCE,
         LIVE_SIM_NROWS,
-        LIVE_SIM_CHAT_ID,
-        MODEL_TYPE,
         LIVE_SIM_SYMBOL,
         LIVE_SIM_TIMEFRAME,
-        LIVE_SIM_FEATURES_DIR,
+        MODEL_TYPE,
     )
 except ImportError:
     ALARM_THRESHOLDS = {"drawdown": -20, "winrate": 20, "profit": -10}
@@ -94,15 +93,11 @@ def load_signals(df, model_type=MODEL_TYPE):
             ml_model, ml_features = load_ml_model()
             print(f"[DEBUG] ml_model type: {type(ml_model)}")
             if ml_model is None or ml_features is None:
-                print(
-                    "[FEJL] Ingen ML-model/feature-liste fundet – fallback til random signaler!"
-                )
+                print("[FEJL] Ingen ML-model/feature-liste fundet – fallback til random signaler!")
                 df["signal"] = np.random.choice([1, -1], size=len(df))
                 return df
             if not hasattr(ml_model, "predict"):
-                print(
-                    "[FEJL] ML-model har ikke predict-metode! Fallback til random signaler."
-                )
+                print("[FEJL] ML-model har ikke predict-metode! Fallback til random signaler.")
                 df["signal"] = np.random.choice([1, -1], size=len(df))
                 return df
             X = reconcile_features(df, ml_features)
@@ -139,9 +134,7 @@ def main(
     symbol=LIVE_SIM_SYMBOL,
     timeframe=LIVE_SIM_TIMEFRAME,
 ):
-    log_device_status(
-        context="live_simulator", print_console=True, telegram_func=send_message
-    )
+    log_device_status(context="live_simulator", print_console=True, telegram_func=send_message)
 
     # 1. Indlæs feature-data (enten valgt fil eller standard/nyeste)
     try:
@@ -154,9 +147,7 @@ def main(
     except Exception as e:
         msg = f"[FEJL] Live-simulering: Kunne ikke loade features ({e})"
         print(msg)
-        send_message(
-            "❌ Live-simulering FEJL: Kunne ikke loade features ({})".format(e)
-        )
+        send_message("❌ Live-simulering FEJL: Kunne ikke loade features ({})".format(e))
         return metrics_fallback()  # Returnér fallback-metrics ved fejl
 
     # 2. Generér signaler
@@ -235,15 +226,11 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--features", type=str, default=None, help="Sti til feature-fil (CSV)"
-    )
+    parser.add_argument("--features", type=str, default=None, help="Sti til feature-fil (CSV)")
     parser.add_argument(
         "--n_rows", type=int, default=LIVE_SIM_NROWS, help="Antal rækker at tage med"
     )
-    parser.add_argument(
-        "--symbol", type=str, default=LIVE_SIM_SYMBOL, help="Symbol (fx btcusdt)"
-    )
+    parser.add_argument("--symbol", type=str, default=LIVE_SIM_SYMBOL, help="Symbol (fx btcusdt)")
     parser.add_argument(
         "--timeframe", type=str, default=LIVE_SIM_TIMEFRAME, help="Timeframe (fx 1h)"
     )

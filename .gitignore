@@ -1,4 +1,6 @@
-# === Virtuelle Python-miljøer ===
+# =========================
+# PYTHON MILJØER
+# =========================
 .venv/
 venv/
 ENV/
@@ -6,31 +8,68 @@ env/
 .venv_*/
 venv_*/
 .venv_tf_gpu/
-# Ignorer ALLE Python virtual environments
+# Utilsigtede miljøer
+gdrive_env/
+gdrive_env/**
+**/.venv/
+**/venv/
+**/ENV/
+**/env/
+**/.venv_*/
+**/venv_*/
+**/Lib/site-packages/**
+**/Scripts/**
 
-# === Backups, logs og cache ===
+# =========================
+# BACKUPS / LOGS / CACHE
+# =========================
 backups/
 backup/
 logs/
-tuner_cache/
 *.log
+.cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.pytest_cache/
+.ipynb_checkpoints/
+*.tmp
+*.temp
+*.bak
 
-# === Output og store genererede data ===
+# =========================
+# PERSISTENS & ARTEFAKTER (FASE 4)
+# =========================
+# Primære artefakter holdes ude af git – persistent via rotation/zip/CI
 outputs/
 !outputs/README.md
 !outputs/.gitkeep
 
-# Feature data (tillad kun templates og .md)
+# Tillad små metadata-pegepinde (trackes)
+!outputs/model_history.csv
+!outputs/metrics/*_latest.json
+!outputs/models/best_model.keras
+!outputs/metrics/README.md
+!outputs/metrics/.gitkeep
+
+# Feature data – kun skabeloner/README
 outputs/feature_data/
 !outputs/feature_data/README.md
 !outputs/feature_data/.gitkeep
 
-# Grafer og billeder (tillad kun .md)
+# Arkiver og artifacts
+archives/
+artifacts/
+
+# Lokale grafer/billeder (ikke versioneres)
 graphs/
 !graphs/*.md
+!graphs/.gitkeep
 
-# === Data og modeller ===
-# Ignorér alt under data/ og models/, men tillad Python-kode og markdown
+# =========================
+# DATA & MODELLER
+# =========================
+# Ignorér alt under data/ og models/, men tillad python/markdown og gitkeeps
 data/**
 !data/
 !data/**/
@@ -47,7 +86,7 @@ models/**
 !models/*.md
 !models/.gitkeep
 
-# Store data-artefakter under data/ ignoreres stadig
+# Store datafiler
 data/**/*.parquet
 data/**/*.csv
 data/**/*.json
@@ -55,17 +94,17 @@ data/**/*.jsonl
 data/**/raw/**
 data/**/outputs/**
 
-# TESTDATA (tillad CSV til CI/tests)
+# TESTDATA (tillad csv til tests/CI)
 !test_data/
 !test_data/*.csv
 !data/test_data/
 !data/test_data/*.csv
 
-# Tillad specifikke eval/eksempel-filer
+# Eksempel/eval-filer
 !data/model_eval.csv
 !data/*.example
 
-# === Model- og ML-filer ===
+# ML/model filtyper
 *.h5
 *.keras
 *.pth
@@ -74,14 +113,16 @@ data/**/outputs/**
 *.npz
 *.joblib
 
-# === Store outputfiler / Trade journals ===
+# Store regneark/journals
 *.xlsx
 *.xls
 *.parquet
 trades.csv
 trades/
 
-# === Miljøfiler og credentials ===
+# =========================
+# MILJØFILER / CREDENTIALS
+# =========================
 .env
 .env.*
 .envrc
@@ -90,7 +131,9 @@ secrets/
 config/*.json
 config/client_secret_*.json
 
-# === MLflow, TensorBoard og eksperimentartefakter ===
+# =========================
+# MLflow / TensorBoard / Eksperimenter
+# =========================
 mlruns/
 mlruns.*
 runs/
@@ -99,93 +142,81 @@ tensorboard/
 *.tensorboard
 *.event*
 
-# === VS Code, PyCharm, OS-filer ===
+# =========================
+# IDE / OS-FILER
+# =========================
 .vscode/
 .idea/
 *.code-workspace
 __pycache__/
-.DS_Store
-Thumbs.db
-
-# === Python cache og build ===
 *.pyc
 *.pyo
 *.pyd
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.swp
+.swo
+
+# =========================
+# BUILD / DIST
+# =========================
 *.egg-info/
 dist/
 build/
 eggs/
+*.spec
+.typings/
+.python-version
+.pyre/
+.pytype/
 
-# === Test/Eksperiment-filer og noter ===
-# Ignorér evt. testfiler i roden; tillad alt i tests/ (rekursivt)
-test_*.py
+# =========================
+# TEST / NOTEBOOKS / UDGANGE
+# =========================
+# Tillad ALT i tests/**
 !tests/**
 tests/output/
 notes/
 notebooks/
 output/
 
-# === CI artefakter/rapporter ===
+# =========================
+# CI ARTEFAKTER / RAPPORTER
+# =========================
 .github/workflows/*.log
 .github/workflows/*.bak
 reports/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
 
-# === Checkpoints, cache og gamle model-filer ===
-checkpoints/
-.cache/
-*.bak
-.mypy_cache/
-.tox/
-
-# === CSV og output (kun evals og eksempler må med) ===
+# =========================
+# CSV & OUTPUT (globale)
+# =========================
 *.csv
 !data/model_eval.csv
 !data/*.example
 !test_data/*.csv
 !data/test_data/*.csv
 
-# === Tuning og Optuna logs/results ===
+# =========================
+# TUNING / OPTUNA
+# =========================
 tuning/*.txt
 !tuning/README.md
 !tuning/.gitkeep
 
-# === Coverage og pytest-cache ===
-.coverage
-coverage.xml
-htmlcov/
-.pytest_cache/
-
-# === Tillad altid Markdown ===
-!*.md
-
-# === Mac & Linux systemfiler ===
-.swp
-.swo
-
-# === Windows systemfiler ===
-ehthumbs.db
-desktop.ini
-
-# === Misc. IDE/pyinstaller artefakter ===
-*.spec
-.typings/
-.python-version
-
-# === Jupyter checkpoints ===
-.ipynb_checkpoints/
-
-# === Diverse midlertidige og eksperiment-artefakter ===
-*.tmp
-*.temp
-.experiment/
-
-# === Observability / Docker (ALDRIG secrets i git) ===
-# Docker secrets (KUN lokale filer – templates må gerne trackes)
+# =========================
+# OBSERVABILITY / DOCKER
+# (ALDRIG secrets i git)
+# =========================
 ops/alertmanager/secrets/*
-# Tillad templates og runtime-skabelon
 !ops/alertmanager/templates/**
 !ops/alertmanager/alertmanager.runtime.yml
-# Hvis nogen skulle komme til at rendre direkte til repoet
+# Hvis nogen renderer direkte til repoet ved en fejl
 ops/alertmanager/alertmanager.yml
 
 # Lokale compose-artefakter og data
@@ -195,15 +226,17 @@ ops/compose/data/alertmanager/
 ops/compose/resolved.yml
 ops/compose/.env
 
-# === Lokale test/scratch-filer i roden (hold dem ude af git) ===
+# =========================
+# LOKALE SCRATCH-FILER I RODEN
+# =========================
 /resolved.yml
+/BotStatus.md
 /DIT_TELEGRAM_BOT_TOKEN
 /7919277721
 DIT_*
+ai_summary.txt
 
-__pycache__/
-*.pyc
-.pytest_cache/
-htmlcov/
-reports/
-
+# =========================
+# TILLADELSE: MARKDOWN ALTID
+# =========================
+!*.md

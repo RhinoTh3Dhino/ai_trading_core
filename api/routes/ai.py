@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Query
 
-from utils.project_path import PROJECT_ROOT
 from llm.anthropic_client import ask_claude
+from utils.project_path import PROJECT_ROOT
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -22,7 +22,9 @@ API_DIR = ROOT / "api"
 # ---------------------------
 # Hjælpere (robuste IO + utils)
 # ---------------------------
-def _read_csv(path: Path, usecols: Optional[List[str]] = None, tail: Optional[int] = None) -> pd.DataFrame:
+def _read_csv(
+    path: Path, usecols: Optional[List[str]] = None, tail: Optional[int] = None
+) -> pd.DataFrame:
     try:
         if not path.exists():
             return pd.DataFrame()
@@ -153,7 +155,9 @@ def ai_summary(
 @router.get("/explain_trade")
 def ai_explain_trade(
     i: int = Query(0, ge=0, description="0 = seneste handel, 1 = næstseneste, osv."),
-    context_bars: int = Query(60, ge=10, le=500, description="Antal seneste signaler/kontext-punkter"),
+    context_bars: int = Query(
+        60, ge=10, le=500, description="Antal seneste signaler/kontext-punkter"
+    ),
 ):
     """
     Forklar én handel baseret på seneste fills + signaler.
@@ -172,7 +176,13 @@ def ai_explain_trade(
         # lav alt lower-case for robust rename
         fills = fills.rename(columns={c: c.lower() for c in fills.columns})
         # aliaser
-        alias = {"timestamp": "ts", "time": "ts", "datetime": "ts", "quantity": "qty", "pnl": "pnl_realized"}
+        alias = {
+            "timestamp": "ts",
+            "time": "ts",
+            "datetime": "ts",
+            "quantity": "qty",
+            "pnl": "pnl_realized",
+        }
         for s, d in alias.items():
             if s in fills.columns and d not in fills.columns:
                 fills = fills.rename(columns={s: d})
@@ -236,7 +246,7 @@ def ai_explain_trade(
             f"Realiseret PnL: {pnl:.2f}  (kommission: {com:.2f})",
             f"Kontekst: {len(signals)} seneste signaler indlæst; equity-punkter: {len(equity)}.",
             "Tolkning: Brug signalets 'confidence' og regime til at validere entries/exits.",
-            "Fremad: Overvej ATR-filter/cooldown for at reducere noise og slippage."
+            "Fremad: Overvej ATR-filter/cooldown for at reducere noise og slippage.",
         ]
         return {"text": "• " + "\n• ".join(bullets)}
 

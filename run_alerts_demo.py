@@ -1,12 +1,12 @@
 # run_alerts_demo.py
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 import time
-import argparse
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 from types import SimpleNamespace as NS
 from typing import Any, Dict
 
@@ -15,14 +15,15 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Lokale imports
-from alerts.signal_router import SignalRouter, Decision  # noqa: E402
-from alerts.alert_manager import AlertManager            # noqa: E402
-from core.state import PosState, PosSide                 # noqa: E402
-import utils.telegram_utils as tg                        # noqa: E402
+import utils.telegram_utils as tg  # noqa: E402
+from alerts.alert_manager import AlertManager  # noqa: E402
 
+# Lokale imports
+from alerts.signal_router import Decision, SignalRouter  # noqa: E402
+from core.state import PosSide, PosState  # noqa: E402
 
 # ------------------------- utils -------------------------
+
 
 def _to_ns(obj: Any) -> Any:
     """Recursiv dict -> SimpleNamespace (så router/AM kan bruge dot-notation)."""
@@ -36,6 +37,7 @@ def _to_ns(obj: Any) -> Any:
 def load_config(path: Path) -> Any:
     """Load YAML til SimpleNamespace. Falder tilbage til fornuftige defaults."""
     import yaml  # kræver pyyaml
+
     if not path.exists():
         # Fallback-defaults (matcher vores tests)
         cfg = {
@@ -54,13 +56,22 @@ def load_config(path: Path) -> Any:
                 "urgent_confidence": 0.80,
                 "allow_market_when_urgent": True,
                 "prefer_limit": True,
-                "lowprio": {"enabled": True, "confidence_below": 0.65, "types": ["limit", "market"]},
+                "lowprio": {
+                    "enabled": True,
+                    "confidence_below": 0.65,
+                    "types": ["limit", "market"],
+                },
                 "price_decimals": 2,
                 "qty_decimals": 8,
                 "notional_currency": "USD",
             },
             "symbols": {
-                "BTCUSDT": {"min_qty": 0.05, "min_notional": 25.0, "min_confidence": 0.50, "urgent_confidence": 0.80},
+                "BTCUSDT": {
+                    "min_qty": 0.05,
+                    "min_notional": 25.0,
+                    "min_confidence": 0.50,
+                    "urgent_confidence": 0.80,
+                },
                 "ETHUSDT": {"min_qty": 0.10, "min_notional": 20.0},
             },
         }
@@ -87,8 +98,10 @@ def color(s: str, c: str) -> str:
 
 # ------------------------- demo broker -------------------------
 
+
 class DemoBroker:
     """Minimal broker til router-demo (ingen eksekvering)."""
+
     def __init__(self):
         self.trading_halted = False
         self.positions: Dict[str, PosState] = {
@@ -103,6 +116,7 @@ class DemoBroker:
 
 
 # ------------------------- sending -------------------------
+
 
 def send_payload(payload: dict, dry_run: bool) -> None:
     """Send til Telegram hvis muligt; ellers print pænt til konsol."""
@@ -120,33 +134,92 @@ def send_payload(payload: dict, dry_run: bool) -> None:
 
 # ------------------------- scenario -------------------------
 
+
 def build_demo_signals(ts: datetime) -> list[dict]:
     """Lille suite af signaler der udløser alle grene: suppress, limit, urgent market, duplicate/cooldown."""
     return [
         # 1) Under min_confidence → SUPPRESS
-        {"symbol": "BTCUSDT", "side": "BUY",  "type": "market", "qty": 1.0, "limit_price": None,   "ts": ts, "confidence": 0.40, "notional": 100.0},
-
+        {
+            "symbol": "BTCUSDT",
+            "side": "BUY",
+            "type": "market",
+            "qty": 1.0,
+            "limit_price": None,
+            "ts": ts,
+            "confidence": 0.40,
+            "notional": 100.0,
+        },
         # 2) Under min_notional → SUPPRESS
-        {"symbol": "BTCUSDT", "side": "BUY",  "type": "market", "qty": 0.2, "limit_price": None,   "ts": ts, "confidence": 0.90, "notional": 10.0},
-
+        {
+            "symbol": "BTCUSDT",
+            "side": "BUY",
+            "type": "market",
+            "qty": 0.2,
+            "limit_price": None,
+            "ts": ts,
+            "confidence": 0.90,
+            "notional": 10.0,
+        },
         # 3) Market + limit_price sat (router normaliserer til LIMIT)
-        {"symbol": "BTCUSDT", "side": "BUY",  "type": "market", "qty": 1.0, "limit_price": 61000.0, "ts": ts, "confidence": 0.70, "notional": 61000.0},
-
+        {
+            "symbol": "BTCUSDT",
+            "side": "BUY",
+            "type": "market",
+            "qty": 1.0,
+            "limit_price": 61000.0,
+            "ts": ts,
+            "confidence": 0.70,
+            "notional": 61000.0,
+        },
         # 4) Urgent → MARKET (allow_market_when_urgent)
-        {"symbol": "BTCUSDT", "side": "SELL", "type": "market", "qty": 1.0, "limit_price": None,   "ts": ts, "confidence": 0.90, "notional": 61000.0},
-
+        {
+            "symbol": "BTCUSDT",
+            "side": "SELL",
+            "type": "market",
+            "qty": 1.0,
+            "limit_price": None,
+            "ts": ts,
+            "confidence": 0.90,
+            "notional": 61000.0,
+        },
         # 5) Dublet af #3 → Duplicate/Cooldown
-        {"symbol": "BTCUSDT", "side": "BUY",  "type": "market", "qty": 1.0, "limit_price": 61000.0, "ts": ts, "confidence": 0.70, "notional": 61000.0},
+        {
+            "symbol": "BTCUSDT",
+            "side": "BUY",
+            "type": "market",
+            "qty": 1.0,
+            "limit_price": 61000.0,
+            "ts": ts,
+            "confidence": 0.70,
+            "notional": 61000.0,
+        },
     ]
 
 
 # ------------------------- main runner -------------------------
 
+
 def main():
-    ap = argparse.ArgumentParser(description="Kør en demo af alerts-stakken (SignalRouter + AlertManager + Telegram).")
-    ap.add_argument("--config", "-c", default=str(ROOT / "config" / "alerts.yaml"), help="Sti til config/alerts.yaml")
-    ap.add_argument("--send", action="store_true", help="Send rigtige Telegram-beskeder (kræver TELEGRAM_TOKEN/CHAT_ID).")
-    ap.add_argument("--sleep", type=float, default=0.0, help="Sekunder at sove mellem signaler (for at se cooldown i realtid).")
+    ap = argparse.ArgumentParser(
+        description="Kør en demo af alerts-stakken (SignalRouter + AlertManager + Telegram)."
+    )
+    ap.add_argument(
+        "--config",
+        "-c",
+        default=str(ROOT / "config" / "alerts.yaml"),
+        help="Sti til config/alerts.yaml",
+    )
+    ap.add_argument(
+        "--send",
+        action="store_true",
+        help="Send rigtige Telegram-beskeder (kræver TELEGRAM_TOKEN/CHAT_ID).",
+    )
+    ap.add_argument(
+        "--sleep",
+        type=float,
+        default=0.0,
+        help="Sekunder at sove mellem signaler (for at se cooldown i realtid).",
+    )
     args = ap.parse_args()
 
     cfg = load_config(Path(args.config))
@@ -177,18 +250,24 @@ def main():
             # Demonstrér low-prio-batching, hvis det er pga. lav confidence og lowprio er slået til
             lpcfg = getattr(cfg.router, "lowprio", NS(enabled=False))
             c = sig.get("confidence")
-            if (decision.reason.lower().startswith("low confidence")
-                    and getattr(lpcfg, "enabled", False)
-                    and c is not None
-                    and getattr(cfg.router, "min_confidence", 0.0) <= c < getattr(lpcfg, "confidence_below", 1.0)):
+            if (
+                decision.reason.lower().startswith("low confidence")
+                and getattr(lpcfg, "enabled", False)
+                and c is not None
+                and getattr(cfg.router, "min_confidence", 0.0)
+                <= c
+                < getattr(lpcfg, "confidence_below", 1.0)
+            ):
                 # læg en kompakt payload i buffer
-                am.enqueue_lowprio({
-                    "symbol": sig["symbol"],
-                    "side": sig["side"],
-                    "type": sig["type"],
-                    "qty": sig.get("qty"),
-                    "limit_price": sig.get("limit_price"),
-                })
+                am.enqueue_lowprio(
+                    {
+                        "symbol": sig["symbol"],
+                        "side": sig["side"],
+                        "type": sig["type"],
+                        "qty": sig.get("qty"),
+                        "limit_price": sig.get("limit_price"),
+                    }
+                )
                 print(color("    (lagt i low-prio buffer)", "cyan"))
 
         if args.sleep > 0:

@@ -7,6 +7,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import types
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -38,15 +39,17 @@ def test_walkforward_real_plot(tmp_path, monkeypatch):
     pytest.importorskip("matplotlib")
 
     # Syntetisk data
-    df = pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=50, freq="H"),
-        "close": np.linspace(100, 110, 50),
-        "ema_200": np.linspace(99, 109, 50),
-        "open": np.linspace(100, 110, 50),
-        "high": np.linspace(101, 111, 50),
-        "low": np.linspace(99, 109, 50),
-        "volume": np.ones(50),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=50, freq="H"),
+            "close": np.linspace(100, 110, 50),
+            "ema_200": np.linspace(99, 109, 50),
+            "open": np.linspace(100, 110, 50),
+            "high": np.linspace(101, 111, 50),
+            "low": np.linspace(99, 109, 50),
+            "volume": np.ones(50),
+        }
+    )
 
     # Patch args + loader
     monkeypatch.setattr(bt, "parse_args", lambda: _args(tmp_path))

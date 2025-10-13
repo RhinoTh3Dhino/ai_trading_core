@@ -1,0 +1,137 @@
+# .github/workflows/connector-ci.yml
+name: "Connector CI"
+
+on:
+  push:
+    branches:
+      - ai_bot_dev
+      - ai_bot_test
+      - ai_bot_pro
+      - epic/**
+      - feat/**
+      - release/**
+    paths:
+      - "bot/live_connector/**"
+      - "config/**"
+      - "tests/**"
+      - "ops/prometheus/**"
+      # test/coverage/config updates should also trigger this workflow
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      # the workflow files themselves
+      - ".github/workflows/connector-ci.yml"
+      - ".github/workflows/connector_ci.yml"
+  pull_request:
+    branches:
+      - ai_bot_dev
+      - ai_bot_test
+      - ai_bot_pro
+    paths:
+      - "bot/live_connector/**"
+      - "config/**"
+      - "tests/**"
+      - "ops/prometheus/**"
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      - ".github/workflows/connector-ci.yml"
+      - ".github/workflows/connector_ci.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: connector-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Pytests (venues + integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install -U pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Ensure pytest+coverage plugins are available even if not pinned
+          pip install -q pytest pytest-cov coverage
+
+      - name: Create reports dir
+        run: mkdir -p reports
+
+      - name: Run pytest (venues + integration) with CI-scoped coverage
+        run: |
+          set -euo pipefail
+          pytest tests/venues tests/integration \
+            --cov-config=/dev/null \
+            --cov=bot.live_connector \
+            --cov-branch \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=html \
+            --cov-fail-under=40 \
+            --junitxml=reports/junit.xml \
+            -q -ra --maxfail=1 --disable-warnings --timeout=30 --durations=10 --color=yes \
+            -k "not heavy and not talib and not pandas_ta"
+
+  promtool:
+    name: Prometheus rule tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: promtool rule tests
+        run: |
+          set -euo pipefail
+          if [ -f "${{ github.workspace }}/ops/prometheus/tests/alerts_test.yml" ]; then
+            docker run --rm \
+              --entrypoint=promtool \
+              -v "${{ github.workspace }}/ops/prometheus:/p" \
+              prom/prometheus:v2.53.0 \
+              test rules /p/tests/alerts_test.yml
+          else
+            echo "No promtool tests found at ops/prometheus/tests/alerts_test.yml; skipping."
+          fi
+
+  alerting:
+    name: Alertmanager config check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: amtool alertmanager config check
+        run: |
+          set -euo pipefail
+          if [ -f "${{ github.workspace }}/ops/prometheus/alertmanager.yml" ]; then
+            docker run --rm \
+              --entrypoint=amtool \
+              -v "${{ github.workspace }}/ops/prometheus:/p" \
+              prom/alertmanager:v0.26.0 \
+              check-config /p/alertmanager.yml
+          else
+            echo "No alertmanager.yml found; skipping amtool check."
+          fi

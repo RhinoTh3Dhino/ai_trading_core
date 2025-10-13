@@ -1,10 +1,11 @@
+import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 # visualization/plot_metrics.py
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
 
 
 # AUTO PATH CONVERTED

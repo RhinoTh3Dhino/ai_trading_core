@@ -1,9 +1,10 @@
 # features/preprocessing.py
 from __future__ import annotations
 
+from typing import Iterable, List, Optional, Sequence, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Iterable, List, Optional, Sequence, Tuple
 
 
 # -----------------------------
@@ -52,7 +53,7 @@ def clean_and_normalize(
     df: pd.DataFrame,
     features: Optional[Sequence[str]] = None,
     *,
-    scaler: str = "zscore",                    # 'zscore' | 'minmax' | 'none'
+    scaler: str = "zscore",  # 'zscore' | 'minmax' | 'none'
     bounds: Optional[Tuple[Optional[float], Optional[float]]] = None,
     dropna: bool = True,
     verbose: bool = False,
@@ -101,7 +102,9 @@ def clean_and_normalize(
         before = len(df)
         df = df.dropna(subset=list(features))
         if verbose:
-            print(f"[clean_and_normalize] Droppede {before - len(df)} rækker pga. NaN/inf i features.")
+            print(
+                f"[clean_and_normalize] Droppede {before - len(df)} rækker pga. NaN/inf i features."
+            )
 
     if df.empty:
         return df

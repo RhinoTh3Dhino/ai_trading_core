@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Tuple
 
-from bot.utils.backup import verify_backup, append_botstatus, restore_backup
+from bot.utils.backup import append_botstatus, restore_backup, verify_backup
 
 
 def _log_status(botstatus: Path, action: str, result: str, details: str = "") -> None:
@@ -89,7 +89,10 @@ def main(argv: list[str] | None = None) -> int:
 
     files = sorted(backups_dir.glob(args.pattern))
     if not files:
-        print(f"[backup_verify] Ingen filer matcher {args.pattern} i {backups_dir}", file=sys.stderr)
+        print(
+            f"[backup_verify] Ingen filer matcher {args.pattern} i {backups_dir}",
+            file=sys.stderr,
+        )
 
     total = ok = corrupt = failed = 0
     for zp in files:

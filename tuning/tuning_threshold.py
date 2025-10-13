@@ -1,19 +1,17 @@
-import os
 import json
+import logging
+import os
 from datetime import datetime
 
-
 import optuna
-import logging
 import pandas as pd
 from dotenv import load_dotenv
 
-from models.model_training import train_model
-from backtest.backtest import run_backtest, calc_backtest_metrics
-from strategies.rsi_strategy import rsi_rule_based_signals
-from strategies.macd_strategy import macd_cross_signals
+from backtest.backtest import calc_backtest_metrics, run_backtest
 from ensemble.majority_vote_ensemble import weighted_vote_ensemble
-
+from models.model_training import train_model
+from strategies.macd_strategy import macd_cross_signals
+from strategies.rsi_strategy import rsi_rule_based_signals
 from utils.project_path import PROJECT_ROOT
 
 # === Load miljøvariabler fra .env ===
@@ -47,9 +45,7 @@ def send_telegram_message(message):
 
 # === Konstanter til tuning ===
 # AUTO PATH CONVERTED
-DATA_PATH = (
-    PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"
-)
+DATA_PATH = PROJECT_ROOT / "outputs" / "feature_data/btc_1h_features_v_test_20250610.csv"
 SYMBOL = "BTC"
 TUNER_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(TUNER_DIR, "tuning_log.txt")
@@ -115,9 +111,7 @@ def objective(trial):
 
 
 def tune_threshold():
-    send_telegram_message(
-        "🔄 Starter automatisk tuning af threshold og weights (Optuna)..."
-    )
+    send_telegram_message("🔄 Starter automatisk tuning af threshold og weights (Optuna)...")
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=25)
     best_threshold = study.best_params["threshold"]

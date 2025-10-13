@@ -13,7 +13,6 @@ from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 import torch
 
-
 # --------------------------------------------------------------------
 # Sørg for at repo-roden er på sys.path, uanset hvorfra scriptet køres
 # --------------------------------------------------------------------
@@ -34,7 +33,9 @@ def _import_class(dotted: str):
     else:
         parts = dotted.rsplit(".", 1)
         if len(parts) != 2:
-            raise ValueError(f"Ugyldigt --arch format: {dotted!r} (brug 'modul:Klasse' eller 'modul.Klasse')")
+            raise ValueError(
+                f"Ugyldigt --arch format: {dotted!r} (brug 'modul:Klasse' eller 'modul.Klasse')"
+            )
         mod_name, cls_name = parts
     try:
         mod = importlib.import_module(mod_name)
@@ -122,9 +123,9 @@ def _try_load_as_torchscript(path: Path, device: str) -> Optional[torch.jit.Scri
         return None
 
 
-def _make_example(example_shape: Optional[str],
-                  example_npy: Optional[str],
-                  dtype: str = "float32") -> Optional[torch.Tensor]:
+def _make_example(
+    example_shape: Optional[str], example_npy: Optional[str], dtype: str = "float32"
+) -> Optional[torch.Tensor]:
     """
     Lav et eksempel-input til tracing/validering.
     - example_shape: "1,34" eller "1x10x34"
@@ -143,7 +144,9 @@ def _make_example(example_shape: Optional[str],
     if not shape:
         return None
 
-    dt = dict(float32=torch.float32, float64=torch.float64, float16=torch.float16).get(dtype.lower(), torch.float32)
+    dt = dict(float32=torch.float32, float64=torch.float64, float16=torch.float16).get(
+        dtype.lower(), torch.float32
+    )
     return torch.randn(*shape, dtype=dt)
 
 
@@ -241,26 +244,50 @@ def export_to_torchscript(
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Eksportér PyTorch checkpoint til TorchScript (.ts)")
-    ap.add_argument("--arch", required=False,
-                    help="Dotted sti til modelklasse, fx engines.arch:MyNet eller engines.arch.MyNet")
-    ap.add_argument("--ckpt", default="models/best_pytorch_model.pt",
-                    help="Sti til checkpoint (.pt eller allerede .ts)")
-    ap.add_argument("--out", default=None,
-                    help="Gem som (.ts). Default: samme navn som ckpt, men med .ts")
-    ap.add_argument("--init", dest="init_args", default=None,
-                    help="Kommasepareret key=val, fx 'hidden=128,dropout=0.2,num_features=34'")
-    ap.add_argument("--init-json", default=None,
-                    help="JSON string eller sti til .json med init kwargs")
-    ap.add_argument("--mode", choices=["script", "trace"], default="script",
-                    help="JIT metode: script (default) eller trace")
-    ap.add_argument("--example-shape", default=None,
-                    help="Eksempel-shape til trace/validering, fx '1,34' eller '1x10x34'")
-    ap.add_argument("--example-npy", default=None,
-                    help="Sti til .npy med eksempel-input til trace/validering")
-    ap.add_argument("--strict-load", action="store_true",
-                    help="Brug strict=True i load_state_dict")
-    ap.add_argument("--device", default="cpu",
-                    help="cpu/cuda (hvis tilgængelig)")
+    ap.add_argument(
+        "--arch",
+        required=False,
+        help="Dotted sti til modelklasse, fx engines.arch:MyNet eller engines.arch.MyNet",
+    )
+    ap.add_argument(
+        "--ckpt",
+        default="models/best_pytorch_model.pt",
+        help="Sti til checkpoint (.pt eller allerede .ts)",
+    )
+    ap.add_argument(
+        "--out",
+        default=None,
+        help="Gem som (.ts). Default: samme navn som ckpt, men med .ts",
+    )
+    ap.add_argument(
+        "--init",
+        dest="init_args",
+        default=None,
+        help="Kommasepareret key=val, fx 'hidden=128,dropout=0.2,num_features=34'",
+    )
+    ap.add_argument(
+        "--init-json",
+        default=None,
+        help="JSON string eller sti til .json med init kwargs",
+    )
+    ap.add_argument(
+        "--mode",
+        choices=["script", "trace"],
+        default="script",
+        help="JIT metode: script (default) eller trace",
+    )
+    ap.add_argument(
+        "--example-shape",
+        default=None,
+        help="Eksempel-shape til trace/validering, fx '1,34' eller '1x10x34'",
+    )
+    ap.add_argument(
+        "--example-npy",
+        default=None,
+        help="Sti til .npy med eksempel-input til trace/validering",
+    )
+    ap.add_argument("--strict-load", action="store_true", help="Brug strict=True i load_state_dict")
+    ap.add_argument("--device", default="cpu", help="cpu/cuda (hvis tilgængelig)")
     args = ap.parse_args()
 
     # Hjælper også når man kører direkte: gør roden synlig for underprocesser

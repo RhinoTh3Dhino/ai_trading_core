@@ -34,8 +34,9 @@ class PosState:
     - avg_price: VWAP for den åbne netto-position
     - last_update_ts: UTC-tidspunkt for seneste opdatering
     """
+
     symbol: str
-    side: PosSide                 # FLAT/LONG/SHORT
+    side: PosSide  # FLAT/LONG/SHORT
     qty: float
     avg_price: float
     last_update_ts: datetime
@@ -53,16 +54,30 @@ class PosState:
     @classmethod
     def empty(cls, symbol: str, ts: Optional[datetime] = None) -> "PosState":
         """Hjælper til at skabe en FLAT position."""
-        return cls(symbol=symbol, side=PosSide.FLAT, qty=0.0, avg_price=0.0, last_update_ts=ts or _now_utc())
+        return cls(
+            symbol=symbol,
+            side=PosSide.FLAT,
+            qty=0.0,
+            avg_price=0.0,
+            last_update_ts=ts or _now_utc(),
+        )
 
     @classmethod
-    def from_qty(cls, symbol: str, qty: float, avg_price: float, ts: Optional[datetime] = None) -> "PosState":
+    def from_qty(
+        cls, symbol: str, qty: float, avg_price: float, ts: Optional[datetime] = None
+    ) -> "PosState":
         """Sæt side automatisk ud fra qty."""
-        return cls(symbol=symbol, side=side_from_qty(qty), qty=qty, avg_price=avg_price, last_update_ts=ts or _now_utc())
+        return cls(
+            symbol=symbol,
+            side=side_from_qty(qty),
+            qty=qty,
+            avg_price=avg_price,
+            last_update_ts=ts or _now_utc(),
+        )
 
     def mark_updated(self, ts: Optional[datetime] = None) -> None:
         """Opdater blot timestamp (UTC)."""
-        self.last_update_ts = (ts or _now_utc())
+        self.last_update_ts = ts or _now_utc()
         if self.last_update_ts.tzinfo is None:
             self.last_update_ts = self.last_update_ts.replace(tzinfo=timezone.utc)
         else:

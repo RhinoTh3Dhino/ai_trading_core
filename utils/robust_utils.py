@@ -1,6 +1,7 @@
 import logging
 import os
 import traceback
+
 from utils.telegram_utils import send_telegram_message
 
 # Opret log-mappen hvis den ikke findes

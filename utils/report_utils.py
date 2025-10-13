@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
+
 import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 
@@ -47,14 +49,18 @@ def update_bot_status(
 
 def log_to_changelog(run_id, version, notes, changelog_path="CHANGELOG.md"):
     """Tilføjer en entry til CHANGELOG.md."""
-    entry = f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M')} - v{version} - {run_id}\n- {notes}\n"
+    entry = (
+        f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M')} - v{version} - {run_id}\n- {notes}\n"
+    )
     with open(changelog_path, "a", encoding="utf-8") as f:
         f.write(entry)
     print(f"[INFO] CHANGELOG.md opdateret: {changelog_path}")
     return entry
 
 
-def print_status(portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv"):
+def print_status(
+    portfolio_metrics_path=PROJECT_ROOT / "outputs" / "portfolio_metrics_latest.csv",
+):
     """Printer portefølje-metrics som markdown."""
     if not os.path.exists(portfolio_metrics_path):
         msg = "Ingen portefølje-metrics fundet."
@@ -115,16 +121,30 @@ def log_performance_to_history(
     os.makedirs(os.path.dirname(history_path), exist_ok=True)
 
     if (not os.path.exists(portfolio_metrics_path)) or force_dummy:
-        print(f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv")
+        print(
+            f"[WARN] {portfolio_metrics_path} ikke fundet – skriver dummy-række til performance_history.csv"
+        )
         df = pd.DataFrame(
-            [{"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Navn": "Ingen data", "Balance": 0}]
+            [
+                {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Navn": "Ingen data",
+                    "Balance": 0,
+                }
+            ]
         )
     else:
         df = pd.read_csv(portfolio_metrics_path)
         df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if df.empty or not all(c in df.columns for c in ["Navn", "Balance"]):
             df = pd.DataFrame(
-                [{"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Navn": "Ingen data", "Balance": 0}]
+                [
+                    {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Navn": "Ingen data",
+                        "Balance": 0,
+                    }
+                ]
             )
 
     if os.path.exists(history_path):

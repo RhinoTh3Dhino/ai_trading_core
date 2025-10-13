@@ -11,11 +11,13 @@ from typing import Dict, Optional
 
 EMA_FAST = 14
 EMA_SLOW = 50
-RSI_LEN  = 14
-ATR_LEN  = 14
+RSI_LEN = 14
+ATR_LEN = 14
+
 
 def _utc_date_from_ms(ms: int):
     return datetime.fromtimestamp(int(ms) / 1000, tz=timezone.utc).date()
+
 
 @dataclass
 class WilderAvg:
@@ -36,6 +38,7 @@ class WilderAvg:
     @property
     def is_warm(self) -> bool:
         return self.warm >= self.length
+
 
 @dataclass
 class EMA:
@@ -61,6 +64,7 @@ class EMA:
     def is_warm(self) -> bool:
         return self.warm >= self.length
 
+
 @dataclass
 class SymbolState:
     last_close: Optional[float] = None
@@ -84,6 +88,7 @@ class SymbolState:
     # antal LUKKEDE bars set (til warmup-gate)
     closed_bars: int = 0
 
+
 class StreamingFeaturePipeline:
     """
     Streaming-feature pipeline (MVP):
@@ -93,6 +98,7 @@ class StreamingFeaturePipeline:
       - VWAP intradag, ankret pr. UTC-dag: cum((H+L+C)/3 * V) / cum(V)
     Kun lukkede barer (bar.is_final=True) opdaterer state og producerer features.
     """
+
     def __init__(self, min_warmup_bars: int = EMA_SLOW):
         # vi kræver mindst 50 lukkede bars før vi emitter features
         self.min_warmup_bars = max(EMA_SLOW, RSI_LEN, ATR_LEN)
@@ -168,13 +174,17 @@ class StreamingFeaturePipeline:
 
         # sørg for at ingen NaN slipper ud (DoD: “ingen NaN-leaks”)
         def _clean(x: float) -> Optional[float]:
-            return None if (x is None or isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else float(x)
+            return (
+                None
+                if (x is None or isinstance(x, float) and (math.isnan(x) or math.isinf(x)))
+                else float(x)
+            )
 
         out = {
             "ema_14": _clean(ema_14),
             "ema_50": _clean(ema_50),
             "rsi_14": _clean(rsi),
-            "vwap":   _clean(vwap),
+            "vwap": _clean(vwap),
             "atr_14": _clean(atr),
         }
         # hvis noget ikke er klar → returnér None (hellere droppe end at skrive NaN)

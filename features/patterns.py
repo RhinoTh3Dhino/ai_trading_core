@@ -6,8 +6,8 @@ Pattern-baserede features til AI trading pipeline:
 - Simple candlestick patterns (bullish/bearish engulfing, doji, hammer)
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def add_breakout_and_volume_spike(df, lookback=20, vol_mult=2.0):
@@ -18,15 +18,9 @@ def add_breakout_and_volume_spike(df, lookback=20, vol_mult=2.0):
     - vol_spike: Volume er > X gange gennemsnittet (lookback)
     """
     df = df.copy()
-    df["breakout_up"] = (
-        df["close"] > df["high"].rolling(lookback).max().shift(1)
-    ).astype(int)
-    df["breakout_down"] = (
-        df["close"] < df["low"].rolling(lookback).min().shift(1)
-    ).astype(int)
-    df["vol_spike"] = (
-        df["volume"] > df["volume"].rolling(lookback).mean() * vol_mult
-    ).astype(int)
+    df["breakout_up"] = (df["close"] > df["high"].rolling(lookback).max().shift(1)).astype(int)
+    df["breakout_down"] = (df["close"] < df["low"].rolling(lookback).min().shift(1)).astype(int)
+    df["vol_spike"] = (df["volume"] > df["volume"].rolling(lookback).mean() * vol_mult).astype(int)
     return df
 
 
@@ -53,9 +47,7 @@ def add_candlestick_patterns(df):
     ).astype(int)
 
     # Doji
-    df["doji"] = (
-        np.abs(df["close"] - df["open"]) < (df["high"] - df["low"]) * 0.1
-    ).astype(int)
+    df["doji"] = (np.abs(df["close"] - df["open"]) < (df["high"] - df["low"]) * 0.1).astype(int)
 
     # Hammer (simpel definition)
     body = np.abs(df["close"] - df["open"])
@@ -71,8 +63,6 @@ def add_all_patterns(df, breakout_lookback=20, vol_mult=2.0):
     """
     Tilføj alle relevante pattern-features til DataFrame.
     """
-    df = add_breakout_and_volume_spike(
-        df, lookback=breakout_lookback, vol_mult=vol_mult
-    )
+    df = add_breakout_and_volume_spike(df, lookback=breakout_lookback, vol_mult=vol_mult)
     df = add_candlestick_patterns(df)
     return df

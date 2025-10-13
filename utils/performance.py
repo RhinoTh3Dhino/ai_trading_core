@@ -108,9 +108,7 @@ def calculate_rolling_sharpe(equity_curve, window=50):
     if len(returns) < window:
         return 0.0
     rolling_sharpe = (
-        returns.rolling(window).mean()
-        / (returns.rolling(window).std() + 1e-9)
-        * np.sqrt(252)
+        returns.rolling(window).mean() / (returns.rolling(window).std() + 1e-9) * np.sqrt(252)
     )
     return rolling_sharpe.iloc[-1] if not rolling_sharpe.empty else 0.0
 
@@ -152,34 +150,22 @@ def calculate_trade_stats(trades_df):
         "profit_factor": calculate_profit_factor(trades_df),
         "kelly_criterion": calculate_kelly_criterion(trades_df),
         "avg_pnl": (
-            trades_df["pnl_%"].mean()
-            if "pnl_%" in trades_df and len(trades_df) > 0
-            else 0.0
+            trades_df["pnl_%"].mean() if "pnl_%" in trades_df and len(trades_df) > 0 else 0.0
         ),
         "best_trade": (
-            trades_df["pnl_%"].max()
-            if "pnl_%" in trades_df and len(trades_df) > 0
-            else 0.0
+            trades_df["pnl_%"].max() if "pnl_%" in trades_df and len(trades_df) > 0 else 0.0
         ),
         "worst_trade": (
-            trades_df["pnl_%"].min()
-            if "pnl_%" in trades_df and len(trades_df) > 0
-            else 0.0
+            trades_df["pnl_%"].min() if "pnl_%" in trades_df and len(trades_df) > 0 else 0.0
         ),
         "median_pnl": (
-            trades_df["pnl_%"].median()
-            if "pnl_%" in trades_df and len(trades_df) > 0
-            else 0.0
+            trades_df["pnl_%"].median() if "pnl_%" in trades_df and len(trades_df) > 0 else 0.0
         ),
         "num_wins": (
-            (trades_df["pnl_%"] > 0).sum()
-            if "pnl_%" in trades_df and len(trades_df) > 0
-            else 0.0
+            (trades_df["pnl_%"] > 0).sum() if "pnl_%" in trades_df and len(trades_df) > 0 else 0.0
         ),
         "num_losses": (
-            (trades_df["pnl_%"] < 0).sum()
-            if "pnl_%" in trades_df and len(trades_df) > 0
-            else 0.0
+            (trades_df["pnl_%"] < 0).sum() if "pnl_%" in trades_df and len(trades_df) > 0 else 0.0
         ),
     }
     # Trade duration (mean/median/max)

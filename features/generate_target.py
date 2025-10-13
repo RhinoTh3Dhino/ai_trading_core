@@ -1,9 +1,11 @@
 # features/generate_target.py
 
-from utils.project_path import PROJECT_ROOT
-import pandas as pd
-import numpy as np
 import argparse
+
+import numpy as np
+import pandas as pd
+
+from utils.project_path import PROJECT_ROOT
 
 
 def calculate_atr(df, period: int = 14):
@@ -73,9 +75,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generér target-kolonner til AI trading pipeline – flere TP/SL på én gang!"
     )
-    parser.add_argument(
-        "--input", type=str, default=str(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv")
-    )
+    parser.add_argument("--input", type=str, default=str(PROJECT_ROOT / "data" / "BTCUSDT_1h.csv"))
     parser.add_argument(
         "--output",
         type=str,

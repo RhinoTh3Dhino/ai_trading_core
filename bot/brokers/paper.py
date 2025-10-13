@@ -1,30 +1,31 @@
 # bot/brokers/paper.py
 from __future__ import annotations
 
-import os
 import json
-from dataclasses import dataclass, asdict
-from pathlib import Path
-from typing import Optional, Dict, Any
+import os
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
-
 # ---------- Datamodeller ----------
+
 
 @dataclass
 class PositionState:
-    mode: str = "FLAT"               # "FLAT" | "LONG"
-    qty: float = 0.0                 # aktuel beholdning (BTC)
-    entry_price: float = 0.0         # gennemsnitlig indpris for aktiv position
-    entry_commission: float = 0.0    # kommission betalt ved indgang
-    cum_realized: float = 0.0        # akkumuleret realiseret PnL (inkl. alle kommissioner ved åbne/lukke)
-    last_bar_ts: Optional[str] = None   # sidste bar (ISO) vi har behandlet (anti-duplikering)
-    last_mtm_ts: Optional[str] = None   # sidste mark-to-market snapshot (ISO)
+    mode: str = "FLAT"  # "FLAT" | "LONG"
+    qty: float = 0.0  # aktuel beholdning (BTC)
+    entry_price: float = 0.0  # gennemsnitlig indpris for aktiv position
+    entry_commission: float = 0.0  # kommission betalt ved indgang
+    cum_realized: float = 0.0  # akkumuleret realiseret PnL (inkl. alle kommissioner ved åbne/lukke)
+    last_bar_ts: Optional[str] = None  # sidste bar (ISO) vi har behandlet (anti-duplikering)
+    last_mtm_ts: Optional[str] = None  # sidste mark-to-market snapshot (ISO)
 
 
 # ---------- Hjælpere ----------
+
 
 def _iso_now() -> str:
     """UTC ISO8601 med sekund-opløsning, tz-naiv (fx '2025-09-03T22:00:00')."""
@@ -53,6 +54,7 @@ def _fmt_price(p: float, decimals: int) -> str:
 
 
 # ---------- PaperBroker ----------
+
 
 class PaperBroker:
     """
@@ -99,7 +101,11 @@ class PaperBroker:
         self.slip_bps = float(os.getenv("PAPER_SLIPPAGE_BPS", "1"))
         self.pos_mode = os.getenv("POSITION_MODE", "onepos").lower()
         self.min_flip = int(os.getenv("MIN_BARS_BETWEEN_FLIPS", "1"))
-        self.use_mtm = os.getenv("PAPER_EQUITY_MTM", "1").lower() in ("1", "true", "yes")
+        self.use_mtm = os.getenv("PAPER_EQUITY_MTM", "1").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         self.dec_price = int(os.getenv("PAPER_DECIMALS_PRICE", "2"))
         self.dec_qty = int(os.getenv("PAPER_DECIMALS_QTY", "6"))
 
@@ -254,9 +260,24 @@ class PaperBroker:
         # Skriv fill
         self._append_csv(
             self.fills_csv,
-            header=["ts", "symbol", "side", "qty", "price", "commission", "pnl_realized"],
-            row=[ts_iso, self.symbol, "BUY", _fmt_qty(qty, self.dec_qty), _fmt_price(exec_px, self.dec_price),
-                 _fmt_price(commission, 2), _fmt_price(0.0, 2)],
+            header=[
+                "ts",
+                "symbol",
+                "side",
+                "qty",
+                "price",
+                "commission",
+                "pnl_realized",
+            ],
+            row=[
+                ts_iso,
+                self.symbol,
+                "BUY",
+                _fmt_qty(qty, self.dec_qty),
+                _fmt_price(exec_px, self.dec_price),
+                _fmt_price(commission, 2),
+                _fmt_price(0.0, 2),
+            ],
         )
 
         # Opdater positions-tilstand
@@ -284,9 +305,24 @@ class PaperBroker:
         # Skriv fill
         self._append_csv(
             self.fills_csv,
-            header=["ts", "symbol", "side", "qty", "price", "commission", "pnl_realized"],
-            row=[ts_iso, self.symbol, "SELL", _fmt_qty(qty, self.dec_qty), _fmt_price(exec_px, self.dec_price),
-                 _fmt_price(commission, 2), _fmt_price(pnl_realized, 2)],
+            header=[
+                "ts",
+                "symbol",
+                "side",
+                "qty",
+                "price",
+                "commission",
+                "pnl_realized",
+            ],
+            row=[
+                ts_iso,
+                self.symbol,
+                "SELL",
+                _fmt_qty(qty, self.dec_qty),
+                _fmt_price(exec_px, self.dec_price),
+                _fmt_price(commission, 2),
+                _fmt_price(pnl_realized, 2),
+            ],
         )
 
         # Luk position

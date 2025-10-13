@@ -7,6 +7,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import types
+
 import numpy as np
 import pandas as pd
 
@@ -98,7 +99,11 @@ def test_main_fullrun_force_debug_triggers_monitoring(tmp_path, monkeypatch):
     monkeypatch.setattr(bt, "save_with_metadata", lambda *a, **k: None)
 
     calls = {"live": 0}
-    monkeypatch.setattr(bt, "send_live_metrics", lambda *a, **k: calls.__setitem__("live", calls["live"] + 1))
+    monkeypatch.setattr(
+        bt,
+        "send_live_metrics",
+        lambda *a, **k: calls.__setitem__("live", calls["live"] + 1),
+    )
 
     # FORCE_DEBUG: undgår afhængighed af strategimoduler og sikrer handler
     monkeypatch.setattr(bt, "FORCE_DEBUG", True, raising=True)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import csv
+
 import pytest
 
 from bot.utils.csv_utils import safe_read_csv

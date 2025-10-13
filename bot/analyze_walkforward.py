@@ -1,12 +1,14 @@
+import glob
+import os
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 # analyze_walkforward.py
 
-import os
-import glob
-import pandas as pd
-import matplotlib.pyplot as plt
-from datetime import datetime
 
 # === Find og indlæs nyeste walkforward-summary ===
 summary_files = sorted(
@@ -62,9 +64,7 @@ print(df.sort_values("test_pct_profit", ascending=False).head(5)[cols_show])
 plt.figure(figsize=(10, 5))
 for symbol in df["symbol"].unique():
     sub = df[df["symbol"] == symbol]
-    plt.plot(
-        sub["window_start"], sub["test_sharpe"], marker="o", label=f"{symbol} Sharpe"
-    )
+    plt.plot(sub["window_start"], sub["test_sharpe"], marker="o", label=f"{symbol} Sharpe")
 plt.xlabel("Walkforward Window Start")
 plt.ylabel("Test Sharpe Ratio")
 plt.title("Test Sharpe Ratio på tværs af splits")
@@ -198,6 +198,4 @@ if "symbol" in df.columns and "timeframe" in df.columns and "test_sharpe" in df.
     )
     print("\nPivot: Mean test_sharpe per symbol/timeframe:\n", pivot)
 
-print(
-    "\nFærdig med analyse! Du kan nu bruge df til videre visualisering, grid search eller AI."
-)
+print("\nFærdig med analyse! Du kan nu bruge df til videre visualisering, grid search eller AI.")

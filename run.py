@@ -16,10 +16,10 @@ Eksempler:
   python run.py pytest -q tests/test_metrics_exposition.py::test_metrics_endpoint_has_core_metrics
 """
 
-import os
-import sys
 import argparse
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -29,7 +29,9 @@ def _ensure_project_root() -> str:
     # Tilføj projektroden til PYTHONPATH for underprocesser
     pythonpath = os.environ.get("PYTHONPATH", "")
     if project_root not in pythonpath.split(os.pathsep):
-        os.environ["PYTHONPATH"] = os.pathsep.join([project_root, pythonpath]) if pythonpath else project_root
+        os.environ["PYTHONPATH"] = (
+            os.pathsep.join([project_root, pythonpath]) if pythonpath else project_root
+        )
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
     print(f"[INFO] Working directory sat til: {project_root}")
@@ -71,8 +73,14 @@ def run_web(host: str, port: int, reload: bool, workers: int, multiproc_dir: str
     # Start uvicorn mod app'en i bot/engine.py
     # VIGTIGT: Din app eksporteres som 'app' i modulet 'bot.engine'
     cmd = [
-        sys.executable, "-m", "uvicorn", "bot.engine:app",
-        "--host", host, "--port", str(port)
+        sys.executable,
+        "-m",
+        "uvicorn",
+        "bot.engine:app",
+        "--host",
+        host,
+        "--port",
+        str(port),
     ]
     if reload:
         cmd.append("--reload")
@@ -107,9 +115,16 @@ def main():
 
     # Subcommand: script (default‐adfærd fra den gamle runner)
     p_script = subparsers.add_parser("script", help="Kør et vilkårligt Python-script")
-    p_script.add_argument("script", type=str, help="Script-sti relativt til projektroden (fx tests/test_features_pipeline.py)")
-    p_script.add_argument("script_args", nargs=argparse.REMAINDER,
-                          help="Ekstra argumenter til scriptet (brug -- for at skille runner fra script)")
+    p_script.add_argument(
+        "script",
+        type=str,
+        help="Script-sti relativt til projektroden (fx tests/test_features_pipeline.py)",
+    )
+    p_script.add_argument(
+        "script_args",
+        nargs=argparse.REMAINDER,
+        help="Ekstra argumenter til scriptet (brug -- for at skille runner fra script)",
+    )
 
     # Subcommand: web (uvicorn bot.engine:app)
     p_web = subparsers.add_parser("web", help="Start web-appen (uvicorn bot.engine:app)")
@@ -117,12 +132,18 @@ def main():
     p_web.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
     p_web.add_argument("--reload", action="store_true", help="Auto-reload ved filændringer (dev)")
     p_web.add_argument("--workers", type=int, default=1, help="Antal uvicorn workers")
-    p_web.add_argument("--multiproc-dir", type=str, default=None,
-                       help="Sti til Prometheus multiprocess dir (default: ./.prom_multiproc)")
+    p_web.add_argument(
+        "--multiproc-dir",
+        type=str,
+        default=None,
+        help="Sti til Prometheus multiprocess dir (default: ./.prom_multiproc)",
+    )
 
     # Subcommand: pytest
     p_pytest = subparsers.add_parser("pytest", help="Kør pytest med valgfri arguments")
-    p_pytest.add_argument("pytest_args", nargs=argparse.REMAINDER, help="Arguments videre til pytest")
+    p_pytest.add_argument(
+        "pytest_args", nargs=argparse.REMAINDER, help="Arguments videre til pytest"
+    )
 
     args = parser.parse_args()
 

@@ -3,14 +3,15 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 
-from .base import BaseConnector
 from bot.live_connector.metrics import (
     inc_feed_bars_total,
     observe_bar_close_lag_ms,
     observe_transport_latency_ms,
 )
+
+from .base import BaseConnector
 
 VENUE_NAME = "kraken"
 
@@ -56,10 +57,7 @@ def parse_kraken_candle_payload(
         return None
 
     # Find par & data
-    pair = (
-        str(msg.get("pair") or msg.get("symbol") or msg.get("instId") or "")
-        or None
-    )
+    pair = str(msg.get("pair") or msg.get("symbol") or msg.get("instId") or "") or None
     data = msg.get("data")
 
     if not pair or not data:

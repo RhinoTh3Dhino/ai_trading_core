@@ -22,16 +22,12 @@ def fix_startswith_in_file(filepath):
             # Path-lignende variabler
             if var in PATH_LIKE:
                 # Skift til var.str(name).startswith(
-                line = re.sub(
-                    rf"\b{var}\.startswith\(", f"{var}.str(name).startswith(", line
-                )
+                line = re.sub(rf"\b{var}\.startswith\(", f"{var}.str(name).startswith(", line)
                 print(f"[RETTER] {filepath} ({i+1}): {orig.strip()} --> {line.strip()}")
                 changed = True
             else:
                 # Skift til str(var).startswith(
-                line = re.sub(
-                    rf"\b{var}\.startswith\(", f"str({var}).startswith(", line
-                )
+                line = re.sub(rf"\b{var}\.startswith\(", f"str({var}).startswith(", line)
                 print(f"[RETTER] {filepath} ({i+1}): {orig.strip()} --> {line.strip()}")
                 changed = True
         new_lines.append(line)

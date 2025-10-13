@@ -1,0 +1,96 @@
+# .github/workflows/style.yml
+name: "style: black/isort + hygiene"
+
+on:
+  push:
+    branches:
+      - ai_bot_dev
+      - ai_bot_test
+      - ai_bot_pro
+      - epic/**
+      - feat/**
+      - release/**
+    paths:
+      - "**/*.py"
+      - "**/*.ipynb"
+      - "**/*.toml"
+      - "**/*.json"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      - ".gitattributes"
+      - "pyproject.toml"
+      - ".github/workflows/style.yml"
+  pull_request:
+    branches:
+      - ai_bot_dev
+      - ai_bot_test
+      - ai_bot_pro
+    paths:
+      - "**/*.py"
+      - "**/*.ipynb"
+      - "**/*.toml"
+      - "**/*.json"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      - ".gitattributes"
+      - "pyproject.toml"
+      - ".github/workflows/style.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: style-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: Run pre-commit (black/isort + hygiene)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Cache pre-commit envs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            precommit-${{ runner.os }}-
+
+      - name: Install pre-commit
+        run: |
+          python -m pip install -U pip
+          pip install pre-commit
+
+      - name: Run pre-commit on all files
+        run: |
+          pre-commit run --all-files
+
+      - name: Upload pre-commit logs (if any)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-commit-logs
+          path: |
+            .pre-commit-config.yaml
+            .git/hooks/
+            ~/.cache/pre-commit
+          if-no-files-found: warn
+          retention-days: 7

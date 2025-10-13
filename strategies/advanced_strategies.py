@@ -1,7 +1,7 @@
 # strategies/advanced_strategies.py
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # --------- Simple og avancerede trading-strategier ---------
 
@@ -41,11 +41,7 @@ def ema_rsi_regime_strategy(
             df["signal"] = 0
             return df
     # Support for regime som både tekst og int
-    regime = (
-        df[regime_col]
-        if regime_col in df.columns
-        else pd.Series("bull", index=df.index)
-    )
+    regime = df[regime_col] if regime_col in df.columns else pd.Series("bull", index=df.index)
     is_bull = (regime == regime_val) | (regime == 1)
     df["signal"] = 0
     buy_mask = (df["ema_9"] > df["ema_21"]) & (df["rsi_14"] > rsi_entry) & is_bull
@@ -68,22 +64,11 @@ def ema_rsi_adx_strategy(
             df["signal"] = 0
             return df
     adx = df["adx_14"] if "adx_14" in df.columns else pd.Series(100, index=df.index)
-    regime = (
-        df[regime_col]
-        if regime_col in df.columns
-        else pd.Series("bull", index=df.index)
-    )
+    regime = df[regime_col] if regime_col in df.columns else pd.Series("bull", index=df.index)
     is_bull = (regime == regime_val) | (regime == 1)
     df["signal"] = 0
-    buy_mask = (
-        (df["ema_9"] > df["ema_21"])
-        & (df["rsi_14"] > 50)
-        & (adx > adx_threshold)
-        & is_bull
-    )
-    sell_mask = (
-        (df["ema_9"] < df["ema_21"]) | (df["rsi_14"] < 45) | (adx < adx_threshold)
-    )
+    buy_mask = (df["ema_9"] > df["ema_21"]) & (df["rsi_14"] > 50) & (adx > adx_threshold) & is_bull
+    sell_mask = (df["ema_9"] < df["ema_21"]) | (df["rsi_14"] < 45) | (adx < adx_threshold)
     df.loc[buy_mask, "signal"] = 1
     df.loc[sell_mask, "signal"] = -1
     df["signal"] = np.where(is_bull, df["signal"], 0)
@@ -118,9 +103,7 @@ def regime_ensemble(df: pd.DataFrame, regime_col="regime") -> pd.DataFrame:
     df["signal"] = 0
     # Bull regime
     mask_bull = (
-        ((regime == "bull") | (regime == 1))
-        & (df["ema_9"] > df["ema_21"])
-        & (df["rsi_14"] > 50)
+        ((regime == "bull") | (regime == 1)) & (df["ema_9"] > df["ema_21"]) & (df["rsi_14"] > 50)
     )
     mask_bull_exit = ((regime == "bull") | (regime == 1)) & (
         (df["ema_9"] < df["ema_21"]) | (df["rsi_14"] < 45)
@@ -158,9 +141,7 @@ def voting_ensemble(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def combined_supertrend_strategy(
-    df: pd.DataFrame, st_col="supertrend_10_3"
-) -> pd.DataFrame:
+def combined_supertrend_strategy(df: pd.DataFrame, st_col="supertrend_10_3") -> pd.DataFrame:
     """
     Kombiner med Supertrend (kun hvis feature findes).
     """

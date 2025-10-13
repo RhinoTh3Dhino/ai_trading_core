@@ -1,13 +1,14 @@
-import ccxt
-import pandas as pd
-from datetime import datetime
-from pathlib import Path
-
-from utils.project_path import PROJECT_ROOT
+import os
 
 # ---- Relativt import-trick: Sikrer at 'utils' kan importeres uanset hvorfra scriptet køres ----
 import sys
-import os
+from datetime import datetime
+from pathlib import Path
+
+import ccxt
+import pandas as pd
+
+from utils.project_path import PROJECT_ROOT
 
 sys.path.append(str(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))))
 from utils.robust_utils import safe_run  # ← Tilføjet robusthed!
@@ -23,9 +24,7 @@ def hent_binance_data(
 
     # Hent data fra Binance
     ohlcv = binance.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
-    df = pd.DataFrame(
-        ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"]
-    )
+    df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
     df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
     df.set_index("datetime", inplace=True)
     df.drop(columns=["timestamp"], inplace=True)

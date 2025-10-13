@@ -1,10 +1,12 @@
 import importlib
+
 import pytest
 
 CANDIDATES = [
     ("utils.telegram_utils", "chunk_message"),
     ("utils.telegram_utils", "chunk_markdown"),
 ]
+
 
 def _find_api():
     for mod, attr in CANDIDATES:
@@ -15,6 +17,7 @@ def _find_api():
         except Exception:
             continue
     return None
+
 
 @pytest.mark.contract
 def test_telegram_chunking_contract():

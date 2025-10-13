@@ -8,15 +8,14 @@ Matcher arkitekturen som bot.engine.py forventer.
 Kører som standard på 'auto' features (finder {SYMBOL}_{TF}_latest.csv).
 """
 
-import os
-import json
 import argparse
-from pathlib import Path
+import json
+import os
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -30,6 +29,7 @@ except Exception:
 MODELS_DIR = Path(PROJECT_ROOT) / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
+
 # ---- find auto features (samme logik som i engine fallback) ----
 def ensure_latest(symbol: str = "BTCUSDT", timeframe: str = "1h"):
     outdir = Path(PROJECT_ROOT) / "outputs" / "feature_data"
@@ -42,11 +42,13 @@ def ensure_latest(symbol: str = "BTCUSDT", timeframe: str = "1h"):
         return alts[0]
     raise FileNotFoundError("Ingen features-CSV fundet i outputs/feature_data/")
 
+
 def _ensure_datetime(series: pd.Series) -> pd.Series:
     s = series.copy()
     if np.issubdtype(s.dtype, np.number):
         return pd.to_datetime(s, unit="s", errors="coerce")
     return pd.to_datetime(s, errors="coerce")
+
 
 def load_dataframe(features_path: str) -> pd.DataFrame:
     with open(features_path, "r", encoding="utf-8") as f:
@@ -63,13 +65,24 @@ def load_dataframe(features_path: str) -> pd.DataFrame:
         df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
     return df
 
+
 def pick_feature_columns(df: pd.DataFrame):
     """
     Brug samme filosofi som engine: tag alle numeriske kolonner
     bortset fra 'target' og helt tydelige meta-kolonner.
     """
-    drop_cols = {"timestamp", "datetime", "target", "signal", "signal_ml", "signal_dl", "signal_ensemble"}
-    num_cols = [c for c in df.columns if c not in drop_cols and np.issubdtype(df[c].dtype, np.number)]
+    drop_cols = {
+        "timestamp",
+        "datetime",
+        "target",
+        "signal",
+        "signal_ml",
+        "signal_dl",
+        "signal_ensemble",
+    }
+    num_cols = [
+        c for c in df.columns if c not in drop_cols and np.issubdtype(df[c].dtype, np.number)
+    ]
     # hvis "regime" findes men ikke er numerisk: map den til -1/0/1 (som engine)
     if "regime" in df.columns and not np.issubdtype(df["regime"].dtype, np.number):
         regime_map = {"bull": 1, "neutral": 0, "bear": -1}
@@ -77,6 +90,7 @@ def pick_feature_columns(df: pd.DataFrame):
         if "regime" not in num_cols:
             num_cols.append("regime")
     return num_cols
+
 
 class TradingNet(nn.Module):
     # Matcher din engine.py (2 skjulte lag á 64, ReLU, output_dim=2)
@@ -89,14 +103,17 @@ class TradingNet(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
         )
+
     def forward(self, x):
         return self.net(x)
+
 
 def chronological_split(X, y, val_ratio=0.2):
     n = len(X)
     n_val = max(1, int(n * val_ratio))
     n_train = n - n_val
     return (X[:n_train], y[:n_train]), (X[n_train:], y[n_train:])
+
 
 def train(
     df: pd.DataFrame,
@@ -176,7 +193,9 @@ def train(
         va_loss /= max(1, len(ds_va))
         va_acc = correct / max(1, total)
 
-        print(f"[{epoch:03d}] train_loss={tr_loss:.4f} | val_loss={va_loss:.4f} | val_acc={va_acc:.3f}")
+        print(
+            f"[{epoch:03d}] train_loss={tr_loss:.4f} | val_loss={va_loss:.4f} | val_acc={va_acc:.3f}"
+        )
 
         if va_loss < best_va_loss - 1e-6:
             best_va_loss = va_loss
@@ -199,9 +218,12 @@ def train(
     print(f"✅ Gemte model til: {out_model_path}")
     print(f"✅ Gemte feature-liste til: {out_features_path}")
 
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--features", type=str, default="auto", help="Sti til features CSV eller 'auto'")
+    ap.add_argument(
+        "--features", type=str, default="auto", help="Sti til features CSV eller 'auto'"
+    )
     ap.add_argument("--symbol", type=str, default="BTCUSDT")
     ap.add_argument("--interval", type=str, default="1h")
     ap.add_argument("--device", type=str, default=None, help="'cuda' eller 'cpu' (auto hvis None)")
@@ -240,6 +262,7 @@ def main():
         batch_size=args.batch_size,
         lr=args.lr,
     )
+
 
 if __name__ == "__main__":
     main()

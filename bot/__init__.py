@@ -17,6 +17,7 @@ Miljøvariable
 """
 
 from __future__ import annotations
+
 import os
 
 
@@ -31,6 +32,7 @@ if _env_on("METRICS_EAGER", "0"):
     try:
         # Skal være idempotent inde i metrics_core
         from .metrics_core import init_core_metrics  # type: ignore
+
         init_core_metrics()
     except Exception:
         # Må aldrig vælte import af pakken
@@ -42,6 +44,7 @@ if _env_on("METRICS_EAGER", "0"):
 if _env_on("METRICS_EAGER_LIVE", "0"):
     try:
         from .live_connector import metrics as _m  # type: ignore
+
         try:
             _m.ensure_registered()  # idempotent i modulet, men vi holder det slukket her
         except Exception:

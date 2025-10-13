@@ -1,28 +1,35 @@
 # tests/test_alerts_stack.py
 from __future__ import annotations
-import sys, os, json, time
-from pathlib import Path
+
+import json
+import os
+import sys
+import time
 from datetime import datetime
+from pathlib import Path
 
 # Sørg for import fra projektroden
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from alerts.signal_router import SignalRouter, Decision        # noqa: E402
-from alerts.alert_manager import AlertManager                  # noqa: E402
-from core.state import PosState, PosSide                       # noqa: E402
-import utils.telegram_utils as tg                              # noqa: E402
+import utils.telegram_utils as tg  # noqa: E402
+from alerts.alert_manager import AlertManager  # noqa: E402
+from alerts.signal_router import Decision, SignalRouter  # noqa: E402
+from core.state import PosSide, PosState  # noqa: E402
 
 
 # ---------- test helpers ----------
 class DummyClock:
     def __init__(self, t0: float | None = None):
         self.t = time.time() if t0 is None else float(t0)
+
     def now(self) -> float:
         return self.t
+
     def sleep(self, sec: float):
         self.t += float(sec)
+
 
 def make_cfg():
     """
@@ -30,6 +37,7 @@ def make_cfg():
     Vi bruger SimpleNamespace for dot-notation og holder samme struktur som alerts.yaml.
     """
     from types import SimpleNamespace as NS
+
     return NS(
         alert_manager=NS(
             dedupe_ttl_sec=90,
@@ -46,16 +54,23 @@ def make_cfg():
             urgent_confidence=0.80,
             allow_market_when_urgent=True,
             prefer_limit=True,
-            lowprio=NS(enabled=True, confidence_below=0.65, types=["limit","market"]),
+            lowprio=NS(enabled=True, confidence_below=0.65, types=["limit", "market"]),
             notional_currency="USD",
         ),
         symbols=NS(  # eksempel override
-            BTCUSDT=NS(min_qty=0.05, min_notional=25.0, min_confidence=0.50, urgent_confidence=0.80)
+            BTCUSDT=NS(
+                min_qty=0.05,
+                min_notional=25.0,
+                min_confidence=0.50,
+                urgent_confidence=0.80,
+            )
         ),
     )
 
+
 class DummyBroker:
     """Kun med det absolut nødvendige interface for router-tests."""
+
     def __init__(self):
         self.positions = {
             "BTCUSDT": PosState(
@@ -66,6 +81,7 @@ class DummyBroker:
                 last_update_ts=datetime.utcnow(),
             )
         }
+
 
 def _extract_order_type(payload) -> str | None:
     """
@@ -95,10 +111,12 @@ class _MockResp:
         self._payload = payload or {}
         self._desc = description
         self.text = json.dumps({"ok": ok, "description": description})
+
     def json(self):
         if self._payload:
             return self._payload
         return {"ok": self._ok, "description": self._desc}
+
 
 def _install_requests_post_mock():
     sent = []
@@ -112,7 +130,14 @@ def _install_requests_post_mock():
             # Simulér parse-fejl for MarkdownV2 for at teste fallback:
             pm = (payload or {}).get("parse_mode")
             if pm in ("MarkdownV2", "Markdown"):
-                return _MockResp(ok=False, status=400, payload={"ok": False, "description": "Bad Request: can't parse entities"})
+                return _MockResp(
+                    ok=False,
+                    status=400,
+                    payload={
+                        "ok": False,
+                        "description": "Bad Request: can't parse entities",
+                    },
+                )
             # HTML fallback eller plain → OK
             return _MockResp(ok=True, status=200)
         elif "sendPhoto" in url:
@@ -127,6 +152,7 @@ def _install_requests_post_mock():
 
     tg.requests.post = fake_post
     return sent, real_post
+
 
 def _restore_requests_post(real_post):
     tg.requests.post = real_post
@@ -145,24 +171,60 @@ def test_signal_router_and_alert_manager():
     ts = datetime(2025, 7, 1, 12, 0, 0)
 
     # 1) Under min_confidence → SUPPRESS
-    sig_lo = {"symbol":"BTCUSDT","side":"BUY","type":"market","qty":1.0,"limit_price":None,"ts":ts,"confidence":0.4,"notional":100.0}
+    sig_lo = {
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "type": "market",
+        "qty": 1.0,
+        "limit_price": None,
+        "ts": ts,
+        "confidence": 0.4,
+        "notional": 100.0,
+    }
     d1 = router.on_signal(sig_lo)
     assert isinstance(d1, Decision) and d1.action == "SUPPRESS", f"forventede SUPPRESS, fik {d1}"
 
     # 2) Under min_notional → SUPPRESS
-    sig_notional = {"symbol":"BTCUSDT","side":"BUY","type":"market","qty":0.2,"limit_price":None,"ts":ts,"confidence":0.9,"notional":10.0}
+    sig_notional = {
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "type": "market",
+        "qty": 0.2,
+        "limit_price": None,
+        "ts": ts,
+        "confidence": 0.9,
+        "notional": 10.0,
+    }
     d2 = router.on_signal(sig_notional)
     assert d2.action == "SUPPRESS" and "notional" in d2.reason.lower()
 
     # 3) Market med OK confidence men ikke urgent → skal promoveres til LIMIT når prefer_limit=True
-    sig_ok = {"symbol":"BTCUSDT","side":"BUY","type":"market","qty":1.0,"limit_price":61000.0,"ts":ts,"confidence":0.70,"notional":61000.0}
+    sig_ok = {
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "type": "market",
+        "qty": 1.0,
+        "limit_price": 61000.0,
+        "ts": ts,
+        "confidence": 0.70,
+        "notional": 61000.0,
+    }
     d3 = router.on_signal(sig_ok)
     assert d3.action == "NOTIFY", f"forventede NOTIFY, fik {d3}"
     typ3 = _extract_order_type(d3.payload)
     assert typ3 == "LIMIT", f"forventede LIMIT, fik {d3.payload}"
 
     # 4) Urgent → tillad MARKET (allow_market_when_urgent=True)
-    sig_urgent = {"symbol":"BTCUSDT","side":"SELL","type":"market","qty":1.0,"limit_price":None,"ts":ts,"confidence":0.90,"notional":61000.0}
+    sig_urgent = {
+        "symbol": "BTCUSDT",
+        "side": "SELL",
+        "type": "market",
+        "qty": 1.0,
+        "limit_price": None,
+        "ts": ts,
+        "confidence": 0.90,
+        "notional": 61000.0,
+    }
     d4 = router.on_signal(sig_urgent)
     assert d4.action == "NOTIFY", f"forventede NOTIFY, fik {d4}"
     typ4 = _extract_order_type(d4.payload)
@@ -179,6 +241,7 @@ def test_signal_router_and_alert_manager():
     # Fremskyd tid for at slippe cooldown (brug cfg.alert_manager.xxx værdier)
     clock.sleep(cfg.alert_manager.cooldown_sec_global + 0.1)
     assert am.in_cooldown(sig_ok) is False
+
 
 def test_telegram_utils_chunk_and_fallback(tmp_path: Path | None = None):
     # Sørg for "aktiv" Telegram i test (men vi mocker netværk)
@@ -201,7 +264,9 @@ def test_telegram_utils_chunk_and_fallback(tmp_path: Path | None = None):
         assert len(sent) >= 2, "Forventede fallback-kald nummer 2"
         # Sidste kald er fallback med HTML
         last_payload = sent[-1][1]
-        assert last_payload.get("parse_mode") == "HTML" and str(last_payload.get("text","")).startswith("<pre>")
+        assert last_payload.get("parse_mode") == "HTML" and str(
+            last_payload.get("text", "")
+        ).startswith("<pre>")
     finally:
         _restore_requests_post(real_post)
 
@@ -261,7 +326,9 @@ def test_tg_dedupe_and_cooldown_and_lowprio_batch():
         # 5) Når dedupe TTL er gået -> kan sendes OK
         clk.sleep(tg.DEDUPE_TTL_SEC + 0.01)
         r5 = tg.send_signal_message("OTHER", symbol="BTCUSDT", priority="high", silent=True)
-        assert not (isinstance(r5, dict) and r5.get("suppressed")), f"forventede send efter TTL, fik: {r5}"
+        assert not (
+            isinstance(r5, dict) and r5.get("suppressed")
+        ), f"forventede send efter TTL, fik: {r5}"
 
         # 6) Low-prio: bufferes og flusher først efter ventetid
         sent.clear()
@@ -281,7 +348,9 @@ def test_tg_dedupe_and_cooldown_and_lowprio_batch():
         assert flushed is True
 
         msg_payloads = [p for kind, p in sent if kind == "msg"]
-        assert msg_payloads and any("Lav-prio opsummering" in (m.get("text", "") or "") for m in msg_payloads)
+        assert msg_payloads and any(
+            "Lav-prio opsummering" in (m.get("text", "") or "") for m in msg_payloads
+        )
 
     finally:
         tg._now_ts = real_now
@@ -295,22 +364,26 @@ def main():
         test_signal_router_and_alert_manager()
         print("OK - SignalRouter & AlertManager")
     except AssertionError as e:
-        print("FAIL - SignalRouter/AlertManager:", e); fails += 1
+        print("FAIL - SignalRouter/AlertManager:", e)
+        fails += 1
     try:
         test_telegram_utils_chunk_and_fallback()
         print("OK - Telegram utils (chunking + fallback)")
     except AssertionError as e:
-        print("FAIL - Telegram utils:", e); fails += 1
+        print("FAIL - Telegram utils:", e)
+        fails += 1
     try:
         test_tg_dedupe_and_cooldown_and_lowprio_batch()
         print("OK - Telegram utils (dedupe/cooldown/lowprio)")
     except AssertionError as e:
-        print("FAIL - Telegram utils gates:", e); fails += 1
+        print("FAIL - Telegram utils gates:", e)
+        fails += 1
     if fails == 0:
         print("\n✅ Alerts/Router/Telegram-tests bestået.")
     else:
         print(f"\n❌ {fails} test(s) fejlede.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

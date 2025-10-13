@@ -1,12 +1,13 @@
 # analyze_strategies.py
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from datetime import datetime
 import argparse
 import platform
 import subprocess
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 # Tilføj rodmappen til sys.path for at kunne importere dine egne moduler
 
@@ -32,18 +33,14 @@ def dummy_backtest_all():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Analyse og visualisering af strategi-performance"
-    )
+    parser = argparse.ArgumentParser(description="Analyse og visualisering af strategi-performance")
     parser.add_argument(
         "--output-dir",
         type=str,
         default=DEFAULT_OUTPUT_DIR,
         help="Output-mappe til alle filer (default=outputs/)",
     )
-    parser.add_argument(
-        "--run-id", type=str, default=None, help="Manuelt run-id (ellers auto)"
-    )
+    parser.add_argument("--run-id", type=str, default=None, help="Manuelt run-id (ellers auto)")
     return parser.parse_args()
 
 
@@ -116,9 +113,7 @@ def update_botstatus_md(metrics, run_id, plot_path, heatmap_path=None, md_path=N
             f.write(f"![Score-heatmap]({os.path.basename(heatmap_path)})\n")
 
 
-def save_run_markdown(
-    metrics, run_id, plot_path, heatmap_path=None, output_dir=DEFAULT_OUTPUT_DIR
-):
+def save_run_markdown(metrics, run_id, plot_path, heatmap_path=None, output_dir=DEFAULT_OUTPUT_DIR):
     md_path = os.path.join(output_dir, f"report_{run_id}.md")
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(f"# Strategi-score rapport – run {run_id}\n\n")

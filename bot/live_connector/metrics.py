@@ -22,9 +22,9 @@ from __future__ import annotations
 import os
 import time
 from contextlib import contextmanager
-from typing import Optional, Union, Dict, Any
+from typing import Any, Dict, Optional, Union
 
-from prometheus_client import Counter, Gauge, Histogram, make_asgi_app, REGISTRY
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram, make_asgi_app
 
 # Multiprocess flag: Hvis du kører uvicorn med --workers>1 og sætter
 # PROMETHEUS_MULTIPROC_DIR, vælger vi passende aggregationsmodus for Gauges.
@@ -32,12 +32,30 @@ _MULTIPROC = bool(os.environ.get("PROMETHEUS_MULTIPROC_DIR"))
 
 # Styr om vi bootstrapper en "tom" serie pr. metric ved app-start
 # (så histogram-buckets m.m. altid er synlige i /metrics)
-_BOOTSTRAP = (os.getenv("METRICS_BOOTSTRAP", "1").strip().lower() not in {"0", "false"})
+_BOOTSTRAP = os.getenv("METRICS_BOOTSTRAP", "1").strip().lower() not in {"0", "false"}
 
 # ms-buckets der dækker både lav latenstid og spikes
 _MS_BUCKETS = (
-    1, 2, 5, 10, 25, 50, 75, 100, 150, 200, 300, 500, 750,
-    1_000, 1_500, 2_000, 3_000, 5_000, 7_500, 10_000
+    1,
+    2,
+    5,
+    10,
+    25,
+    50,
+    75,
+    100,
+    150,
+    200,
+    300,
+    500,
+    750,
+    1_000,
+    1_500,
+    2_000,
+    3_000,
+    5_000,
+    7_500,
+    10_000,
 )
 
 # Globals (sættes ved ensure_registered)
@@ -108,8 +126,17 @@ def ensure_registered() -> None:
     existing_feat_ms = _registry_lookup("feature_compute_ms")
     existing_feat_err = _registry_lookup("feature_errors_total")
 
-    if all([existing_transport, existing_bar_lag, existing_bars,
-            existing_reconnects, existing_queue, existing_feat_ms, existing_feat_err]):
+    if all(
+        [
+            existing_transport,
+            existing_bar_lag,
+            existing_bars,
+            existing_reconnects,
+            existing_queue,
+            existing_feat_ms,
+            existing_feat_err,
+        ]
+    ):
         feed_transport_latency_ms = existing_transport
         feed_bar_close_lag_ms = existing_bar_lag
         feed_bars_total = existing_bars
@@ -206,6 +233,7 @@ def bootstrap_core_metrics(venue: str = "binance", symbol: str = "TESTUSDT") -> 
 
 
 # --- Helper API (kalder defensivt ensure_registered) -------------------------
+
 
 def observe_transport_latency(venue: str, symbol: str, event_ts_ms: Optional[Union[int, float]]):
     """
@@ -323,6 +351,7 @@ def time_feature(feature: str, symbol: str):
 
 # --- /metrics ASGI app helper -----------------------------------------------
 
+
 def make_metrics_app():
     """
     Returnér en ASGI-app for /metrics.
@@ -336,6 +365,7 @@ def make_metrics_app():
 
     if _MULTIPROC:
         from prometheus_client import CollectorRegistry, multiprocess
+
         registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(registry)  # type: ignore[attr-defined]
         return make_asgi_app(registry=registry)

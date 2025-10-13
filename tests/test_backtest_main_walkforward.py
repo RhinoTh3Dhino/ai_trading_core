@@ -7,6 +7,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import types
+
 import numpy as np
 import pandas as pd
 
@@ -51,8 +52,14 @@ def test_main_walkforward_smoke(tmp_path, monkeypatch):
 
     # No-op I/O / telegram
     calls = {"msg": 0, "live": 0, "savefig": 0}
-    monkeypatch.setattr(bt, "send_message", lambda *a, **k: calls.__setitem__("msg", calls["msg"] + 1))
-    monkeypatch.setattr(bt, "send_live_metrics", lambda *a, **k: calls.__setitem__("live", calls["live"] + 1))
+    monkeypatch.setattr(
+        bt, "send_message", lambda *a, **k: calls.__setitem__("msg", calls["msg"] + 1)
+    )
+    monkeypatch.setattr(
+        bt,
+        "send_live_metrics",
+        lambda *a, **k: calls.__setitem__("live", calls["live"] + 1),
+    )
     monkeypatch.setattr(bt, "send_image", lambda *a, **k: None)
     monkeypatch.setattr(bt, "save_backtest_results", lambda *a, **k: None)
     monkeypatch.setattr(bt, "save_with_metadata", lambda *a, **k: None)
@@ -66,22 +73,41 @@ def test_main_walkforward_smoke(tmp_path, monkeypatch):
             self._calls = calls_dict
 
         # Funktioner der typisk kaldes direkte i backtest
-        def plot(self, *_, **__): return None
-        def title(self, *_): return None
-        def ylabel(self, *_): return None
-        def xlabel(self, *_): return None
-        def grid(self, *_): return None
-        def tight_layout(self, *_): return None
-        def savefig(self, *_): self._calls.__setitem__("savefig", self._calls["savefig"] + 1)
+        def plot(self, *_, **__):
+            return None
+
+        def title(self, *_):
+            return None
+
+        def ylabel(self, *_):
+            return None
+
+        def xlabel(self, *_):
+            return None
+
+        def grid(self, *_):
+            return None
+
+        def tight_layout(self, *_):
+            return None
+
+        def savefig(self, *_):
+            self._calls.__setitem__("savefig", self._calls["savefig"] + 1)
 
         # Funktioner som pandas/brugerkode kan kalde
-        def figure(self, *_, **__): return self
-        def gca(self, *_, **__): return self
-        def subplots(self, *_, **__): return (self, self)
+        def figure(self, *_, **__):
+            return self
+
+        def gca(self, *_, **__):
+            return self
+
+        def subplots(self, *_, **__):
+            return (self, self)
 
     class _MPL:
         def __init__(self, plt_obj):
             self.pyplot = plt_obj
+
         def use(self, *_args, **_kwargs):  # accepterer fx "Agg"
             return None
 
@@ -104,4 +130,5 @@ def test_main_walkforward_smoke(tmp_path, monkeypatch):
 def test_import_backtest_metrics_module():
     # Sørg for at modulet tæller i coverage – uden at forudsætte API
     import backtest.metrics as _bm  # noqa: F401
+
     assert _bm is not None

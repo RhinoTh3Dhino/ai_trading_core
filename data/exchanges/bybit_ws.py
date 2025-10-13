@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import AsyncIterator, List, Optional, Dict
+from typing import AsyncIterator, Dict, List, Optional
 
 import websockets
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError, ConnectionClosedOK
@@ -19,13 +19,13 @@ for _name in ("websockets", "websockets.client", "websockets.protocol"):
 
 # Bybit v5 WS endpoints (public)
 BYBIT_WS_LINEAR = "wss://stream.bybit.com/v5/public/linear"  # USDT perpetuals
-BYBIT_WS_SPOT   = "wss://stream.bybit.com/v5/public/spot"    # Spot
+BYBIT_WS_SPOT = "wss://stream.bybit.com/v5/public/spot"  # Spot
 
 PING_INTERVAL_SEC = 20
-PING_TIMEOUT_SEC  = 10
-PROBE_TIMEOUT_SEC = 12     # hvis ingen kline-data inden dette → prøv anden kategori
-MAX_BACKOFF_SEC   = 30
-CHUNK_SIZE        = 10     # Bybit begrænser args til ≤10 pr. subscribe
+PING_TIMEOUT_SEC = 10
+PROBE_TIMEOUT_SEC = 12  # hvis ingen kline-data inden dette → prøv anden kategori
+MAX_BACKOFF_SEC = 30
+CHUNK_SIZE = 10  # Bybit begrænser args til ≤10 pr. subscribe
 
 
 def _bybit_interval(interval: str) -> str:
@@ -49,7 +49,7 @@ def _topics(symbols: List[str], interval: str) -> List[str]:
 
 
 def _chunked(xs: List[str], n: int) -> List[List[str]]:
-    return [xs[i:i + n] for i in range(0, len(xs), n)]
+    return [xs[i : i + n] for i in range(0, len(xs), n)]
 
 
 async def _stream_from_url(
@@ -71,7 +71,7 @@ async def _stream_from_url(
 
     async with websockets.connect(
         url,
-        ping_interval=PING_INTERVAL_SEC,   # TCP-level ping frames
+        ping_interval=PING_INTERVAL_SEC,  # TCP-level ping frames
         ping_timeout=PING_TIMEOUT_SEC,
         max_size=2_000_000,
         close_timeout=1,
@@ -141,7 +141,7 @@ async def _stream_from_url(
                         venue="bybit",
                         symbol=symbol,
                         ts=ts_end,
-                        interval=interval,                     # kræves af din Bar-model
+                        interval=interval,  # kræves af din Bar-model
                         open=float(d["open"]),
                         high=float(d["high"]),
                         low=float(d["low"]),
@@ -153,7 +153,9 @@ async def _stream_from_url(
                     # Kun DEBUG for at undgå støj ved enkelte records
                     log.debug(
                         "Bybit parse-fejl for %s: %r (payload=%s)",
-                        symbol_from_topic, e, d
+                        symbol_from_topic,
+                        e,
+                        d,
                     )
 
 
@@ -169,7 +171,7 @@ async def subscribe(
     include_partials=False (default) → kun lukkede lys for roligere output.
     """
     preferred_url = BYBIT_WS_LINEAR
-    fallback_url  = BYBIT_WS_SPOT
+    fallback_url = BYBIT_WS_SPOT
 
     chosen = preferred_url
 
@@ -196,8 +198,16 @@ async def subscribe(
         except asyncio.TimeoutError:
             # Flip kategori ved gentagen timeout
             chosen = fallback_url if chosen == preferred_url else preferred_url
-            log.info("Bybit skifter kategori efter timeout → %s", "SPOT" if chosen == fallback_url else "LINEAR")
-        except (ConnectionClosed, ConnectionClosedOK, ConnectionClosedError, OSError) as e:
+            log.info(
+                "Bybit skifter kategori efter timeout → %s",
+                "SPOT" if chosen == fallback_url else "LINEAR",
+            )
+        except (
+            ConnectionClosed,
+            ConnectionClosedOK,
+            ConnectionClosedError,
+            OSError,
+        ) as e:
             log.warning("Bybit WS (%s) lukket/fejl: %r", chosen, e)
         except Exception as e:
             log.warning("Bybit ukendt fejl (%s): %r", chosen, e)

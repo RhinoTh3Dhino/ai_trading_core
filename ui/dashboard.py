@@ -38,9 +38,14 @@ with st.sidebar:
     st.header("⚙️ Indstillinger")
     default_log_dir = os.getenv("LOG_DIR", "logs")
     log_dir = Path(st.text_input("LOG_DIR", value=default_log_dir))
-    auto_refresh_sec = st.number_input("Auto-refresh (sek)", min_value=0, max_value=600, value=15, step=5)
-    max_rows = st.number_input("Max rows (tabeller)", min_value=100, max_value=100_000, value=2_000, step=100)
+    auto_refresh_sec = st.number_input(
+        "Auto-refresh (sek)", min_value=0, max_value=600, value=15, step=5
+    )
+    max_rows = st.number_input(
+        "Max rows (tabeller)", min_value=100, max_value=100_000, value=2_000, step=100
+    )
     st.caption("Tip: Peg på alternativ log-mappe uden kodeændringer.")
+
 
 def _inject_auto_refresh(seconds: int) -> None:
     """Reload hele siden i browseren efter N sekunder (stabilt på Windows)."""
@@ -51,13 +56,17 @@ def _inject_auto_refresh(seconds: int) -> None:
             unsafe_allow_html=True,
         )
 
+
 _inject_auto_refresh(int(auto_refresh_sec))
+
 
 # -------------------------------------------------
 # Sikker CSV-læsning (med cache + retries)
 # -------------------------------------------------
 @st.cache_data(ttl=5)
-def read_csv_safe(path: Path, parse_dates: Optional[list] = None, nrows: Optional[int] = None) -> pd.DataFrame:
+def read_csv_safe(
+    path: Path, parse_dates: Optional[list] = None, nrows: Optional[int] = None
+) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame()
     last_err: Exception | None = None
@@ -75,6 +84,7 @@ def read_csv_safe(path: Path, parse_dates: Optional[list] = None, nrows: Optiona
             time.sleep(0.1)
     st.warning(f"Kunne ikke læse {path.name}: {last_err}")
     return pd.DataFrame()
+
 
 # -------------------------------------------------
 # Indlæs data
@@ -111,6 +121,7 @@ if not fills_df.empty and len(fills_df) > max_rows:
 if not signals_df.empty and len(signals_df) > max_rows:
     signals_df = signals_df.tail(max_rows)
 
+
 # -------------------------------------------------
 # KPI’er
 # -------------------------------------------------
@@ -119,8 +130,16 @@ def _detect_pnl_col(df: pd.DataFrame) -> Optional[str]:
     if df is None or df.empty:
         return None
     candidates = [
-        "pnl", "pnl_realized", "pnl_realised", "pnl_total", "pnl_net",
-        "profit", "profit_net", "pl", "realized_pnl", "realised_pnl"
+        "pnl",
+        "pnl_realized",
+        "pnl_realised",
+        "pnl_total",
+        "pnl_net",
+        "profit",
+        "profit_net",
+        "pl",
+        "realized_pnl",
+        "realised_pnl",
     ]
     cols = set(df.columns)
     for c in candidates:
@@ -178,7 +197,9 @@ st.subheader("Equity-kurve")
 if equity_df.empty:
     st.info(f"Ingen data endnu i {EQUITY_CSV}")
 else:
-    plot_df = equity_df[["timestamp", "equity"]].copy().sort_values("timestamp").set_index("timestamp")
+    plot_df = (
+        equity_df[["timestamp", "equity"]].copy().sort_values("timestamp").set_index("timestamp")
+    )
     st.line_chart(plot_df)
 
 # -------------------------------------------------

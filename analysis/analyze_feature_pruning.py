@@ -2,22 +2,23 @@
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
 # Skjul joblib/loky resource_tracker-advarsler globalt
 import warnings
+
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore", category=UserWarning, module="joblib")
 
 
-import pandas as pd
-import numpy as np
-from datetime import datetime
 import argparse
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 # === OUTPUT DIR ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,9 +48,7 @@ def get_feature_ranking(X, y):
     # Træn fuld model, brug klassisk importance til sortering
     model = RandomForestClassifier(n_estimators=50, random_state=42)
     model.fit(X, y)
-    feat_df = pd.DataFrame(
-        {"feature": X.columns, "importance": model.feature_importances_}
-    )
+    feat_df = pd.DataFrame({"feature": X.columns, "importance": model.feature_importances_})
     feat_df = feat_df.sort_values("importance", ascending=False)
     return feat_df["feature"].tolist(), feat_df
 
@@ -103,9 +102,7 @@ def save_pruning_report(run_id, df, plot_path, output_dir=OUTPUT_DIR):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Auto feature-pruning/backtest pipeline"
-    )
+    parser = argparse.ArgumentParser(description="Auto feature-pruning/backtest pipeline")
     parser.add_argument(
         "--steps",
         nargs="+",
@@ -124,9 +121,7 @@ def main():
 
     print(f"[{run_id}] Feature ranking: {ranking}")
 
-    df, csv_path = prune_and_evaluate(
-        X, y, ranking, args.steps, run_id, output_dir=OUTPUT_DIR
-    )
+    df, csv_path = prune_and_evaluate(X, y, ranking, args.steps, run_id, output_dir=OUTPUT_DIR)
     plot_path = plot_pruning_results(df, run_id, output_dir=OUTPUT_DIR)
     save_pruning_report(run_id, df, plot_path, output_dir=OUTPUT_DIR)
 

@@ -1,5 +1,5 @@
 # bot/live_connector/metrics_bootstrap.py
-from prometheus_client import Histogram, Counter, Gauge
+from prometheus_client import Counter, Gauge, Histogram
 
 # === Feed / transport ===
 FEED_TRANSPORT_LATENCY_MS = Histogram(
@@ -7,7 +7,7 @@ FEED_TRANSPORT_LATENCY_MS = Histogram(
     "End-to-end transportlatens (ms): now_ms - event_ts fra venue besked",
     ["venue"],
     # simple buckets – tilpas hvis du vil
-    buckets=(5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000)
+    buckets=(5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000),
 )
 
 FEED_BAR_CLOSE_LAG_MS = Gauge(
@@ -39,7 +39,7 @@ FEATURE_COMPUTE_MS = Histogram(
     "feature_compute_ms",
     "Feature-beregningstid (ms) per symbol",
     ["feature", "symbol"],
-    buckets=(1, 2, 5, 10, 20, 50, 100, 250, 500)
+    buckets=(1, 2, 5, 10, 20, 50, 100, 250, 500),
 )
 
 FEATURE_ERRORS_TOTAL = Counter(

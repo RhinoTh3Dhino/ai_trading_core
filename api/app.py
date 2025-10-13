@@ -1,29 +1,24 @@
 # api/app.py
 from __future__ import annotations
 
-import os
+import contextlib
 import json
 import math
-import contextlib
-from datetime import datetime, date, timezone
+import os
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, Query, Response
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 
 # ⬇️ NYT: Prometheus-klient til /metrics
-from prometheus_client import (
-    CollectorRegistry,
-    Gauge,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-)
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Gauge, generate_latest
+from pydantic import BaseModel
 
 # ---------------------------
 # Paths & App
@@ -56,6 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # ---------------------------
 # Globalt: sikre UTF-8 for JSON
 # ---------------------------
@@ -70,6 +66,7 @@ async def ensure_utf8_json(request, call_next):
     if ct.startswith("application/json") and "charset" not in ct.lower():
         resp.headers["content-type"] = "application/json; charset=utf-8"
     return resp
+
 
 # ---------------------------
 # Pydantic models (bruges hvor format er fast)
@@ -101,6 +98,7 @@ _G_DD = Gauge("drawdown_pct", "Latest drawdown percentage", registry=_METRICS)
 # init liveness
 _G_HEALTH.set(1.0)
 
+
 @app.get("/metrics")
 def metrics():
     """
@@ -129,6 +127,7 @@ def _read_csv(path: Path) -> pd.DataFrame:
         # ultra-robust fallback
         try:
             from io import StringIO
+
             with path.open("r", encoding="utf-8", errors="ignore") as f:
                 lines = []
                 for ln in f:
@@ -276,13 +275,19 @@ def get_daily_metrics(limit: int = Query(30, ge=1, le=90)):
     df = df.tail(limit).copy()
 
     # Konverter numeriske kolonner robust
-    num_cols = ["signal_count", "trades", "win_rate", "gross_pnl", "net_pnl", "max_dd", "sharpe_d"]
+    num_cols = [
+        "signal_count",
+        "trades",
+        "win_rate",
+        "gross_pnl",
+        "net_pnl",
+        "max_dd",
+        "sharpe_d",
+    ]
     for c in num_cols:
         if c in df.columns:
             df[c] = (
-                pd.to_numeric(df[c], errors="coerce")
-                .replace([np.inf, -np.inf], np.nan)
-                .fillna(0.0)
+                pd.to_numeric(df[c], errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0.0)
             )
             if c in {"signal_count", "trades"}:
                 df[c] = df[c].astype(int)
@@ -370,7 +375,9 @@ def get_status():
     # drawdown (sidste punkt)
     drawdown = 0.0
     if not df_e.empty and "drawdown_pct" in df_e.columns:
-        dd_series = pd.to_numeric(df_e["drawdown_pct"], errors="coerce").replace([np.inf, -np.inf], np.nan)
+        dd_series = pd.to_numeric(df_e["drawdown_pct"], errors="coerce").replace(
+            [np.inf, -np.inf], np.nan
+        )
         if len(dd_series) > 0:
             drawdown = _safe_float(dd_series.iloc[-1], 0.0)
 
@@ -419,8 +426,10 @@ def _ask_claude(
     api_key = os.getenv("ANTHROPIC_API_KEY")
     force_fallback = os.getenv("AI_FORCE_FALLBACK", "").lower() in ("1", "true", "yes")
     if not api_key or force_fallback:
-        return ("(AI slået fra) Sæt ANTHROPIC_API_KEY i miljøet for at aktivere forklaringer.\n"
-                "Jeg kan stadig vise dine data, men ikke generere AI-forklaringer.")
+        return (
+            "(AI slået fra) Sæt ANTHROPIC_API_KEY i miljøet for at aktivere forklaringer.\n"
+            "Jeg kan stadig vise dine data, men ikke generere AI-forklaringer."
+        )
 
     http_client = None
     try:
@@ -431,6 +440,7 @@ def _ask_claude(
         client: Optional[Anthropic] = None
         try:
             import httpx  # type: ignore
+
             http_timeout = float(os.getenv("AI_HTTP_TIMEOUT", "8.0"))
             http_client = httpx.Client(timeout=httpx.Timeout(http_timeout))
             client = Anthropic(api_key=api_key, http_client=http_client, max_retries=0)
@@ -498,7 +508,7 @@ def ai_explain_trade(i: int = 0, context_bars: int = 60):
         with contextlib.suppress(Exception):
             arr = json.loads(sim_p.read_text(encoding="utf-8"))
             if isinstance(arr, list):
-                signals = arr[-min(len(arr), 50):]
+                signals = arr[-min(len(arr), 50) :]
 
     # Kontekst – equity (seneste context_bars rækker)
     equity = []
@@ -513,12 +523,11 @@ def ai_explain_trade(i: int = 0, context_bars: int = 60):
     }
     safe_payload = _sanitize_json(payload)
 
-    system = ("Du er en nøgtern trading-assistent. "
-              "Svar korte bullets, ingen hype, ingen pynt.")
+    system = "Du er en nøgtern trading-assistent. " "Svar korte bullets, ingen hype, ingen pynt."
     user = (
         "Forklar den udvalgte handel i højst 6 bullets (hvad, hvorfor, timing). "
-        "Afslut med 2 konkrete risikonoter. Data (JSON):\n\n" +
-        json.dumps(safe_payload, ensure_ascii=False)[:12000]
+        "Afslut med 2 konkrete risikonoter. Data (JSON):\n\n"
+        + json.dumps(safe_payload, ensure_ascii=False)[:12000]
     )
     text = _ask_claude(system, user)
     return {"text": text}
@@ -550,11 +559,10 @@ def ai_summary(limit_days: int = Query(7, ge=1, le=30)):
     }
     safe_payload = _sanitize_json(payload)
 
-    system = ("Du er en kortfattet assistent for en trader. "
-              "Opsummer nøgletal og momentum kort.")
+    system = "Du er en kortfattet assistent for en trader. " "Opsummer nøgletal og momentum kort."
     user = (
-        "Lav en kort status (3–5 bullets) for trading-systemet, baseret på data (JSON):\n\n" +
-        json.dumps(safe_payload, ensure_ascii=False)[:12000]
+        "Lav en kort status (3–5 bullets) for trading-systemet, baseret på data (JSON):\n\n"
+        + json.dumps(safe_payload, ensure_ascii=False)[:12000]
     )
     text = _ask_claude(system, user)
     return {"text": text}

@@ -1,21 +1,18 @@
+import datetime
+import os
+import subprocess
+
+import pandas as pd
+
 from utils.project_path import PROJECT_ROOT
 
 # utils/file_utils.py
-
-import os
-import datetime
-import subprocess
-import pandas as pd
 
 
 def get_git_hash():
     """Hent aktiv git commit hash – eller 'unknown' hvis fejl."""
     try:
-        return (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .decode()
-            .strip()
-        )
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
     except Exception as e:
         print(f"[ADVARSEL] Kunne ikke hente git-hash: {e}")
         return "unknown"

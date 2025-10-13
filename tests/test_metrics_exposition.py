@@ -1,7 +1,12 @@
 # tests/test_metrics_exposition.py
-import httpx, asyncio, subprocess, time
+import asyncio
+import subprocess
+import time
+
+import httpx
 
 # Forudsætter at uvicorn kører app på :8000 i CI-jobbet
+
 
 def test_metrics_endpoint_has_core_metrics():
     r = httpx.get("http://localhost:8000/metrics", timeout=5)

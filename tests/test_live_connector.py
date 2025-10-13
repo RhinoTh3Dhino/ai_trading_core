@@ -1,6 +1,7 @@
 # tests/test_live_connector.py
 import asyncio
 import math
+
 import pytest
 
 from data.schemas import Bar

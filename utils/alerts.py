@@ -1,17 +1,19 @@
 # utils/alerts.py
 from __future__ import annotations
+
 import time
 from dataclasses import dataclass
-from typing import Optional, Dict, Callable, Tuple
+from typing import Callable, Dict, Optional, Tuple
+
 
 # -------------------------------------------------------------------------------------------------
 # Konfiguration af tærskler
 # -------------------------------------------------------------------------------------------------
 @dataclass
 class AlertThresholds:
-    dd_pct: float = 10.0        # Alert når drawdown <= -dd_pct  (fx -10%)
-    winrate_min: float = 45.0   # Alert når winrate < winrate_min
-    profit_pct: float = 20.0    # Alert når samlet PnL% >= profit_pct
+    dd_pct: float = 10.0  # Alert når drawdown <= -dd_pct  (fx -10%)
+    winrate_min: float = 45.0  # Alert når winrate < winrate_min
+    profit_pct: float = 20.0  # Alert når samlet PnL% >= profit_pct
     cooldown_s: float = 1800.0  # Cooldown per alert-type i sekunder
 
 
@@ -119,13 +121,19 @@ class AlertManager:
         wr = self._winrate()
         if wr is not None and self._trades >= 10 and wr < self.th.winrate_min:
             if self._cooldown_ok("winrate"):
-                send_fn("alert", f"⚠️ Win-rate {wr:.1f}% under {self.th.winrate_min:.1f}% (trades={self._trades})")
+                send_fn(
+                    "alert",
+                    f"⚠️ Win-rate {wr:.1f}% under {self.th.winrate_min:.1f}% (trades={self._trades})",
+                )
 
         # Profit
         pnl = self._pnl_pct()
         if pnl is not None and pnl >= self.th.profit_pct:
             if self._cooldown_ok("profit"):
-                send_fn("alert", f"✅ PnL {pnl:.2f}% over {self.th.profit_pct:.2f}% (take-profit signal?)")
+                send_fn(
+                    "alert",
+                    f"✅ PnL {pnl:.2f}% over {self.th.profit_pct:.2f}% (take-profit signal?)",
+                )
 
     # -----------------------------
     # Hjælpere til tests/debug

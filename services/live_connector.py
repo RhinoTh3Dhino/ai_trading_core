@@ -1,103 +1,97 @@
 # services/live_connector.py
 from __future__ import annotations
 
-import os
-import sys
 import asyncio
 import json
+import os
+import sys
 import time
-from pathlib import Path
-from typing import Dict, List, DefaultDict
 from collections import defaultdict, deque
+from pathlib import Path
+from typing import DefaultDict, Dict, List
 
 import pandas as pd
 
 # ---- ENV & LOGGING ---------------------------------------------------------
 try:
     from utils.env import load_env
+
     load_env()
 except Exception:
-    # Hvis utils.env ikke eksisterer, kører vi videre med process-miljøet
-    pass
+    pass  # kør videre med eksisterende miljø
 
 import logging
+
 
 def _coerce_bool(value: str | None, default: bool) -> bool:
     if value is None:
         return default
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
+
 LOG_LEVEL = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
-)
+logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("live_connector")
 
 # Dæmp 3.-parts støj som standard (kan overstyres med --no-quiet)
 DEFAULT_QUIET = _coerce_bool(os.getenv("QUIET_LOGS", "1"), True)
+
+
 def _set_quiet_loggers(quiet: bool) -> None:
     level = logging.WARNING if quiet else LOG_LEVEL
     for name in ("websockets", "websockets.client", "websockets.protocol", "asyncio"):
         logging.getLogger(name).setLevel(level)
 
+
+# ---- Fase 4 persistens -----------------------------------------------------
+from config.config import PERSIST
+
 # ---- ORCHESTRATOR & FEATURES ----------------------------------------------
-from data.feed_orchestrator import FeedOrchestrator, PRIMARY, BACKUP
-from features.streaming_pipeline import StreamingFeaturePipeline  # EMA(14/50), RSI(14), ATR(14), VWAP
+from data.feed_orchestrator import BACKUP, PRIMARY, FeedOrchestrator
+from features.streaming_pipeline import (  # EMA(14/50), RSI(14), ATR(14), VWAP
+    StreamingFeaturePipeline,
+)
+from utils.artifacts import rotate_partition  # skriver parts + metadata
 
 # ---- PATHS -----------------------------------------------------------------
-OUTPUTS = Path(os.getenv("OUTPUTS_DIR", "outputs/live"))
 LOGS = Path(os.getenv("LOGS_DIR", "logs"))
-OUTPUTS.mkdir(parents=True, exist_ok=True)
 LOGS.mkdir(parents=True, exist_ok=True)
 
 # ---- SETTINGS --------------------------------------------------------------
-FLUSH_EVERY       = int(os.getenv("LIVE_FLUSH_EVERY", "5"))          # hvor ofte vi flusher bars til parquet
-STATUS_MIN_SECS   = int(os.getenv("LIVE_STATUS_MIN_SECS", "30"))     # min. sekunder mellem statuslinjer (samlet)
-WRITE_METRICS     = _coerce_bool(os.getenv("LIVE_WRITE_METRICS", "1"), True)  # skriv feed_metrics.jsonl
-LAG_WINDOW        = int(os.getenv("LAG_WINDOW", "20"))               # glidende vindue for bar_close_lag_ms
-SCHEMA_VERSION    = os.getenv("LIVE_SCHEMA_VERSION", "stream-mvp-1") # Parquet metadata
+FLUSH_EVERY = int(os.getenv("LIVE_FLUSH_EVERY", "5"))  # hvor ofte vi flusher bars til parquet
+STATUS_MIN_SECS = int(os.getenv("LIVE_STATUS_MIN_SECS", "30"))  # min. sekunder mellem statuslinjer
+WRITE_METRICS = _coerce_bool(os.getenv("LIVE_WRITE_METRICS", "1"), True)  # skriv feed_metrics.jsonl
+LAG_WINDOW = int(os.getenv("LAG_WINDOW", "20"))  # glidende vindue for bar_close_lag_ms
 
+# kolonner vi materialiserer pr. bar (ts er nøgle i persist)
 FEATURE_COLS = ["ema_14", "ema_50", "rsi_14", "vwap", "atr_14"]
-BASE_COLS    = ["ts", "open", "high", "low", "close", "volume"]
-ALL_COLS     = BASE_COLS + FEATURE_COLS
+BASE_COLS = ["ts", "open", "high", "low", "close", "volume"]
+ALL_COLS = BASE_COLS + FEATURE_COLS
+
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
 
-def _write_parquet_with_meta(df: pd.DataFrame, path: Path, schema_version: str):
-    """
-    Skriv Parquet med metadata hvis pyarrow er tilgængelig.
-    Fallback: almindelig pandas + sidecar .meta.json
-    """
-    try:
-        import pyarrow as pa
-        import pyarrow.parquet as pq
-        table = pa.Table.from_pandas(df, preserve_index=False)
-        md = dict(table.schema.metadata or {})
-        md[b"schema_version"] = schema_version.encode("utf-8")
-        md[b"columns"] = ",".join(df.columns).encode("utf-8")
-        table = table.replace_schema_metadata(md)
-        pq.write_table(table, path)
-    except Exception:
-        # Fallback
-        df.to_parquet(path, index=False)
-        try:
-            with open(str(path) + ".meta.json", "w", encoding="utf-8") as f:
-                json.dump({"schema_version": schema_version, "columns": list(df.columns)}, f)
-        except Exception:
-            log.debug("Kunne ikke skrive sidecar metadata for %s", path)
 
 async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_QUIET):
     _set_quiet_loggers(quiet)
 
     # Startup-banner
-    log.info("Starter live_connector")
+    log.info("Starter live_connector (Fase 4 persistens aktiv)")
     log.info("ENV=%s  SYMBOLS=%s  INTERVAL=%s", os.getenv("ENV", "DEV"), symbols, interval)
     log.info("PRIMARY venues=%s  BACKUP venues=%s", PRIMARY, BACKUP)
     log.info(
-        "OUTPUTS=%s  FLUSH_EVERY=%s  STATUS_MIN_SECS=%s  LOG_LEVEL=%s  QUIET=%s",
-        str(OUTPUTS), FLUSH_EVERY, STATUS_MIN_SECS, logging.getLevelName(LOG_LEVEL), quiet
+        "FLUSH_EVERY=%s  STATUS_MIN_SECS=%s  LOG_LEVEL=%s  QUIET=%s",
+        FLUSH_EVERY,
+        STATUS_MIN_SECS,
+        logging.getLevelName(LOG_LEVEL),
+        quiet,
+    )
+    log.info(
+        "Persist: schema=%s features=%s layout_root=%s",
+        PERSIST["SCHEMA_VERSION"],
+        PERSIST["FEATURES_VERSION"],
+        PERSIST["LAYOUT"]["LIVE_ROOT"],
     )
 
     # Start orchestrator
@@ -107,8 +101,7 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
     # Streaming features (kun lukkede barer)
     pipe = StreamingFeaturePipeline()
 
-    # Parquet buffers pr. symbol
-    parquet_files: Dict[str, Path] = {s: OUTPUTS / f"{s}_{interval}.parquet" for s in symbols}
+    # Buffere pr. symbol som flusher til partitions via rotate_partition()
     dfs: Dict[str, pd.DataFrame] = {s: pd.DataFrame(columns=ALL_COLS) for s in symbols}
     bar_counts: Dict[str, int] = {s: 0 for s in symbols}
 
@@ -126,7 +119,7 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
             # --- Metrics for ALLE bars (også u-lukkede) ---------------------
             now_ms = _now_ms()
 
-            # Forsøg at bruge et “event/source” timestamp hvis Bar har det; fallback til bar.ts
+            # Forsøg at bruge “event/source” timestamp; fallback til bar.ts
             event_ts = None
             for cand in ("event_ts", "source_ts", "ingest_ts", "recv_ts"):
                 if hasattr(bar, cand):
@@ -168,21 +161,25 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
                 except Exception:
                     pass
 
-            # --- Kun LUKKEDE barer skrives til Parquet og tælles -------------
+            # --- Kun LUKKEDE barer skrives/flushes --------------------------
             if not getattr(bar, "is_final", False):
                 continue
 
             feats = pipe.update(bar) or {}
 
-            # Lazy init hvis et symbol dukker op, vi ikke forventede
+            # Lazy init hvis ukendt symbol dukker op
             if bar.symbol not in dfs:
                 dfs[bar.symbol] = pd.DataFrame(columns=ALL_COLS)
-                parquet_files[bar.symbol] = OUTPUTS / f"{bar.symbol}_{interval}.parquet"
                 bar_counts[bar.symbol] = 0
 
-            # Row til skrivning
+            # Row til buffer (ts → UTC-aware pandas datetime for robust sort/dedup)
+            try:
+                ts_dt = pd.to_datetime(int(bar.ts), unit="ms", utc=True)
+            except Exception:
+                ts_dt = pd.Timestamp.utcnow().tz_localize("UTC")
+
             row = {
-                "ts": int(bar.ts),
+                "ts": ts_dt,
                 "open": float(bar.open),
                 "high": float(bar.high),
                 "low": float(bar.low),
@@ -200,13 +197,16 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
             if isinstance(bar_close_lag_ms, (int, float)):
                 close_lag_windows[bar.symbol].append(int(bar_close_lag_ms))
 
-            # Periodisk flush til disk (Parquet) pr. symbol
+            # Periodisk flush → skriv som part-*.parquet via rotate_partition()
             if bar_counts[bar.symbol] % FLUSH_EVERY == 0:
                 try:
                     df_sorted = df.sort_values("ts").drop_duplicates(subset=["ts"], keep="last")
-                    _write_parquet_with_meta(df_sorted, parquet_files[bar.symbol], SCHEMA_VERSION)
+                    if not df_sorted.empty:
+                        # skriv og nulstil buffer for symbolet
+                        rotate_partition(bar.symbol, interval, df_sorted)
+                        dfs[bar.symbol] = pd.DataFrame(columns=ALL_COLS)
                 except Exception as e:
-                    log.warning("Parquet flush fejlede for %s: %s", bar.symbol, repr(e))
+                    log.warning("Persist flush fejlede for %s: %s", bar.symbol, repr(e))
 
             # Samlet statuslinje med rate limit
             now = time.time()
@@ -231,7 +231,10 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
 
                 log.info(
                     "Status: bars={%s}  p99(ms)=%s  lag_ms≈%s  active=%s",
-                    bars_summary, p99_latencies, lag_str, orch.active
+                    bars_summary,
+                    p99_latencies,
+                    lag_str,
+                    orch.active,
                 )
                 last_status_wall = now
 
@@ -254,12 +257,12 @@ async def main(symbols: List[str], interval: str = "1m", quiet: bool = DEFAULT_Q
         except Exception as e:
             log.debug("Orchestrator shutdown gav en advarsel: %s", repr(e))
 
-        # Final flush
+        # Final flush for alle symboler (skriv rest-buffers som part-filer)
         for sym, df in dfs.items():
             try:
                 if not df.empty:
                     df_sorted = df.sort_values("ts").drop_duplicates(subset=["ts"], keep="last")
-                    _write_parquet_with_meta(df_sorted, parquet_files[sym], SCHEMA_VERSION)
+                    rotate_partition(sym, interval, df_sorted)
             except Exception as e:
                 log.warning("Final flush fejlede for %s: %s", sym, repr(e))
         log.info("Live connector stoppet.")
@@ -273,15 +276,26 @@ if __name__ == "__main__":
         except Exception:
             pass
 
-    import argparse, re
+    import argparse
+    import re
+
     parser = argparse.ArgumentParser()
     # Acceptér både: --symbols BTCUSDT ETHUSDT  og  --symbols "BTCUSDT,ETHUSDT"
     parser.add_argument("--symbols", nargs="+", default=[os.getenv("SYMBOLS", "BTCUSDT")])
     parser.add_argument("--interval", default=os.getenv("BAR_INTERVAL", "1m"))
-    parser.add_argument("--quiet", dest="quiet", action="store_true", default=DEFAULT_QUIET,
-                        help="Dæmp 3.-parts logger-støj (default fra env QUIET_LOGS=1).")
-    parser.add_argument("--no-quiet", dest="quiet", action="store_false",
-                        help="Vis detaljerede websockets/asyncio logs.")
+    parser.add_argument(
+        "--quiet",
+        dest="quiet",
+        action="store_true",
+        default=DEFAULT_QUIET,
+        help="Dæmp 3.-parts logger-støj (default fra env QUIET_LOGS=1).",
+    )
+    parser.add_argument(
+        "--no-quiet",
+        dest="quiet",
+        action="store_false",
+        help="Vis detaljerede websockets/asyncio logs.",
+    )
     args = parser.parse_args()
 
     # Flad ud og split på komma, hvis nogen entries er streng med komma

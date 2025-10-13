@@ -1,26 +1,27 @@
+import glob
+import os
+from datetime import datetime
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from config.config import COINS, TIMEFRAMES
+
+# Importér strategier (efter sys.path-trick!)
+from strategies.advanced_strategies import (  # Bonus: hvis du vil bruge adaptive SL/TP!
+    add_adaptive_sl_tp,
+    ema_crossover_strategy,
+    ema_rsi_adx_strategy,
+    ema_rsi_regime_strategy,
+    voting_ensemble,
+)
+from utils.performance import print_performance_report
 from utils.project_path import PROJECT_ROOT
 
 # bot/paper_trader.py
 
-import os
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import glob
-from pathlib import Path
-import matplotlib.pyplot as plt
-
-# Importér strategier (efter sys.path-trick!)
-from strategies.advanced_strategies import (
-    ema_crossover_strategy,
-    ema_rsi_regime_strategy,
-    ema_rsi_adx_strategy,
-    voting_ensemble,
-    add_adaptive_sl_tp,  # Bonus: hvis du vil bruge adaptive SL/TP!
-)
-
-from utils.performance import print_performance_report
-from config.config import COINS, TIMEFRAMES
 
 # -- Parametre (kan importeres fra config.py) --
 SL = 0.02
@@ -60,17 +61,11 @@ def plot_trades(df, trades_df, journal_path):
     sls = trades_df[trades_df["type"] == "SL"]
     tps = trades_df[trades_df["type"] == "TP"]
 
-    plt.scatter(
-        buys["time"], buys["price"], marker="^", color="green", label="Køb", s=100
-    )
-    plt.scatter(
-        sells["time"], sells["price"], marker="v", color="red", label="Sælg", s=100
-    )
+    plt.scatter(buys["time"], buys["price"], marker="^", color="green", label="Køb", s=100)
+    plt.scatter(sells["time"], sells["price"], marker="v", color="red", label="Sælg", s=100)
 
     if not sls.empty:
-        plt.scatter(
-            sls["time"], sls["price"], marker="x", color="red", label="Stop Loss", s=100
-        )
+        plt.scatter(sls["time"], sls["price"], marker="x", color="red", label="Stop Loss", s=100)
     if not tps.empty:
         plt.scatter(
             tps["time"],
@@ -139,11 +134,7 @@ def paper_trade(
             this_tp = entry_row.get("tp_pct", tp) if use_adaptive_sl_tp else tp
 
             if row["signal"] == -1 or pnl <= -this_sl or pnl >= this_tp:
-                exit_type = (
-                    "SELL"
-                    if row["signal"] == -1
-                    else ("TP" if pnl >= this_tp else "SL")
-                )
+                exit_type = "SELL" if row["signal"] == -1 else ("TP" if pnl >= this_tp else "SL")
                 fee_total = balance * fee * 2
                 balance = balance * (1 + pnl) - fee_total
                 equity.append(balance)

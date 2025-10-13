@@ -9,10 +9,10 @@ Tests for utils/backup.py
 - Tester graceful håndtering når backup-roden ikke findes
 """
 
+import os
+import re
 import sys
 from pathlib import Path
-import re
-import os
 
 # Sørg for at projektroden (mappen med 'utils') er i sys.path
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -20,7 +20,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest
-from utils.backup import make_backup, cleanup_old_backups
+
+from utils.backup import cleanup_old_backups, make_backup
 
 
 def test_make_backup_creates_folder_and_dummy(tmp_path):
@@ -111,7 +112,9 @@ def test_cleanup_old_backups_limits_per_day_and_days(tmp_path):
     assert new_day.exists(), "Ny dagsmappe blev fejlagtigt slettet"
     remaining = [p for p in new_day.iterdir() if p.is_dir() and p.name.startswith("backup_")]
     assert len(remaining) == 1, f"For mange backups tilbage for ny dag: {remaining}"
-    assert isinstance(deleted, list), "cleanup_old_backups bør returnere en liste over slettede stier"
+    assert isinstance(
+        deleted, list
+    ), "cleanup_old_backups bør returnere en liste over slettede stier"
 
 
 def test_cleanup_old_backups_handles_missing_root(tmp_path):
