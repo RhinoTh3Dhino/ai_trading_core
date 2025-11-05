@@ -128,6 +128,7 @@ jobs:
           set -euxo pipefail
           mkdir -p ops/prometheus/rules ops/prometheus/tests
 
+          # alerts.yml
           if [ ! -f ops/prometheus/alerts.yml ]; then
             printf '%s\n' \
               'groups:' \
@@ -136,6 +137,7 @@ jobs:
               > ops/prometheus/alerts.yml
           fi
 
+          # recording_rules.yml
           if [ ! -f ops/prometheus/recording_rules.yml ]; then
             printf '%s\n' \
               'groups:' \
@@ -144,31 +146,32 @@ jobs:
               > ops/prometheus/recording_rules.yml
           fi
 
-          # Fase 5: data_quality.yml (minimal hvis mangler) – korrekt YAML indrykning
+          # data_quality.yml (matcher promtool tests/annotations)
           if [ ! -f ops/prometheus/rules/data_quality.yml ]; then
-            cat > ops/prometheus/rules/data_quality.yml <<'YAML'
-            groups:
-              - name: data_quality
-                rules:
-                  - alert: DQViolationsBurst
-                    expr: increase(dq_violations_total[5m]) > 0
-                    for: 2m
-                    labels:
-                      service: data
-                      severity: warning
-                    annotations:
-                      summary: "Data Quality issues"
-                      description: "Violations i seneste 5m."
-                  - alert: DataFreshnessStale
-                    expr: dq_freshness_minutes{dataset="ohlcv_1h"} > 15
-                    for: 5m
-                    labels:
-                      service: data
-                      severity: critical
-                    annotations:
-                      summary: "Stale dataset: ohlcv_1h"
-                      description: "Ingen opdatering >15 min."
-            YAML
+            printf '%s\n' \
+              'groups:' \
+              '  - name: data_quality' \
+              '    rules:' \
+              '      - alert: DQViolationsBurst' \
+              '        expr: increase(dq_violations_total[5m]) > 0' \
+              '        for: 2m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: warning' \
+              '        annotations:' \
+              '          summary: "Data Quality issues ({{ $labels.contract }} / {{ $labels.rule }})"' \
+              '          description: "Der er registreret DQ-violations de seneste 5 min (kontrakt={{ $labels.contract }}, rule={{ $labels.rule }}).\nSe runbook: docs/runbooks/data_quality.md\nvalue={{ $value }}\n"' \
+              '' \
+              '      - alert: DataFreshnessStale' \
+              '        expr: dq_freshness_minutes{dataset="ohlcv_1h"} > 15' \
+              '        for: 5m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: critical' \
+              '        annotations:' \
+              '          summary: "Stale dataset: ohlcv_1h"' \
+              '          description: "Ingen opdatering >15 min for dataset=ohlcv_1h.\nTjek ingestion-job, cred og upstream kilder.\nfreshness_minutes={{ $value }}\nRunbook: docs/runbooks/data_quality.md#freshness\n"' \
+              > ops/prometheus/rules/data_quality.yml
           fi
 
           test -f ops/prometheus/prometheus.yml
@@ -247,7 +250,6 @@ jobs:
             echo "No tests/test_metrics_exposition.py present — skipping."
           fi
 
-      # Valgfrit: ad-hoc DQ check på et kendt dataset hvis findes
       - name: Optional ad-hoc DQ check
         shell: bash
         run: |
@@ -292,33 +294,50 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p ops/prometheus/rules
+
           if [ ! -f ops/prometheus/alerts.yml ]; then
             printf '%s\n' \
               'groups:' \
               '  - name: alerts.empty' \
-              '    rules: []' > ops/prometheus/alerts.yml
+              '    rules: []' \
+              > ops/prometheus/alerts.yml
           fi
+
           if [ ! -f ops/prometheus/recording_rules.yml ]; then
             printf '%s\n' \
               'groups:' \
               '  - name: recordings.empty' \
-              '    rules: []' > ops/prometheus/recording_rules.yml
+              '    rules: []' \
+              > ops/prometheus/recording_rules.yml
           fi
+
           if [ ! -f ops/prometheus/rules/data_quality.yml ]; then
-            cat > ops/prometheus/rules/data_quality.yml <<'YAML'
-            groups:
-              - name: data_quality
-                rules:
-                  - alert: DQViolationsBurst
-                    expr: increase(dq_violations_total[5m]) > 0
-                    for: 2m
-                    labels:
-                      service: data
-                      severity: warning
-                    annotations:
-                      summary: "Data Quality issues"
-            YAML
+            printf '%s\n' \
+              'groups:' \
+              '  - name: data_quality' \
+              '    rules:' \
+              '      - alert: DQViolationsBurst' \
+              '        expr: increase(dq_violations_total[5m]) > 0' \
+              '        for: 2m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: warning' \
+              '        annotations:' \
+              '          summary: "Data Quality issues ({{ $labels.contract }} / {{ $labels.rule }})"' \
+              '          description: "Der er registreret DQ-violations de seneste 5 min (kontrakt={{ $labels.contract }}, rule={{ $labels.rule }}).\nSe runbook: docs/runbooks/data_quality.md\nvalue={{ $value }}\n"' \
+              '' \
+              '      - alert: DataFreshnessStale' \
+              '        expr: dq_freshness_minutes{dataset="ohlcv_1h"} > 15' \
+              '        for: 5m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: critical' \
+              '        annotations:' \
+              '          summary: "Stale dataset: ohlcv_1h"' \
+              '          description: "Ingen opdatering >15 min for dataset=ohlcv_1h.\nTjek ingestion-job, cred og upstream kilder.\nfreshness_minutes={{ $value }}\nRunbook: docs/runbooks/data_quality.md#freshness\n"' \
+              > ops/prometheus/rules/data_quality.yml
           fi
+
           test -f ops/prometheus/prometheus.yml
 
       - name: Compose up (live_connector + prometheus only)
