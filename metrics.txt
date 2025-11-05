@@ -1,0 +1,158 @@
+# HELP python_gc_objects_collected_total Objects collected during gc
+# TYPE python_gc_objects_collected_total counter
+python_gc_objects_collected_total{generation="0"} 493.0
+python_gc_objects_collected_total{generation="1"} 330.0
+python_gc_objects_collected_total{generation="2"} 0.0
+# HELP python_gc_objects_uncollectable_total Uncollectable objects found during GC
+# TYPE python_gc_objects_uncollectable_total counter
+python_gc_objects_uncollectable_total{generation="0"} 0.0
+python_gc_objects_uncollectable_total{generation="1"} 0.0
+python_gc_objects_uncollectable_total{generation="2"} 0.0
+# HELP python_gc_collections_total Number of times this generation was collected
+# TYPE python_gc_collections_total counter
+python_gc_collections_total{generation="0"} 117.0
+python_gc_collections_total{generation="1"} 10.0
+python_gc_collections_total{generation="2"} 0.0
+# HELP python_info Python platform information
+# TYPE python_info gauge
+python_info{implementation="CPython",major="3",minor="11",patchlevel="9",version="3.11.9"} 1.0
+# HELP feed_transport_latency_ms End-to-end transportlatens (ms): now_ms - event_ts fra venue besked
+# TYPE feed_transport_latency_ms histogram
+feed_transport_latency_ms_bucket{le="1.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="2.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="5.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="10.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="25.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="50.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="75.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="100.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="150.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="200.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="300.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="500.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="750.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="1000.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="1500.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="2000.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="3000.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="5000.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="7500.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="10000.0",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_bucket{le="+Inf",symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_count{symbol="TESTUSDT",venue="binance"} 1.0
+feed_transport_latency_ms_sum{symbol="TESTUSDT",venue="binance"} 0.0
+feed_transport_latency_ms_bucket{le="1.0",symbol="TESTUSDT",venue="bootstrap"} 0.0
+feed_transport_latency_ms_bucket{le="2.0",symbol="TESTUSDT",venue="bootstrap"} 0.0
+feed_transport_latency_ms_bucket{le="5.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="10.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="25.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="50.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="75.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="100.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="150.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="200.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="300.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="500.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="750.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="1000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="1500.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="2000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="3000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="5000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="7500.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="10000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="+Inf",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_count{symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_sum{symbol="TESTUSDT",venue="bootstrap"} 5.0
+# HELP feed_transport_latency_ms_created End-to-end transportlatens (ms): now_ms - event_ts fra venue besked
+# TYPE feed_transport_latency_ms_created gauge
+feed_transport_latency_ms_created{symbol="TESTUSDT",venue="binance"} 1.7604510107221653e+09
+feed_transport_latency_ms_created{symbol="TESTUSDT",venue="bootstrap"} 1.760451010724666e+09
+# HELP feed_bar_close_lag_ms Hvor langt inde i baren vi er: now_ms - bar_end_ms
+# TYPE feed_bar_close_lag_ms gauge
+feed_bar_close_lag_ms{symbol="TESTUSDT",venue="binance"} 0.0
+feed_bar_close_lag_ms{symbol="TESTUSDT",venue="bootstrap"} 1500.0
+# HELP feed_bars_total Antal lukkede bars (is_final=True) modtaget/produceret
+# TYPE feed_bars_total counter
+feed_bars_total{symbol="TESTUSDT",venue="binance"} 0.0
+feed_bars_total{symbol="TESTUSDT",venue="bootstrap"} 1.0
+# HELP feed_bars_created Antal lukkede bars (is_final=True) modtaget/produceret
+# TYPE feed_bars_created gauge
+feed_bars_created{symbol="TESTUSDT",venue="binance"} 1.7604510107221653e+09
+feed_bars_created{symbol="TESTUSDT",venue="bootstrap"} 1.760451010724666e+09
+# HELP feed_reconnects_total Antal WS reconnects per venue
+# TYPE feed_reconnects_total counter
+feed_reconnects_total{venue="binance"} 0.0
+# HELP feed_reconnects_created Antal WS reconnects per venue
+# TYPE feed_reconnects_created gauge
+feed_reconnects_created{venue="binance"} 1.7604510107221653e+09
+# HELP feed_queue_depth Aktuel k├©dybde i live-pipelinen (global eller pr. stage)
+# TYPE feed_queue_depth gauge
+feed_queue_depth{queue="live"} 0.0
+# HELP feature_compute_ms Feature-beregningstid (ms) per symbol
+# TYPE feature_compute_ms histogram
+feature_compute_ms_bucket{feature="ema",le="1.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="2.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="5.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="10.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="25.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="50.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="75.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="100.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="150.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="200.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="300.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="750.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="1000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="1500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="2000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="3000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="5000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="7500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="10000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="ema",le="+Inf",symbol="TESTUSDT"} 1.0
+feature_compute_ms_count{feature="ema",symbol="TESTUSDT"} 1.0
+feature_compute_ms_sum{feature="ema",symbol="TESTUSDT"} 0.0
+feature_compute_ms_bucket{feature="EMA_14",le="1.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="2.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="5.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="10.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="25.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="50.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="75.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="100.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="150.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="200.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="300.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="750.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="1000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="1500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="2000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="3000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="5000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="7500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="10000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="+Inf",symbol="TESTUSDT"} 1.0
+feature_compute_ms_count{feature="EMA_14",symbol="TESTUSDT"} 1.0
+feature_compute_ms_sum{feature="EMA_14",symbol="TESTUSDT"} 0.0005
+# HELP feature_compute_ms_created Feature-beregningstid (ms) per symbol
+# TYPE feature_compute_ms_created gauge
+feature_compute_ms_created{feature="ema",symbol="TESTUSDT"} 1.7604510107221653e+09
+feature_compute_ms_created{feature="EMA_14",symbol="TESTUSDT"} 1.760451010724666e+09
+# HELP feature_errors_total Antal featurefejl (exceptions/NaN) per feature/symbol
+# TYPE feature_errors_total counter
+feature_errors_total{feature="ema",symbol="TESTUSDT"} 0.0
+# HELP feature_errors_created Antal featurefejl (exceptions/NaN) per feature/symbol
+# TYPE feature_errors_created gauge
+feature_errors_created{feature="ema",symbol="TESTUSDT"} 1.7604510107221653e+09
+# HELP dq_violations_total Data quality violations by contract and rule
+# TYPE dq_violations_total counter
+dq_violations_total{contract="ohlcv_1h",rule="bootstrap"} 0.0
+# HELP dq_violations_created Data quality violations by contract and rule
+# TYPE dq_violations_created gauge
+dq_violations_created{contract="ohlcv_1h",rule="bootstrap"} 1.7604510107221653e+09
+# HELP dq_freshness_minutes Minutes since last data update
+# TYPE dq_freshness_minutes gauge
+dq_freshness_minutes{dataset="ohlcv_1h"} 0.0

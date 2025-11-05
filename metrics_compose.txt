@@ -1,0 +1,108 @@
+# HELP python_gc_objects_collected_total Objects collected during gc
+# TYPE python_gc_objects_collected_total counter
+python_gc_objects_collected_total{generation="0"} 661.0
+python_gc_objects_collected_total{generation="1"} 85.0
+python_gc_objects_collected_total{generation="2"} 0.0
+# HELP python_gc_objects_uncollectable_total Uncollectable objects found during GC
+# TYPE python_gc_objects_uncollectable_total counter
+python_gc_objects_uncollectable_total{generation="0"} 0.0
+python_gc_objects_uncollectable_total{generation="1"} 0.0
+python_gc_objects_uncollectable_total{generation="2"} 0.0
+# HELP python_gc_collections_total Number of times this generation was collected
+# TYPE python_gc_collections_total counter
+python_gc_collections_total{generation="0"} 121.0
+python_gc_collections_total{generation="1"} 11.0
+python_gc_collections_total{generation="2"} 0.0
+# HELP python_info Python platform information
+# TYPE python_info gauge
+python_info{implementation="CPython",major="3",minor="11",patchlevel="13",version="3.11.13"} 1.0
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 1.72085248e+08
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 5.8929152e+07
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.76045130788e+09
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 2.0
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 16.0
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1.048576e+06
+# HELP feed_transport_latency_ms End-to-end transportlatens (ms): now_ms - event_ts fra venue besked
+# TYPE feed_transport_latency_ms histogram
+feed_transport_latency_ms_bucket{le="1.0",symbol="TESTUSDT",venue="bootstrap"} 0.0
+feed_transport_latency_ms_bucket{le="2.0",symbol="TESTUSDT",venue="bootstrap"} 0.0
+feed_transport_latency_ms_bucket{le="5.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="10.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="25.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="50.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="75.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="100.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="150.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="200.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="300.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="500.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="750.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="1000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="1500.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="2000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="3000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="5000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="7500.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="10000.0",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_bucket{le="+Inf",symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_count{symbol="TESTUSDT",venue="bootstrap"} 1.0
+feed_transport_latency_ms_sum{symbol="TESTUSDT",venue="bootstrap"} 5.0
+# HELP feed_transport_latency_ms_created End-to-end transportlatens (ms): now_ms - event_ts fra venue besked
+# TYPE feed_transport_latency_ms_created gauge
+feed_transport_latency_ms_created{symbol="TESTUSDT",venue="bootstrap"} 1.7604513092689104e+09
+# HELP feed_bar_close_lag_ms Hvor langt inde i baren vi er: now_ms - bar_end_ms
+# TYPE feed_bar_close_lag_ms gauge
+feed_bar_close_lag_ms{symbol="TESTUSDT",venue="bootstrap"} 1500.0
+# HELP feed_bars_total Antal lukkede bars (is_final=True) modtaget/produceret
+# TYPE feed_bars_total counter
+feed_bars_total{symbol="TESTUSDT",venue="bootstrap"} 1.0
+# HELP feed_bars_created Antal lukkede bars (is_final=True) modtaget/produceret
+# TYPE feed_bars_created gauge
+feed_bars_created{symbol="TESTUSDT",venue="bootstrap"} 1.7604513092689457e+09
+# HELP feed_reconnects_total Antal WS reconnects per venue
+# TYPE feed_reconnects_total counter
+# HELP feed_queue_depth Aktuel kødybde i live-pipelinen (global eller pr. stage)
+# TYPE feed_queue_depth gauge
+feed_queue_depth{queue="live"} 0.0
+# HELP feature_compute_ms Feature-beregningstid (ms) per symbol
+# TYPE feature_compute_ms histogram
+feature_compute_ms_bucket{feature="EMA_14",le="1.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="2.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="5.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="10.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="25.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="50.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="75.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="100.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="150.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="200.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="300.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="750.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="1000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="1500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="2000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="3000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="5000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="7500.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="10000.0",symbol="TESTUSDT"} 1.0
+feature_compute_ms_bucket{feature="EMA_14",le="+Inf",symbol="TESTUSDT"} 1.0
+feature_compute_ms_count{feature="EMA_14",symbol="TESTUSDT"} 1.0
+feature_compute_ms_sum{feature="EMA_14",symbol="TESTUSDT"} 0.000505
+# HELP feature_compute_ms_created Feature-beregningstid (ms) per symbol
+# TYPE feature_compute_ms_created gauge
+feature_compute_ms_created{feature="EMA_14",symbol="TESTUSDT"} 1.7604513092689574e+09
+# HELP feature_errors_total Antal featurefejl (exceptions/NaN) per feature/symbol
+# TYPE feature_errors_total counter

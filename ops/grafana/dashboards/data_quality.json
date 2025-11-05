@@ -1,0 +1,127 @@
+{
+  "id": null,
+  "uid": "dq-obs-001",
+  "title": "Data Quality — Live",
+  "timezone": "",
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "dataset",
+        "label": "Dataset",
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "refresh": 2,
+        "query": "label_values(dq_freshness_minutes, dataset)",
+        "includeAll": false,
+        "multi": false,
+        "hide": 0,
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Freshness (min)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "dq_freshness_minutes{dataset=\"$dataset\"}",
+          "legendFormat": "{{dataset}}"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "horizontal",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 15 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "DQ Violations (increase[5m])",
+      "gridPos": { "x": 6, "y": 0, "w": 18, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (contract,rule) (increase(dq_violations_total[5m]))",
+          "legendFormat": "{{contract}} / {{rule}}"
+        }
+      ],
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Bars pr. venue (rate[5m])",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum by (venue) (rate(feed_bars_total[5m]))", "legendFormat": "{{venue}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Transport p99 (5m)",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "live:transport_latency_ms_p99", "legendFormat": "p99 (all venues)" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 250 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "title": "Aktive alarmer (Prometheus ALERTS)",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [
+        {
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "{{alertname}} {{severity}}"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "transformations": [
+        { "id": "labelsToFields", "options": { "keepLabels": ["alertname", "severity", "service", "venue", "dataset"] } },
+        { "id": "organize", "options": { "excludeByName": { "Value": true } } }
+      ]
+    }
+  ]
+}

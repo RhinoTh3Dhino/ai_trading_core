@@ -15,11 +15,21 @@ NYT (Fase 3):
     inc_feed_bars_total, inc_feed_reconnects_total,
     observe_bar_close_lag_ms, observe_transport_latency_ms
 - Auto-init ved import (kan slås fra med METRICS_AUTO_INIT=0).
+
+NYT (Fase 5 — Datakvalitet & alerts):
+- dq_violations_total(contract, rule)  [Counter]
+- dq_freshness_minutes(dataset)        [Gauge, multiprocess_mode=max]
+- Helpers: inc_dq_violation(), set_dq_freshness_minutes()
+
+NYT (Dev/emulering):
+- emit_sample_dev(): lille helper til at emulere bars/latency/feature-latency i dev,
+  så PromQL-vinduer over 5m får rigtige observationer (ikke tomme sæt).
 """
 
 from __future__ import annotations
 
 import os
+import random
 import time
 from contextlib import contextmanager
 from typing import Any, Dict, Optional, Union
@@ -67,6 +77,10 @@ feed_queue_depth: Gauge | None = None
 feature_compute_ms: Histogram | None = None
 feature_errors_total: Counter | None = None
 
+# Fase 5 — DQ
+dq_violations_total: Counter | None = None
+dq_freshness_minutes: Gauge | None = None
+
 _METRICS_READY = False
 _BOOTSTRAPPED = False  # sikrer, at vi kun bootstrapper én gang
 
@@ -88,7 +102,7 @@ def _to_ms(ts: Union[int, float]) -> int:
 def _gauge_kwargs() -> dict:
     """
     Multiprocess-aggregationsmodus for Gauges.
-    'max' giver mening for lag/kødybde.
+    'max' giver mening for lag/kødybde/freshness.
     """
     return {"multiprocess_mode": "max"} if _MULTIPROC else {}
 
@@ -116,6 +130,7 @@ def ensure_registered() -> None:
 
     global feed_transport_latency_ms, feed_bar_close_lag_ms, feed_bars_total
     global feed_reconnects_total, feed_queue_depth, feature_compute_ms, feature_errors_total
+    global dq_violations_total, dq_freshness_minutes
 
     # 1) Rebind til eksisterende collectors hvis de findes (reload-sikkert)
     existing_transport = _registry_lookup("feed_transport_latency_ms")
@@ -125,6 +140,8 @@ def ensure_registered() -> None:
     existing_queue = _registry_lookup("feed_queue_depth")
     existing_feat_ms = _registry_lookup("feature_compute_ms")
     existing_feat_err = _registry_lookup("feature_errors_total")
+    existing_dq_viol = _registry_lookup("dq_violations_total")
+    existing_dq_fresh = _registry_lookup("dq_freshness_minutes")
 
     if all(
         [
@@ -135,6 +152,8 @@ def ensure_registered() -> None:
             existing_queue,
             existing_feat_ms,
             existing_feat_err,
+            existing_dq_viol is not None,
+            existing_dq_fresh is not None,
         ]
     ):
         feed_transport_latency_ms = existing_transport
@@ -144,6 +163,8 @@ def ensure_registered() -> None:
         feed_queue_depth = existing_queue
         feature_compute_ms = existing_feat_ms
         feature_errors_total = existing_feat_err
+        dq_violations_total = existing_dq_viol
+        dq_freshness_minutes = existing_dq_fresh
         _METRICS_READY = True
         return
 
@@ -195,6 +216,20 @@ def ensure_registered() -> None:
         labelnames=("feature", "symbol"),
     )
 
+    # ---- Fase 5: Data Quality ----
+    dq_violations_total = Counter(
+        "dq_violations_total",
+        "Data quality violations by contract and rule",
+        labelnames=("contract", "rule"),
+    )
+
+    dq_freshness_minutes = Gauge(
+        "dq_freshness_minutes",
+        "Minutes since last data update",
+        labelnames=("dataset",),
+        **_gauge_kwargs(),
+    )
+
     _METRICS_READY = True
 
 
@@ -225,6 +260,12 @@ def bootstrap_core_metrics(venue: str = "binance", symbol: str = "TESTUSDT") -> 
             feature_compute_ms.labels("ema", symbol).observe(0.0)
         if feature_errors_total is not None:
             feature_errors_total.labels("ema", symbol).inc(0)
+
+        # Fase 5 bootstrap
+        if dq_violations_total is not None:
+            dq_violations_total.labels("ohlcv_1h", "bootstrap").inc(0)
+        if dq_freshness_minutes is not None:
+            dq_freshness_minutes.labels("ohlcv_1h").set(0)
     except Exception:
         # Bootstrap må aldrig vælte processen – det er kun kosmetisk for /metrics
         pass
@@ -349,6 +390,79 @@ def time_feature(feature: str, symbol: str):
             feature_compute_ms.labels(feature, symbol).observe(dur_ms)
 
 
+# --------- Fase 5 helpers (DQ) ----------------------------------------------
+
+
+def inc_dq_violation(contract: str, rule: str):
+    """
+    Inkrementér en DQ-violation (bruges når validate(...) returnerer issues).
+    """
+    ensure_registered()
+    if dq_violations_total is None:
+        return
+    dq_violations_total.labels(contract, rule).inc()
+
+
+def set_dq_freshness_minutes(dataset: str, minutes: Union[int, float]):
+    """
+    Sæt freshness (minutter siden sidste opdatering) for et dataset.
+    Typisk kaldt fra persistens-job efter succesfuld write/rotation.
+    """
+    ensure_registered()
+    if dq_freshness_minutes is None:
+        return
+    try:
+        val = float(minutes)
+    except Exception:
+        return
+    if val >= 0:
+        dq_freshness_minutes.labels(dataset).set(val)
+
+
+# --------- Dev helper: emulér trafik til tests/gates -------------------------
+
+
+def emit_sample_dev() -> dict:
+    """
+    Emulér et enkelt “tick” for at sikre aktive tidsserier i Prometheus.
+    Kald denne fra en debug-route (f.eks. /_debug/emit_sample).
+
+    Returnerer et lille statusdict som kan logges i debug.
+    """
+    ensure_registered()
+
+    venues = ("binance", "bootstrap")
+    symbol = "TESTUSDT"
+
+    try:
+        for v in venues:
+            # Bars
+            if feed_bars_total is not None:
+                feed_bars_total.labels(v, symbol).inc()
+
+            # Transport-latency (histogram observationer)
+            if feed_transport_latency_ms is not None:
+                feed_transport_latency_ms.labels(v, symbol).observe(
+                    random.choice([20, 35, 60, 120, 240])
+                )
+
+            # Bar close lag (gauge)
+            if feed_bar_close_lag_ms is not None:
+                feed_bar_close_lag_ms.labels(v, symbol).set(random.choice([500, 800, 1200]))
+
+        # Feature compute latency (histogram observationer)
+        if feature_compute_ms is not None:
+            feature_compute_ms.labels("ema", symbol).observe(random.choice([8, 12, 18, 30, 45]))
+
+        # Kødybde (gauge)
+        if feed_queue_depth is not None:
+            feed_queue_depth.labels("live").set(random.choice([0, 5, 10, 20]))
+
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 # --- /metrics ASGI app helper -----------------------------------------------
 
 
@@ -381,6 +495,8 @@ __all__ = [
     "feed_queue_depth",
     "feature_compute_ms",
     "feature_errors_total",
+    "dq_violations_total",
+    "dq_freshness_minutes",
     # helpers (primær + alias)
     "ensure_registered",
     "bootstrap_core_metrics",
@@ -394,6 +510,11 @@ __all__ = [
     "inc_feed_reconnects_total",
     "set_queue_depth",
     "time_feature",
+    # Fase 5 helpers
+    "inc_dq_violation",
+    "set_dq_freshness_minutes",
+    # Dev helper
+    "emit_sample_dev",
     "make_metrics_app",
 ]
 

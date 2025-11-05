@@ -40,28 +40,22 @@ logs/
 # =========================
 # PERSISTENS & ARTEFAKTER (FASE 4)
 # =========================
-# Primære artefakter holdes ude af git – persistent via rotation/zip/CI
 outputs/
 !outputs/README.md
 !outputs/.gitkeep
-
-# Tillad små metadata-pegepinde (trackes)
 !outputs/model_history.csv
 !outputs/metrics/*_latest.json
 !outputs/models/best_model.keras
 !outputs/metrics/README.md
 !outputs/metrics/.gitkeep
 
-# Feature data – kun skabeloner/README
 outputs/feature_data/
 !outputs/feature_data/README.md
 !outputs/feature_data/.gitkeep
 
-# Arkiver og artifacts
 archives/
 artifacts/
 
-# Lokale grafer/billeder (ikke versioneres)
 graphs/
 !graphs/*.md
 !graphs/.gitkeep
@@ -69,7 +63,6 @@ graphs/
 # =========================
 # DATA & MODELLER
 # =========================
-# Ignorér alt under data/ og models/, men tillad python/markdown og gitkeeps
 data/**
 !data/
 !data/**/
@@ -86,7 +79,6 @@ models/**
 !models/*.md
 !models/.gitkeep
 
-# Store datafiler
 data/**/*.parquet
 data/**/*.csv
 data/**/*.json
@@ -94,17 +86,14 @@ data/**/*.jsonl
 data/**/raw/**
 data/**/outputs/**
 
-# TESTDATA (tillad csv til tests/CI)
 !test_data/
 !test_data/*.csv
 !data/test_data/
 !data/test_data/*.csv
 
-# Eksempel/eval-filer
 !data/model_eval.csv
 !data/*.example
 
-# ML/model filtyper
 *.h5
 *.keras
 *.pth
@@ -113,7 +102,6 @@ data/**/outputs/**
 *.npz
 *.joblib
 
-# Store regneark/journals
 *.xlsx
 *.xls
 *.parquet
@@ -175,7 +163,6 @@ eggs/
 # =========================
 # TEST / NOTEBOOKS / UDGANGE
 # =========================
-# Tillad ALT i tests/**
 !tests/**
 tests/output/
 notes/
@@ -211,13 +198,16 @@ tuning/*.txt
 
 # =========================
 # OBSERVABILITY / DOCKER
-# (ALDRIG secrets i git)
 # =========================
+# ALERTMANAGER: aldrig secrets i git
 ops/alertmanager/secrets/*
+# Tillad templates, men IGNORÉR renderede runtime-filer
 !ops/alertmanager/templates/**
-!ops/alertmanager/alertmanager.runtime.yml
-# Hvis nogen renderer direkte til repoet ved en fejl
+ops/alertmanager/alertmanager.runtime.yml
+!ops/alertmanager/alertmanager.runtime.yml.tmpl
+# Hvis nogen mount’er/renderer lokalt under repo
 ops/alertmanager/alertmanager.yml
+ops/alertmanager/amcfg/
 
 # Lokale compose-artefakter og data
 ops/compose/data/grafana/
@@ -225,6 +215,16 @@ ops/compose/data/prometheus/
 ops/compose/data/alertmanager/
 ops/compose/resolved.yml
 ops/compose/.env
+ops/compose/*.local.yml
+ops/compose/overrides/*.yml
+
+# Grafana lokale DB-eksporter (persistens håndteres via volume)
+grafana*.db
+*.sqlite
+
+# Prometheus test/fixtures artefakter (valgfri konvention)
+ops/prometheus/tests/**/out.*
+ops/prometheus/tests/**/.tmp*
 
 # =========================
 # LOKALE SCRATCH-FILER I RODEN
@@ -241,5 +241,6 @@ ai_summary.txt
 # =========================
 !*.md
 
+# (redundans – sikkerhed)
 __pycache__/
 *.pyc

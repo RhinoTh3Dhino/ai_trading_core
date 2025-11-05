@@ -1,18 +1,23 @@
 # ops/compose/docker-compose.yml
 # Observability stack – profiler + healthchecks
 # Profiler:
-#  - default: live_connector + prometheus (CI-sikker)
+#  - (default): live_connector + prometheus (CI-/dev-venlig)
 #  - alerting: am_init + alertmanager (kræver secrets)
 #  - ui: grafana
+#  - debug: sample_emitter (varmer metrics via /_debug/emit_sample)
 
 networks:
   obsnet:
     name: obsnet
 
 volumes:
-  amcfg: {}
-  prom_data: {}         # Prometheus TSDB (persistens)
-  grafana_data: {}      # Grafana DB (persistens)
+  amcfg:
+    name: amcfg
+    external: true            # fast navn så docker run -v amcfg:/amcfg virker
+  prom_data:
+    name: prom_data        # fast navn for nem inspektion/backup
+  grafana_data:
+    name: grafana_data     # fast navn for nem inspektion/backup
 
 secrets:
   telegram_bot_token:
@@ -23,10 +28,31 @@ secrets:
 services:
   live_connector:
     build: ../../
+    container_name: live_connector
     command: ["uvicorn","bot.live_connector.runner:app","--host","0.0.0.0","--port","8000","--workers","1"]
-    ports: ["8000:8000"]
+    environment:
+      PYTHONUNBUFFERED: "1"
+      LOG_LEVEL: "INFO"
+      # Aktiver test-endpoint til DQ-metrics i dev/compose:
+      ENABLE_DEBUG_ROUTES: "1"
+      # Sørg for synlige metrikker uden trafik:
+      METRICS_AUTO_INIT: "1"
+      METRICS_BOOTSTRAP: "1"
+      # (Valgfrit) label-guard tuning
+      OBS_SYMBOLS_MAX: "200"
+      OBS_SYMBOLS_WHITELIST: ""
+      # (Valgfrit) status-logging cadence
+      STATUS_MIN_SECS: "30"
+      # === DQ-prod auth til /dq/* endpoints ===
+      DQ_SHARED_SECRET: "${DQ_SHARED_SECRET:-change-me-long-random}"
+      # (Valgfrit) multiprocess metrics dir hvis du kører >1 worker
+      # PROMETHEUS_MULTIPROC_DIR: "/tmp/prom_mp"
+    ports:
+      - "8000:8000"     # <— vigtigt: så localhost:8000 rammer containeren
     restart: unless-stopped
-    networks: [obsnet]
+    networks:
+      obsnet:
+        aliases: ["live_connector"]
     healthcheck:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 5s
@@ -65,7 +91,8 @@ services:
     command:
       - --config.file=/amcfg/alertmanager.yml
       - --web.listen-address=:9093
-    ports: ["9093:9093"]
+    ports:
+      - "9093:9093"
     restart: unless-stopped
     networks:
       obsnet:
@@ -79,6 +106,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.6.0
+    container_name: prometheus
     command:
       [
         "--config.file=/etc/prometheus/prometheus.yml",
@@ -90,10 +118,13 @@ services:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
+      - ../prometheus/rules:/etc/prometheus/rules:ro   # ← inkluder data_quality.yml m.fl.
       - prom_data:/prometheus
-    ports: ["9090:9090"]
+    ports:
+      - "9090:9090"
     depends_on:
-      - live_connector
+      live_connector:
+        condition: service_healthy   # <— vent til live_connector er klar
     restart: unless-stopped
     networks:
       obsnet:
@@ -107,7 +138,8 @@ services:
 
   grafana:
     profiles: ["ui"]
-    image: grafana/grafana:11.1.0    # pin for determinisme
+    image: grafana/grafana:11.1.0
+    container_name: grafana
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
@@ -116,9 +148,11 @@ services:
       - ../grafana/provisioning:/etc/grafana/provisioning:ro
       - ../grafana/dashboards:/var/lib/grafana/dashboards
       - grafana_data:/var/lib/grafana
-    ports: ["3000:3000"]
+    ports:
+      - "3000:3000"
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_started
     restart: unless-stopped
     networks:
       obsnet:
@@ -129,3 +163,27 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hvert 5s
+  sample_emitter:
+    profiles: ["debug"]
+    image: curlimages/curl:8.8.0
+    depends_on:
+      live_connector:
+        condition: service_healthy
+    environment:
+      EMIT_EVERY: "${EMIT_EVERY:-5}"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        echo "Venter på live_connector..."
+        until curl -sf http://live_connector:8000/healthz >/dev/null; do sleep 2; done
+        echo "Spammer /_debug/emit_sample hver ${EMIT_EVERY}s"
+        while :; do
+          curl -s -X POST http://live_connector:8000/_debug/emit_sample >/dev/null || true
+          sleep "${EMIT_EVERY}"
+        done
+    restart: unless-stopped
+    networks: [obsnet]

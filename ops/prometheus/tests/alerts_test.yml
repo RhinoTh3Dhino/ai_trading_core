@@ -1,6 +1,7 @@
 rule_files:
   - ../alerts.yml
   - ../recording_rules.yml
+  - ../rules/data_quality.yml
 
 evaluation_interval: 1m
 
@@ -25,7 +26,7 @@ tests:
               summary: "Ingen bars i 5m for venue binance"
               description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue binance (feed_bars:rate5m == 0)."
 
-  # 1b) NoBarsIn5m – OKX (ny for Fase 3)
+  # 1b) NoBarsIn5m – OKX
   - name: nobars_triggers_okx
     interval: 1m
     input_series:
@@ -44,7 +45,7 @@ tests:
               summary: "Ingen bars i 5m for venue okx"
               description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue okx (feed_bars:rate5m == 0)."
 
-  # 1c) NoBarsIn5m – Kraken (ny for Fase 3)
+  # 1c) NoBarsIn5m – Kraken
   - name: nobars_triggers_kraken
     interval: 1m
     input_series:
@@ -258,3 +259,45 @@ tests:
             exp_annotations:
               summary: "Global bar-close lag > 1.5s (5m)"
               description: "Det globale 5m-maksimum for bar-close lag overstiger 1.5 sekunder i mindst 3 minutter."
+
+  # 10) DataFreshnessStale (DQ) — >15 min i mindst 5m
+  - name: dq_freshness_stale
+    interval: 1m
+    input_series:
+      - series: 'dq_freshness_minutes{dataset="ohlcv_1h"}'
+        # Stiger til 20 min fra t=3m og holder → skal fire efter for:5m (dvs. ved ~8m)
+        values: '0 0 0 20 20 20 20 20 20'
+    alert_rule_test:
+      - alertname: DataFreshnessStale
+        eval_time: 8m
+        exp_alerts:
+          - exp_labels:
+              alertname: DataFreshnessStale
+              service: data
+              severity: critical
+              dataset: ohlcv_1h
+            exp_annotations:
+              summary: "Stale dataset: ohlcv_1h"
+              description: "Ingen opdatering >15 min. Tjek ingestion-job & cred."
+
+  # 11) DQViolationsBurst — increase(dq_violations_total[5m]) > 0 for:2m
+  - name: dq_violations_burst
+    interval: 1m
+    input_series:
+      - series: 'dq_violations_total{contract="ohlcv_1h",rule="bounds_min"}'
+        # Counter hopper fra 0 → 3 ved t=5m og holder
+        values: '0 0 0 0 0 3 3 3 3'
+    alert_rule_test:
+      - alertname: DQViolationsBurst
+        # kræver for:2m; evaluer 2m efter hop indenfor 5m-vinduet
+        eval_time: 7m
+        exp_alerts:
+          - exp_labels:
+              alertname: DQViolationsBurst
+              service: data
+              severity: warning
+              contract: ohlcv_1h
+              rule: bounds_min
+            exp_annotations:
+              summary: "Data Quality issues"
+              description: "Violations i seneste 5m. Se runbook: docs/runbooks/data_quality.md"

@@ -1,0 +1,73 @@
+groups:
+- name: data_quality
+  rules:
+  # --- 1) Bratte DQ-violations (per kontrakt/rule) ---------------------------
+  - alert: DQViolationsBurst
+    expr: increase(dq_violations_total[5m]) > 0
+    for: 2m
+    labels:
+      service: data
+      severity: warning
+    annotations:
+      summary: "Data Quality issues ({{ $labels.contract }} / {{ $labels.rule }})"
+      description: |
+        Der er registreret DQ-violations de seneste 5 min (kontrakt={{ $labels.contract }}, rule={{ $labels.rule }}).
+        Se runbook: docs/runbooks/data_quality.md
+        value={{ $value }}
+
+  # Alternativ rate-baseret vagt (mindre følsom, mere stabil)
+  - alert: DQViolationsRateSpike
+    expr: rate(dq_violations_total[10m]) > 0
+    for: 3m
+    labels:
+      service: data
+      severity: warning
+    annotations:
+      summary: "Data Quality violations (rate) ({{ $labels.contract }} / {{ $labels.rule }})"
+      description: |
+        dq_violations_total har en positiv rate over 10m (kontrakt={{ $labels.contract }}, rule={{ $labels.rule }}).
+        Se runbook: docs/runbooks/data_quality.md
+        rate={{ $value }}
+
+  # --- 2) Freshness for ohlcv_1h (stale) -------------------------------------
+  - alert: DataFreshnessStale
+    expr: dq_freshness_minutes{dataset="ohlcv_1h"} > 15
+    for: 5m
+    labels:
+      service: data
+      severity: critical
+    annotations:
+      summary: "Stale dataset: {{ $labels.dataset }}"
+      description: |
+        Ingen opdatering >15 min for dataset={{ $labels.dataset }}.
+        Tjek ingestion-job, cred og upstream kilder.
+        freshness_minutes={{ $value }}
+        Runbook: docs/runbooks/data_quality.md#freshness
+
+  # Freshness-metric mangler helt (ingen serie eksponeret)
+  - alert: DataFreshnessMissing
+    expr: absent(dq_freshness_minutes{dataset="ohlcv_1h"})
+    for: 10m
+    labels:
+      service: data
+      severity: critical
+    annotations:
+      summary: "Mangler freshness-metric for {{ $labels.dataset }}"
+      description: |
+        Prometheus ser ingen dq_freshness_minutes for dataset=ohlcv_1h.
+        Live-connector eller eksponering af /metrics kan være nede, eller bootstrap er ikke kørt.
+        Runbook: docs/runbooks/data_quality.md#freshness
+
+  # --- 3) Global null-rate (kontraktgrænse overskredet) ----------------------
+  - alert: GlobalNullRateHigh
+    expr: increase(dq_violations_total{rule="global_null_rate"}[10m]) > 0
+    for: 5m
+    labels:
+      service: data
+      severity: critical
+    annotations:
+      summary: "Global null-rate over kontraktgrænse ({{ $labels.contract }})"
+      description: |
+        Der er registreret global_null_rate-violations de seneste 10 min for kontrakt={{ $labels.contract }}.
+        Se detaljer i check_data_quality-rapport og runbook: docs/runbooks/data_quality.md#null-rate
+        value={{ $value }}
