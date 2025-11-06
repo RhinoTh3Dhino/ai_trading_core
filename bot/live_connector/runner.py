@@ -51,65 +51,19 @@ except Exception:
         return {"ok": False, "error": "emit_sample_dev not available"}
 
 
-# -----------------------------------------------------------------------------
-
-
-# Feature-API (robust relativ import; fallback til no-ops)
-try:  # pragma: no cover
-    from features import (
-        compute_all_features,
-        compute_atr14,
-        compute_ema14,
-        compute_ema50,
-        compute_rsi14,
-        compute_vwap,
-    )
-except Exception:  # pragma: no cover
-    compute_all_features = None
-    compute_ema14 = compute_ema50 = compute_rsi14 = compute_vwap = compute_atr14 = None
-
-# Label guard (valgfri)
-try:
-    from .label_guard import LabelLimiter  # hvis tilgængelig i repo
-except Exception:  # pragma: no cover
-
-    class LabelLimiter:  # no-op fallback
-        def __init__(self, whitelist=None, max_items: int = 10_000):
-            self.whitelist = set(whitelist or [])
-            self.max_items = max_items
-            self.seen = set()
-
-        def allow(self, value: str) -> bool:
-            if self.whitelist and value not in self.whitelist:
-                return False
-            if value in self.seen:
-                return True
-            if len(self.seen) >= self.max_items:
-                return False
-            self.seen.add(value)
-            return True
-
-
 # ----------------------------------------------------------------------------------------
 # Konfiguration
 # ----------------------------------------------------------------------------------------
 LOG = logging.getLogger("live_connector")
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
-QUIET = os.getenv("QUIET", "1") not in {"0", "false", "False", "no", "NO"}
+QUIET = os.getenv("QUIET", "1").strip().lower() not in {"0", "false", "no"}
 STATUS_MIN_SECS = int(os.getenv("STATUS_MIN_SECS", "30"))
 QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
 READINESS_MAX_LAG_SECS = int(os.getenv("READINESS_MAX_LAG_SECS", "120"))
 
 # Debug routes gate
 ENABLE_DEBUG_ROUTES = os.getenv("ENABLE_DEBUG_ROUTES", "0").strip().lower() in {"1", "true"}
-
-# Label-guard setup
-_symbols_whitelist = [
-    s.strip() for s in os.getenv("OBS_SYMBOLS_WHITELIST", "").split(",") if s.strip()
-]
-_symbols_max = int(os.getenv("OBS_SYMBOLS_MAX", "100"))
-SYMBOLS = LabelLimiter(whitelist=_symbols_whitelist or None, max_items=_symbols_max)
 
 # Multiprocess-metrics?
 PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR")
@@ -173,6 +127,37 @@ _last_bar_ts_ms: Dict[str, int] = {}
 _last_status_log_ms: float = 0.0
 _active_venues: Dict[str, bool] = {}
 _main_queue: Optional[Any] = None
+
+
+# ----------------------------------------------------------------------------------------
+# Label guard (valgfri – robust fallback)
+# ----------------------------------------------------------------------------------------
+try:
+    from .label_guard import LabelLimiter  # hvis tilgængelig i repo
+except Exception:  # pragma: no cover
+
+    class LabelLimiter:  # no-op fallback
+        def __init__(self, whitelist=None, max_items: int = 10_000):
+            self.whitelist = set(whitelist or [])
+            self.max_items = max_items
+            self.seen = set()
+
+        def allow(self, value: str) -> bool:
+            if self.whitelist and value not in self.whitelist:
+                return False
+            if value in self.seen:
+                return True
+            if len(self.seen) >= self.max_items:
+                return False
+            self.seen.add(value)
+            return True
+
+
+_symbols_whitelist = [
+    s.strip() for s in os.getenv("OBS_SYMBOLS_WHITELIST", "").split(",") if s.strip()
+]
+_symbols_max = int(os.getenv("OBS_SYMBOLS_MAX", "100"))
+SYMBOLS = LabelLimiter(whitelist=_symbols_whitelist or None, max_items=_symbols_max)
 
 
 # ----------------------------------------------------------------------------------------
@@ -251,6 +236,21 @@ async def poll_queue_depth(q: Any) -> None:
 # ----------------------------------------------------------------------------------------
 # Feature-beregning
 # ----------------------------------------------------------------------------------------
+# Robust relativ import; fallback til no-ops (tests skal ikke kræve feature-moduler)
+try:  # pragma: no cover
+    from features import (
+        compute_all_features,
+        compute_atr14,
+        compute_ema14,
+        compute_ema50,
+        compute_rsi14,
+        compute_vwap,
+    )
+except Exception:  # pragma: no cover
+    compute_all_features = None
+    compute_ema14 = compute_ema50 = compute_rsi14 = compute_vwap = compute_atr14 = None
+
+
 async def compute_features_for_bar(bar: Bar) -> None:
     symbol = bar.symbol
     ran_any = False
@@ -285,11 +285,12 @@ async def compute_features_for_bar(bar: Bar) -> None:
 # ----------------------------------------------------------------------------------------
 async def _bg_status_task() -> None:
     global _last_status_log_ms
+    interval = max(5, STATUS_MIN_SECS)
     while True:
         try:
             if not QUIET:
                 now = time.time()
-                if (now - _last_status_log_ms) >= max(5, STATUS_MIN_SECS):
+                if (now - _last_status_log_ms) >= interval:
                     _last_status_log_ms = now
                     newest = max(_last_bar_ts_ms.values()) if _last_bar_ts_ms else 0
                     lag_ms = int(time.time() * 1000) - newest if newest else None
@@ -304,7 +305,7 @@ async def _bg_status_task() -> None:
                             else "-"
                         ),
                     )
-            await asyncio.sleep(max(5, STATUS_MIN_SECS))
+            await asyncio.sleep(interval)
         except asyncio.CancelledError:
             return
         except Exception as e:  # pragma: no cover
@@ -409,7 +410,7 @@ def dq_violation_inc(
 
 
 # ----------------------------------------------------------------------------------------
-# Debug endpoints
+# Debug endpoints (bag feature-flag)
 # ----------------------------------------------------------------------------------------
 def _emit_sample_fallback() -> dict:
     """
@@ -439,7 +440,7 @@ def _emit_sample_fallback() -> dict:
     _last_bar_ts_ms[symbol] = now_ms
     set_queue_depth(5, "live")
 
-    return {"ok": True, "source": "fallback", "venue": venue, "symbol": symbol}
+    return {"ok": True, "source": "fallback", "venue": venue, "symbol": "BTCUSDT"}
 
 
 @app.post("/_debug/emit_sample")
