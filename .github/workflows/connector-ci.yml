@@ -15,6 +15,7 @@ on:
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      - "ops/alertmanager/**"
       # test/coverage/config updates should also trigger this workflow
       - "pytest.ini"
       - ".coveragerc"
@@ -34,6 +35,7 @@ on:
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      - "ops/alertmanager/**"
       - "pytest.ini"
       - ".coveragerc"
       - "pyproject.toml"
@@ -73,15 +75,16 @@ jobs:
           set -euo pipefail
           python -m pip install -U pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Ensure pytest+coverage plugins are available even if not pinned
+          # Sikr pytest + coverage findes, selv hvis de ikke er pinned
           pip install -q pytest pytest-cov coverage
 
       - name: Create reports dir
         run: mkdir -p reports
 
-      - name: Run pytest (venues + integration) with CI-scoped coverage
+      - name: Run pytest (venues + integration) with scoped coverage
         run: |
           set -euo pipefail
+          # Vi overstyrer evtl. projekt-opsætning og måler KUN connector-koden.
           pytest tests/venues tests/integration \
             --cov-config=/dev/null \
             --cov=bot.live_connector \
