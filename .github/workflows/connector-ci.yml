@@ -54,7 +54,7 @@ permissions:
 
 jobs:
   tests:
-    name: Pytests (venues + integration)
+    name: Pytests (venues + integration + persistence)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -81,11 +81,11 @@ jobs:
       - name: Create reports dir
         run: mkdir -p reports
 
-      - name: Run pytest (venues + integration) with scoped coverage
+      - name: Run pytest (scoped coverage on connector code)
         run: |
           set -euo pipefail
-          # Vi overstyrer evtl. projekt-opsætning og måler KUN connector-koden.
-          pytest tests/venues tests/integration \
+          # Mål kun connector-koden, men kør ALLE relevante tests (inkl. persistence)
+          pytest tests/venues tests/integration tests/persistence \
             --cov-config=/dev/null \
             --cov=bot.live_connector \
             --cov-branch \
