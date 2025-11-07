@@ -57,14 +57,12 @@ jobs:
           python -m pip install -U pip wheel setuptools
 
           if [ -f requirements.txt ]; then
-            # Hurtig binær pre-seed for CI-stabilitet
             pip install --only-binary=:all: 'numpy==1.26.4' 'pyarrow==11.0.0' || true
             pip install -r requirements.txt
           else
             pip install fastapi uvicorn prometheus-client httpx pytest pandas pyarrow requests
           fi
 
-          # Valgfrit: CPU Torch (ikke kritisk for observability)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu \
             'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
 
@@ -80,7 +78,7 @@ jobs:
 
       - name: Launch app (uvicorn) in background
         env:
-          ENABLE_DEBUG_ROUTES: "1"   # må gerne være aktiv i unit-smoke
+          ENABLE_DEBUG_ROUTES: "1"
         run: |
           set -euxo pipefail
           nohup uvicorn bot.live_connector.runner:app \
@@ -109,26 +107,21 @@ jobs:
         run: |
           set -euxo pipefail
           curl -fsS http://localhost:8000/metrics | tee /tmp/metrics.txt >/dev/null
-          # Core
           grep -q "feed_transport_latency_ms_bucket" /tmp/metrics.txt
           grep -q "feed_bar_close_lag_ms"          /tmp/metrics.txt
           grep -q "feed_bars_total"                /tmp/metrics.txt
           grep -q "feed_reconnects_total"          /tmp/metrics.txt
           grep -q "feed_queue_depth"               /tmp/metrics.txt
           grep -q "feature_compute_ms_bucket"      /tmp/metrics.txt
-          # Fase 5 (DQ)
           grep -q 'dq_violations_total'            /tmp/metrics.txt
-          # Bekræft specifik label for freshness
           grep -q 'dq_freshness_minutes{dataset="ohlcv_1h"}' /tmp/metrics_after_dq.txt
 
-      # ---------- promtool forberedelse: sørg for alle filer findes ----------
       - name: Ensure Prometheus rule files exist (create minimal if missing)
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p ops/prometheus/rules ops/prometheus/tests
 
-          # alerts.yml
           if [ ! -f ops/prometheus/alerts.yml ]; then
             printf '%s\n' \
               'groups:' \
@@ -137,7 +130,6 @@ jobs:
               > ops/prometheus/alerts.yml
           fi
 
-          # recording_rules.yml
           if [ ! -f ops/prometheus/recording_rules.yml ]; then
             printf '%s\n' \
               'groups:' \
@@ -146,7 +138,6 @@ jobs:
               > ops/prometheus/recording_rules.yml
           fi
 
-          # data_quality.yml (matcher promtool tests/annotations)
           if [ ! -f ops/prometheus/rules/data_quality.yml ]; then
             printf '%s\n' \
               'groups:' \
@@ -215,7 +206,6 @@ jobs:
             "prom/prometheus:${PROM_VERSION}" \
             check rules /etc/prom/rules/data_quality.yml
 
-      # ✅ promtool enhedstests af alerts (betinget)
       - name: promtool test alert rules (unit)
         shell: bash
         run: |
@@ -230,7 +220,6 @@ jobs:
             echo "No alerts_test.yml present — skipping promtool unit tests."
           fi
 
-      # ✅ Kør DQ-unit tests (hvis mappen findes)
       - name: "Run tests: data_quality (if present)"
         shell: bash
         run: |
@@ -241,7 +230,6 @@ jobs:
             echo "No tests/data_quality present — skipping."
           fi
 
-      # ✅ Kun metrics-smoke, ingen coverage gate
       - name: Run tests (metrics only, no coverage gate)
         run: |
           if [ -f tests/test_metrics_exposition.py ]; then
@@ -353,7 +341,6 @@ jobs:
           docker compose -f docker-compose.yml up -d --wait live_connector prometheus
           docker compose -f docker-compose.yml ps
 
-          # Vent på appens healthz (op til 2 min)
           ok=0
           for i in {1..120}; do
             if curl -fsS http://localhost:8000/healthz >/dev/null; then ok=1; break; fi
@@ -365,7 +352,6 @@ jobs:
             exit 2
           fi
 
-          # Vent på Prometheus readiness (op til 4 min)
           ok=0
           for i in {1..240}; do
             if curl -fsS http://localhost:9090/-/ready >/dev/null; then ok=1; break; fi
@@ -411,10 +397,24 @@ jobs:
           sleep 2
 
       - name: Assert dq_freshness_minutes via Prometheus instant query
+        shell: bash
         run: |
           set -euxo pipefail
-          curl -fsS "http://localhost:9090/api/v1/query?query=dq_freshness_minutes{dataset=\"ohlcv_1h\"}" \
-          | jq -e '.data.result[0]'
+          # Poll i op til 30s og brug URL-encoding for korrekt PromQL-parse
+          last=""
+          for i in $(seq 1 30); do
+            last="$(curl -fsS --get \
+              --data-urlencode 'query=dq_freshness_minutes{dataset="ohlcv_1h"}' \
+              http://localhost:9090/api/v1/query || true)"
+            if [ -n "$last" ] && echo "$last" | jq -e '.data.result[0]' >/dev/null 2>&1; then
+              echo "$last" | jq '.data.result[0]'
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::dq_freshness_minutes{dataset=\"ohlcv_1h\"} ikke fundet i Prometheus efter 30s."
+          echo "${last:-<empty>}"
+          exit 4
 
       - name: Dump Prometheus target summaries
         if: always()
