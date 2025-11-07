@@ -1,0 +1,140 @@
+# config/data_contracts.yaml
+# Versionér denne fil i takt med schema-ændringer. Brug semver for nem diff/rollback.
+version: "1.0.0"
+
+# Globale defaults kan overrides pr. dataset
+defaults:
+  max_dup_rate: 0.02        # 2% duplikater som globalt loft (kan sættes til 0.0 for hård gate)
+  max_null_rate: 0.01       # 1% global null-rate på tværs af required kolonner
+  min_rows: 1               # mindstekrav til antal rækker i et batch
+  freshness_minutes_sla: 15 # forventet max forsinkelse for nye data (bruges til alarmer/monitorering)
+
+# Datasets (kontraktnavne) — refereres fra CLI/tools som --contract <name>
+datasets:
+
+  # -------------------------------
+  # Candle-data (OHLCV) – 1 minut
+  # -------------------------------
+  ohlcv_1m:
+    description: "Venue-normaliserede OHLCV-bars i 1m opløsning"
+    key_cols: ["timestamp", "symbol"]
+    min_rows: 1000
+    max_dup_rate: 0.0
+    max_null_rate: 0.005
+    freshness_minutes_sla: 3
+    required_cols:
+      timestamp: { dtype: datetime, allow_null: false }
+      symbol:    { dtype: str,      allow_null: false }
+      open:      { dtype: float,    allow_null: false, min_val: 0 }
+      high:      { dtype: float,    allow_null: false, min_val: 0 }
+      low:       { dtype: float,    allow_null: false, min_val: 0 }
+      close:     { dtype: float,    allow_null: false, min_val: 0 }
+      volume:    { dtype: float,    allow_null: false, min_val: 0 }
+
+  # -------------------------------
+  # Candle-data (OHLCV) – 1 time
+  # -------------------------------
+  ohlcv_1h:
+    description: "Venue-normaliserede OHLCV-bars i 1h opløsning"
+    key_cols: ["timestamp", "symbol"]
+    min_rows: 100
+    max_dup_rate: 0.0
+    max_null_rate: 0.01
+    freshness_minutes_sla: 15
+    required_cols:
+      timestamp: { dtype: datetime, allow_null: false }
+      symbol:    { dtype: str,      allow_null: false }
+      open:      { dtype: float,    allow_null: false, min_val: 0 }
+      high:      { dtype: float,    allow_null: false, min_val: 0 }
+      low:       { dtype: float,    allow_null: false, min_val: 0 }
+      close:     { dtype: float,    allow_null: false, min_val: 0 }
+      volume:    { dtype: float,    allow_null: false, min_val: 0 }
+
+  # -------------------------------
+  # Trades (tick-data)
+  # -------------------------------
+  trades:
+    description: "Normaliserede handler fra venue (tick stream)"
+    key_cols: ["timestamp", "trade_id", "symbol"]
+    min_rows: 5000
+    max_dup_rate: 0.0
+    max_null_rate: 0.002
+    freshness_minutes_sla: 1
+    required_cols:
+      timestamp: { dtype: datetime, allow_null: false }
+      symbol:    { dtype: str,      allow_null: false }
+      trade_id:  { dtype: str,      allow_null: false }   # kan være str på nogle venues
+      price:     { dtype: float,    allow_null: false, min_val: 0 }
+      size:      { dtype: float,    allow_null: false, min_val: 0 }
+      side:      { dtype: str,      allow_null: false }   # 'buy'/'sell' – enum håndhæves ikke her
+
+  # -----------------------------------------
+  # Orderbook (best price snapshot / top-of-book)
+  # -----------------------------------------
+  orderbook_top:
+    description: "Top-of-book snapshots (bedste bid/ask) pr. timestamp"
+    key_cols: ["timestamp", "symbol"]
+    min_rows: 500
+    max_dup_rate: 0.0
+    max_null_rate: 0.005
+    freshness_minutes_sla: 1
+    required_cols:
+      timestamp: { dtype: datetime, allow_null: false }
+      symbol:    { dtype: str,      allow_null: false }
+      best_bid:  { dtype: float,    allow_null: false, min_val: 0 }
+      best_ask:  { dtype: float,    allow_null: false, min_val: 0 }
+      mid:       { dtype: float,    allow_null: false, min_val: 0 }
+      spread:    { dtype: float,    allow_null: false, min_val: 0 }
+
+  # -------------------------------
+  # Features (model-input)
+  # -------------------------------
+  features_1h:
+    description: "Feature-matrix alignet til 1h bars (kan indeholde warmup-NaN)"
+    key_cols: ["timestamp", "symbol"]
+    min_rows: 100
+    max_dup_rate: 0.0
+    # Tillad lidt højere global null-rate pga. warmup-perioder
+    max_null_rate: 0.2
+    freshness_minutes_sla: 20
+    required_cols:
+      timestamp: { dtype: datetime, allow_null: false }
+      symbol:    { dtype: str,      allow_null: false }
+      rsi_14:    { dtype: float,    allow_null: true,  min_val: 0, max_val: 100 }
+      ema_12:    { dtype: float,    allow_null: true,  min_val: 0 }
+      ema_26:    { dtype: float,    allow_null: true,  min_val: 0 }
+      atr_14:    { dtype: float,    allow_null: true,  min_val: 0 }
+      vol_norm:  { dtype: float,    allow_null: true,  min_val: 0 }
+
+  # -------------------------------
+  # Labels (supervised targets)
+  # -------------------------------
+  labels_1h:
+    description: "Træningslabels alignet til 1h (forward return/klasselabels)"
+    key_cols: ["timestamp", "symbol"]
+    min_rows: 100
+    max_dup_rate: 0.0
+    max_null_rate: 0.0
+    freshness_minutes_sla: 25
+    required_cols:
+      timestamp:     { dtype: datetime, allow_null: false }
+      symbol:        { dtype: str,      allow_null: false }
+      target_return: { dtype: float,    allow_null: false }    # fx log-return(+k)
+      target_class:  { dtype: int,      allow_null: false, min_val: 0, max_val: 1 }  # binær label 0/1
+
+  # -------------------------------
+  # Regime (markedsregime/volatilitet)
+  # -------------------------------
+  regime_1h:
+    description: "Regime-klassifikation pr. time (vola/likviditet mm.)"
+    key_cols: ["timestamp", "symbol"]
+    min_rows: 100
+    max_dup_rate: 0.0
+    max_null_rate: 0.01
+    freshness_minutes_sla: 25
+    required_cols:
+      timestamp:  { dtype: datetime, allow_null: false }
+      symbol:     { dtype: str,      allow_null: false }
+      regime_id:  { dtype: int,      allow_null: false, min_val: 0 }  # enum map i kode/bog
+      vola_1d:    { dtype: float,    allow_null: false, min_val: 0 }
+      vola_1w:    { dtype: float,    allow_null: true,  min_val: 0 }

@@ -1,6 +1,6 @@
 global:
-  scrape_interval: 5s
-  evaluation_interval: 5s
+  scrape_interval: 5s          # hurtig feedback i dev
+  evaluation_interval: 5s      # rules evalueres ofte (dev)
   scrape_timeout: 4s
   external_labels:
     env: dev
@@ -8,11 +8,13 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ['alertmanager:9093']
+        - targets: ['alertmanager:9093']   # virker når Alertmanager-profil er aktiv
 
+# VIGTIGT: indlæs alle rule-filer inkl. Fase 5 DQ (rules/data_quality.yml)
 rule_files:
   - /etc/prometheus/recording_rules.yml
   - /etc/prometheus/alerts.yml
+  - /etc/prometheus/rules/*.yml
 
 scrape_configs:
   # Scrape Prometheus selv (diagnostik)

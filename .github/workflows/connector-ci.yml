@@ -15,6 +15,7 @@ on:
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      - "ops/alertmanager/**"
       # test/coverage/config updates should also trigger this workflow
       - "pytest.ini"
       - ".coveragerc"
@@ -34,6 +35,7 @@ on:
       - "config/**"
       - "tests/**"
       - "ops/prometheus/**"
+      - "ops/alertmanager/**"
       - "pytest.ini"
       - ".coveragerc"
       - "pyproject.toml"
@@ -51,10 +53,68 @@ permissions:
   contents: read
 
 jobs:
+  smoke:
+    name: Smoke /metrics + prime (fastapi/uvicorn)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
+      # VIGTIGT: gør debug-endpoints og bootstrap synlige for smoke-kørslen
+      ENABLE_DEBUG_ROUTES: "1"
+      METRICS_AUTO_INIT: "1"
+      METRICS_BOOTSTRAP: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install minimal runtime deps (projektets requirements hvis til stede)
+        run: |
+          set -euo pipefail
+          python -m pip install -U pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            # fallback, hvis requirements ikke pin'er alt
+            pip install fastapi uvicorn prometheus-client
+          fi
+
+      - name: Start uvicorn (background) og vent på /healthz
+        run: |
+          set -euo pipefail
+          nohup python -m uvicorn bot.live_connector.runner:app --host 0.0.0.0 --port 8000 >/tmp/uvicorn.log 2>&1 &
+          for i in $(seq 1 40); do
+            curl -fsS http://localhost:8000/healthz && break || sleep 0.5
+          done
+          curl -fsS http://localhost:8000/healthz
+
+      - name: Prime metrics (materialisér histogram-buckets)
+        run: |
+          set -euo pipefail
+          # kræver ENABLE_DEBUG_ROUTES=1, ellers 403
+          curl -fsS -X POST http://localhost:8000/_debug/emit_sample
+          # bekræft /metrics kan hentes
+          curl -fsS http://localhost:8000/metrics | head -n 20 || true
+
+      - name: Stop uvicorn (best effort)
+        if: always()
+        run: |
+          pkill -f "uvicorn bot.live_connector.runner:app" || true
+          sleep 1
+          echo "uvicorn log (tail):"
+          tail -n 100 /tmp/uvicorn.log || true
+
   tests:
-    name: Pytests (venues + integration)
+    name: Pytests (venues + integration + persistence)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: [smoke]
     env:
       PYTHONUNBUFFERED: "1"
       PYTHONPATH: ${{ github.workspace }}
@@ -73,16 +133,17 @@ jobs:
           set -euo pipefail
           python -m pip install -U pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Ensure pytest+coverage plugins are available even if not pinned
+          # Sikr pytest + coverage findes, selv hvis de ikke er pinned
           pip install -q pytest pytest-cov coverage
 
       - name: Create reports dir
         run: mkdir -p reports
 
-      - name: Run pytest (venues + integration) with CI-scoped coverage
+      - name: Run pytest (scoped coverage on connector code)
         run: |
           set -euo pipefail
-          pytest tests/venues tests/integration \
+          # Mål kun connector-koden, men kør ALLE relevante tests (inkl. persistence)
+          pytest tests/venues tests/integration tests/persistence \
             --cov-config=/dev/null \
             --cov=bot.live_connector \
             --cov-branch \

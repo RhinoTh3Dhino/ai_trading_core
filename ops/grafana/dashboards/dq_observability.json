@@ -1,0 +1,73 @@
+{
+  "title": "Observability — Data Quality",
+  "uid": "dq-observability",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["observability", "dq"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Freshness (min) — ohlcv_1h",
+      "id": 1,
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "dq_freshness_minutes{dataset=\"ohlcv_1h\"}",
+          "legendFormat": "freshness",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"]},
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "auto"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": null },
+          { "color": "red", "value": 15 }
+        ]
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Freshness trend (min) — ohlcv_1h",
+      "id": 2,
+      "gridPos": { "h": 6, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        { "expr": "dq_freshness_minutes{dataset=\"ohlcv_1h\"}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "DQ violations rate (5m)",
+      "id": 3,
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        { "expr": "rate(dq_violations_total[5m])", "refId": "A", "legendFormat": "{{contract}}:{{rule}}" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Scrape targets (health)",
+      "id": 4,
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 6 },
+      "transformations": [
+        { "id": "labelsToFields", "options": {} }
+      ],
+      "targets": [
+        {
+          "expr": "up",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": { "showHeader": true }
+    }
+  ],
+  "templating": { "list": [] }
+}

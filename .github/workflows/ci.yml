@@ -116,11 +116,11 @@ jobs:
           # CPU-only torch (ok at ignorere fejl hvis ikke brugt i tests)
           pip install --extra-index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
           # Sikr at uvicorn er tilgængelig i job-miljøet
-          pip install 'uvicorn[standard]' httpx || true
+          pip install 'uvicorn[standard]' httpx fastapi prometheus-client || true
           echo "--- Versions ---"
           python - <<'PY'
           import importlib
-          for name in ("pydantic","numpy","pandas","pyarrow","websockets","pytest","pytest_asyncio","mlflow","uvicorn","fastapi"):
+          for name in ("pydantic","numpy","pandas","pyarrow","websockets","pytest","pytest_asyncio","mlflow","uvicorn","fastapi","prometheus_client"):
               try:
                   m = importlib.import_module(name); print(f"{name}: {getattr(m,'__version__','?')}")
               except Exception as e:
@@ -153,8 +153,11 @@ jobs:
           print("sys.path[0]:", sys.path[0])
           PY
 
-      # === Start uvicorn og prime metrics (så /metrics har histogram-buckets) ===
+      # === Start uvicorn og verificér /metrics (uden debug-endpoints) ===
       - name: Start uvicorn (background)
+        env:
+          # Debug routes ikke nødvendige; runner primér selv kernemetrics ved startup
+          ENABLE_DEBUG_ROUTES: "0"
         run: |
           set -euxo pipefail
           nohup python -m uvicorn \
@@ -165,26 +168,23 @@ jobs:
           echo $! > /tmp/uvicorn.pid
           echo "PID: $(cat /tmp/uvicorn.pid)"
 
-      - name: Vent på /metrics
+      - name: Vent på /metrics og assert kernemetrics
         run: |
           set -euxo pipefail
           for i in $(seq 1 40); do
             if curl -fsS http://localhost:8000/metrics >/tmp/metrics.txt; then
-              exit 0
+              break
             fi
             sleep 0.5
           done
-          echo "Service did not become ready"
-          tail -n 200 /tmp/uvicorn.log || true
-          exit 1
+          # Kernemetrics forventes til stede pga. runner-startup bootstrap
+          grep -q "feed_transport_latency_ms_bucket" /tmp/metrics.txt
+          grep -q "feed_bar_close_lag_ms"          /tmp/metrics.txt
+          grep -q "feed_bars_total"                /tmp/metrics.txt
+          grep -q "feature_compute_ms_bucket"      /tmp/metrics.txt || (echo "::warning::feature_compute_ms_bucket not found"; true)
+          head -n 60 /tmp/metrics.txt || true
 
-      - name: Prime metrics (materialisér histogram-buckets)
-        run: |
-          set -euxo pipefail
-          curl -fsS -X POST http://localhost:8000/_debug/emit_sample
-          head -n 120 /tmp/metrics.txt || true
-
-      # 🔧 Midlertidigt: skip tunge tests (TA-Lib/pandas_ta/heavy) indtil full suite er wired i CI
+      # 🔧 Midlertidigt: skip tunge tests
       - name: Kør pytest (lette tests)
         run: |
           pytest -q -k "not talib and not pandas_ta and not test_features and not heavy"
