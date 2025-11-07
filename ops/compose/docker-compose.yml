@@ -15,9 +15,9 @@ volumes:
     name: amcfg
     external: true            # fast navn så docker run -v amcfg:/amcfg virker
   prom_data:
-    name: prom_data        # fast navn for nem inspektion/backup
+    name: prom_data           # fast navn for nem inspektion/backup
   grafana_data:
-    name: grafana_data     # fast navn for nem inspektion/backup
+    name: grafana_data        # fast navn for nem inspektion/backup
 
 secrets:
   telegram_bot_token:
@@ -33,7 +33,7 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: "INFO"
-      # Aktiver test-endpoint til DQ-metrics i dev/compose:
+      # Aktiver test-endpoints til DQ-metrics i dev/compose:
       ENABLE_DEBUG_ROUTES: "1"
       # Sørg for synlige metrikker uden trafik:
       METRICS_AUTO_INIT: "1"
