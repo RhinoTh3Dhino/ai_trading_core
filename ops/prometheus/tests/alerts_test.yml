@@ -1,3 +1,10 @@
+# ops/prometheus/tests/alerts_test.yml
+# Promtool enhedstests for observability + Fase 5 DQ-regler.
+# Matcher alerts i:
+#  - ops/prometheus/alerts.yml
+#  - ops/prometheus/recording_rules.yml
+#  - ops/prometheus/rules/data_quality.yml
+
 rule_files:
   - ../alerts.yml
   - ../recording_rules.yml

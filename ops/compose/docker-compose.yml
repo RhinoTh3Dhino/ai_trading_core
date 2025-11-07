@@ -11,13 +11,15 @@ networks:
     name: obsnet
 
 volumes:
+  # NOTE: 'amcfg' bruges kun når profile=alerting er aktiv. Behold external:true for at
+  # kunne gense filer uden compose; opret volumen manuelt: `docker volume create amcfg`.
   amcfg:
     name: amcfg
-    external: true            # fast navn så docker run -v amcfg:/amcfg virker
+    external: true
   prom_data:
-    name: prom_data           # fast navn for nem inspektion/backup
+    name: prom_data          # fast navn for nem inspektion/backup
   grafana_data:
-    name: grafana_data        # fast navn for nem inspektion/backup
+    name: grafana_data       # fast navn for nem inspektion/backup
 
 secrets:
   telegram_bot_token:
@@ -27,15 +29,25 @@ secrets:
 
 services:
   live_connector:
-    build: ../../
+    build:
+      context: ../../
+    image: live-connector:local
     container_name: live_connector
-    command: ["uvicorn","bot.live_connector.runner:app","--host","0.0.0.0","--port","8000","--workers","1"]
+    command:
+      - uvicorn
+      - bot.live_connector.runner:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "1"
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: "INFO"
       # Aktiver test-endpoints til DQ-metrics i dev/compose:
       ENABLE_DEBUG_ROUTES: "1"
-      # Sørg for synlige metrikker uden trafik:
+      # Sørg for synlige metrikker uden reel trafik:
       METRICS_AUTO_INIT: "1"
       METRICS_BOOTSTRAP: "1"
       # (Valgfrit) label-guard tuning
@@ -45,20 +57,26 @@ services:
       STATUS_MIN_SECS: "30"
       # === DQ-prod auth til /dq/* endpoints ===
       DQ_SHARED_SECRET: "${DQ_SHARED_SECRET:-change-me-long-random}"
-      # (Valgfrit) multiprocess metrics dir hvis du kører >1 worker
+      # (Valgfrit) multiprocess metrics hvis du kører >1 worker
       # PROMETHEUS_MULTIPROC_DIR: "/tmp/prom_mp"
     ports:
-      - "8000:8000"     # <— vigtigt: så localhost:8000 rammer containeren
+      - "8000:8000"   # <— vigtigt: så localhost:8000 rammer containeren
     restart: unless-stopped
     networks:
       obsnet:
         aliases: ["live_connector"]
     healthcheck:
-      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 12
       start_period: 15s
+    # Begræns containerens ressourceforbrug let i dev
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
 
   # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
   am_init:
@@ -74,7 +92,7 @@ services:
     secrets:
       - telegram_bot_token
       - telegram_chat_id
-    entrypoint: ["/bin/sh","/src/render.sh"]
+    entrypoint: ["/bin/sh", "/src/render.sh"]
     restart: "no"
     networks: [obsnet]
 
@@ -98,7 +116,7 @@ services:
       obsnet:
         aliases: ["alertmanager"]
     healthcheck:
-      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9093/-/ready >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9093/-/ready >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 15
@@ -108,12 +126,10 @@ services:
     image: prom/prometheus:v3.6.0
     container_name: prometheus
     command:
-      [
-        "--config.file=/etc/prometheus/prometheus.yml",
-        "--storage.tsdb.path=/prometheus",
-        "--storage.tsdb.retention.time=15d",
-        "--web.enable-lifecycle"
-      ]
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -130,7 +146,7 @@ services:
       obsnet:
         aliases: ["prometheus"]
     healthcheck:
-      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 60
@@ -158,13 +174,13 @@ services:
       obsnet:
         aliases: ["grafana"]
     healthcheck:
-      test: ["CMD-SHELL","wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 12
       start_period: 20s
 
-  # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hvert 5s
+  # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hver N sek
   sample_emitter:
     profiles: ["debug"]
     image: curlimages/curl:8.8.0
