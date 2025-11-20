@@ -1,25 +1,23 @@
 # ops/compose/docker-compose.yml
 # Observability stack – profiler + healthchecks
 # Profiler:
-#  - (default): live_connector + prometheus (CI-/dev-venlig)
-#  - alerting: am_init + alertmanager (kræver secrets)
+#  - (default): live_connector + prometheus
+#  - alerting: am_init + alertmanager
 #  - ui: grafana
-#  - debug: sample_emitter (varmer metrics via /_debug/emit_sample)
+#  - debug: sample_emitter + promtool_check
 
 networks:
   obsnet:
     name: obsnet
 
 volumes:
-  # NOTE: 'amcfg' bruges kun når profile=alerting er aktiv. Behold external:true for at
-  # kunne gense filer uden compose; opret volumen manuelt: `docker volume create amcfg`.
   amcfg:
     name: amcfg
     external: true
   prom_data:
-    name: prom_data          # fast navn for nem inspektion/backup
+    name: prom_data
   grafana_data:
-    name: grafana_data       # fast navn for nem inspektion/backup
+    name: grafana_data
 
 secrets:
   telegram_bot_token:
@@ -45,22 +43,16 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: "INFO"
-      # Aktiver test-endpoints til DQ-metrics i dev/compose:
       ENABLE_DEBUG_ROUTES: "1"
-      # Sørg for synlige metrikker uden reel trafik:
       METRICS_AUTO_INIT: "1"
       METRICS_BOOTSTRAP: "1"
-      # (Valgfrit) label-guard tuning
       OBS_SYMBOLS_MAX: "200"
       OBS_SYMBOLS_WHITELIST: ""
-      # (Valgfrit) status-logging cadence
       STATUS_MIN_SECS: "30"
-      # === DQ-prod auth til /dq/* endpoints ===
       DQ_SHARED_SECRET: "${DQ_SHARED_SECRET:-change-me-long-random}"
-      # (Valgfrit) multiprocess metrics hvis du kører >1 worker
       # PROMETHEUS_MULTIPROC_DIR: "/tmp/prom_mp"
     ports:
-      - "8000:8000"   # <— vigtigt: så localhost:8000 rammer containeren
+      - "8000:8000"
     restart: unless-stopped
     networks:
       obsnet:
@@ -71,14 +63,13 @@ services:
       timeout: 3s
       retries: 12
       start_period: 15s
-    # Begræns containerens ressourceforbrug let i dev
     deploy:
       resources:
         limits:
           cpus: "1.00"
           memory: 512M
 
-  # Init-job: renderer /amcfg/alertmanager.yml ud fra template + secrets
+  # Init-job: render /amcfg/alertmanager.yml fra template + secrets
   am_init:
     profiles: ["alerting"]
     image: alpine:3.20
@@ -123,7 +114,7 @@ services:
       start_period: 10s
 
   prometheus:
-    image: prom/prometheus:v3.6.0
+    image: prom/prometheus:v2.53.0
     container_name: prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -132,15 +123,17 @@ services:
       - --web.enable-lifecycle
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Valgfri enkel-filer (hvis du bruger dem i din config)
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
-      - ../prometheus/rules:/etc/prometheus/rules:ro   # ← inkluder data_quality.yml m.fl.
+      # Hele rules-mappen (inkl. fase6-recording rules)
+      - ../prometheus/rules:/etc/prometheus/rules:ro
       - prom_data:/prometheus
     ports:
       - "9090:9090"
     depends_on:
       live_connector:
-        condition: service_healthy   # <— vent til live_connector er klar
+        condition: service_healthy
     restart: unless-stopped
     networks:
       obsnet:
@@ -202,4 +195,20 @@ services:
           sleep "${EMIT_EVERY}"
         done
     restart: unless-stopped
+    networks: [obsnet]
+
+  # Valgfri: promtool validering af rules (kør med profil 'debug')
+  promtool_check:
+    profiles: ["debug"]
+    image: prom/prometheus:v2.53.0
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        echo "Validerer rules..."
+        promtool check rules /etc/prometheus/rules/*.yml
+        echo "OK"
+        sleep 2
+    volumes:
+      - ../prometheus/rules:/etc/prometheus/rules:ro
     networks: [obsnet]

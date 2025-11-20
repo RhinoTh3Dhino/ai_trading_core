@@ -1,0 +1,5 @@
+name: "02 Bandwidth throttle + jitter"
+steps:
+  - action: throttle
+    params: { rate: "200kbit", delay: "100ms", jitter: "20ms", seconds: 300 }
+  - action: reset

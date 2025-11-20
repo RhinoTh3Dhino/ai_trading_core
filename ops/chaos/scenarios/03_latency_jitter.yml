@@ -1,0 +1,5 @@
+name: "03 Latency spike + loss"
+steps:
+  - action: latency
+    params: { delay_ms: 1000, loss_pct: 2, seconds: 120 }
+  - action: reset

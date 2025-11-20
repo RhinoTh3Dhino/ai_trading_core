@@ -1,0 +1,62 @@
+# ops/alerting/fase6_slo_alerts.yml
+# Fase 6 — SLO-baserede alerts for live datafeed
+
+groups:
+  - name: fase6_slo
+    interval: 30s
+    rules:
+      # Transport latency p99 for høj
+      - alert: Fase6_TransportLatencyP99High
+        expr: lyra:transport_latency_ms:p99 > 300
+        for: 5m
+        labels:
+          severity: warning
+          phase: "F6"
+          service: "live_connector"
+        annotations:
+          summary: "Transport latency p99 er over 300 ms"
+          description: |
+            Transport latency p99 er {{ $value }} ms (> 300 ms) i mindst 5 minutter.
+            Tjek websocket-forbindelser, netværk og venue-latency.
+
+      # Bar close lag p99 for høj
+      - alert: Fase6_BarCloseLagP99High
+        expr: lyra:bar_close_lag_ms:p99 > 1200
+        for: 5m
+        labels:
+          severity: warning
+          phase: "F6"
+          service: "live_connector"
+        annotations:
+          summary: "Bar close lag p99 er over 1200 ms"
+          description: |
+            Bar close lag p99 er {{ $value }} ms (> 1200 ms) i mindst 5 minutter.
+            Systemet er for langt bagefter real-time.
+
+      # For mange reconnects
+      - alert: Fase6_ReconnectRateHigh
+        expr: lyra:reconnects_per_min > 1
+        for: 5m
+        labels:
+          severity: warning
+          phase: "F6"
+          service: "live_connector"
+        annotations:
+          summary: "Reconnects/min er over 1"
+          description: |
+            Reconnect rate er {{ $value }} reconnects/min (> 1) i mindst 5 minutter.
+            Undersøg netværksstabilitet og venue-WS-handling.
+
+      # Throughput for lav (bars/sec)
+      - alert: Fase6_BarsPerSecLow
+        expr: lyra:bars_per_sec < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          phase: "F6"
+          service: "live_connector"
+        annotations:
+          summary: "Bars per second for lav"
+          description: |
+            Bars per second er {{ $value }} (< 0.1) i mindst 5 minutter.
+            Det indikerer, at feedet i praksis er stoppet eller stærkt degraderet.

@@ -1,0 +1,4 @@
+name: "07 Disk fill"
+steps:
+  - action: diskfill
+    params: { size: "8G", seconds: 90, path: "/tmp/fill" }

@@ -1,0 +1,7 @@
+name: "01 Net drop 20s"
+steps:
+  - action: netdrop
+    params: { seconds: 20 }
+  - action: wait
+    params: { seconds: 40 }
+  - action: reset

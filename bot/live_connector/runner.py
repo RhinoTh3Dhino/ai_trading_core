@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, Response
@@ -42,13 +42,39 @@ except Exception:  # pragma: no cover
         pass
 
 
-# --- Dev/emulering helper (til 5m rate/increase i dev) -----------------------
+# --- Dev/emulering helpers ---------------------------------------------------
+# Primær: brug ny, parametrisérbar emit_sample
 try:
-    from .metrics import emit_sample_dev  # type: ignore
+    from .metrics import emit_sample  # type: ignore
 except Exception:
 
-    def emit_sample_dev() -> dict:  # no-op hvis ikke tilgængelig
-        return {"ok": False, "error": "emit_sample_dev not available"}
+    def emit_sample(  # type: ignore
+        venue: str,
+        symbol: str = "TESTUSDT",
+        transport_ms: Optional[float] = None,
+        bar_close_lag_ms: Optional[float] = None,
+        bars_inc: int = 1,
+    ) -> dict:
+        # Minimal fallback hvis metrics.emit_sample ikke findes
+        now_ms = int(time.time() * 1000)
+        observe_transport_latency(venue, symbol, now_ms - (transport_ms or 120))
+        set_bar_close_lag(venue, symbol, now_ms - (bar_close_lag_ms or 1200))
+        inc_bars(venue, symbol, max(1, bars_inc))
+        try:
+            with time_feature("EMA_14", symbol):
+                pass
+        except Exception:
+            pass
+        return {"ok": True, "venue": venue, "symbol": symbol}
+
+
+# Valgfri router med GET/POST /_debug/emit_sample hvis tilgængelig i metrics
+try:
+    from .metrics import get_debug_router  # type: ignore
+except Exception:
+
+    def get_debug_router():  # type: ignore
+        return None
 
 
 # ----------------------------------------------------------------------------------------
@@ -62,8 +88,8 @@ STATUS_MIN_SECS = int(os.getenv("STATUS_MIN_SECS", "30"))
 QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
 READINESS_MAX_LAG_SECS = int(os.getenv("READINESS_MAX_LAG_SECS", "120"))
 
-# Debug routes gate
-ENABLE_DEBUG_ROUTES = os.getenv("ENABLE_DEBUG_ROUTES", "0").strip().lower() in {"1", "true"}
+# Debug routes gate (default = ON for dev)
+ENABLE_DEBUG_ROUTES = os.getenv("ENABLE_DEBUG_ROUTES", "1").strip().lower() not in {"0", "false"}
 
 # Multiprocess-metrics?
 PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR")
@@ -101,7 +127,7 @@ class Bar:
 # ----------------------------------------------------------------------------------------
 # App & /metrics endpoint
 # ----------------------------------------------------------------------------------------
-app = FastAPI(title="Live Connector", version="1.0.0")
+app = FastAPI(title="Live Connector", version="1.1.0")
 
 if PROMETHEUS_MULTIPROC_DIR:
     _registry = CollectorRegistry()
@@ -153,7 +179,7 @@ except Exception:  # pragma: no cover
             return True
 
 
-_symbols_whitelist = [
+_symbols_whitelist: List[str] = [
     s.strip() for s in os.getenv("OBS_SYMBOLS_WHITELIST", "").split(",") if s.strip()
 ]
 _symbols_max = int(os.getenv("OBS_SYMBOLS_MAX", "100"))
@@ -360,6 +386,12 @@ async def _on_startup() -> None:
     _active_venues[venue] = True
     _last_bar_ts_ms[symbol] = now_ms
 
+    # Monter valgfri debug-router (fra metrics), ellers fallback endpoints (nedenfor)
+    if ENABLE_DEBUG_ROUTES:
+        r = get_debug_router()
+        if r is not None:
+            app.include_router(r)
+
     _bg_tasks.append(asyncio.create_task(_bg_status_task(), name="status"))
     _bg_tasks.append(asyncio.create_task(_bg_queue_depth_task(), name="queue-depth"))
 
@@ -410,106 +442,74 @@ def dq_violation_inc(
 
 
 # ----------------------------------------------------------------------------------------
-# Debug endpoints (bag feature-flag)
+# Debug endpoints (fallback, kun hvis metrics-router ikke er monteret)
 # ----------------------------------------------------------------------------------------
-def _emit_sample_fallback() -> dict:
-    """
-    Lokal fallback, der emulerer én bar + transport-latency + en feature-timing.
-    Giver liv i:
-      - feed_bars_total
-      - feed_transport_latency_ms_bucket
-      - feature_compute_ms_bucket
-      - feed_bar_close_lag_ms
-    """
+def _emit_sample_fallback_once(
+    venue: str,
+    symbol: str,
+    transport_ms: Optional[float],
+    bar_lag_ms: Optional[float],
+) -> dict:
     now_ms = int(time.time() * 1000)
-    venue = "binance"
-    symbol = "BTCUSDT"
-
-    observe_transport_latency(venue, symbol, now_ms - 120)
-    set_bar_close_lag(venue, symbol, now_ms - 1500)
-    inc_bars(venue, symbol, 1)
-
-    # Minimal feature-timing (måler bare context-manager overhead)
-    try:
-        with time_feature("EMA_14", symbol):
-            pass
-    except Exception:
-        pass
-
-    _active_venues[venue] = True
-    _last_bar_ts_ms[symbol] = now_ms
-    set_queue_depth(5, "live")
-
-    return {"ok": True, "source": "fallback", "venue": venue, "symbol": "BTCUSDT"}
+    # Brug primær emit_sample helper (eller dens fallback), så labels matches korrekt
+    return emit_sample(
+        venue=venue,
+        symbol=symbol,
+        transport_ms=transport_ms if transport_ms is not None else 120.0,
+        bar_close_lag_ms=bar_lag_ms if bar_lag_ms is not None else 1200.0,
+        bars_inc=1,
+    )
 
 
-@app.post("/_debug/emit_sample")
-def _debug_emit_sample() -> JSONResponse:
-    if not ENABLE_DEBUG_ROUTES:
-        raise HTTPException(
-            status_code=403, detail="Debug routes disabled (set ENABLE_DEBUG_ROUTES=1)"
-        )
-
-    # Brug central dev-helper hvis muligt
-    result = emit_sample_dev()
-    if not result.get("ok"):
-        result = _emit_sample_fallback()
-
-    # Sørg for ready-state (i tilfælde af helt tom proces)
-    if "BTCUSDT" not in _last_bar_ts_ms:
-        _last_bar_ts_ms["BTCUSDT"] = int(time.time() * 1000)
-    _active_venues.setdefault("binance", True)
-
-    return JSONResponse(result)
+def _debug_routes_enabled_but_no_router() -> bool:
+    # True hvis vi vil have debugruter, men ingen router blev monteret i startup
+    return ENABLE_DEBUG_ROUTES and get_debug_router() is None  # type: ignore
 
 
-@app.post("/_debug/emit_n")
-def _debug_emit_n(
-    n: int = Query(10, ge=1, le=1000, description="Antal samples at emulere sekventielt")
-) -> JSONResponse:
-    if not ENABLE_DEBUG_ROUTES:
-        raise HTTPException(
-            status_code=403, detail="Debug routes disabled (set ENABLE_DEBUG_ROUTES=1)"
-        )
+if _debug_routes_enabled_but_no_router():
 
-    ok_count = 0
-    for _ in range(n):
-        r = emit_sample_dev()
-        if not r.get("ok"):
-            r = _emit_sample_fallback()
-        ok_count += 1 if r.get("ok") else 0
-        # let pacing så Prometheus rate() har vindue at arbejde med
-        time.sleep(0.05)
+    @app.get("/_debug/emit_sample")
+    @app.post("/_debug/emit_sample")
+    def _debug_emit_sample(
+        venue: str = Query(default="bootstrap"),
+        symbol: str = Query(default="TESTUSDT"),
+        transport_ms: Optional[float] = Query(default=None),
+        bar_lag_ms: Optional[float] = Query(default=None),
+        n: int = Query(default=1, ge=0, le=100),
+    ) -> JSONResponse:
+        if not ENABLE_DEBUG_ROUTES:
+            raise HTTPException(
+                status_code=403, detail="Debug routes disabled (set ENABLE_DEBUG_ROUTES=1)"
+            )
+        out: dict = {}
+        last: dict = {}
+        for _ in range(max(1, n)):
+            last = _emit_sample_fallback_once(venue, symbol, transport_ms, bar_lag_ms)
+            out = last
 
-    return JSONResponse({"ok": True, "emitted": ok_count})
+        # Sørg for ready-state
+        _active_venues[venue] = True
+        _last_bar_ts_ms[symbol] = int(time.time() * 1000)
+        return JSONResponse(out or {"ok": False, "error": "emit failed"})
 
+    @app.post("/_debug/emit_n")
+    def _debug_emit_n(
+        n: int = Query(10, ge=1, le=1000, description="Antal samples at emulere sekventielt"),
+        venue: str = Query(default="binance"),
+        symbol: str = Query(default="TESTUSDT"),
+    ) -> JSONResponse:
+        if not ENABLE_DEBUG_ROUTES:
+            raise HTTPException(
+                status_code=403, detail="Debug routes disabled (set ENABLE_DEBUG_ROUTES=1)"
+            )
 
-@app.post("/debug/dq")
-def debug_dq(
-    contract: str = Query(default="ohlcv_1h"),
-    rule: str = Query(default="bounds_min"),
-    freshness: Optional[float] = Query(default=None, description="Minutter siden seneste update"),
-    inc: int = Query(default=0, description="Inkrementér violations N gange"),
-) -> JSONResponse:
-    """
-    Sæt DQ-metrikker direkte i denne app-proces (til test/observability).
-    Beskyttet af ENABLE_DEBUG_ROUTES=1.
-    """
-    if not ENABLE_DEBUG_ROUTES:
-        raise HTTPException(
-            status_code=403, detail="Debug routes disabled (set ENABLE_DEBUG_ROUTES=1)"
-        )
+        ok_count = 0
+        for _ in range(n):
+            r = _emit_sample_fallback_once(venue, symbol, None, None)
+            ok_count += 1 if r.get("ok") else 0
+            time.sleep(0.05)  # lille pacing til rate()-vinduer
 
-    changed: Dict[str, Any] = {}
-    if freshness is not None:
-        set_dq_freshness_minutes("ohlcv_1h", float(freshness))
-        changed["dq_freshness_minutes"] = float(freshness)
-    if inc and inc > 0:
-        for _ in range(int(inc)):
-            inc_dq_violation(contract, rule)
-        changed["dq_violations_total"] = {"contract": contract, "rule": rule, "inc": int(inc)}
-
-    return JSONResponse({"ok": True, "changed": changed})
+        return JSONResponse({"ok": True, "emitted": ok_count})
 
 
 # ----------------------------------------------------------------------------------------

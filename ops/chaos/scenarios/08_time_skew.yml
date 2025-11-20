@@ -1,0 +1,4 @@
+name: "08 Time skew +3s"
+steps:
+  - action: timeskew
+    params: { offset_sec: 3, seconds: 60 }
