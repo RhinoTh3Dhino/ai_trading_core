@@ -19,8 +19,12 @@ permissions:
 env:
   PYTHONUNBUFFERED: "1"
   MPLBACKEND: Agg
-  PROM_VERSION: "v3.6.0"     # skal matche Prometheus/promtool i compose
+  PROM_VERSION: "v2.53.0"     # skal matche Prometheus/promtool i compose
   DQ_SHARED_SECRET: "change-me-long-random"  # auth til /dq/* prod-endpoints
+  # Bruges af ops/compose/docker-compose.yml:
+  # env_file: ${LIVE_ENV_FILE:-../../config/env/live.env}
+  # I CI peger vi på en dummy-fil, der oprettes dynamisk.
+  LIVE_ENV_FILE: "../../config/env/live.ci.env"
 
 jobs:
   unit-smoke:
@@ -335,6 +339,20 @@ jobs:
           fi
 
           test -f ops/prometheus/prometheus.yml
+
+      - name: Prepare LIVE_ENV_FILE for CI (dummy env)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p config/env
+          if [ ! -f config/env/live.ci.env ]; then
+            {
+              echo "# Dummy env for CI observability compose"
+              echo "DUMMY_ENV=1"
+            } > config/env/live.ci.env
+          fi
+          echo "LIVE_ENV_FILE expected at: ${LIVE_ENV_FILE}"
+          ls -R config/env
 
       - name: Compose up (live_connector + prometheus only)
         working-directory: ops/compose
