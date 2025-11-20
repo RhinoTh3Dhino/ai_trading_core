@@ -1,0 +1,41 @@
+{
+  "title": "Lyra Fase 6 — Soak/Chaos Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Transport latency p50/p95/p99",
+      "targets": [
+        {"expr": "lyra:transport_latency_ms:p50"},
+        {"expr": "lyra:transport_latency_ms:p95"},
+        {"expr": "lyra:transport_latency_ms:p99"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "ms"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Bar close lag p99",
+      "targets": [{"expr": "lyra:bar_close_lag_ms:p99"}],
+      "fieldConfig": {"defaults": {"unit": "ms"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Bars/sec (sum)",
+      "targets": [{"expr": "lyra:bars_per_sec"}],
+      "fieldConfig": {"defaults": {"unit": "ops"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Reconnects/min (sum)",
+      "targets": [{"expr": "lyra:reconnects_per_min"}]
+    },
+    {
+      "type": "bargauge",
+      "title": "DQ alerts (active)",
+      "targets": [{"expr": "sum(ALERTS{alertstate=\"firing\"}) by (alertname)"}]
+    }
+  ]
+}

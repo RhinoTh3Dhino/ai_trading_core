@@ -1,0 +1,191 @@
+# .github/workflows/alerting-ci.yml
+name: Alerting CI
+
+on:
+  pull_request:
+    paths:
+      - "ops/alertmanager/**"
+      - "ops/prometheus/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/alerting-ci.yml"
+  push:
+    branches: [ main, master ]
+    paths:
+      - "ops/alertmanager/**"
+      - "ops/prometheus/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/alerting-ci.yml"
+
+concurrency:
+  group: alerting-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+  MPLBACKEND: Agg
+  PYTHONNOUSERSITE: "1"
+  # Pin versions for determinism
+  PROM_VERSION: "v2.53.0"        # prom/prometheus
+  AM_VERSION: "v0.27.0"          # prom/alertmanager
+  TELEGRAM_BOT_TOKEN: "ci_dummy_token_1234567890"
+  TELEGRAM_CHAT_ID: "123456789"
+  AM_RENDER_DIR: /tmp/amcfg
+
+jobs:
+  check-alerting:
+    name: Prometheus, Alertmanager & Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- Python setup & deps ----------
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          echo "PYTHONPATH=$PWD" >> "$GITHUB_ENV"
+          # Stabiliser coverage (samme version som i repo)
+          pip install --force-reinstall "coverage==7.5.3"
+          # Fjern tunge/ikke-brugte i CI hvis de skulle være listet
+          pip uninstall -y pandas-ta numba || true
+
+      # ---------- Start uvicorn for /metrics-smoke ----------
+      - name: Start uvicorn (background)
+        run: |
+          set -euxo pipefail
+          nohup python -m uvicorn bot.live_connector.runner:app \
+            --host 0.0.0.0 --port 8000 --workers 1 \
+            > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+          echo "PID: $(cat /tmp/uvicorn.pid)"
+
+      - name: Wait for /metrics to be ready
+        run: |
+          set -euxo pipefail
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8000/metrics >/tmp/metrics.txt; then
+              echo "Service ready"
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "Service did not become ready"
+          tail -n 200 /tmp/uvicorn.log || true
+          exit 1
+
+      # ---------- Kør tests ----------
+      - name: Run pytest (quiet)
+        run: pytest -q
+
+      - name: Stop uvicorn
+        if: always()
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then
+            kill "$(cat /tmp/uvicorn.pid)" || true
+          fi
+
+      - name: Upload uvicorn log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uvicorn-log
+          path: /tmp/uvicorn.log
+          if-no-files-found: warn
+
+      # ---------- Prometheus: sikre filer findes ----------
+      - name: Ensure Prometheus rule files exist
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p ops/prometheus
+          if [ ! -f ops/prometheus/alerts.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: alerts.empty' \
+              '    rules: []' > ops/prometheus/alerts.yml
+          fi
+          if [ ! -f ops/prometheus/recording_rules.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: recordings.empty' \
+              '    rules: []' > ops/prometheus/recording_rules.yml
+          fi
+          test -f ops/prometheus/prometheus.yml
+
+      # ---------- promtool checks (korrekt entrypoint & mounts) ----------
+      - name: promtool check config (prometheus.yml)
+        run: |
+          docker run --rm \
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "${{ github.workspace }}/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "${{ github.workspace }}/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
+            "prom/prometheus:${PROM_VERSION}" \
+            check config /etc/prometheus/prometheus.yml
+
+      - name: promtool check rules (alerts.yml)
+        run: |
+          docker run --rm \
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/alerts.yml
+
+      - name: promtool check rules (recording_rules.yml)
+        run: |
+          docker run --rm \
+            --entrypoint=promtool \
+            -v "${{ github.workspace }}/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/recording_rules.yml
+
+      # ---------- Alertmanager render + check ----------
+      - name: Render Alertmanager config (envsubst med dummy-secrets)
+        run: |
+          mkdir -p "$AM_RENDER_DIR"
+          docker run --rm \
+            -e TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}" \
+            -e TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID}" \
+            -v "${{ github.workspace }}/ops/alertmanager/alertmanager.runtime.yml:/tmpl/alertmanager.yml.tmpl:ro" \
+            -v "$AM_RENDER_DIR:/amcfg" \
+            alpine:3.20 \
+            sh -lc '
+              set -euo pipefail
+              apk add --no-cache gettext >/dev/null
+              envsubst '"'"'${TELEGRAM_BOT_TOKEN} ${TELEGRAM_CHAT_ID}'"'"' \
+                </tmpl/alertmanager.yml.tmpl > /amcfg/alertmanager.yml
+              echo "[CI] Rendered /amcfg/alertmanager.yml (first 30 lines):"
+              head -n 30 /amcfg/alertmanager.yml || true
+              grep -q "bot_token:" /amcfg/alertmanager.yml
+              grep -q "chat_id:" /amcfg/alertmanager.yml
+            '
+
+      - name: amtool check-config (rendered alertmanager.yml + templates)
+        run: |
+          docker run --rm \
+            --entrypoint=amtool \
+            -v "$AM_RENDER_DIR:/amcfg:ro" \
+            -v "${{ github.workspace }}/ops/alertmanager/templates:/etc/alertmanager/templates:ro" \
+            "prom/alertmanager:${AM_VERSION}" \
+            check-config /amcfg/alertmanager.yml
+
+      - name: Upload rendered Alertmanager (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-alertmanager
+          path: /tmp/amcfg/alertmanager.yml
+          if-no-files-found: warn

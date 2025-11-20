@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+ops/
+outputs/
+data/
+backups/
+notebooks/
+*.ipynb
+*.csv
+*.parquet
+.DS_Store
+.env

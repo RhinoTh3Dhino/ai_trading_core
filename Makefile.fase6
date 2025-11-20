@@ -1,0 +1,27 @@
+.PHONY: soak-start soak-final chaos-netdrop chaos-throttle chaos-cpu chaos-reset scenario
+
+SOAK_OUT=outputs/reports/F6_$(shell date +%Y%m%d_%H%M)
+
+soak-start:
+	bash ops/chaos/scripts/soak_start.sh
+
+soak-final:
+	OUT_ROOT=$(SOAK_OUT) bash ops/chaos/scripts/soak_collect.sh --final
+	python ops/chaos/scripts/F6_generate_report.py --metrics-dir $(SOAK_OUT)/metrics --out-dir $(SOAK_OUT)
+
+chaos-netdrop:
+	docker compose -f ops/compose/docker-compose.yml -f ops/compose/docker-compose.chaos.addon.yml --profile chaos up -d chaos_runner
+	docker exec chaos_runner bash /chaos/scripts/chaos_lib.sh netdrop 20
+
+chaos-throttle:
+	docker exec chaos_runner bash /chaos/scripts/chaos_lib.sh throttle 200kbit 100ms 20ms 300
+
+chaos-cpu:
+	docker exec chaos_runner bash /chaos/scripts/chaos_lib.sh cpu 60
+
+chaos-reset:
+	docker exec chaos_runner bash /chaos/scripts/chaos_lib.sh reset
+
+scenario:
+	# Brug: make scenario FILE=ops/chaos/scenarios/01_net_drop.yml
+	docker exec chaos_runner python /chaos/scripts/chaos_run.py --file $(FILE)

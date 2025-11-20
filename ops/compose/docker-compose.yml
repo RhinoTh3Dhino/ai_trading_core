@@ -1,0 +1,214 @@
+# ops/compose/docker-compose.yml
+# Observability stack – profiler + healthchecks
+# Profiler:
+#  - (default): live_connector + prometheus
+#  - alerting: am_init + alertmanager
+#  - ui: grafana
+#  - debug: sample_emitter + promtool_check
+
+networks:
+  obsnet:
+    name: obsnet
+
+volumes:
+  amcfg:
+    name: amcfg
+    external: true
+  prom_data:
+    name: prom_data
+  grafana_data:
+    name: grafana_data
+
+secrets:
+  telegram_bot_token:
+    file: ../alertmanager/secrets/telegram_bot_token
+  telegram_chat_id:
+    file: ../alertmanager/secrets/telegram_chat_id
+
+services:
+  live_connector:
+    build:
+      context: ../../
+    image: live-connector:local
+    container_name: live_connector
+    command:
+      - uvicorn
+      - bot.live_connector.runner:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "1"
+    environment:
+      PYTHONUNBUFFERED: "1"
+      LOG_LEVEL: "INFO"
+      ENABLE_DEBUG_ROUTES: "1"
+      METRICS_AUTO_INIT: "1"
+      METRICS_BOOTSTRAP: "1"
+      OBS_SYMBOLS_MAX: "200"
+      OBS_SYMBOLS_WHITELIST: ""
+      STATUS_MIN_SECS: "30"
+      DQ_SHARED_SECRET: "${DQ_SHARED_SECRET:-change-me-long-random}"
+      # PROMETHEUS_MULTIPROC_DIR: "/tmp/prom_mp"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      obsnet:
+        aliases: ["live_connector"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+  # Init-job: render /amcfg/alertmanager.yml fra template + secrets
+  am_init:
+    profiles: ["alerting"]
+    image: alpine:3.20
+    environment:
+      ALERT_TMPL: /src/alertmanager.yml.tmpl
+      ALERT_OUT:  /amcfg/alertmanager.yml
+    volumes:
+      - amcfg:/amcfg
+      - ../alertmanager/alertmanager.runtime.yml:/src/alertmanager.yml.tmpl:ro
+      - ../alertmanager/render.sh:/src/render.sh:ro
+    secrets:
+      - telegram_bot_token
+      - telegram_chat_id
+    entrypoint: ["/bin/sh", "/src/render.sh"]
+    restart: "no"
+    networks: [obsnet]
+
+  alertmanager:
+    profiles: ["alerting"]
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    depends_on:
+      am_init:
+        condition: service_completed_successfully
+    volumes:
+      - amcfg:/amcfg:ro
+      - ../alertmanager/templates:/etc/alertmanager/templates:ro
+    command:
+      - --config.file=/amcfg/alertmanager.yml
+      - --web.listen-address=:9093
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+    networks:
+      obsnet:
+        aliases: ["alertmanager"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9093/-/ready >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Valgfri enkel-filer (hvis du bruger dem i din config)
+      - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
+      # Hele rules-mappen (inkl. fase6-recording rules)
+      - ../prometheus/rules:/etc/prometheus/rules:ro
+      - prom_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      live_connector:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      obsnet:
+        aliases: ["prometheus"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/ready >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 15s
+
+  grafana:
+    profiles: ["ui"]
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_PLUGINS_SIGNATURES_ENABLED=false
+    volumes:
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      obsnet:
+        aliases: ["grafana"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hver N sek
+  sample_emitter:
+    profiles: ["debug"]
+    image: curlimages/curl:8.8.0
+    depends_on:
+      live_connector:
+        condition: service_healthy
+    environment:
+      EMIT_EVERY: "${EMIT_EVERY:-5}"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        echo "Venter på live_connector..."
+        until curl -sf http://live_connector:8000/healthz >/dev/null; do sleep 2; done
+        echo "Spammer /_debug/emit_sample hver ${EMIT_EVERY}s"
+        while :; do
+          curl -s -X POST http://live_connector:8000/_debug/emit_sample >/dev/null || true
+          sleep "${EMIT_EVERY}"
+        done
+    restart: unless-stopped
+    networks: [obsnet]
+
+  # Valgfri: promtool validering af rules (kør med profil 'debug')
+  promtool_check:
+    profiles: ["debug"]
+    image: prom/prometheus:v2.53.0
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        echo "Validerer rules..."
+        promtool check rules /etc/prometheus/rules/*.yml
+        echo "OK"
+        sleep 2
+    volumes:
+      - ../prometheus/rules:/etc/prometheus/rules:ro
+    networks: [obsnet]

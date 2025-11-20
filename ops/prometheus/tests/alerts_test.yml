@@ -1,0 +1,310 @@
+# ops/prometheus/tests/alerts_test.yml
+# Promtool enhedstests for observability + Fase 5 DQ-regler.
+# Matcher alerts i:
+#  - ops/prometheus/alerts.yml
+#  - ops/prometheus/recording_rules.yml
+#  - ops/prometheus/rules/data_quality.yml
+
+rule_files:
+  - ../alerts.yml
+  - ../recording_rules.yml
+  - ../rules/data_quality.yml
+
+evaluation_interval: 1m
+
+tests:
+  # 1) NoBarsIn5m (per venue) – rate over 5m = 0
+  - name: nobars_triggers_per_venue
+    interval: 1m
+    input_series:
+      - series: 'feed_bars_total{venue="binance"}'
+        # 12 minutter uden stigning → rate5m == 0
+        values: '0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - alertname: NoBarsIn5m
+        eval_time: 11m
+        exp_alerts:
+          - exp_labels:
+              alertname: NoBarsIn5m
+              service: live_connector
+              severity: critical
+              venue: binance
+            exp_annotations:
+              summary: "Ingen bars i 5m for venue binance"
+              description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue binance (feed_bars:rate5m == 0)."
+
+  # 1b) NoBarsIn5m – OKX
+  - name: nobars_triggers_okx
+    interval: 1m
+    input_series:
+      - series: 'feed_bars_total{venue="okx"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - alertname: NoBarsIn5m
+        eval_time: 11m
+        exp_alerts:
+          - exp_labels:
+              alertname: NoBarsIn5m
+              service: live_connector
+              severity: critical
+              venue: okx
+            exp_annotations:
+              summary: "Ingen bars i 5m for venue okx"
+              description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue okx (feed_bars:rate5m == 0)."
+
+  # 1c) NoBarsIn5m – Kraken
+  - name: nobars_triggers_kraken
+    interval: 1m
+    input_series:
+      - series: 'feed_bars_total{venue="kraken"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - alertname: NoBarsIn5m
+        eval_time: 11m
+        exp_alerts:
+          - exp_labels:
+              alertname: NoBarsIn5m
+              service: live_connector
+              severity: critical
+              venue: kraken
+            exp_annotations:
+              summary: "Ingen bars i 5m for venue kraken"
+              description: "Der er ikke registreret lukkede bars i mindst 5 minutter for venue kraken (feed_bars:rate5m == 0)."
+
+  # 2) HighBarCloseLag (venue,symbol) > 3000 ms (5m vindue, for:2m)
+  - name: bar_close_lag_high_after_5m
+    interval: 1m
+    input_series:
+      - series: 'feed_bar_close_lag_ms{venue="binance",symbol="BTCUSDT"}'
+        # Først 5m under threshold, derefter 4m over → vindue fyldes og for:2m opfyldes
+        values: '1000 1000 1000 1000 1000 3500 3600 3700 3800 3800'
+    alert_rule_test:
+      - alertname: HighBarCloseLag
+        eval_time: 8m
+        exp_alerts:
+          - exp_labels:
+              alertname: HighBarCloseLag
+              service: live_connector
+              severity: warning
+              venue: binance
+              symbol: BTCUSDT
+            exp_annotations:
+              summary: "Bar close lag > 3s (seneste 5m) for binance BTCUSDT"
+              description: "Maks bar-close lag overstiger 3000 ms for binance BTCUSDT i mindst 2 minutter (glattet over 5m)."
+
+  # 3) ReconnectSpike (>3 pr. 5m per venue) – increase over 5m
+  - name: reconnect_spike_gt3_on_5m
+    interval: 1m
+    input_series:
+      - series: 'feed_reconnects_total{venue="binance"}'
+        # Monotont stigende counter hvert minut
+        values: '0 1 2 3 4 5 6 7 8 9 10'
+    alert_rule_test:
+      - alertname: ReconnectSpike
+        eval_time: 7m
+        exp_alerts:
+          - exp_labels:
+              alertname: ReconnectSpike
+              service: live_connector
+              severity: warning
+              venue: binance
+            exp_annotations:
+              summary: "Reconnect spike (>3/5m) for binance"
+              description: "Antallet af reconnects er steget markant de sidste 5 minutter for venue binance (increase > 3)."
+
+  # 4) TransportLatencyP99High (p99 > 500ms, per venue/5m)
+  #    Kumulative histogram-buckets, hvor hale >500ms sikrer p99>500
+  - name: transport_latency_p99_high_per_venue
+    interval: 1m
+    input_series:
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="100"}'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="250"}'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="500"}'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="1000"}'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="+Inf"}'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
+    alert_rule_test:
+      - alertname: TransportLatencyP99High
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              alertname: TransportLatencyP99High
+              service: live_connector
+              severity: warning
+              venue: binance
+            exp_annotations:
+              summary: "Transport p99 > 500ms (5m) for binance"
+              description: "P99-latenstiden for feed-transport er over 500 ms for venue binance (5m vindue)."
+
+  # 5) FeatureLatencyP99High (p99 > 50ms per feature/5m)
+  - name: feature_latency_p99_high_per_feature
+    interval: 1m
+    input_series:
+      - series: 'feature_compute_ms_bucket{feature="ema",le="10"}'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="25"}'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="50"}'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="100"}'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
+      - series: 'feature_compute_ms_bucket{feature="ema",le="+Inf"}'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
+    alert_rule_test:
+      - alertname: FeatureLatencyP99High
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              alertname: FeatureLatencyP99High
+              service: live_connector
+              severity: warning
+              feature: ema
+            exp_annotations:
+              summary: "Feature ema p99 > 50ms (5m)"
+              description: "P99-beregningslatens for feature ema er over 50 ms (5m vindue)."
+
+  # 6) FeatureErrorsRate (>0 på 5m per feature)
+  - name: feature_errors_positive_increase
+    interval: 1m
+    input_series:
+      - series: 'feature_errors_total{feature="ema"}'
+        values: '0 0 0 0 0 1 1 2 2 3 3'
+    alert_rule_test:
+      - alertname: FeatureErrorsRate
+        eval_time: 8m
+        exp_alerts:
+          - exp_labels:
+              alertname: FeatureErrorsRate
+              service: live_connector
+              severity: critical
+              feature: ema
+            exp_annotations:
+              summary: "Feature-fejl detekteret for ema"
+              description: "Der er registreret fejl i feature-beregninger de seneste 5 minutter for feature ema (increase > 0)."
+
+  # 7) QueueDepthHigh (max_over_time[5m] > 1000 per venue) – for:2m
+  - name: queue_depth_high_after_sustained_load
+    interval: 1m
+    input_series:
+      - series: 'feed_queue_depth{venue="binance"}'
+        # 5m med 500, derefter 4m med 1201 → max_over_time>1000 og holder i >2m
+        values: '500 500 500 500 500 1201 1201 1201 1201'
+    alert_rule_test:
+      - alertname: QueueDepthHigh
+        eval_time: 9m
+        exp_alerts:
+          - exp_labels:
+              alertname: QueueDepthHigh
+              service: live_connector
+              severity: warning
+              venue: binance
+            exp_annotations:
+              summary: "Kødybde > 1000 (seneste 5m) for binance"
+              description: "Den målte kødybde har været høj i længere tid for venue binance (max_over_time[5m] > 1000)."
+
+  # 8) GlobalTransportP99High (samlet p99 > 250ms på tværs af venues / 5m)
+  - name: global_transport_p99_high
+    interval: 1m
+    input_series:
+      # Venue A (binance)
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="100"}'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="250"}'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="500"}'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="1000"}'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
+      - series: 'feed_transport_latency_ms_bucket{venue="binance",le="+Inf"}'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
+      # Venue B (coinbase)
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="100"}'
+        values: '0 1 2 3 4 5 6 7 7 7 7 7'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="250"}'
+        values: '0 2 4 6 8 10 12 14 14 14 14 14'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="500"}'
+        values: '0 3 6 9 12 15 18 21 21 21 21 21'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="1000"}'
+        values: '0 5 10 15 20 25 30 35 40 45 50 55'
+      - series: 'feed_transport_latency_ms_bucket{venue="coinbase",le="+Inf"}'
+        values: '0 12 24 36 48 60 72 84 96 108 120 132'
+    alert_rule_test:
+      - alertname: GlobalTransportP99High
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              alertname: GlobalTransportP99High
+              service: live_connector
+              severity: critical
+            exp_annotations:
+              summary: "Global transport p99 > 250ms (5m)"
+              description: "Global p99 for transport-latency ligger over 250 ms i mindst 5 minutter."
+
+  # 9) GlobalBarCloseLagHigh (globalt max > 1.5s i 3m/5m vindue)
+  - name: global_bar_close_lag_high
+    interval: 1m
+    input_series:
+      - series: 'feed_bar_close_lag_ms{venue="binance",symbol="ETHUSDT"}'
+        # 4m ~0.8s, derefter 5m ~2.0s
+        values: '800 800 800 800 2000 2000 2000 2000 2000'
+      - series: 'feed_bar_close_lag_ms{venue="binance",symbol="BTCUSDT"}'
+        values: '700 700 700 700 700 700 700 700 700'
+    alert_rule_test:
+      - alertname: GlobalBarCloseLagHigh
+        eval_time: 9m
+        exp_alerts:
+          - exp_labels:
+              alertname: GlobalBarCloseLagHigh
+              service: live_connector
+              severity: warning
+              venue: binance
+              symbol: ETHUSDT
+            exp_annotations:
+              summary: "Global bar-close lag > 1.5s (5m)"
+              description: "Det globale 5m-maksimum for bar-close lag overstiger 1.5 sekunder i mindst 3 minutter."
+
+  # 10) DataFreshnessStale (DQ) — >15 min i mindst 5m
+  - name: dq_freshness_stale
+    interval: 1m
+    input_series:
+      - series: 'dq_freshness_minutes{dataset="ohlcv_1h"}'
+        # Stiger til 20 min fra t=3m og holder → skal fire efter for:5m (dvs. ved ~8m)
+        values: '0 0 0 20 20 20 20 20 20'
+    alert_rule_test:
+      - alertname: DataFreshnessStale
+        eval_time: 8m
+        exp_alerts:
+          - exp_labels:
+              alertname: DataFreshnessStale
+              service: data
+              severity: critical
+              dataset: ohlcv_1h
+            exp_annotations:
+              summary: "Stale dataset: ohlcv_1h"
+              description: "Ingen opdatering >15 min for dataset=ohlcv_1h.\nTjek ingestion-job, cred og upstream kilder.\nfreshness_minutes=20\nRunbook: docs/runbooks/data_quality.md#freshness\n"
+
+  # 11) DQViolationsBurst — increase(dq_violations_total[5m]) > 0 for:2m
+  - name: dq_violations_burst
+    interval: 1m
+    input_series:
+      - series: 'dq_violations_total{contract="ohlcv_1h",rule="bounds_min"}'
+        # Counter hopper fra 0 → 3 ved t=5m og holder
+        values: '0 0 0 0 0 3 3 3 3'
+    alert_rule_test:
+      - alertname: DQViolationsBurst
+        # kræver for:2m; evaluer 2m efter hop indenfor 5m-vinduet
+        eval_time: 7m
+        exp_alerts:
+          - exp_labels:
+              alertname: DQViolationsBurst
+              service: data
+              severity: warning
+              contract: ohlcv_1h
+              rule: bounds_min
+            exp_annotations:
+              summary: "Data Quality issues (ohlcv_1h / bounds_min)"
+              description: "Der er registreret DQ-violations de seneste 5 min (kontrakt=ohlcv_1h, rule=bounds_min).\nSe runbook: docs/runbooks/data_quality.md\nvalue=3\n"

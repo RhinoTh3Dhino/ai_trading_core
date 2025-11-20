@@ -1,0 +1,44 @@
+# ops/compose/docker-compose.chaos.addon.yml
+services:
+  chaos_runner:
+    image: alpine:3.20
+    container_name: chaos_runner
+    profiles: ["chaos"]
+
+    # Bootstrap: installer værktøjer og hold containeren kørende
+    command:
+      [
+        "/bin/sh","-lc",
+        "apk add --no-cache bash iproute2 iptables iptables-legacy util-linux libfaketime coreutils curl python3 py3-pip jq && sleep infinity"
+      ]
+
+    # Krævet for tc/iptables + netns-manipulation
+    privileged: true
+    # Del netns med live_connector for at påvirke dens netværk direkte
+    network_mode: "service:live_connector"
+
+    # Sørg for at connectoren er startet først (defineret i base compose)
+    depends_on:
+      - live_connector
+
+    volumes:
+      - ../chaos:/chaos
+      - ../../outputs/reports:/outputs/reports
+
+    environment:
+      - PROM_URL=${PROM_URL:-http://prometheus:9090}
+      - GRAF_URL=${GRAF_URL:-http://grafana:3000}
+      - LYRA_BUILD_SHA=${LYRA_BUILD_SHA:-unknown}
+      - LYRA_VENUES=${LYRA_VENUES:-binance,bybit}
+      # Net-interface i containerens netns (typisk eth0)
+      - IFACE=${IFACE:-eth0}
+
+    restart: unless-stopped
+
+    # Healthcheck: sikre at shell + værktøjer er tilgængelige
+    healthcheck:
+      test: ["CMD-SHELL","bash -lc 'bash --version >/dev/null 2>&1 && curl --version >/dev/null 2>&1 && python3 --version >/dev/null 2>&1'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

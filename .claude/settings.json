@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/**)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Edit(/bot/**)",
+      "Edit(/tests/**)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(secrets/**)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Edit(/backtest/**)"
+    ]
+  },
+  "model": "sonnet"
+}

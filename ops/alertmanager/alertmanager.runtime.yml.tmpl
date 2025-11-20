@@ -1,0 +1,26 @@
+# ops/alertmanager/alertmanager.runtime.yml.tmpl
+
+route:
+  receiver: "telegram"
+  group_by: ["alertname","service"]
+  group_wait: 10s
+  group_interval: 2m
+  repeat_interval: 2h
+
+receivers:
+  - name: "telegram"
+    telegram_configs:
+      - bot_token: "{{ .secrets.telegram_bot_token }}"
+        chat_id: "{{ .secrets.telegram_chat_id }}"
+        parse_mode: "HTML"
+        message: |-
+          🚨 <b>{{ .CommonLabels.alertname }}</b> ({{ .Status | toUpper }})
+          <b>Service:</b> {{ .CommonLabels.service }}
+          {{ range .Alerts -}}
+          • <b>{{ .Labels.severity }}</b> @ {{ .StartsAt }} UTC
+            {{ if .Annotations.summary }}⟶ {{ .Annotations.summary }}{{ end }}
+            {{ if .Annotations.description }}
+            <pre>{{ .Annotations.description }}</pre>
+            {{ end }}
+          {{ end }}
+          <i>Silence/Details: Prometheus/Grafana</i>

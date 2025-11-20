@@ -1,0 +1,56 @@
+﻿# ops/alertmanager/alertmanager.runtime.yml
+global:
+  resolve_timeout: 5m
+
+# Hvor Alertmanager finder Telegram-templates (mountes i compose)
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"
+
+route:
+  receiver: telegram-default
+  group_by: [alertname, job, instance, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  # Under-routes for målrettet håndtering
+  routes:
+    # 1) Kritiske alarmer -> separat receiver + kortere kadencer
+    - matchers: ['severity="critical"']
+      receiver: telegram-critical
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 1h
+
+    # 2) Data-kvalitet (Fase 5) kan tunes separat uden at påvirke øvrige
+    - matchers: ['service="data"']
+      receiver: telegram-default
+      group_by: [alertname, dataset]
+      group_wait: 20s
+      group_interval: 3m
+      repeat_interval: 2h
+
+receivers:
+  - name: telegram-default
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: "HTML"
+        send_resolved: true
+        # Template defineret i ops/alertmanager/templates/telegram.tmpl
+        message: '{{ template "telegram.message" . }}'
+
+  - name: telegram-critical
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: "HTML"
+        send_resolved: true
+        # Genbrug standardlayout, men med tydeligt prefix for critical
+        message: '🚨 {{ template "telegram.message" . }}'
+
+# Dæmp “warning”, når en tilsvarende “critical” allerede er aktiv
+inhibit_rules:
+  - source_matchers: ['severity="critical"']
+    target_matchers: ['severity="warning"']
+    equal: [alertname, job, instance, service]

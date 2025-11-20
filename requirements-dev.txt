@@ -1,0 +1,22 @@
+# requirements-dev.txt
+# Dev & test dependencies. Holdes kompatible med mlflow 2.3.0 / scipy 1.11.4.
+
+black==24.4.2
+coverage==7.5.3
+
+# --- Lint/format/typecheck ---
+flake8==7.0.0
+mypy==1.10.0
+# --- Runtime pins brugt i tests (for at undgå resolver-konflikter) ---
+numpy==1.26.4           # kompatibel med scipy<1.28 og mlflow<3
+pyarrow==11.0.0         # kompatibel med mlflow>=2.0,<2.4
+
+# --- Testing ---
+pytest>=8.4,<9
+pytest-asyncio==0.23.8  # kræves til @pytest.mark.asyncio tests (pytest 8 / Py3.11)
+pytest-cov==6.2.1
+pytest-timeout==2.3.1
+
+# --- (Valgfrit) lokale værktøjer ---
+# pre-commit==3.8.0
+# isort==5.13.2

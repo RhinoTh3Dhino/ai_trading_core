@@ -1,0 +1,50 @@
+# .pre-commit-config.yaml
+default_language_version:
+  python: python3.11
+
+# Ignorér genererede/tunge/CI-artefakter, så hooks ikke piller ved dem
+exclude: >
+  ^(
+    outputs/|
+    logs/|
+    backups/|
+    mlruns/|
+    htmlcov/|
+    reports/|
+    \.pytest_cache/|
+    \.coverage.*|
+    .*\.ipynb_checkpoints/|
+    ops/alertmanager/|
+    ops/prometheus/
+  )
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        # 'auto' bevarer CRLF i .ps1/.bat (jvf. .gitattributes) og fjerner kun blandede endinger
+        args: [--fix=auto]
+      - id: check-yaml
+      - id: check-json
+      - id: check-ast                # Python syntaks-check
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: requirements-txt-fixer
+      - id: detect-private-key
+      - id: debug-statements
+
+  - repo: https://github.com/psf/black
+    # stabil version som spiller godt med py311
+    rev: 25.9.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        # isort styres af profile=black fra pyproject.toml (ingen ekstra args nødvendige)
+        additional_dependencies: []  # kan fjernes; handy hvis Windows env driller

@@ -1,0 +1,33 @@
+# =========================================
+# ML / Modeller / DL (valgfrit)
+# Bruges til træning/inferens uden at belaste live-runneren.
+# scikit-learn er pin’et til 1.6.1 (kompatibel med dine .pkl artefakter).
+# =========================================
+
+catboost==1.2.5
+
+# GPU-monitorering (valgfrit)
+GPUtil==1.4.0
+joblib==1.4.2
+lightgbm==4.3.0
+nvidia-ml-py3==7.352.0
+optuna==3.6.1
+# Klassiske ML-pakker
+scikit-learn==1.6.1
+shap==0.44.1
+# torchvision==0.17.2      # tilføj ved behov
+# torchaudio==2.2.2        # tilføj ved behov
+
+# Logging/visualisering for DL
+tensorboard==2.15.1
+
+# Deep Learning (CPU som default; GPU-wheels kræver korrekt CUDA-driver)
+torch==2.2.2
+xgboost==2.0.3
+
+# (Valgfrit) LSTM via TensorFlow — kun hvis du eksplicit vil bruge TF i stedet for PyTorch.
+# TF 2.15 spiller pænt med numpy 1.26.* og Python 3.10/3.11.
+# tensorflow==2.15.0
+# h5py==3.10.0
+# keras==2.15.0
+# tensorboard-data-server==0.7.2

@@ -1,0 +1,54 @@
+# config/alerts.yaml
+# Standardindstillinger for alarmer og routing af signaler til Telegram.
+# Matcher vores test- og driftsplan (ro på, men uden at miste vigtige signaler).
+
+alert_manager:
+  # Dubletfilter: samme (symbol, side, type, limit_price) inden for denne TTL → undertrykkes.
+  dedupe_ttl_sec: 90
+  # Tids-bucket som også indgår i dubletnøglen (robust mod små tidsforskelle).
+  dedupe_bucket_sec: 60
+
+  # Cooldowns for at undgå spam (strammet i forhold til default).
+  cooldown_sec_global: 5           # global minimums-interval mellem to sendte beskeder
+  cooldown_sec_per_symbol: 3       # pr. symbol
+
+  # Low-prio batch: lav-prio payloads samles og sendes periodisk som ét sammendrag.
+  batch_lowprio_every_sec: 60
+  batch_max_items_preview: 3       # hvor mange eksempler vises i sammendraget
+
+router:
+  # Minimumskrav for at et signal må sendes (kan overstyres pr. symbol nedenfor).
+  min_qty: 0.10                    # mindste handelsmængde
+  min_notional: 50.0               # mindste notional (pris * qty)
+  min_confidence: 0.55             # under dette → SUPPRESS (eller low-prio hvis slået til)
+
+  # “Urgent” signaler (høj sikkerhed) må gerne gå igennem som market-ordre.
+  urgent_confidence: 0.80
+  allow_market_when_urgent: true
+
+  # Foretræk limit-ordrer i beskeder (ren information/routing-præference).
+  prefer_limit: true
+
+  # Low-prio indstillinger: svagere (men ikke helt dårlige) signaler kan batches.
+  lowprio:
+    enabled: true
+    confidence_below: 0.65         # [min_confidence, confidence_below) → low-prio
+    types: ["limit", "market"]     # hvilke ordertyper kan gå i low-prio
+
+  # Format-kosmetik (bruges af SignalRouter til visning/afrunding)
+  price_decimals: 2
+  qty_decimals: 8
+
+  # Valgfrit: metadata
+  notional_currency: "USD"
+
+# Pr. symbol overrides (valgfrit). Udelad nøgler du ikke vil overstyre.
+symbols:
+  BTCUSDT:
+    min_qty: 0.05
+    min_notional: 25.0
+    min_confidence: 0.50
+    urgent_confidence: 0.80
+  ETHUSDT:
+    min_qty: 0.10
+    min_notional: 20.0

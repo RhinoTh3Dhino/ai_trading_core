@@ -1,0 +1,462 @@
+name: observability
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: observability-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+  MPLBACKEND: Agg
+  PROM_VERSION: "v3.6.0"     # skal matche Prometheus/promtool i compose
+  DQ_SHARED_SECRET: "change-me-long-random"  # auth til /dq/* prod-endpoints
+
+jobs:
+  unit-smoke:
+    name: Smoke /metrics + promtool + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      has_dockerfile: ${{ steps.detect_dockerfile.outputs.present }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Dockerfile
+        id: detect_dockerfile
+        shell: bash
+        run: |
+          if [ -f Dockerfile ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Python 3.11 (cache=pip)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies (incl. CPU PyTorch like CI)
+        run: |
+          set -euxo pipefail
+          python -m pip install -U pip wheel setuptools
+
+          if [ -f requirements.txt ]; then
+            # hurtig binær pre-seed for stabil CI
+            pip install --only-binary=:all: 'numpy==1.26.4' 'pyarrow==11.0.0' || true
+            pip install -r requirements.txt
+          else
+            pip install fastapi uvicorn prometheus-client httpx pytest pandas pyarrow requests
+          fi
+
+          # Valgfrit: CPU Torch (ikke kritisk for observability)
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu \
+            'torch==2.2.2' 'torchvision==0.17.2' 'torchaudio==2.2.2' || true
+
+          python - <<'PY'
+          import importlib
+          for name in ("torch","torchvision","torchaudio","fastapi","uvicorn","prometheus_client","numpy","pyarrow","pytest","pandas","requests"):
+              try:
+                  m = importlib.import_module(name)
+                  print(f"{name}: {getattr(m,'__version__','?')}")
+              except Exception as e:
+                  print(f"{name}: <missing> ({e})")
+          PY
+
+      - name: Launch app (uvicorn) in background
+        env:
+          ENABLE_DEBUG_ROUTES: "1"   # tillad test-ruter i smoke
+        run: |
+          set -euxo pipefail
+          nohup uvicorn bot.live_connector.runner:app \
+            --host 0.0.0.0 --port 8000 --workers 1 >/tmp/app.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8000/healthz >/dev/null; then
+              echo "healthz OK"; break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8000/metrics > /tmp/metrics_all.txt
+          head -n 5 /tmp/metrics_all.txt || true
+
+      - name: Trigger DQ freshness via prod endpoint (header auth)
+        env:
+          DQ_URL: "http://localhost:8000"
+        run: |
+          set -euxo pipefail
+          curl -fsS -XPOST \
+            -H "X-Dq-Secret: ${DQ_SHARED_SECRET}" \
+            "${DQ_URL}/dq/freshness?dataset=ohlcv_1h&minutes=30" > /dev/null
+          sleep 1
+          curl -fsS "${DQ_URL}/metrics" | tee /tmp/metrics_after_dq.txt >/dev/null
+
+      - name: Smoke /metrics contains core & DQ metrics
+        run: |
+          set -euxo pipefail
+          curl -fsS http://localhost:8000/metrics | tee /tmp/metrics.txt >/dev/null
+          # Core
+          grep -q "feed_transport_latency_ms_bucket" /tmp/metrics.txt
+          grep -q "feed_bar_close_lag_ms"          /tmp/metrics.txt
+          grep -q "feed_bars_total"                /tmp/metrics.txt
+          grep -q "feed_reconnects_total"          /tmp/metrics.txt
+          grep -q "feed_queue_depth"               /tmp/metrics.txt
+          grep -q "feature_compute_ms_bucket"      /tmp/metrics.txt
+          # Fase 5 (DQ)
+          grep -q 'dq_violations_total'            /tmp/metrics.txt
+          grep -q 'dq_freshness_minutes{dataset="ohlcv_1h"}' /tmp/metrics_after_dq.txt
+
+      # ---------- promtool forberedelse: sørg for alle filer findes ----------
+      - name: Ensure Prometheus rule files exist (create minimal if missing)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p ops/prometheus/rules ops/prometheus/tests
+
+          # alerts.yml
+          if [ ! -f ops/prometheus/alerts.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: alerts.empty' \
+              '    rules: []' \
+              > ops/prometheus/alerts.yml
+          fi
+
+          # recording_rules.yml
+          if [ ! -f ops/prometheus/recording_rules.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: recordings.empty' \
+              '    rules: []' \
+              > ops/prometheus/recording_rules.yml
+          fi
+
+          # data_quality.yml (matcher promtool tests/annotations)
+          if [ ! -f ops/prometheus/rules/data_quality.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: data_quality' \
+              '    rules:' \
+              '      - alert: DQViolationsBurst' \
+              '        expr: increase(dq_violations_total[5m]) > 0' \
+              '        for: 2m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: warning' \
+              '        annotations:' \
+              '          summary: "Data Quality issues ({{ $labels.contract }} / {{ $labels.rule }})"' \
+              '          description: "Der er registreret DQ-violations de seneste 5 min (kontrakt={{ $labels.contract }}, rule={{ $labels.rule }}).\nSe runbook: docs/runbooks/data_quality.md\nvalue={{ $value }}\n"' \
+              '' \
+              '      - alert: DataFreshnessStale' \
+              '        expr: dq_freshness_minutes{dataset="ohlcv_1h"} > 15' \
+              '        for: 5m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: critical' \
+              '        annotations:' \
+              '          summary: "Stale dataset: ohlcv_1h"' \
+              '          description: "Ingen opdatering >15 min for dataset=ohlcv_1h.\nTjek ingestion-job, cred og upstream kilder.\nfreshness_minutes={{ $value }}\nRunbook: docs/runbooks/data_quality.md#freshness\n"' \
+              > ops/prometheus/rules/data_quality.yml
+          fi
+
+          test -f ops/prometheus/prometheus.yml
+
+      - name: promtool check config (prometheus.yml)
+        run: |
+          set -euxo pipefail
+          docker run --rm \
+            -v "$PWD/ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro" \
+            -v "$PWD/ops/prometheus/rules/data_quality.yml:/etc/prometheus/rules/data_quality.yml:ro" \
+            --entrypoint=promtool \
+            "prom/prometheus:${PROM_VERSION}" \
+            check config /etc/prometheus/prometheus.yml
+
+      - name: promtool check rules (alerts.yml)
+        run: |
+          set -euxo pipefail
+          docker run --rm \
+            -v "$PWD/ops/prometheus/alerts.yml:/etc/prom/alerts.yml:ro" \
+            --entrypoint=promtool \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/alerts.yml
+
+      - name: promtool check rules (recording_rules.yml)
+        run: |
+          set -euxo pipefail
+          docker run --rm \
+            -v "$PWD/ops/prometheus/recording_rules.yml:/etc/prom/recording_rules.yml:ro" \
+            --entrypoint=promtool \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/recording_rules.yml
+
+      - name: promtool check rules (rules/data_quality.yml)
+        run: |
+          set -euxo pipefail
+          docker run --rm \
+            -v "$PWD/ops/prometheus/rules/data_quality.yml:/etc/prom/rules/data_quality.yml:ro" \
+            --entrypoint=promtool \
+            "prom/prometheus:${PROM_VERSION}" \
+            check rules /etc/prom/rules/data_quality.yml
+
+      - name: promtool test alert rules (unit)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if [ -f ops/prometheus/tests/alerts_test.yml ]; then
+            docker run --rm \
+              -v "$PWD/ops/prometheus:/etc/prom" \
+              --entrypoint=promtool \
+              "prom/prometheus:${PROM_VERSION}" \
+              test rules /etc/prom/tests/alerts_test.yml
+          else
+            echo "No alerts_test.yml present — skipping promtool unit tests."
+          fi
+
+      - name: "Run tests: data_quality (if present)"
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if [ -d tests/data_quality ]; then
+            pytest -q -p no:cov -o addopts='' tests/data_quality
+          else
+            echo "No tests/data_quality present — skipping."
+          fi
+
+      - name: Run tests (metrics only, no coverage gate)
+        run: |
+          if [ -f tests/test_metrics_exposition.py ]; then
+            pytest -q -p no:cov -o addopts='' tests/test_metrics_exposition.py
+          else
+            echo "No tests/test_metrics_exposition.py present — skipping."
+          fi
+
+      - name: Optional ad-hoc DQ check
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if [ -f tools/check_data_quality.py ] && [ -f outputs/data/btc_1h_latest.parquet ]; then
+            python tools/check_data_quality.py \
+              --dataset outputs/data/btc_1h_latest.parquet \
+              --contract ohlcv_1h \
+              --print-report || true
+          else
+            echo "DQ CLI eller dataset ikke tilgængeligt — skipping."
+          fi
+
+      - name: Upload metrics and logs (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observability-smoke-artifacts
+          path: |
+            /tmp/metrics.txt
+            /tmp/metrics_all.txt
+            /tmp/metrics_after_dq.txt
+            /tmp/app.log
+          if-no-files-found: ignore
+
+  compose-integration:
+    name: Compose integration (target=UP)
+    needs: unit-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ needs.unit-smoke.outputs.has_dockerfile == 'true' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq (for API checks)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Ensure Prometheus rule files exist (compose job)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p ops/prometheus/rules
+
+          if [ ! -f ops/prometheus/alerts.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: alerts.empty' \
+              '    rules: []' \
+              > ops/prometheus/alerts.yml
+          fi
+
+          if [ ! -f ops/prometheus/recording_rules.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: recordings.empty' \
+              '    rules: []' \
+              > ops/prometheus/recording_rules.yml
+          fi
+
+          if [ ! -f ops/prometheus/rules/data_quality.yml ]; then
+            printf '%s\n' \
+              'groups:' \
+              '  - name: data_quality' \
+              '    rules:' \
+              '      - alert: DQViolationsBurst' \
+              '        expr: increase(dq_violations_total[5m]) > 0' \
+              '        for: 2m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: warning' \
+              '        annotations:' \
+              '          summary: "Data Quality issues ({{ $labels.contract }} / {{ $labels.rule }})"' \
+              '          description: "Der er registreret DQ-violations de seneste 5 min (kontrakt={{ $labels.contract }}, rule={{ $labels.rule }}).\nSe runbook: docs/runbooks/data_quality.md\nvalue={{ $value }}\n"' \
+              '' \
+              '      - alert: DataFreshnessStale' \
+              '        expr: dq_freshness_minutes{dataset="ohlcv_1h"} > 15' \
+              '        for: 5m' \
+              '        labels:' \
+              '          service: data' \
+              '          severity: critical' \
+              '        annotations:' \
+              '          summary: "Stale dataset: ohlcv_1h"' \
+              '          description: "Ingen opdatering >15 min for dataset=ohlcv_1h.\nTjek ingestion-job, cred og upstream kilder.\nfreshness_minutes={{ $value }}\nRunbook: docs/runbooks/data_quality.md#freshness\n"' \
+              > ops/prometheus/rules/data_quality.yml
+          fi
+
+          test -f ops/prometheus/prometheus.yml
+
+      - name: Compose up (live_connector + prometheus only)
+        working-directory: ops/compose
+        env:
+          DQ_SHARED_SECRET: ${{ env.DQ_SHARED_SECRET }}
+        run: |
+          set -euxo pipefail
+          echo "Docker/Compose versions:"
+          docker --version || true
+          docker compose version || true
+
+          docker compose -f docker-compose.yml up -d --wait live_connector prometheus
+          docker compose -f docker-compose.yml ps
+
+          # Vent på appens healthz
+          ok=0
+          for i in {1..120}; do
+            if curl -fsS http://localhost:8000/healthz >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::App /healthz blev ikke klar i tide."
+            docker compose -f docker-compose.yml logs --no-color --tail=200 live_connector || true
+            exit 2
+          fi
+
+          # Vent på Prometheus readiness
+          ok=0
+          for i in {1..240}; do
+            if curl -fsS http://localhost:9090/-/ready >/dev/null; then ok=1; break; fi
+            sleep 1
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Prometheus /-/ready blev ikke klar i tide."
+            docker compose -f docker-compose.yml logs --no-color --tail=200 prometheus || true
+            exit 2
+          fi
+
+      - name: Verify Prometheus target is UP
+        shell: bash
+        run: |
+          set -euxo pipefail
+          up=0
+          for i in {1..60}; do
+            curl -fsS "http://localhost:9090/api/v1/targets" -o /tmp/targets.json || true
+            if [ -s /tmp/targets.json ]; then
+              up="$(jq -r '.data.activeTargets | map(select(.health=="up")) | length' /tmp/targets.json 2>/dev/null || echo 0)"
+            else
+              up=0
+            fi
+            echo "UP targets: ${up} (forsøg ${i})"
+            if [ "${up}" -gt 0 ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ -s /tmp/targets.json ]; then
+            jq '.data.activeTargets | map({job:.labels.job, health, scrapeUrl, lastError})' /tmp/targets.json || true
+          fi
+
+          test "${up}" -gt 0
+
+      - name: Trigger DQ freshness via prod endpoint (compose)
+        run: |
+          set -euxo pipefail
+          curl -fsS -XPOST \
+            -H "X-Dq-Secret: ${DQ_SHARED_SECRET}" \
+            "http://localhost:8000/dq/freshness?dataset=ohlcv_1h&minutes=30" > /dev/null
+          sleep 2
+
+      - name: Assert dq_freshness_minutes via Prometheus instant query
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Poll i op til 30s og brug URL-encoding for korrekt PromQL-parse
+          last=""
+          for i in $(seq 1 30); do
+            last="$(curl -fsS --get \
+              --data-urlencode 'query=dq_freshness_minutes{dataset="ohlcv_1h"}' \
+              http://localhost:9090/api/v1/query || true)"
+            if [ -n "$last" ] && echo "$last" | jq -e '.data.result[0]' >/dev/null 2>&1; then
+              echo "$last" | jq '.data.result[0]'
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::dq_freshness_minutes{dataset=\"ohlcv_1h\"} ikke fundet i Prometheus efter 30s."
+          echo "${last:-<empty>}"
+          exit 4
+
+      - name: Dump Prometheus target summaries
+        if: always()
+        run: |
+          jq '.data.activeTargets[] | {job:.labels.job, health, scrapeUrl, lastError}' /tmp/targets.json || true
+
+      - name: Compose logs (on failure)
+        if: failure()
+        working-directory: ops/compose
+        run: |
+          docker compose -f docker-compose.yml ps
+          docker compose -f docker-compose.yml logs --no-color --tail=200 live_connector || true
+          docker compose -f docker-compose.yml logs --no-color --tail=200 prometheus || true
+
+      - name: Compose down
+        if: always()
+        working-directory: ops/compose
+        run: docker compose -f docker-compose.yml down -v
+
+      - name: Check targets.json exists
+        id: check_targets
+        if: always()
+        run: |
+          if [ -s /tmp/targets.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload compose artifacts
+        if: always() && steps.check_targets.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: observability-compose-artifacts
+          path: /tmp/targets.json

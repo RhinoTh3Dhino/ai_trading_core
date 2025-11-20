@@ -1,0 +1,7 @@
+symbols_whitelist: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT"]
+max_symbols: 50
+sampling:
+  feature_latency_ms: 1.0 # 1.0 = 100 %, 0.1 = 10 %
+thresholds:
+  bar_close_lag_ms_warn: 3000
+  transport_p99_ms_warn: 500

@@ -1,6 +1,70 @@
-pandas
-numpy
-matplotlib
-scikit-learn
-python-dotenv
 
+# =========================
+# AI / Claude integration
+# =========================
+# Bruges af api/app.py -> _ask_claude()
+anthropic>=0.34,<0.41
+black==24.4.2
+ccxt==4.1.98
+coverage==7.5.3
+# =========================
+# RUNTIME (EPIC A — Live feed + Observability)
+# =========================
+fastapi==0.111.0
+flake8==7.0.0
+httpx>=0.25.2,<0.26
+
+# =========================
+# PLOTTING (til CI baseline-test – brug MPLBACKEND=Agg i CI)
+# =========================
+matplotlib>=3.9,<3.10
+mypy==1.10.0
+
+# =========================
+# CORE NUMPY/PANDAS STACK
+# =========================
+numpy==1.26.4
+packaging==23.2
+pandas==2.2.2
+prometheus-client>=0.20,<0.23
+psutil==5.9.8
+pyarrow==11.0.0
+pydantic==2.11.4
+
+# =========================
+# TEST / LINT
+# =========================
+pytest==8.4.2
+pytest-asyncio==0.23.8
+pytest-cov==6.2.1
+pytest-timeout==2.3.1
+python-binance==1.0.19
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+
+# =========================
+# TELEGRAM (alarmer)
+# =========================
+python-telegram-bot==20.7
+PyYAML>=6.0,<7
+# pandas-ta fjernet (pre-release + VCS, giver build-fejl i Docker/CI)
+
+# =========================
+# UTILS / IO
+# =========================
+requests==2.32.4
+schedule==1.2.2
+scipy==1.11.4
+
+# =========================
+# FEATURE ENG / TA (MVP: EMA/RSI/VWAP/ATR)
+# =========================
+ta==0.11.0
+tabulate==0.9.0
+tqdm==4.67.1
+uvicorn[standard]==0.30.1
+
+# =========================
+# STREAMING / MARKET DATA
+# =========================
+websockets==15.0.1

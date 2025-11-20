@@ -1,58 +1,246 @@
-# Ignorer backup, logs og cache
+# =========================
+# PYTHON MILJØER
+# =========================
+.venv/
+venv/
+ENV/
+env/
+.venv_*/
+venv_*/
+.venv_tf_gpu/
+# Utilsigtede miljøer
+gdrive_env/
+gdrive_env/**
+**/.venv/
+**/venv/
+**/ENV/
+**/env/
+**/.venv_*/
+**/venv_*/
+**/Lib/site-packages/**
+**/Scripts/**
+
+# =========================
+# BACKUPS / LOGS / CACHE
+# =========================
 backups/
 backup/
 logs/
-tuner_cache/
 *.log
+.cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.pytest_cache/
+.ipynb_checkpoints/
+*.tmp
+*.temp
+*.bak
 
-# Data og modeller
-data/
-models/
+# =========================
+# PERSISTENS & ARTEFAKTER (FASE 4)
+# =========================
+outputs/
+!outputs/README.md
+!outputs/.gitkeep
+!outputs/model_history.csv
+!outputs/metrics/*_latest.json
+!outputs/models/best_model.keras
+!outputs/metrics/README.md
+!outputs/metrics/.gitkeep
+
+outputs/feature_data/
+!outputs/feature_data/README.md
+!outputs/feature_data/.gitkeep
+
+archives/
+artifacts/
+
+graphs/
+!graphs/*.md
+!graphs/.gitkeep
+
+# =========================
+# DATA & MODELLER
+# =========================
+data/**
+!data/
+!data/**/
+!data/**/*.py
+!data/**/__init__.py
+!data/*.md
+!data/README.md
+!data/.gitkeep
+
+models/**
+!models/
+!models/**/
+!models/**/*.py
+!models/*.md
+!models/.gitkeep
+
+data/**/*.parquet
+data/**/*.csv
+data/**/*.json
+data/**/*.jsonl
+data/**/raw/**
+data/**/outputs/**
+
+!test_data/
+!test_data/*.csv
+!data/test_data/
+!data/test_data/*.csv
+
+!data/model_eval.csv
+!data/*.example
+
 *.h5
 *.keras
 *.pth
-*.pk1
-*.csv
+*.pt
+*.pkl
 *.npz
+*.joblib
 
-# Trade journals og store output-filer
 *.xlsx
 *.xls
 *.parquet
+trades.csv
+trades/
 
-# Miljøfiler og credentials
+# =========================
+# MILJØFILER / CREDENTIALS
+# =========================
 .env
 .env.*
+.envrc
+.secrets
 secrets/
 config/*.json
-config/*.yml
+config/client_secret_*.json
 
-# PyCharm, VS Code, OS-filer osv.
+# =========================
+# MLflow / TensorBoard / Eksperimenter
+# =========================
+mlruns/
+mlruns.*
+runs/
+runs.*
+tensorboard/
+*.tensorboard
+*.event*
+
+# =========================
+# IDE / OS-FILER
+# =========================
 .vscode/
 .idea/
+*.code-workspace
 __pycache__/
-.DS_Store
-Thumbs.db
-
-# Python cache og build
 *.pyc
 *.pyo
 *.pyd
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.swp
+.swo
+
+# =========================
+# BUILD / DIST
+# =========================
 *.egg-info/
 dist/
 build/
 eggs/
+*.spec
+.typings/
+.python-version
+.pyre/
+.pytype/
 
-# Test/eksperimentelle filer og noter
-test_*.py
-tests/
+# =========================
+# TEST / NOTEBOOKS / UDGANGE
+# =========================
+!tests/**
+tests/output/
 notes/
 notebooks/
 output/
 
-# GitHub workflows og artefakter (valgfrit)
+# =========================
+# CI ARTEFAKTER / RAPPORTER
+# =========================
 .github/workflows/*.log
 .github/workflows/*.bak
+reports/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
 
-# Undgå at committe gamle checkpoints
-checkpoints/
+# =========================
+# CSV & OUTPUT (globale)
+# =========================
+*.csv
+!data/model_eval.csv
+!data/*.example
+!test_data/*.csv
+!data/test_data/*.csv
+
+# =========================
+# TUNING / OPTUNA
+# =========================
+tuning/*.txt
+!tuning/README.md
+!tuning/.gitkeep
+
+# =========================
+# OBSERVABILITY / DOCKER
+# =========================
+# ALERTMANAGER: aldrig secrets i git
+ops/alertmanager/secrets/*
+# Tillad templates, men IGNORÉR renderede runtime-filer
+!ops/alertmanager/templates/**
+ops/alertmanager/alertmanager.runtime.yml
+!ops/alertmanager/alertmanager.runtime.yml.tmpl
+# Hvis nogen mount’er/renderer lokalt under repo
+ops/alertmanager/alertmanager.yml
+ops/alertmanager/amcfg/
+
+# Lokale compose-artefakter og data
+ops/compose/data/grafana/
+ops/compose/data/prometheus/
+ops/compose/data/alertmanager/
+ops/compose/resolved.yml
+ops/compose/.env
+ops/compose/*.local.yml
+ops/compose/overrides/*.yml
+
+# Grafana lokale DB-eksporter (persistens håndteres via volume)
+grafana*.db
+*.sqlite
+
+# Prometheus test/fixtures artefakter (valgfri konvention)
+ops/prometheus/tests/**/out.*
+ops/prometheus/tests/**/.tmp*
+
+# =========================
+# LOKALE SCRATCH-FILER I RODEN
+# =========================
+/resolved.yml
+/BotStatus.md
+/DIT_TELEGRAM_BOT_TOKEN
+/7919277721
+DIT_*
+ai_summary.txt
+
+# =========================
+# TILLADELSE: MARKDOWN ALTID
+# =========================
+!*.md
+
+# (redundans – sikkerhed)
+__pycache__/
+*.pyc

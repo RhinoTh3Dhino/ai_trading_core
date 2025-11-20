@@ -1,0 +1,89 @@
+# .github/workflows/persist-hygiejne.yml
+name: "Persistens & Filhygiejne"
+
+on:
+  push:
+    branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro, epic/**, feat/**, release/** ]
+    paths:
+      - "tools/**"
+      - "utils/**"
+      - "outputs/**"
+      - "tests/persistence/**"
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      - ".github/workflows/persist-hygiejne.yml"
+  pull_request:
+    branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro ]
+    paths:
+      - "tools/**"
+      - "utils/**"
+      - "outputs/**"
+      - "tests/persistence/**"
+      - "pytest.ini"
+      - ".coveragerc"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+      - ".editorconfig"
+      - ".github/workflows/persist-hygiejne.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: persist-hygiejne-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rotate-and-archive:
+    name: Rotate outputs + arkiv
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}   # gør repo-roden importbar
+      TZ: Europe/Copenhagen
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install deps (minimal)
+        run: |
+          set -euo pipefail
+          python -m pip install -U pip
+          # utils.artifacts importerer pandas/pyarrow → sørg for at de findes
+          pip install "pandas>=2,<3" "pyarrow>=14"
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Rotate outputs
+        run: |
+          set -euo pipefail
+          # Kør som modul, så relative imports (utils/...) virker
+          python -m tools.rotate_outputs
+
+      - name: Make archive
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          TS="$(date -u +'%Y%m%dT%H%M%SZ')"
+          # Sikr at outputs/ findes så zip ikke fejler
+          if [ ! -d "outputs" ]; then mkdir -p outputs && touch outputs/.empty; fi
+          zip -r "artifacts/trading-core-archive_${TS}.zip" outputs/ -q
+
+      - name: Upload artifact (archive)
+        if: always()   # upload også ved fejl for fejlsøgning
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-core-archive
+          path: artifacts/*.zip
+          if-no-files-found: warn
+          retention-days: 30

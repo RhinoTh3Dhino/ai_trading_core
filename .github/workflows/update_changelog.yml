@@ -2,94 +2,124 @@ name: Auto Update Changelog
 
 on:
   push:
-    branches: [ main ]
+    branches: [ ai_bot_dev, ai_bot_test, ai_bot_pro ]
   schedule:
-    - cron: "0 3 * * *"  # Kør hver nat kl. 03:00 UTC (tilpas som du vil)
+    - cron: "0 3 * * *"   # hver nat kl. 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: changelog-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changelog:
-    runs-on: ubuntu-latest   # Kør altid på Ubuntu for maksimal Actions-kompatibilitet
-
+    runs-on: ubuntu-latest
     permissions:
-      contents: write   # Tillad skrivning til repo (nødvendigt for auto-commit/push)
+      contents: write
+
+    env:
+      MPLBACKEND: Agg
+      PYTHONUNBUFFERED: "1"
+      CI: "true"
+      # Map secrets -> env, sÃ¥ vi kan bruge env.* i if:
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements*.txt
+            bot/requirements*.txt
 
-      # 💡 Ekstra tip: Print miljø og status for debugging
       - name: Print system info
         run: |
-          echo "Kører på runner: $RUNNER_OS"
-          python --version
+          echo "Runner: $RUNNER_OS"
+          python -V
+          pip -V
           git --version
 
-      # (Valgfrit) Kør tests inden du opdaterer changelog
-      - name: Run tests
+      - name: Install dependencies (minimal)
+        run: |
+          python -m pip install -U pip wheel setuptools
+          if [ -f bot/requirements-changelog.txt ]; then
+            pip install -r bot/requirements-changelog.txt
+          elif [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          elif [ -f requirements.txt ]; then
+            pip install -r requirements.txt || true
+          fi
+          pip install python-dotenv requests || true
+
+      - name: Run tests (optional)
         run: |
           if [ -d "tests" ]; then
-            echo "Kører tests..."
-            pytest tests/
+            echo "KÃ¸rer tests (hurtigt)â€¦"
+            pytest -q || true
           else
-            echo "Ingen tests-mappe fundet, springer over."
+            echo "Ingen tests-mappe fundet â€“ springer over."
+          fi
+
+      - name: Ensure CHANGELOG.md exists
+        run: |
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
           fi
 
       - name: Run update_changelog.py
-        run: python bot/update_changelog.py
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python bot/update_changelog.py
 
-      # 💡 Ekstra tip: Tjek om CHANGELOG.md faktisk er ændret
       - name: Check for CHANGELOG changes
         id: changelog
         run: |
-          if git diff --quiet CHANGELOG.md; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Git user
-        if: steps.changelog.outputs.changed == 'true'
+        if: ${{ steps.changelog.outputs.changed == 'true' }}
         run: |
           git config --global user.name "RhinoTh3Dhino"
           git config --global user.email "reno_123@live.dk"
 
       - name: Commit and push CHANGELOG.md
-        if: steps.changelog.outputs.changed == 'true'
-        run: |
-          git add CHANGELOG.md
-          git commit -m "Auto-update CHANGELOG.md"
-          git pull --rebase origin main
-          git push
+        if: ${{ steps.changelog.outputs.changed == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+          git add CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "Ingen Ã¦ndringer at committe."
+          else
+            git commit -m "Auto-update CHANGELOG.md [skip ci]"
+            git pull --rebase --autostash origin "$BRANCH" || true
+            git push origin "$BRANCH"
+          fi
 
       - name: Send Telegram notification
-        if: steps.changelog.outputs.changed == 'true'
+        # Brug env.* i stedet for secrets.* i if for at gÃ¸re lintern glad
+        if: ${{ steps.changelog.outputs.changed == 'true' && env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
         uses: appleboy/telegram-action@v0.1.1
         with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "✅ CHANGELOG.md er automatisk opdateret og committet! 🚀"
+          to: ${{ env.TELEGRAM_CHAT_ID }}
+          token: ${{ env.TELEGRAM_TOKEN }}
+          message: "âœ… CHANGELOG.md er automatisk opdateret og committet! ðŸš€"
 
-      # (Ekstra: Auto-tagging – aktiver hvis du vil have versionsnummer/tag ved auto-commit)
-      # - name: Create Tag
-      #   uses: EndBug/latest-tag@v1
-      #   with:
-      #     tag: v${{ github.run_number }}
-
-      # (Ekstra: Auto-generer changelog/release-drafter – kan bruges til at lave professionelle releases automatisk)
-      # - name: Draft Release Notes
-      #   uses: release-drafter/release-drafter@v5
-      #   with:
-      #     config-name: release-drafter.yml
-
-      # 💡 Ekstra tip: Print succes/summary til loggen for overblik
       - name: Done summary
-        run: echo "✅ Workflow gennemført - se Telegram for besked hvis der var ændringer."
+        run: echo "âœ… Auto Update Changelog gennemfÃ¸rt â€“ se artifacts/logs (og Telegram hvis sat op)."

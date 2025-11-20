@@ -1,0 +1,4 @@
+name: "06 Memory pressure"
+steps:
+  - action: mem
+    params: { megabytes: 1024, seconds: 60 }

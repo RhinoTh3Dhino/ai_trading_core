@@ -1,0 +1,4 @@
+name: "05 CPU spike"
+steps:
+  - action: cpu
+    params: { seconds: 60 }

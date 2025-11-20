@@ -1,0 +1,6 @@
+name: "04 WebSocket forced close"
+steps:
+  - action: wsclose
+    params: { proc_match: "live_connector" }
+  - action: wait
+    params: { seconds: 30 }

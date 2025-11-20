@@ -1,0 +1,97 @@
+# prometheus/rules/recording_rules_fase6.yml
+# Fase 6 — Recording rules (robust: histogram+gauge-fallback)
+# - transport_latency_ms: forventes som histogram (_bucket)
+# - bar_close_lag_ms: kan være histogram ELLER gauge (fallback via quantile_over_time)
+# - Ekskludér venue="bootstrap" fra alle lag/bars/reconnects for at undgå warmup-støj
+
+groups:
+- name: fase6_records
+  interval: 30s
+  rules:
+    # ------------------------
+    # TRANSPORT LATENCY (global)
+    # ------------------------
+    - record: lyra:transport_latency_ms:p50
+      expr: |
+        histogram_quantile(
+          0.50,
+          sum by (le) (rate(feed_transport_latency_ms_bucket[5m]))
+        )
+    - record: lyra:transport_latency_ms:p95
+      expr: |
+        histogram_quantile(
+          0.95,
+          sum by (le) (rate(feed_transport_latency_ms_bucket[5m]))
+        )
+    - record: lyra:transport_latency_ms:p99
+      expr: |
+        histogram_quantile(
+          0.99,
+          sum by (le) (rate(feed_transport_latency_ms_bucket[5m]))
+        )
+
+    # ------------------------
+    # TRANSPORT LATENCY (per venue)
+    # ------------------------
+    - record: lyra:transport_latency_ms:p50:by_venue
+      expr: |
+        histogram_quantile(
+          0.50,
+          sum by (le, venue) (rate(feed_transport_latency_ms_bucket[5m]))
+        )
+    - record: lyra:transport_latency_ms:p95:by_venue
+      expr: |
+        histogram_quantile(
+          0.95,
+          sum by (le, venue) (rate(feed_transport_latency_ms_bucket[5m]))
+        )
+    - record: lyra:transport_latency_ms:p99:by_venue
+      expr: |
+        histogram_quantile(
+          0.99,
+          sum by (le, venue) (rate(feed_transport_latency_ms_bucket[5m]))
+        )
+
+    # ------------------------
+    # BAR CLOSE LAG p99 (global)
+    # Histogram → primær, Gauge → fallback (ekskl. bootstrap)
+    # ------------------------
+    - record: lyra:bar_close_lag_ms:p99
+      expr: |
+        histogram_quantile(
+          0.99,
+          sum by (le) (rate(feed_bar_close_lag_ms_bucket{venue!="bootstrap"}[5m]))
+        )
+        OR
+        quantile_over_time(0.99, feed_bar_close_lag_ms{venue!="bootstrap"}[5m])
+
+    # ------------------------
+    # BAR CLOSE LAG p99 (per venue)
+    # NB: Hvis feed_bar_close_lag_ms også har symbol-label, aggreger over symboler.
+    # ------------------------
+    - record: lyra:bar_close_lag_ms:p99:by_venue
+      expr: |
+        histogram_quantile(
+          0.99,
+          sum by (le, venue) (rate(feed_bar_close_lag_ms_bucket{venue!="bootstrap"}[5m]))
+        )
+        OR
+        max by (venue) (
+          quantile_over_time(0.99, feed_bar_close_lag_ms{venue!="bootstrap"}[5m])
+        )
+
+    # ------------------------
+    # RECONNECTS/MIN & BARS/SEC (global) — ekskl. bootstrap
+    # ------------------------
+    - record: lyra:reconnects_per_min
+      expr: sum(rate(feed_reconnects_total{venue!="bootstrap"}[1m]))
+    - record: lyra:bars_per_sec
+      expr: sum(rate(feed_bars_total{venue!="bootstrap"}[1m]))
+
+    # ------------------------
+    # RECONNECTS/MIN & BARS/SEC (per venue) — ekskl. bootstrap
+    # ------------------------
+    - record: lyra:reconnects_per_min:by_venue
+      expr: sum by (venue) (rate(feed_reconnects_total{venue!="bootstrap"}[1m]))
+    - record: lyra:bars_per_sec:by_venue
+      expr: sum by (venue) (rate(feed_bars_total{venue!="bootstrap"}[1m]))
