@@ -5,6 +5,11 @@
 #  - alerting: am_init + alertmanager
 #  - ui: grafana
 #  - debug: sample_emitter + promtool_check
+#
+# NOTE om env-fil til live_connector:
+#  - Lokalt: brug ../../config/env/live.env (ikke committed, .gitignore)
+#  - CI:     sæt LIVE_ENV_FILE til en template/dummy-fil, fx config/env/live.ci.env,
+#            som oprettes i workflowet før docker compose køres.
 
 networks:
   obsnet: {}
@@ -37,8 +42,10 @@ services:
       - bot.live_connector.cli
       - --quiet
     # Basis-ENV + live-specifikke indstillinger i separat env-fil
+    # Lokalt: ../../config/env/live.env
+    # CI:     LIVE_ENV_FILE peger på en dummy/template-fil
     env_file:
-      - ../../config/env/live.env
+      - ${LIVE_ENV_FILE:-../../config/env/live.env}
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: "INFO"
@@ -116,7 +123,7 @@ services:
       - --web.enable-lifecycle
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      # Valgfri enkel-filer (hvis du bruger dem i din config)
+      # Valgfri enkelt-filer (hvis du bruger dem i din config)
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
       # Hele rules-mappen (inkl. fase6-recording rules)
