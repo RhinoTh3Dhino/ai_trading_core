@@ -8,7 +8,7 @@
 #
 # NOTE om env-fil til live_connector:
 #  - Lokalt: brug ../../config/env/live.env (ikke committed, .gitignore)
-#  - CI:     sæt LIVE_ENV_FILE til en template/dummy-fil, fx config/env/live.ci.env,
+#  - CI:     sæt LIVE_ENV_FILE til en template/dummy-fil, fx ../../config/env/live.ci.env,
 #            som oprettes i workflowet før docker compose køres.
 
 networks:
