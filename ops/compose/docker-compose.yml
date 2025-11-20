@@ -7,8 +7,7 @@
 #  - debug: sample_emitter + promtool_check
 
 networks:
-  obsnet:
-    name: obsnet
+  obsnet: {}
 
 volumes:
   amcfg:
@@ -31,34 +30,28 @@ services:
       context: ../../
     image: live-connector:local
     container_name: live_connector
+    # Kør CLI-entrypoint som Python-modul
     command:
-      - uvicorn
-      - bot.live_connector.runner:app
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8000"
-      - --workers
-      - "1"
+      - python
+      - -m
+      - bot.live_connector.cli
+      - --quiet
+    # Basis-ENV + live-specifikke indstillinger i separat env-fil
+    env_file:
+      - ../../config/env/live.env
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: "INFO"
-      ENABLE_DEBUG_ROUTES: "1"
-      METRICS_AUTO_INIT: "1"
-      METRICS_BOOTSTRAP: "1"
-      OBS_SYMBOLS_MAX: "200"
-      OBS_SYMBOLS_WHITELIST: ""
-      STATUS_MIN_SECS: "30"
-      DQ_SHARED_SECRET: "${DQ_SHARED_SECRET:-change-me-long-random}"
-      # PROMETHEUS_MULTIPROC_DIR: "/tmp/prom_mp"
     ports:
+      # Prometheus HTTP-server (prometheus_client.start_http_server)
       - "8000:8000"
     restart: unless-stopped
     networks:
       obsnet:
         aliases: ["live_connector"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      # Tjek at metrics-endpoint svarer
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/metrics >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -173,7 +166,7 @@ services:
       retries: 12
       start_period: 20s
 
-  # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hver N sek
+  # Valgfri: "varm" metrics i dev ved at scrape /metrics hver N sek
   sample_emitter:
     profiles: ["debug"]
     image: curlimages/curl:8.8.0
@@ -188,10 +181,10 @@ services:
       - |
         set -e
         echo "Venter på live_connector..."
-        until curl -sf http://live_connector:8000/healthz >/dev/null; do sleep 2; done
-        echo "Spammer /_debug/emit_sample hver ${EMIT_EVERY}s"
+        until curl -sf http://live_connector:8000/metrics >/dev/null; do sleep 2; done
+        echo "Scraper /metrics hver ${EMIT_EVERY}s"
         while :; do
-          curl -s -X POST http://live_connector:8000/_debug/emit_sample >/dev/null || true
+          curl -s http://live_connector:8000/metrics >/dev/null || true
           sleep "${EMIT_EVERY}"
         done
     restart: unless-stopped
