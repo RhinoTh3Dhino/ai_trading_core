@@ -5,10 +5,14 @@
 #  - alerting: am_init + alertmanager
 #  - ui: grafana
 #  - debug: sample_emitter + promtool_check
+#
+# NOTE om env-fil til live_connector:
+#  - Lokalt: brug ../../config/env/live.env (ikke committed, .gitignore)
+#  - CI:     sæt LIVE_ENV_FILE til en template/dummy-fil, fx ../../config/env/live.ci.env,
+#            som oprettes i workflowet før docker compose køres.
 
 networks:
-  obsnet:
-    name: obsnet
+  obsnet: {}
 
 volumes:
   amcfg:
@@ -31,34 +35,30 @@ services:
       context: ../../
     image: live-connector:local
     container_name: live_connector
+    # Kør CLI-entrypoint som Python-modul
     command:
-      - uvicorn
-      - bot.live_connector.runner:app
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8000"
-      - --workers
-      - "1"
+      - python
+      - -m
+      - bot.live_connector.cli
+      - --quiet
+    # Basis-ENV + live-specifikke indstillinger i separat env-fil
+    # Lokalt: ../../config/env/live.env
+    # CI:     LIVE_ENV_FILE peger på en dummy/template-fil
+    env_file:
+      - ${LIVE_ENV_FILE:-../../config/env/live.env}
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_LEVEL: "INFO"
-      ENABLE_DEBUG_ROUTES: "1"
-      METRICS_AUTO_INIT: "1"
-      METRICS_BOOTSTRAP: "1"
-      OBS_SYMBOLS_MAX: "200"
-      OBS_SYMBOLS_WHITELIST: ""
-      STATUS_MIN_SECS: "30"
-      DQ_SHARED_SECRET: "${DQ_SHARED_SECRET:-change-me-long-random}"
-      # PROMETHEUS_MULTIPROC_DIR: "/tmp/prom_mp"
     ports:
+      # Prometheus HTTP-server (prometheus_client.start_http_server)
       - "8000:8000"
     restart: unless-stopped
     networks:
       obsnet:
         aliases: ["live_connector"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      # Tjek at metrics-endpoint svarer
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/metrics >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -123,7 +123,7 @@ services:
       - --web.enable-lifecycle
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      # Valgfri enkel-filer (hvis du bruger dem i din config)
+      # Valgfri enkelt-filer (hvis du bruger dem i din config)
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
       # Hele rules-mappen (inkl. fase6-recording rules)
@@ -173,7 +173,7 @@ services:
       retries: 12
       start_period: 20s
 
-  # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hver N sek
+  # Valgfri: "varm" metrics i dev ved at scrape /metrics hver N sek
   sample_emitter:
     profiles: ["debug"]
     image: curlimages/curl:8.8.0
@@ -188,10 +188,10 @@ services:
       - |
         set -e
         echo "Venter på live_connector..."
-        until curl -sf http://live_connector:8000/healthz >/dev/null; do sleep 2; done
-        echo "Spammer /_debug/emit_sample hver ${EMIT_EVERY}s"
+        until curl -sf http://live_connector:8000/metrics >/dev/null; do sleep 2; done
+        echo "Scraper /metrics hver ${EMIT_EVERY}s"
         while :; do
-          curl -s -X POST http://live_connector:8000/_debug/emit_sample >/dev/null || true
+          curl -s http://live_connector:8000/metrics >/dev/null || true
           sleep "${EMIT_EVERY}"
         done
     restart: unless-stopped
