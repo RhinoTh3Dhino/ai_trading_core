@@ -150,8 +150,23 @@ services:
     image: grafana/grafana:11.1.0
     container_name: grafana
     environment:
+      # Basis sikkerhed (kan overskrives via .env eller secrets i prod)
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+      # Anonymous adgang i homelab (viewer)
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_BASIC_ENABLED=true
+
+      # Root URL (til reverse proxy / mere stabil logik)
+      - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-http://localhost:3000/}
+
+      # Mindre logstøj fra authn.service (auth warnings → info)
+      - GF_LOG_FILTERS=authn.service:info
+
+      # Plugins-signatures disabled (nemmere i homelab)
       - GF_PLUGINS_SIGNATURES_ENABLED=false
     volumes:
       - ../grafana/provisioning:/etc/grafana/provisioning:ro
