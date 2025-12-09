@@ -32,6 +32,13 @@ OPDATERET (fix 0-metrics):
 - _normalize_bt_frames + _simple_metrics_from_balance
 - Luk sidste bar for ML/DL/Ensemble for at realisere PnL
 - Robust plot-prep: accepter både 'equity' og 'balance'
+
+
+OPDATERET [EPIC B – B1]:
+- FillEngineV2 (backtest/fill_engine_v2.py) integreret i analyze/backtest-flow
+  via _run_bt_with_fillengine_v2 + _run_bt_with_rescue.
+=======
+
 """
 from __future__ import annotations
 
@@ -495,6 +502,21 @@ except Exception:
     torch = None  # type: ignore
     nn = None  # type: ignore
 
+# --- FillEngine v2 (EPIC B – Backtest realisme) ------------------------------
+try:
+    from backtest.fill_engine_v2 import (  # type: ignore
+        BacktestOrder,
+        FillEngineConfig,
+        FillEngineV2,
+        MarketSnapshot,
+        OrderType,
+        Side,
+        TimeInForce,
+    )
+except Exception:
+    BacktestOrder = MarketSnapshot = FillEngineConfig = FillEngineV2 = None  # type: ignore
+    OrderType = Side = TimeInForce = None  # type: ignore
+
 # =========================
 # [F4] Persistens helpers
 # =========================
@@ -803,6 +825,177 @@ def _backtest_is_useless(trades_df: pd.DataFrame, balance_df: pd.DataFrame) -> b
         return True
     return False
 
+
+def _run_bt_with_fillengine_v2(
+    df: pd.DataFrame, signals: np.ndarray
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtest via FillEngineV2 (EPIC B – B1).
+    - Simpel long/flat-logik (signal 1 = long, 0 = flat)
+    - Fills via MARKET IOC-ordrer mod L1 snapshot (bid/ask approximated).
+    - Ingen kommission her (kost bliver håndteret andetsteds i analyse).
+    """
+    if FillEngineV2 is None or BacktestOrder is None or MarketSnapshot is None:
+        raise RuntimeError("FillEngineV2 ikke tilgængelig")
+
+    df = df.copy()
+    # timestamp
+    if "timestamp" in df.columns:
+        ts = pd.to_datetime(df["timestamp"], errors="coerce")
+    elif "datetime" in df.columns:
+        ts = pd.to_datetime(df["datetime"], errors="coerce")
+    else:
+        ts = pd.Series(pd.date_range("1970-01-01", periods=len(df), freq="H"))
+    df["__ts__"] = ts
+
+    price = pd.to_numeric(df["close"], errors="coerce").ffill().bfill()
+    vol = (
+        pd.to_numeric(df["volume"], errors="coerce").fillna(1.0)
+        if "volume" in df.columns
+        else pd.Series([1.0] * len(df))
+    )
+    sig = np.asarray(signals).astype(int)
+
+    cfg = FillEngineConfig(
+        latency_ms=0,
+        impact_k=0.0,
+        max_slippage_bps=float(ENV_SLIPPAGE_BP or 5.0),
+    )
+    engine = FillEngineV2(cfg)
+
+    cash = 1000.0
+    position = 0.0
+    entry_px: Optional[float] = None
+
+    trades: List[Dict[str, Any]] = []
+    balances: List[Dict[str, Any]] = []
+
+    for i in range(len(df)):
+        px = float(price.iat[i])
+        v = float(vol.iat[i])
+        s = int(sig[i])
+        ts_i = df["__ts__"].iat[i]
+        ts_ms = int(pd.Timestamp(ts_i).timestamp() * 1000) if pd.notna(ts_i) else i
+
+        # Approximeret L1 book
+        spread_bps = float(ENV_SLIPPAGE_BP or 1.0)
+        half_spread = px * spread_bps / 2.0 / 1e4
+        bid = px - half_spread
+        ask = px + half_spread
+
+        snapshot = MarketSnapshot(
+            ts=ts_ms,
+            bid=bid,
+            ask=ask,
+            bid_size=v / 2.0,
+            ask_size=v / 2.0,
+        )
+
+        # Entry (long)
+        if s == 1 and position == 0.0:
+            order = BacktestOrder(
+                order_id=f"open_{i}",
+                symbol="BT",
+                side=Side.BUY,
+                order_type=OrderType.MARKET,
+                time_in_force=TimeInForce.IOC,
+                qty=1.0,
+                submit_ts=ts_ms,
+            )
+            res = engine.simulate_order(order, snapshot)
+            if res.fills:
+                qty_exec = sum(f.qty for f in res.fills)
+                px_exec = float(
+                    np.average(
+                        [f.price for f in res.fills],
+                        weights=[f.qty for f in res.fills],
+                    )
+                )
+                cash -= px_exec * qty_exec
+                position += qty_exec
+                entry_px = px_exec
+                trades.append(
+                    {
+                        "idx": i,
+                        "ts": str(ts_i),
+                        "type": "OPEN",
+                        "price": px_exec,
+                        "profit": 0.0,
+                    }
+                )
+
+        # Exit (luk long)
+        elif s == 0 and position > 0.0:
+            order = BacktestOrder(
+                order_id=f"close_{i}",
+                symbol="BT",
+                side=Side.SELL,
+                order_type=OrderType.MARKET,
+                time_in_force=TimeInForce.IOC,
+                qty=float(position),
+                submit_ts=ts_ms,
+            )
+            res = engine.simulate_order(order, snapshot)
+            if res.fills:
+                qty_exec = sum(f.qty for f in res.fills)
+                px_exec = float(
+                    np.average(
+                        [f.price for f in res.fills],
+                        weights=[f.qty for f in res.fills],
+                    )
+                )
+                cash += px_exec * qty_exec
+                if entry_px is not None and qty_exec > 0:
+                    pnl_pct = (px_exec - entry_px) / max(entry_px, 1e-9)
+                else:
+                    pnl_pct = 0.0
+                position -= qty_exec
+                if position <= 1e-8:
+                    position = 0.0
+                    entry_px = None
+                trades.append(
+                    {
+                        "idx": i,
+                        "ts": str(ts_i),
+                        "type": "CLOSE",
+                        "price": px_exec,
+                        "profit": float(pnl_pct),
+                    }
+                )
+
+        equity = cash + position * px
+        balances.append({"timestamp": str(ts_i), "balance": float(equity)})
+
+    trades_df = (
+        pd.DataFrame(trades)
+        if trades
+        else pd.DataFrame(columns=["idx", "ts", "type", "price", "profit"])
+    )
+    balance_df = (
+        pd.DataFrame(balances) if balances else pd.DataFrame(columns=["timestamp", "balance"])
+    )
+    return trades_df, balance_df
+
+
+def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Kør backtest med følgende prioritet:
+    1) FillEngineV2 (EPIC B – B1) for mere realistiske fills
+    2) run_backtest (eksisterende engine/backtest)
+    3) _simple_rescue_backtest (failsafe)
+    Derefter normaliseres frames til videre metrics/plots.
+    """
+    # 1) FillEngineV2
+    try:
+        t, b = _run_bt_with_fillengine_v2(df, sig)
+    except Exception as e:
+        print(f"[B1] FillEngineV2 backtest fejlede eller ikke tilgængelig → fallback. ({e})")
+        # 2) run_backtest
+        t, b = run_backtest(df, sig)
+
+    if _backtest_is_useless(t, b):
+        print("[RESCUE] Backtest output ubrugelig – fallback aktiveres.")
+        t, b = _simple_rescue_backtest(df, sig)
 
 def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Kør standard backtest; hvis ubrugelig → brug rescue og fix timestamp-kolonne."""
@@ -1355,6 +1548,8 @@ def run_pipeline(
     df["ema_200"] = df["close"].ewm(span=10, adjust=False).mean()
     signals = _simple_signals(df)
 
+    # Brug samme backtest-pipeline som analyze-mode (FillEngineV2 + rescue)
+    trades, balance = _run_bt_with_rescue(df, signals=signals)
     trades, balance = run_backtest(df, signals=signals)
 
     try:

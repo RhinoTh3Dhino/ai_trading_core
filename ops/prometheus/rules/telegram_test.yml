@@ -1,0 +1,16 @@
+# ops/prometheus/rules/telegram_test.yml
+groups:
+  - name: telegram-test
+    rules:
+      - alert: TelegramTestAlert
+        expr: vector(0)           # <- deaktiveret som default
+        for: 0m
+        labels:
+          alert_type: test
+          service: live_connector
+          severity: critical
+        annotations:
+          summary: "Telegram test alert"
+          description: >
+            Manuel test af Telegram-notifikationer fra Alertmanager (ai_trading_core).
+            Slå kun denne alarm til midlertidigt ved test (se runbook).
