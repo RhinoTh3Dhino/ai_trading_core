@@ -1,8 +1,0 @@
-# risk/limits.yml
-max_daily_loss_pct: 0.03          # 3 % dagligt tab
-max_equity_drawdown_pct: 0.10     # 10 % fra intradag highwater
-max_notional_exposure_pct: 0.50   # 50 % af kontoens equity
-max_per_trade_risk_pct: 0.01      # 1 % af equity pr. trade
-max_open_positions: 10
-circuit_breaker_drawdown_pct: 0.05  # 5 % intradag tab → stop
-circuit_breaker_cooldown_minutes: 60

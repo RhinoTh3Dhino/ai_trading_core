@@ -52,6 +52,3 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
 exclude = '(^\.venv|^outputs|^logs|^backups|^mlruns)'
-
-[project.scripts]
-live-connector = "bot.live_connector.cli:main"

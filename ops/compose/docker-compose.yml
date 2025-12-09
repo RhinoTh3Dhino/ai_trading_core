@@ -5,14 +5,6 @@
 #  - alerting: am_init + alertmanager
 #  - ui: grafana
 #  - debug: sample_emitter + promtool_check
-#
-# NOTE om env-fil til live_connector:
-#  - Lokalt: brug ../../config/env/live.env (ikke committed, .gitignore)
-#  - CI:     sæt LIVE_ENV_FILE til en template/dummy-fil, fx ../../config/env/live.ci.env,
-#            som oprettes i workflowet før docker compose køres.
-
-networks:
-  obsnet: {}
 
 networks:
   obsnet:
@@ -39,22 +31,6 @@ services:
       context: ../../
     image: live-connector:local
     container_name: live_connector
-    # Kør CLI-entrypoint som Python-modul
-    command:
-      - python
-      - -m
-      - bot.live_connector.cli
-      - --quiet
-    # Basis-ENV + live-specifikke indstillinger i separat env-fil
-    # Lokalt: ../../config/env/live.env
-    # CI:     LIVE_ENV_FILE peger på en dummy/template-fil
-    env_file:
-      - ${LIVE_ENV_FILE:-../../config/env/live.env}
-    environment:
-      PYTHONUNBUFFERED: "1"
-      LOG_LEVEL: "INFO"
-    ports:
-      # Prometheus HTTP-server (prometheus_client.start_http_server)
     command:
       - uvicorn
       - bot.live_connector.runner:app
@@ -82,8 +58,6 @@ services:
       obsnet:
         aliases: ["live_connector"]
     healthcheck:
-      # Tjek at metrics-endpoint svarer
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/metrics >/dev/null 2>&1 || exit 1"]
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
@@ -149,7 +123,6 @@ services:
       - --web.enable-lifecycle
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      # Valgfri enkelt-filer (hvis du bruger dem i din config)
       # Valgfri enkel-filer (hvis du bruger dem i din config)
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ../prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
@@ -177,23 +150,6 @@ services:
     image: grafana/grafana:11.1.0
     container_name: grafana
     environment:
-      # Basis sikkerhed (kan overskrives via .env eller secrets i prod)
-      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-
-      # Anonymous adgang i homelab (viewer)
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-      - GF_AUTH_BASIC_ENABLED=true
-
-      # Root URL (til reverse proxy / mere stabil logik)
-      - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-http://localhost:3000/}
-
-      # Mindre logstøj fra authn.service (auth warnings → info)
-      - GF_LOG_FILTERS=authn.service:info
-
-      # Plugins-signatures disabled (nemmere i homelab)
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_PLUGINS_SIGNATURES_ENABLED=false
@@ -217,7 +173,6 @@ services:
       retries: 12
       start_period: 20s
 
-  # Valgfri: "varm" metrics i dev ved at scrape /metrics hver N sek
   # Valgfri: varm metrics i dev ved at poste til /_debug/emit_sample hver N sek
   sample_emitter:
     profiles: ["debug"]
@@ -233,10 +188,6 @@ services:
       - |
         set -e
         echo "Venter på live_connector..."
-        until curl -sf http://live_connector:8000/metrics >/dev/null; do sleep 2; done
-        echo "Scraper /metrics hver ${EMIT_EVERY}s"
-        while :; do
-          curl -s http://live_connector:8000/metrics >/dev/null || true
         until curl -sf http://live_connector:8000/healthz >/dev/null; do sleep 2; done
         echo "Spammer /_debug/emit_sample hver ${EMIT_EVERY}s"
         while :; do

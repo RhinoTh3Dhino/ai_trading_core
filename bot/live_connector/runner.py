@@ -83,36 +83,6 @@ except Exception:
 LOG = logging.getLogger("live_connector")
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
-
-def env_bool(name: str, default: bool) -> bool:
-    """Robust bool-læsning fra env (true/false, 1/0, yes/no, on/off)."""
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
-def env_int(name: str, default: int) -> int:
-    """Robust int-læsning fra env med fallback til default."""
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        return int(raw)
-    except ValueError:
-        LOG.warning("Ugyldig værdi for %s=%r – bruger default=%s", name, raw, default)
-        return default
-
-
-# QUIET / STATUS kommer nu fra LIVE_* så det matcher live.env + CLI/LiveConfig
-QUIET = env_bool("LIVE_QUIET", default=True)
-STATUS_MIN_SECS = env_int("LIVE_STATUS_MIN_SECS", default=30)
-
-QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
-READINESS_MAX_LAG_SECS = env_int("READINESS_MAX_LAG_SECS", default=120)
-
-# Debug routes gate (default = ON for dev, som tidligere)
-ENABLE_DEBUG_ROUTES = env_bool("ENABLE_DEBUG_ROUTES", default=True)
 QUIET = os.getenv("QUIET", "1").strip().lower() not in {"0", "false", "no"}
 STATUS_MIN_SECS = int(os.getenv("STATUS_MIN_SECS", "30"))
 QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
