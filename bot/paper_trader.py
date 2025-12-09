@@ -25,6 +25,9 @@ from strategies.advanced_strategies import (  # Bonus: hvis du vil bruge adaptiv
 from utils.performance import print_performance_report
 from utils.project_path import PROJECT_ROOT
 
+# bot/paper_trader.py
+
+
 # -- Parametre (kan importeres fra config.py) --
 SL = 0.02
 TP = 0.04
@@ -158,6 +161,7 @@ def paper_trade(
     risk_limits : RiskLimits eller None
         Hvis None, bruges DEFAULT_RISK_LIMITS.
     """
+):
     balance = start_balance
     equity = [start_balance]
     position = 0
@@ -207,6 +211,11 @@ def paper_trade(
             # Hvis vi når hertil, er ordren godkendt af risk
             position = 1
             entry_price = order_price
+    for i, row in df.iterrows():
+        # ENTRY
+        if row["signal"] == 1 and position == 0:
+            position = 1
+            entry_price = row["close"]
             entry_row = row
             entry_time = row["timestamp"] if "timestamp" in row else i
             trades.append(
@@ -237,6 +246,7 @@ def paper_trade(
 
             should_exit = row["signal"] == -1 or pnl <= -this_sl or pnl >= this_tp
             if should_exit:
+            if row["signal"] == -1 or pnl <= -this_sl or pnl >= this_tp:
                 exit_type = "SELL" if row["signal"] == -1 else ("TP" if pnl >= this_tp else "SL")
                 fee_total = balance * fee * 2
                 balance = balance * (1 + pnl) - fee_total
@@ -271,6 +281,11 @@ def paper_trade(
         equity.append(balance)
 
     # Force exit ved slut hvis position stadig åben
+                position = 0
+                entry_price = 0
+                entry_row = None
+        equity.append(balance)
+
     if position == 1:
         final_price = df.iloc[-1]["close"]
         pnl = (final_price - entry_price) / entry_price

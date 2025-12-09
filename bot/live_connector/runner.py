@@ -113,6 +113,13 @@ READINESS_MAX_LAG_SECS = env_int("READINESS_MAX_LAG_SECS", default=120)
 
 # Debug routes gate (default = ON for dev, som tidligere)
 ENABLE_DEBUG_ROUTES = env_bool("ENABLE_DEBUG_ROUTES", default=True)
+QUIET = os.getenv("QUIET", "1").strip().lower() not in {"0", "false", "no"}
+STATUS_MIN_SECS = int(os.getenv("STATUS_MIN_SECS", "30"))
+QUEUE_DEPTH_POLL_SECS = float(os.getenv("QUEUE_DEPTH_POLL_SECS", "2.0"))
+READINESS_MAX_LAG_SECS = int(os.getenv("READINESS_MAX_LAG_SECS", "120"))
+
+# Debug routes gate (default = ON for dev)
+ENABLE_DEBUG_ROUTES = os.getenv("ENABLE_DEBUG_ROUTES", "1").strip().lower() not in {"0", "false"}
 
 # Multiprocess-metrics?
 PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR")

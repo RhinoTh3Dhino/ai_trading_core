@@ -19,12 +19,17 @@ permissions:
 env:
   PYTHONUNBUFFERED: "1"
   MPLBACKEND: Agg
+
   PROM_VERSION: "v2.53.0"     # skal matche Prometheus/promtool i compose
   DQ_SHARED_SECRET: "change-me-long-random"  # auth til /dq/* prod-endpoints
   # Bruges af ops/compose/docker-compose.yml:
   # env_file: ${LIVE_ENV_FILE:-../../config/env/live.env}
   # I CI peger vi på en dummy-fil, der oprettes dynamisk.
   LIVE_ENV_FILE: "../../config/env/live.ci.env"
+
+  PROM_VERSION: "v3.6.0"     # skal matche Prometheus/promtool i compose
+  DQ_SHARED_SECRET: "change-me-long-random"  # auth til /dq/* prod-endpoints
+
 
 jobs:
   unit-smoke:
@@ -340,6 +345,7 @@ jobs:
 
           test -f ops/prometheus/prometheus.yml
 
+
       - name: Prepare LIVE_ENV_FILE for CI (dummy env)
         shell: bash
         run: |
@@ -353,6 +359,7 @@ jobs:
           fi
           echo "LIVE_ENV_FILE expected at: ${LIVE_ENV_FILE}"
           ls -R config/env
+
 
       - name: Compose up (live_connector + prometheus only)
         working-directory: ops/compose

@@ -33,9 +33,12 @@ OPDATERET (fix 0-metrics):
 - Luk sidste bar for ML/DL/Ensemble for at realisere PnL
 - Robust plot-prep: accepter både 'equity' og 'balance'
 
+
 OPDATERET [EPIC B – B1]:
 - FillEngineV2 (backtest/fill_engine_v2.py) integreret i analyze/backtest-flow
   via _run_bt_with_fillengine_v2 + _run_bt_with_rescue.
+=======
+
 """
 from __future__ import annotations
 
@@ -994,6 +997,12 @@ def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame
         print("[RESCUE] Backtest output ubrugelig – fallback aktiveres.")
         t, b = _simple_rescue_backtest(df, sig)
 
+def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Kør standard backtest; hvis ubrugelig → brug rescue og fix timestamp-kolonne."""
+    t, b = run_backtest(df, sig)
+    if _backtest_is_useless(t, b):
+        print("[RESCUE] Backtest output ubrugelig – fallback aktiveres.")
+        t, b = _simple_rescue_backtest(df, sig)
     # Align timestamp fra source hvis mangler
     if "timestamp" not in b.columns and "timestamp" in df.columns:
         b = b.copy()
@@ -1541,6 +1550,7 @@ def run_pipeline(
 
     # Brug samme backtest-pipeline som analyze-mode (FillEngineV2 + rescue)
     trades, balance = _run_bt_with_rescue(df, signals=signals)
+    trades, balance = run_backtest(df, signals=signals)
 
     try:
         from utils.metrics_utils import advanced_performance_metrics as _apm  # type: ignore
