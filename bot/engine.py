@@ -33,13 +33,11 @@ OPDATERET (fix 0-metrics):
 - Luk sidste bar for ML/DL/Ensemble for at realisere PnL
 - Robust plot-prep: accepter både 'equity' og 'balance'
 
-
 OPDATERET [EPIC B – B1]:
 - FillEngineV2 (backtest/fill_engine_v2.py) integreret i analyze/backtest-flow
   via _run_bt_with_fillengine_v2 + _run_bt_with_rescue.
-=======
-
 """
+
 from __future__ import annotations
 
 import csv
@@ -135,7 +133,7 @@ def _ensure_test_core_metrics() -> None:
 
     # Gauges
     for name, helptext in [
-        ("feed_bar_close_lag_ms", "Lag between bar close and processing (ms)"),
+        ("feed_bar_close_lag_ms", "Lag mellem bar close og processing (ms)"),
         ("feed_queue_depth", "Current depth of feed queue"),
     ]:
         try:
@@ -245,14 +243,14 @@ def create_app() -> FastAPI:
         _ensure_test_core_metrics()
 
         if not generate_latest or not REGISTRY:
-            return Response(content=b"", media_type=CONTENT_TYPE_LATEST)
+            return Response(content=b"", media_type=CONTENT_TYPE_LATEST)  # type: ignore[arg-type]
         data = generate_latest(REGISTRY)
         try:
             text = data.decode("utf-8", errors="replace")
         except Exception:
             text = str(data)
         text = _patch_missing_metrics_lines(text)
-        return Response(content=text.encode("utf-8"), media_type=CONTENT_TYPE_LATEST)
+        return Response(content=text.encode("utf-8"), media_type=CONTENT_TYPE_LATEST)  # type: ignore[arg-type]
 
     if _HAS_FASTAPI and hasattr(app, "get"):
 
@@ -263,9 +261,9 @@ def create_app() -> FastAPI:
     else:
 
         def _health(_req):  # type: ignore
-            return JSONResponse({"ok": True})
+            return JSONResponse({"ok": True})  # type: ignore[call-arg]
 
-        app.add_route("/health", _health, methods=["GET"])  # type: ignore
+        app.add_route("/health", _health, methods=["GET"])  # type: ignore[arg-type]
 
     return app
 
@@ -373,7 +371,7 @@ def _send(kind: str, text: str, **kw):
     try:
         send_message(f"[{kind.upper()}] {text}", **kw)
     except Exception:
-        print(f"[{kind.upper()}] {text}")  # fallback til stdout
+        print(f"[{kind.upper()}] {text}")
     _last_send_ts = now
 
 
@@ -476,7 +474,7 @@ ENV_DAILY_LOSS_LIMIT_PCT = _env_float(
     "DAILY_LOSS_LIMIT_PCT", getattr(CFG, "daily_loss_limit_pct", 5.0)
 )
 
-_TELEGRAM_DAILY_REPORT = os.getenv("TELEGRAM_DAILY_REPORT", "last").lower()  # none|daily|last
+_TELEGRAM_DAILY_REPORT = os.getenv("TELEGRAM_DAILY_REPORT", "last").lower()
 
 # --- Versions (failsafe) ------------------------------------------------------
 try:
@@ -531,7 +529,7 @@ except Exception:
         obj: dict, out_dir: str, prefix: str, version: str, with_time: bool = False
     ) -> str:
         ensure_dir(out_dir)
-        ts = datetime.now().strftime("%Y%m%d" + ("_%H%M%S" if with_time else ""))  # noqa: E501
+        ts = datetime.now().strftime("%Y%m%d" + ("_%H%M%S" if with_time else ""))
         p = Path(out_dir) / f"{prefix}_{version}_{ts}.json"
         with open(p, "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=2)
@@ -683,7 +681,6 @@ except Exception:
         - balance_df har 'timestamp' og 'balance' (til plots/metrics).
         """
         df = df.copy()
-        # timestamp
         if "timestamp" in df:
             ts = pd.to_datetime(df["timestamp"], errors="coerce")
         elif "datetime" in df:
@@ -707,7 +704,6 @@ except Exception:
             px = float(price.iat[i])
             s = int(sig[i])
 
-            # entries/exits
             if s == 1 and position == 0.0:
                 position = qty
                 entry_px = px
@@ -767,7 +763,8 @@ def _simple_rescue_backtest(
     qty = 1.0
     pos = 0.0
     entry = None
-    trades, balances = [], []
+    trades: List[Dict[str, Any]] = []
+    balances: List[Dict[str, Any]] = []
 
     for i in range(len(df)):
         price = float(px.iat[i])
@@ -839,7 +836,6 @@ def _run_bt_with_fillengine_v2(
         raise RuntimeError("FillEngineV2 ikke tilgængelig")
 
     df = df.copy()
-    # timestamp
     if "timestamp" in df.columns:
         ts = pd.to_datetime(df["timestamp"], errors="coerce")
     elif "datetime" in df.columns:
@@ -877,7 +873,6 @@ def _run_bt_with_fillengine_v2(
         ts_i = df["__ts__"].iat[i]
         ts_ms = int(pd.Timestamp(ts_i).timestamp() * 1000) if pd.notna(ts_i) else i
 
-        # Approximeret L1 book
         spread_bps = float(ENV_SLIPPAGE_BP or 1.0)
         half_spread = px * spread_bps / 2.0 / 1e4
         bid = px - half_spread
@@ -891,7 +886,6 @@ def _run_bt_with_fillengine_v2(
             ask_size=v / 2.0,
         )
 
-        # Entry (long)
         if s == 1 and position == 0.0:
             order = BacktestOrder(
                 order_id=f"open_{i}",
@@ -924,7 +918,6 @@ def _run_bt_with_fillengine_v2(
                     }
                 )
 
-        # Exit (luk long)
         elif s == 0 and position > 0.0:
             order = BacktestOrder(
                 order_id=f"close_{i}",
@@ -983,7 +976,7 @@ def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame
     1) FillEngineV2 (EPIC B – B1) for mere realistiske fills
     2) run_backtest (eksisterende engine/backtest)
     3) _simple_rescue_backtest (failsafe)
-    Derefter normaliseres frames til videre metrics/plots.
+    Derefter sikres timestamp-kolonne i balance_df hvis muligt.
     """
     # 1) FillEngineV2
     try:
@@ -993,20 +986,16 @@ def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame
         # 2) run_backtest
         t, b = run_backtest(df, sig)
 
+    # 3) Rescue hvis output er ubrugeligt
     if _backtest_is_useless(t, b):
         print("[RESCUE] Backtest output ubrugelig – fallback aktiveres.")
         t, b = _simple_rescue_backtest(df, sig)
 
-def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Kør standard backtest; hvis ubrugelig → brug rescue og fix timestamp-kolonne."""
-    t, b = run_backtest(df, sig)
-    if _backtest_is_useless(t, b):
-        print("[RESCUE] Backtest output ubrugelig – fallback aktiveres.")
-        t, b = _simple_rescue_backtest(df, sig)
     # Align timestamp fra source hvis mangler
-    if "timestamp" not in b.columns and "timestamp" in df.columns:
+    if not b.empty and "timestamp" not in b.columns and "timestamp" in df.columns:
         b = b.copy()
-        b["timestamp"] = pd.to_datetime(df["timestamp"]).astype(str).iloc[: len(b)].values
+        b["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce").iloc[: len(b)].values
+
     return t, b
 
 
@@ -1017,7 +1006,6 @@ def _normalize_bt_frames(
     t = trades_df.copy() if trades_df is not None else pd.DataFrame()
     b = balance_df.copy() if balance_df is not None else pd.DataFrame()
 
-    # trades: ts -> timestamp, og til datetime
     if not t.empty:
         if "timestamp" not in t.columns and "ts" in t.columns:
             t["timestamp"] = pd.to_datetime(t["ts"], errors="coerce")
@@ -1026,11 +1014,9 @@ def _normalize_bt_frames(
         if "profit" in t.columns:
             t["profit"] = pd.to_numeric(t["profit"], errors="coerce").fillna(0.0)
 
-    # balance: garanti for timestamp + drawdown + balance/equity alias
     if not b.empty:
         b = _prep_for_plot(b)
 
-    # ekstra safety: hvis balance stadig mangler timestamp, align på src_df
     if not b.empty and "timestamp" not in b.columns and "timestamp" in src_df.columns:
         b["timestamp"] = pd.to_datetime(src_df["timestamp"], errors="coerce").iloc[: len(b)].values
     return t, b
@@ -1072,7 +1058,7 @@ def _simple_metrics_from_balance(trades_df: pd.DataFrame, balance_df: pd.DataFra
             }
         ret = (bal.iloc[-1] / max(bal.iloc[0], 1e-9) - 1.0) * 100.0
         dd_series = (bal / bal.cummax() - 1.0) * 100.0
-        max_dd = float(max(dd_series.min(), -100.0))  # clamp
+        max_dd = float(max(dd_series.min(), -100.0))
         return {
             "profit_pct": float(ret),
             "max_drawdown": max_dd,
@@ -1550,7 +1536,6 @@ def run_pipeline(
 
     # Brug samme backtest-pipeline som analyze-mode (FillEngineV2 + rescue)
     trades, balance = _run_bt_with_rescue(df, signals=signals)
-    trades, balance = run_backtest(df, signals=signals)
 
     try:
         from utils.metrics_utils import advanced_performance_metrics as _apm  # type: ignore
@@ -1559,14 +1544,13 @@ def run_pipeline(
         if "max_drawdown" in metrics and "drawdown_pct" not in metrics:
             metrics["drawdown_pct"] = metrics["max_drawdown"]
     except Exception:
-        pnl = (
-            float(
+        if "balance" in balance:
+            pnl = float(
                 (balance["balance"].iloc[-1] - balance["balance"].iloc[0])
                 / max(balance["balance"].iloc[0], 1.0)
             )
-            if "balance" in balance
-            else 0.0
-        )
+        else:
+            pnl = 0.0
         metrics = {
             "profit_pct": pnl * 100.0,
             "drawdown_pct": 0.0,
@@ -1819,7 +1803,6 @@ def run_paper_trading(
     daily_loss_limit_pct: float,
     allow_short: bool,
     alloc_pct: float,
-    # [F4] Persist
     persist: bool = True,
     persist_version: str = os.getenv("MODEL_VERSION", "v1"),
 ) -> None:
@@ -1837,7 +1820,7 @@ def run_paper_trading(
         raise ValueError("Features skal have 'close' kolonne.")
 
     ens_signals = _generate_ensemble_signals_for_df(df.copy(), threshold, device_str, use_lstm)
-    if len(ens_signals) > 0:  # Luk sidste bar → realiser PnL
+    if len(ens_signals) > 0:
         ens_signals[-1] = 0
     df["signal_ens"] = ens_signals
 
@@ -1923,7 +1906,6 @@ def run_paper_trading(
         if _TELEGRAM_DAILY_REPORT in {"daily", "last"}:
             _send_daily_report_telegram(current_day, m_)
 
-    # [F4] Persist “paper” dags-aggregat
     if persist:
         try:
             persist_after_run(
@@ -1951,7 +1933,6 @@ def _prep_for_plot(balance_df: pd.DataFrame) -> pd.DataFrame:
     """Sørg for at balance_df har timestamp (datetime), 'balance' alias og drawdown-kolonne til plotting."""
     b = balance_df.copy()
 
-    # Sørg for timestamp
     if "timestamp" in b.columns:
         b["timestamp"] = pd.to_datetime(b["timestamp"], errors="coerce")
     elif "date" in b.columns:
@@ -1960,13 +1941,11 @@ def _prep_for_plot(balance_df: pd.DataFrame) -> pd.DataFrame:
     else:
         b["timestamp"] = pd.date_range(start="1970-01-01", periods=len(b), freq="H")
 
-    # Sørg for at vi har en 'balance'-kolonne (alias fra equity hvis nødvendigt)
     if "balance" not in b.columns and "equity" in b.columns:
         b["balance"] = pd.to_numeric(b["equity"], errors="coerce")
     elif "balance" in b.columns:
         b["balance"] = pd.to_numeric(b["balance"], errors="coerce")
 
-    # drawdown (clip til [-1, 0])
     if "drawdown" not in b.columns and "balance" in b.columns:
         bal = b["balance"]
         peak = bal.cummax().replace(0, np.nan)
@@ -1987,13 +1966,12 @@ def main(
     device_str: Optional[str] = ENV_DEVICE,
     use_lstm: bool = False,
     FORCE_DEBUG: bool = False,
-    mode: str = ENV_MODE,  # "analyze" | "paper"
+    mode: str = ENV_MODE,
     commission_bp: float = ENV_COMMISSION_BP,
     slippage_bp: float = ENV_SLIPPAGE_BP,
     daily_loss_limit_pct: float = ENV_DAILY_LOSS_LIMIT_PCT,
     allow_short: bool = False,
     alloc_pct: float = ENV_ALLOC_PCT,
-    # [F4] CLI flags
     persist: bool = (os.getenv("PERSIST", "true").lower() in {"1", "true", "yes", "on"}),
     persist_version: str = os.getenv("MODEL_VERSION", "v1"),
 ) -> None:
@@ -2023,8 +2001,8 @@ def main(
             daily_loss_limit_pct=daily_loss_limit_pct,
             allow_short=allow_short,
             alloc_pct=alloc_pct,
-            persist=persist,  # [F4]
-            persist_version=persist_version,  # [F4]
+            persist=persist,
+            persist_version=persist_version,
         )
         return
 
@@ -2049,7 +2027,6 @@ def main(
         print(f"✅ Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
-        # ---- ML ----
         print("🛠️ Loader ML-model ...")
         ml_model, ml_features = load_ml_model()
         if ml_model is not None and ml_features is not None:
@@ -2058,7 +2035,6 @@ def main(
         else:
             ml_signals = np.random.choice([0, 1], size=len(df))
             print("[ADVARSEL] ML fallback: bruger random signaler.")
-        # Luk sidste bar → realiseret PnL
         if len(ml_signals) > 0:
             ml_signals[-1] = 0
         df["signal_ml"] = ml_signals
@@ -2073,7 +2049,6 @@ def main(
             metrics_ml = _simple_metrics_from_balance(trades_ml, balance_ml)
         metrics_dict: Dict[str, Dict[str, float]] = {"ML": metrics_ml}
 
-        # ---- DL ----
         trained_features = load_trained_feature_list()
         if trained_features is not None:
             X_dl = reconcile_features(df, trained_features)
@@ -2137,7 +2112,6 @@ def main(
             metrics_dl = _simple_metrics_from_balance(trades_dl, balance_dl)
         metrics_dict["DL"] = metrics_dl
 
-        # --- Ensemble (Rule → binær) ---
         rsi_signals_raw = rsi_rule_based_signals(df, low=45, high=55)
         rsi_signals = np.where(rsi_signals_raw > 0, 1, 0)
         ensemble_signals = ensemble_predict(
@@ -2169,8 +2143,8 @@ def main(
         print("Ensemble:", pd.Series(ensemble_signals).value_counts().to_dict())
 
         print("\n=== Performance metrics (backtest) ===")
-        for model, metrics in metrics_dict.items():
-            print(f"{model}: {metrics}")
+        for model_name, metrics in metrics_dict.items():
+            print(f"{model_name}: {metrics}")
 
         try:
             send_live_metrics(
@@ -2195,7 +2169,6 @@ def main(
                     pass
         writer.flush()
 
-        # Gem grafer til graphs/
         perf_ml_png = f"{GRAPH_DIR}/performance_ml.png"
         perf_dl_png = f"{GRAPH_DIR}/performance_dl.png"
         perf_ens_png = f"{GRAPH_DIR}/performance_ensemble.png"
@@ -2225,7 +2198,7 @@ def main(
             )
         except Exception as e:
             print(f"[ADVARSEL] plot_performance mangler/fejlede: {e}")
-            perf_ens_png = None  # kan mangle
+            perf_ens_png = None
 
         try:
             from visualization.plot_comparison import plot_comparison  # type: ignore
@@ -2242,7 +2215,6 @@ def main(
             print(f"[ADVARSEL] plot_comparison mangler/fejlede: {e}")
             comparison_png = None
 
-        # [F4] Persistér ensemble-metrics + balance-plot (foretrækker ensemble)
         if persist:
             try:
                 balance_plot = perf_ens_png or comparison_png
@@ -2318,8 +2290,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Brug Keras LSTM-model i stedet for PyTorch (DL)",
     )
-
-    # Paper-mode
     parser.add_argument(
         "--mode",
         type=str,
@@ -2358,8 +2328,6 @@ if __name__ == "__main__":
         dest="alloc_pct",
         help="Andel af equity per entry (0.10 = 10%)",
     )
-
-    # [F4] Persist CLI
     parser.add_argument(
         "--persist",
         action="store_true",
@@ -2392,7 +2360,7 @@ if __name__ == "__main__":
             daily_loss_limit_pct=args.daily_loss_limit_pct,
             allow_short=args.allow_short,
             alloc_pct=args.alloc_pct,
-            persist=bool(args.persist),  # [F4]
-            persist_version=str(args.persist_version),  # [F4]
+            persist=bool(args.persist),
+            persist_version=str(args.persist_version),
         )
     )
