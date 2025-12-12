@@ -2,9 +2,11 @@ name: observability
 
 on:
   push:
-    branches: ["**"]
+    branches:
+      - "**"
   pull_request:
-    branches: ["**"]
+    branches:
+      - "**"
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -18,13 +20,18 @@ permissions:
 
 env:
   PYTHONUNBUFFERED: "1"
-  MPLBACKEND: Agg
-  PROM_VERSION: "v2.53.0"     # skal matche Prometheus/promtool i compose
-  DQ_SHARED_SECRET: "change-me-long-random"  # auth til /dq/* prod-endpoints
+  MPLBACKEND: "Agg"
+
   # Bruges af ops/compose/docker-compose.yml:
   # env_file: ${LIVE_ENV_FILE:-../../config/env/live.env}
   # I CI peger vi på en dummy-fil, der oprettes dynamisk.
   LIVE_ENV_FILE: "../../config/env/live.ci.env"
+
+  # Version til prom/prometheus images (promtool + compose)
+  PROM_VERSION: "v3.6.0"
+
+  # Auth til /dq/* prod-endpoints
+  DQ_SHARED_SECRET: "change-me-long-random"
 
 jobs:
   unit-smoke:
@@ -74,7 +81,9 @@ jobs:
 
           python - <<'PY'
           import importlib
-          for name in ("torch","torchvision","torchaudio","fastapi","uvicorn","prometheus_client","numpy","pyarrow","pytest","pandas","requests"):
+          for name in ("torch","torchvision","torchaudio",
+                       "fastapi","uvicorn","prometheus_client",
+                       "numpy","pyarrow","pytest","pandas","requests"):
               try:
                   m = importlib.import_module(name)
                   print(f"{name}: {getattr(m,'__version__','?')}")

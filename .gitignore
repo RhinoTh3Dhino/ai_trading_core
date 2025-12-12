@@ -118,6 +118,7 @@ trades/
 secrets/
 config/*.json
 config/client_secret_*.json
+
 config/env/live.env
 
 
@@ -133,6 +134,21 @@ tensorboard/
 *.event*
 
 # =========================
+=======
+
+# =========================
+# MLflow / TensorBoard / Eksperimenter
+# =========================
+mlruns/
+mlruns.*
+runs/
+runs.*
+tensorboard/
+*.tensorboard
+*.event*
+
+# =========================
+
 # IDE / OS-FILER
 # =========================
 .vscode/

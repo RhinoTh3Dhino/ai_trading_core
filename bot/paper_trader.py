@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
+import numpy as np  # kan fjernes hvis du ikke bruger det senere
 import pandas as pd
 
 from config.config import COINS, TIMEFRAMES
@@ -14,8 +14,8 @@ from config.config import COINS, TIMEFRAMES
 # EPIC C – Risk Engine integration
 from risk.risk_engine import RiskEngine, RiskLimits, RiskState
 
-# Importér strategier (efter sys.path-trick!)
-from strategies.advanced_strategies import (  # Bonus: hvis du vil bruge adaptive SL/TP!
+# Strategier (voting_ensemble m.fl.)
+from strategies.advanced_strategies import (
     add_adaptive_sl_tp,
     ema_crossover_strategy,
     ema_rsi_adx_strategy,
@@ -43,8 +43,8 @@ DEFAULT_RISK_LIMITS = RiskLimits(
 )
 
 
-def find_latest_feature_file(symbol, tf, version="v1.3"):
-    """Finder seneste feature-fil med mønster."""
+def find_latest_feature_file(symbol: str, tf: str, version: str = "v1.3") -> str | None:
+    """Find seneste feature-fil med mønsteret {symbol}_{tf}_features_{version}_*.csv."""
     pattern = str(
         Path(PROJECT_ROOT)
         / "outputs"
@@ -57,29 +57,31 @@ def find_latest_feature_file(symbol, tf, version="v1.3"):
     return max(files, key=os.path.getctime)
 
 
-def plot_trades(df, trades_df, journal_path):
+def plot_trades(df: pd.DataFrame, trades_df: pd.DataFrame, journal_path: Path | str) -> None:
     """
-    Plot backtest equity, køb/salg, stop loss og take profit på prisgraf.
+    Plot backtest: pris + køb/salg/SL/TP + risk-blocks.
     Gemmer graf som PNG i samme mappe som journal_path.
     """
     plt.figure(figsize=(14, 7))
-    plt.title("Backtest – Signaler & Exits")
+    plt.title("Backtest – Signaler & exits")
 
     # Pris graf
     plt.plot(df["timestamp"], df["close"], label="Pris")
 
-    # Markér køb, salg, SL, TP
+    # Markér køb, salg, SL, TP, risk-blocks
     buys = trades_df[trades_df["type"] == "BUY"]
     sells = trades_df[trades_df["type"] == "SELL"]
     sls = trades_df[trades_df["type"] == "SL"]
     tps = trades_df[trades_df["type"] == "TP"]
     risk_blocks = trades_df[trades_df["type"] == "RISK_BLOCK"]
+    force_exits = trades_df[trades_df["type"] == "FORCE_EXIT"]
 
-    plt.scatter(buys["time"], buys["price"], marker="^", color="green", label="Køb", s=100)
-    plt.scatter(sells["time"], sells["price"], marker="v", color="red", label="Sælg", s=100)
-
+    if not buys.empty:
+        plt.scatter(buys["time"], buys["price"], marker="^", color="green", label="Køb", s=80)
+    if not sells.empty:
+        plt.scatter(sells["time"], sells["price"], marker="v", color="red", label="Sælg", s=80)
     if not sls.empty:
-        plt.scatter(sls["time"], sls["price"], marker="x", color="red", label="Stop Loss", s=100)
+        plt.scatter(sls["time"], sls["price"], marker="x", color="red", label="Stop Loss", s=80)
     if not tps.empty:
         plt.scatter(
             tps["time"],
@@ -87,7 +89,7 @@ def plot_trades(df, trades_df, journal_path):
             marker="*",
             color="gold",
             label="Take Profit",
-            s=150,
+            s=120,
         )
     if not risk_blocks.empty:
         plt.scatter(
@@ -96,7 +98,16 @@ def plot_trades(df, trades_df, journal_path):
             marker="o",
             color="orange",
             label="Risk block",
-            s=80,
+            s=70,
+        )
+    if not force_exits.empty:
+        plt.scatter(
+            force_exits["time"],
+            force_exits["price"],
+            marker="D",
+            color="blue",
+            label="Force exit",
+            s=70,
         )
 
     plt.xlabel("Tid")
@@ -111,7 +122,7 @@ def plot_trades(df, trades_df, journal_path):
     plt.show()
 
 
-def _init_risk_state(start_balance, df):
+def _init_risk_state(start_balance: float, df: pd.DataFrame) -> RiskState:
     """Init RiskState ud fra første timestamp i df eller dagsdato."""
     if "timestamp" in df.columns and not df["timestamp"].isna().all():
         try:
@@ -134,41 +145,42 @@ def _init_risk_state(start_balance, df):
 
 
 def paper_trade(
-    df,
-    sl=SL,
-    tp=TP,
-    start_balance=START_BALANCE,
-    fee=FEE,
-    JOURNAL_PATH=None,
-    use_adaptive_sl_tp=False,
-    enable_risk_checks=True,
-    risk_limits: RiskLimits = None,
+    df: pd.DataFrame,
+    sl: float = SL,
+    tp: float = TP,
+    start_balance: float = START_BALANCE,
+    fee: float = FEE,
+    JOURNAL_PATH: Path | None = None,
+    use_adaptive_sl_tp: bool = False,
+    enable_risk_checks: bool = True,
+    risk_limits: RiskLimits | None = None,
 ):
     """
-    Offline paper backtest:
+    Offline paper backtest med simpel 1-positions-model + RiskEngine integration.
 
-    - Bevarer din oprindelige SL/TP, fee, balance-logik.
-    - Tilføjer RiskEngine pre-trade checks pr. entry.
-    - Opdaterer RiskState ved entry/exit, så risk-metrikker kan genbruges til live.
+    Forventet input:
+      - df['signal'] i {-1, 0, 1}
+      - df['close']
+      - valgfrit df['timestamp']
+      - valgfrit df['sl_pct']/df['tp_pct'] hvis use_adaptive_sl_tp=True
 
-    Parameters
-    ----------
-    enable_risk_checks : bool
-        Hvis True, bruges RiskEngine til at blokere entries, der bryder limits.
-    risk_limits : RiskLimits eller None
-        Hvis None, bruges DEFAULT_RISK_LIMITS.
+    Logic:
+      - Entry ved signal == 1 når der ikke er position.
+      - Exit ved signal == -1 eller SL/TP hit.
+      - RiskEngine bruges som pre-trade check (kan blokere entry med RISK_BLOCK).
     """
     balance = start_balance
-    equity = [start_balance]
+    equity_curve: list[float] = [start_balance]
     position = 0
-    entry_price = 0
-    trades = []
+    entry_price = 0.0
+    entry_row = None  # type: ignore[assignment]
+    trades: list[dict] = []
     n_wins = 0
     n_trades = 0
-    entry_row = None  # Til adaptiv SL/TP
 
     if JOURNAL_PATH is None:
         JOURNAL_PATH = Path(PROJECT_ROOT) / "outputs" / "paper_trades.csv"
+    JOURNAL_PATH = Path(JOURNAL_PATH)
 
     # RiskEngine setup
     if risk_limits is None:
@@ -176,12 +188,15 @@ def paper_trade(
     risk_engine = RiskEngine(risk_limits)
     risk_state = _init_risk_state(start_balance, df)
 
+    # Hoved-loop
     for i, row in df.iterrows():
+        ts = row["timestamp"] if "timestamp" in df.columns else i
+
         # ENTRY
-        if row["signal"] == 1 and position == 0:
-            # Definér ordre-notional – her antager vi "all-in" (kan justeres senere)
+        if position == 0 and row.get("signal", 0) == 1:
             order_price = float(row["close"])
-            order_notional = balance  # all-in på hver trade i denne simple model
+            # simpel model: all-in
+            order_notional = balance
 
             if enable_risk_checks:
                 decision = risk_engine.check_pre_trade(
@@ -189,10 +204,9 @@ def paper_trade(
                     order_notional=order_notional,
                 )
                 if not decision.allowed:
-                    entry_time = row["timestamp"] if "timestamp" in row else i
                     trades.append(
                         {
-                            "time": entry_time,
+                            "time": ts,
                             "type": "RISK_BLOCK",
                             "price": order_price,
                             "balance": balance,
@@ -200,18 +214,16 @@ def paper_trade(
                             "limit_name": decision.limit_name,
                         }
                     )
-                    # Ingen position åbnes – videre til næste bar
-                    equity.append(balance)
+                    equity_curve.append(balance)
                     continue
 
             # Hvis vi når hertil, er ordren godkendt af risk
             position = 1
             entry_price = order_price
             entry_row = row
-            entry_time = row["timestamp"] if "timestamp" in row else i
             trades.append(
                 {
-                    "time": entry_time,
+                    "time": ts,
                     "type": "BUY",
                     "price": entry_price,
                     "balance": balance,
@@ -219,7 +231,7 @@ def paper_trade(
             )
             n_trades += 1
 
-            # Opdater RiskState for ny eksponering (equity uændret, exposure sat)
+            # Opdater RiskState for ny eksponering
             risk_state = risk_engine.apply_fill(
                 risk_state,
                 new_equity=balance,
@@ -228,25 +240,38 @@ def paper_trade(
                 now=datetime.utcnow(),
             )
 
-        # EXIT (strategi eller SL/TP)
+        # EXIT-logik (kun hvis position er åben)
         if position == 1:
-            pnl = (row["close"] - entry_price) / entry_price
+            pnl = (float(row["close"]) - entry_price) / entry_price
 
-            this_sl = entry_row.get("sl_pct", sl) if use_adaptive_sl_tp else sl
-            this_tp = entry_row.get("tp_pct", tp) if use_adaptive_sl_tp else tp
+            if use_adaptive_sl_tp and entry_row is not None:
+                this_sl = float(entry_row.get("sl_pct", sl))
+                this_tp = float(entry_row.get("tp_pct", tp))
+            else:
+                this_sl = sl
+                this_tp = tp
 
-            should_exit = row["signal"] == -1 or pnl <= -this_sl or pnl >= this_tp
+            should_exit = False
+            exit_type = "SELL"
+
+            if row.get("signal", 0) == -1:
+                should_exit = True
+                exit_type = "SELL"
+            elif pnl <= -this_sl:
+                should_exit = True
+                exit_type = "SL"
+            elif pnl >= this_tp:
+                should_exit = True
+                exit_type = "TP"
+
             if should_exit:
-                exit_type = "SELL" if row["signal"] == -1 else ("TP" if pnl >= this_tp else "SL")
                 fee_total = balance * fee * 2
-                balance = balance * (1 + pnl) - fee_total
-                equity.append(balance)
-                exit_time = row["timestamp"] if "timestamp" in row else i
+                balance = balance * (1.0 + pnl) - fee_total
                 trades.append(
                     {
-                        "time": exit_time,
+                        "time": ts,
                         "type": exit_type,
-                        "price": row["close"],
+                        "price": float(row["close"]),
                         "pnl_%": round(pnl * 100, 2),
                         "balance": balance,
                     }
@@ -255,10 +280,10 @@ def paper_trade(
                     n_wins += 1
 
                 position = 0
-                entry_price = 0
+                entry_price = 0.0
                 entry_row = None
 
-                # Exit → eksponering nulstilles, equity opdateres
+                # Exit → eksponering nulstilles
                 risk_state = risk_engine.apply_fill(
                     risk_state,
                     new_equity=balance,
@@ -268,20 +293,26 @@ def paper_trade(
                 )
 
         # Equity-kurven opdateres for hver bar
-        equity.append(balance)
+        equity_curve.append(balance)
 
     # Force exit ved slut hvis position stadig åben
-    if position == 1:
-        final_price = df.iloc[-1]["close"]
+    if position == 1 and entry_row is not None:
+        final_price = float(df.iloc[-1]["close"])
+        final_ts = df.iloc[-1].get("timestamp", len(df) - 1)
         pnl = (final_price - entry_price) / entry_price
-        this_sl = entry_row.get("sl_pct", sl) if use_adaptive_sl_tp else sl
-        this_tp = entry_row.get("tp_pct", tp) if use_adaptive_sl_tp else tp
+        if use_adaptive_sl_tp:
+            this_sl = float(entry_row.get("sl_pct", sl))
+            this_tp = float(entry_row.get("tp_pct", tp))
+        else:
+            this_sl = sl
+            this_tp = tp
+
         fee_total = balance * fee * 2
-        balance = balance * (1 + pnl) - fee_total
-        equity.append(balance)
+        balance = balance * (1.0 + pnl) - fee_total
+        equity_curve.append(balance)
         trades.append(
             {
-                "time": df.iloc[-1].get("timestamp", len(df) - 1),
+                "time": final_ts,
                 "type": "FORCE_EXIT",
                 "price": final_price,
                 "pnl_%": round(pnl * 100, 2),
@@ -298,18 +329,18 @@ def paper_trade(
             now=datetime.utcnow(),
         )
 
+    # Gem journal
     trades_df = pd.DataFrame(trades)
-    os.makedirs(os.path.dirname(str(JOURNAL_PATH)), exist_ok=True)
+    os.makedirs(JOURNAL_PATH.parent, exist_ok=True)
     trades_df.to_csv(str(JOURNAL_PATH), index=False)
 
-    win_rate = n_wins / n_trades * 100 if n_trades > 0 else 0
+    win_rate = (n_wins / n_trades * 100.0) if n_trades > 0 else 0.0
     print(f"Slutbalance: {balance:.2f}")
     print(f"Antal handler: {n_trades}")
     print(f"Win-rate: {win_rate:.1f}%")
     print(f"Journal gemt: {JOURNAL_PATH}")
 
-    print_performance_report(equity_curve=equity, trades_df=trades_df)
-
+    print_performance_report(equity_curve=equity_curve, trades_df=trades_df)
     plot_trades(df, trades_df, JOURNAL_PATH)
 
     return balance, trades_df
@@ -322,6 +353,7 @@ if __name__ == "__main__":
             if not feature_path:
                 print(f"❌ Featurefil mangler: {symbol} {tf} version v1.3")
                 continue
+
             print(f"\n=== Backtester {symbol} {tf} med Voting-Ensemble ===")
             df = pd.read_csv(feature_path)
             if "timestamp" in df.columns:
