@@ -607,7 +607,7 @@ def persist_after_run(
             ensure_dir("outputs/models")
             symlink_latest(model_path, "outputs/models/best_model.keras")
 
-        print(f"[F4] Persist OK → {metrics_path}")
+        print(f"[F4] Persist OK -> {metrics_path}")
         return metrics_path
     except Exception as e:
         print(f"[F4] Persist FEJL: {e}")
@@ -695,7 +695,7 @@ except Exception:
         cash = 1000.0
         qty = 1.0
         position = 0.0
-        entry_px: Optional[float] = None
+        entry_price: Optional[float] = None
 
         trades: List[Dict[str, Any]] = []
         balances: List[Dict[str, Any]] = []
@@ -706,7 +706,7 @@ except Exception:
 
             if s == 1 and position == 0.0:
                 position = qty
-                entry_px = px
+                entry_price = px
                 trades.append(
                     {
                         "idx": i,
@@ -717,8 +717,8 @@ except Exception:
                     }
                 )
             elif s == 0 and position > 0.0:
-                pnl_pct = (px - (entry_px or px)) / max(entry_px or px, 1e-9)
-                cash += (px - (entry_px or px)) * qty
+                pnl_pct = (px - (entry_price or px)) / max(entry_price or px, 1e-9)
+                cash += (px - (entry_price or px)) * qty
                 trades.append(
                     {
                         "idx": i,
@@ -729,7 +729,7 @@ except Exception:
                     }
                 )
                 position = 0.0
-                entry_px = None
+                entry_price = None
 
             equity = cash + position * px
             balances.append({"timestamp": str(df["__ts__"].iat[i]), "balance": float(equity)})
@@ -982,7 +982,7 @@ def _run_bt_with_rescue(df: pd.DataFrame, sig: np.ndarray) -> Tuple[pd.DataFrame
     try:
         t, b = _run_bt_with_fillengine_v2(df, sig)
     except Exception as e:
-        print(f"[B1] FillEngineV2 backtest fejlede eller ikke tilgængelig → fallback. ({e})")
+        print(f"[B1] FillEngineV2 backtest fejlede eller ikke tilgængelig -> fallback. ({e})")
         # 2) run_backtest
         t, b = run_backtest(df, sig)
 
@@ -1253,7 +1253,8 @@ def _resolve_features_path(
         or not os.path.exists(str(features_path))
     ):
         path = ensure_latest(symbol=symbol, timeframe=interval, min_rows=min_rows)
-        print(f"🧩 AUTO features valgt → {path}")
+        # ASCII-only print for Windows consoles
+        print(f"AUTO features valgt -> {path}")
         return str(path)
     return str(features_path)
 
@@ -1308,7 +1309,7 @@ def load_ml_model():
 def reconcile_features(df: pd.DataFrame, feature_list: List[str]) -> pd.DataFrame:
     missing = [col for col in feature_list if col not in df.columns]
     if missing:
-        print(f"‼️ ADVARSEL: Følgende features manglede i data og blev tilføjet med 0: {missing}")
+        print(f"[ADVARSEL] Følgende features manglede i data og blev tilføjet med 0: {missing}")
         for col in missing:
             df[col] = 0.0
     return df[feature_list]
@@ -1318,7 +1319,7 @@ def load_pytorch_model(
     feature_dim: int, model_path: str = PYTORCH_MODEL_PATH, device_str: str = "cpu"
 ):
     if torch is None:
-        print("❌ PyTorch ikke tilgængelig – springer DL over.")
+        print("[ERROR] PyTorch ikke tilgængelig – springer DL over.")
         return None
     cand = Path(model_path)
     ts_alt = cand.with_suffix(".ts")
@@ -1332,7 +1333,7 @@ def load_pytorch_model(
                 m_ = torch.jit.load(str(p), map_location=device_str)
                 m_.eval()
                 m_.to(device_str)
-                print(f"✅ PyTorch TorchScript-model indlæst fra {p} på {device_str}")
+                print(f"[INFO] PyTorch TorchScript-model indlæst fra {p} på {device_str}")
                 return m_
             except Exception:
                 pass
@@ -1373,10 +1374,10 @@ def load_pytorch_model(
         if unexpected:
             print(f"[ADVARSEL] Unexpected keys i state_dict: {list(unexpected)}")
         model.to(device_str).eval()
-        print(f"✅ PyTorch state_dict-model indlæst fra {p} på {device_str}")
+        print(f"[INFO] PyTorch state_dict-model indlæst fra {p} på {device_str}")
         return model
 
-    print(f"❌ Ingen gyldig PyTorch-model fundet i {paths_to_try}")
+    print(f"[ERROR] Ingen gyldig PyTorch-model fundet i {paths_to_try}")
     return None
 
 
@@ -1403,15 +1404,15 @@ def keras_lstm_predict(
     try:
         from tensorflow.keras.models import load_model  # type: ignore
     except Exception:
-        print("❌ TensorFlow/Keras ikke tilgængelig.")
+        print("[ERROR] TensorFlow/Keras ikke tilgængelig.")
         return np.zeros(len(df), dtype=int)
 
     if not os.path.exists(model_path):
-        print(f"❌ Keras LSTM-model ikke fundet: {model_path}")
+        print(f"[ERROR] Keras LSTM-model ikke fundet: {model_path}")
         return np.zeros(len(df), dtype=int)
 
     if not (os.path.exists(LSTM_SCALER_MEAN_PATH) and os.path.exists(LSTM_SCALER_SCALE_PATH)):
-        print("❌ Mangler scaler-filer til LSTM – bruger nuller.")
+        print("[ERROR] Mangler scaler-filer til LSTM – bruger nuller.")
         return np.zeros(len(df), dtype=int)
 
     mean = np.load(LSTM_SCALER_MEAN_PATH)
@@ -1435,7 +1436,7 @@ def read_features_auto(file_path: str) -> pd.DataFrame:
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
     if str(first_line).startswith("#"):
-        print("🔎 Meta-header fundet – springer første linje over (skiprows=1).")
+        print("[INFO] Meta-header fundet – springer første linje over (skiprows=1).")
         df = pd.read_csv(file_path, skiprows=1)
     else:
         df = pd.read_csv(file_path)
@@ -1700,7 +1701,7 @@ def _upsert_daily_metrics(date_str: str, updates: Dict[str, float]) -> None:
 def _send_daily_report_telegram(date_str: str, m_: Dict[str, float]) -> None:
     try:
         msg = (
-            f"📊 *Daglig rapport* {date_str}\n"
+            f"Daglig rapport {date_str}\n"
             f"- Win-rate: {m_['win_rate']:.2f}%\n"
             f"- Signal count: {m_['signal_count']}\n"
             f"- Trades (closed legs): {m_['trades']}\n"
@@ -1755,6 +1756,7 @@ def _generate_ensemble_signals_for_df(
         os.path.exists(p) for p in (LSTM_MODEL_PATH, LSTM_SCALER_MEAN_PATH, LSTM_SCALER_SCALE_PATH)
     )
     if lstm_ok:
+        print("[INFO] Bruger Keras LSTM til inference.")
         feature_cols = trained_features if trained_features is not None else list(X_dl.columns)
         dl_signals = keras_lstm_predict(df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PATH)
     elif use_lstm:
@@ -1764,7 +1766,7 @@ def _generate_ensemble_signals_for_df(
             if not os.path.exists(p)
         ]
         print(
-            f"⚠️ --use_lstm er sat, men mangler filer: {missing}. Hopper DL over (neutral stemme)."
+            f"[ADVARSEL] --use_lstm er sat, men mangler filer: {missing}. Hopper DL over (neutral stemme)."
         )
         dl_signals = np.zeros(len(df), dtype=int)
     else:
@@ -1772,8 +1774,9 @@ def _generate_ensemble_signals_for_df(
         if model is not None and torch is not None:
             _, dl_probs = pytorch_predict(model, X_dl, device_str=device_str)
             dl_signals = (dl_probs[:, 1] > threshold).astype(int)
+            print("[INFO] PyTorch DL-inference klar.")
         else:
-            print("❌ Ingen DL-model – random signaler.")
+            print("[ERROR] Ingen DL-model – random signaler.")
             dl_signals = np.random.choice([0, 1], size=len(df))
 
     rsi_signals_raw = rsi_rule_based_signals(df, low=45, high=55)
@@ -1808,7 +1811,7 @@ def run_paper_trading(
 ) -> None:
     features_path = _resolve_features_path(features_path, symbol, interval, min_rows=200)
 
-    print(f"🔄 Indlæser features til paper: {features_path}")
+    print(f"[INFO] Indlæser features til paper: {features_path}")
     df = read_features_auto(features_path)
     if "timestamp" not in df.columns and "datetime" in df.columns:
         df = df.rename(columns={"datetime": "timestamp"})
@@ -1838,7 +1841,7 @@ def run_paper_trading(
     daily_signal_count = 0
     prev_sig = 0
 
-    print("🚀 Starter bar-for-bar loop…")
+    print("[INFO] Starter bar-for-bar loop (paper trading)...")
     for i in range(len(df)):
         ts = df["timestamp"].iat[i]
         price = float(df["close"].iat[i])
@@ -1919,11 +1922,11 @@ def run_paper_trading(
         except Exception:
             pass
 
-    print("✅ Paper trading gennemløb færdigt.")
-    print(f"- Fills: {FILLS_CSV}")
-    print(f"- Equity: {EQUITY_CSV}")
-    print(f"- Daily metrics: {DAILY_METRICS_CSV}")
-    print(f"- Signals: {SIGNALS_CSV}")
+    print("[INFO] Paper trading gennemløb færdigt.")
+    print(f"[INFO] Fills: {FILLS_CSV}")
+    print(f"[INFO] Equity: {EQUITY_CSV}")
+    print(f"[INFO] Daily metrics: {DAILY_METRICS_CSV}")
+    print(f"[INFO] Signals: {SIGNALS_CSV}")
 
 
 # ============================================================
@@ -2022,12 +2025,12 @@ def main(
 
     try:
         features_path_final = _resolve_features_path(features_path, symbol, interval, min_rows=200)
-        print("🔄 Indlæser features:", features_path_final)
+        print("[INFO] Indlæser features:", features_path_final)
         df = read_features_auto(features_path_final)
-        print(f"✅ Data indlæst ({len(df)} rækker)")
+        print(f"[INFO] Data indlæst ({len(df)} rækker)")
         print("Kolonner:", list(df.columns))
 
-        print("🛠️ Loader ML-model ...")
+        print("[INFO] Loader ML-model ...")
         ml_model, ml_features = load_ml_model()
         if ml_model is not None and ml_features is not None:
             X_ml = reconcile_features(df, ml_features)
@@ -2061,13 +2064,13 @@ def main(
             X_dl = df[fallback_cols]
             print(f"[ADVARSEL] Kører med fallback-features: {fallback_cols}")
 
-        print(f"🔄 Loader DL-model ...{' (LSTM ønsket)' if use_lstm else ''}")
+        print(f"[INFO] Loader DL-model ...{' (LSTM ønsket)' if use_lstm else ''}")
         lstm_ok = bool(use_lstm) and all(
             os.path.exists(p)
             for p in (LSTM_MODEL_PATH, LSTM_SCALER_MEAN_PATH, LSTM_SCALER_SCALE_PATH)
         )
         if lstm_ok:
-            print("✅ Bruger Keras LSTM til inference.")
+            print("[INFO] Bruger Keras LSTM til inference.")
             feature_cols = trained_features if trained_features is not None else list(X_dl.columns)
             dl_signals = keras_lstm_predict(
                 df, feature_cols, seq_length=48, model_path=LSTM_MODEL_PATH
@@ -2084,7 +2087,7 @@ def main(
                 if not os.path.exists(p)
             ]
             print(
-                f"⚠️ --use_lstm er sat, men mangler filer: {missing}. Hopper DL over (neutral stemme)."
+                f"[ADVARSEL] --use_lstm er sat, men mangler filer: {missing}. Hopper DL over (neutral stemme)."
             )
             dl_signals = np.zeros(len(df), dtype=int)
             dl_probas = np.stack([1 - dl_signals, dl_signals], axis=1, dtype=float)
@@ -2093,9 +2096,9 @@ def main(
             if model is not None and torch is not None:
                 dl_preds, dl_probas = pytorch_predict(model, X_dl, device_str=device_str)
                 dl_signals = (dl_probas[:, 1] > threshold).astype(int)
-                print("✅ PyTorch DL-inference klar!")
+                print("[INFO] PyTorch DL-inference klar.")
             else:
-                print("❌ Ingen DL-model fundet – fallback til random signaler")
+                print("[ERROR] Ingen DL-model fundet – fallback til random signaler")
                 dl_signals = np.random.choice([0, 1], size=len(df))
                 dl_probas = np.stack([1 - dl_signals, dl_signals], axis=1)
         if len(dl_signals) > 0:
@@ -2236,7 +2239,7 @@ def main(
             except Exception as e:
                 print(f"[F4] Persist analyze FEJL: {e}")
 
-        print("\n🎉 Pipeline afsluttet uden fejl!")
+        print("\n[INFO] Pipeline afsluttet uden fejl.")
 
     finally:
         try:

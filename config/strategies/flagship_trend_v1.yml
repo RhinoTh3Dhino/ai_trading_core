@@ -1,14 +1,20 @@
-name: "Lyra BTCUSDT Trend V1"
-symbol: "BTCUSDT"
-timeframe: "15m"
+id: flagship_trend_v1
 
 params:
-  ema_fast: 20
-  ema_slow: 50
-  atr_period: 14
-  atr_sl_mult: 1.5
-  atr_tp_mult: 3.0
-  risk_per_trade: 0.005
-  daily_loss_limit_pct: 0.03
-  min_vol_ratio: 0.002
-  cooldown_bars: 4
+  symbol: "BTCUSDT"
+  timeframe: "1h"
+
+  # Trend + filtre
+  ema_fast: 9
+  ema_slow: 21
+  atr_window: 14
+  min_volume_usd: 1000000
+
+  # Risk / MM
+  risk_per_trade_pct: 0.01
+  daily_loss_limit_pct: 0.05
+  take_profit_rr: 2.0
+  stop_atr_mult: 2.0
+
+  # Cooldown (bars efter exit)
+  cooldown_bars: 5
