@@ -1,4 +1,5 @@
 # bot/live_connector/metrics.py
+
 """
 Prometheus metrics til live-connectoren.
 
@@ -14,6 +15,7 @@ NYT:
 - emit_sample(venue, symbol, ...) som emulerer trafik for et konkret venue.
 - Valgfrit FastAPI-router (get_debug_router) med /_debug/emit_sample (GET/POST),
   aktiveres hvis ENABLE_DEBUG_ROUTES != 0/false.
+- Flagship-strategi-metrics (lyra_flagship_*).
 """
 
 from __future__ import annotations
@@ -69,6 +71,13 @@ feature_errors_total: Counter | None = None
 dq_violations_total: Counter | None = None
 dq_freshness_minutes: Gauge | None = None
 
+# Flagship-strategi-metrics (v1)
+FLAGSHIP_TRADES_TOTAL: Counter | None = None
+FLAGSHIP_PNL_REALIZED: Gauge | None = None
+FLAGSHIP_DRAWDOWN_PCT: Gauge | None = None
+FLAGSHIP_DAILY_LOSS_PCT: Gauge | None = None
+FLAGSHIP_POSITION_BTC: Gauge | None = None
+
 _METRICS_READY = False
 _BOOTSTRAPPED = False
 
@@ -105,6 +114,8 @@ def ensure_registered() -> None:
     global feed_transport_latency_ms, feed_bar_close_lag_ms, feed_bars_total
     global feed_reconnects_total, feed_queue_depth, feature_compute_ms, feature_errors_total
     global dq_violations_total, dq_freshness_minutes
+    global FLAGSHIP_TRADES_TOTAL, FLAGSHIP_PNL_REALIZED, FLAGSHIP_DRAWDOWN_PCT
+    global FLAGSHIP_DAILY_LOSS_PCT, FLAGSHIP_POSITION_BTC
 
     # Rebind hvis de allerede findes
     existing = {
@@ -117,8 +128,30 @@ def ensure_registered() -> None:
         "feature_errors_total": _registry_lookup("feature_errors_total"),
         "dq_violations_total": _registry_lookup("dq_violations_total"),
         "dq_freshness_minutes": _registry_lookup("dq_freshness_minutes"),
+        "lyra_flagship_trades_total": _registry_lookup("lyra_flagship_trades_total"),
+        "lyra_flagship_pnl_realized": _registry_lookup("lyra_flagship_pnl_realized"),
+        "lyra_flagship_drawdown_pct": _registry_lookup("lyra_flagship_drawdown_pct"),
+        "lyra_flagship_daily_loss_pct": _registry_lookup("lyra_flagship_daily_loss_pct"),
+        "lyra_flagship_position_btc": _registry_lookup("lyra_flagship_position_btc"),
     }
-    if all(v is not None for v in existing.values()):
+
+    core_keys = [
+        "feed_transport_latency_ms",
+        "feed_bar_close_lag_ms",
+        "feed_bars_total",
+        "feed_reconnects_total",
+        "feed_queue_depth",
+        "feature_compute_ms",
+        "feature_errors_total",
+        "dq_violations_total",
+        "dq_freshness_minutes",
+        "lyra_flagship_trades_total",
+        "lyra_flagship_pnl_realized",
+        "lyra_flagship_drawdown_pct",
+        "lyra_flagship_daily_loss_pct",
+        "lyra_flagship_position_btc",
+    ]
+    if all(existing.get(k) is not None for k in core_keys):
         feed_transport_latency_ms = existing["feed_transport_latency_ms"]
         feed_bar_close_lag_ms = existing["feed_bar_close_lag_ms"]
         feed_bars_total = existing["feed_bars_total"]
@@ -128,6 +161,11 @@ def ensure_registered() -> None:
         feature_errors_total = existing["feature_errors_total"]
         dq_violations_total = existing["dq_violations_total"]
         dq_freshness_minutes = existing["dq_freshness_minutes"]
+        FLAGSHIP_TRADES_TOTAL = existing["lyra_flagship_trades_total"]
+        FLAGSHIP_PNL_REALIZED = existing["lyra_flagship_pnl_realized"]
+        FLAGSHIP_DRAWDOWN_PCT = existing["lyra_flagship_drawdown_pct"]
+        FLAGSHIP_DAILY_LOSS_PCT = existing["lyra_flagship_daily_loss_pct"]
+        FLAGSHIP_POSITION_BTC = existing["lyra_flagship_position_btc"]
         _METRICS_READY = True
         return
 
@@ -183,6 +221,29 @@ def ensure_registered() -> None:
         **_gauge_kwargs(),
     )
 
+    # Flagship-strategi metrics
+    FLAGSHIP_TRADES_TOTAL = Counter(
+        "lyra_flagship_trades_total",
+        "Antal handler for flagship_trend_v1-strategien.",
+        ("status", "side"),
+    )
+    FLAGSHIP_PNL_REALIZED = Gauge(
+        "lyra_flagship_pnl_realized",
+        "Realiseret PnL for flagship_trend_v1 (i quote-valuta, f.eks. USDT).",
+    )
+    FLAGSHIP_DRAWDOWN_PCT = Gauge(
+        "lyra_flagship_drawdown_pct",
+        "Aktuel peak-to-trough drawdown for flagship_trend_v1, i pct.",
+    )
+    FLAGSHIP_DAILY_LOSS_PCT = Gauge(
+        "lyra_flagship_daily_loss_pct",
+        "Aktuel dags-loss i pct. af start-of-day equity for flagship_trend_v1.",
+    )
+    FLAGSHIP_POSITION_BTC = Gauge(
+        "lyra_flagship_position_btc",
+        "Aktuel netto BTC-position for flagship_trend_v1.",
+    )
+
     _METRICS_READY = True
 
 
@@ -203,6 +264,14 @@ def bootstrap_core_metrics(venue: str = "binance", symbol: str = "TESTUSDT") -> 
         feature_errors_total.labels("ema", symbol).inc(0)  # type: ignore[union-attr]
         dq_violations_total.labels("ohlcv_1h", "bootstrap").inc(0)  # type: ignore[union-attr]
         dq_freshness_minutes.labels("ohlcv_1h").set(0)  # type: ignore[union-attr]
+
+        # Flagship baseline
+        FLAGSHIP_TRADES_TOTAL.labels(status="filled", side="buy").inc(0)  # type: ignore[union-attr]
+        FLAGSHIP_TRADES_TOTAL.labels(status="filled", side="sell").inc(0)  # type: ignore[union-attr]
+        FLAGSHIP_PNL_REALIZED.set(0.0)  # type: ignore[union-attr]
+        FLAGSHIP_DRAWDOWN_PCT.set(0.0)  # type: ignore[union-attr]
+        FLAGSHIP_DAILY_LOSS_PCT.set(0.0)  # type: ignore[union-attr]
+        FLAGSHIP_POSITION_BTC.set(0.0)  # type: ignore[union-attr]
     except Exception:
         pass
 
@@ -312,6 +381,70 @@ def set_dq_freshness_minutes(dataset: str, minutes: Union[int, float]):
         return
 
 
+# --------- Flagship-strategi helpers ----------------------------------------
+
+
+def record_flagship_trade(*, side: str, status: str) -> None:
+    """Registrér én handel i Flagship-metrics."""
+    ensure_registered()
+    try:
+        side_norm = side.lower()
+        status_norm = status.lower()
+        FLAGSHIP_TRADES_TOTAL.labels(status=status_norm, side=side_norm).inc()  # type: ignore[union-attr]
+    except Exception:
+        return
+
+
+def set_flagship_position(position_btc: float) -> None:
+    ensure_registered()
+    try:
+        FLAGSHIP_POSITION_BTC.set(float(position_btc))  # type: ignore[union-attr]
+    except Exception:
+        return
+
+
+def set_flagship_pnl(realized_pnl: float) -> None:
+    ensure_registered()
+    try:
+        FLAGSHIP_PNL_REALIZED.set(float(realized_pnl))  # type: ignore[union-attr]
+    except Exception:
+        return
+
+
+def set_flagship_drawdown(drawdown_pct: float) -> None:
+    ensure_registered()
+    try:
+        FLAGSHIP_DRAWDOWN_PCT.set(float(drawdown_pct))  # type: ignore[union-attr]
+    except Exception:
+        return
+
+
+def set_flagship_daily_loss(daily_loss_pct: float) -> None:
+    ensure_registered()
+    try:
+        FLAGSHIP_DAILY_LOSS_PCT.set(float(daily_loss_pct))  # type: ignore[union-attr]
+    except Exception:
+        return
+
+
+def update_flagship_state(
+    *,
+    position_btc: float,
+    realized_pnl: float,
+    drawdown_pct: float,
+    daily_loss_pct: float,
+) -> None:
+    """Opdatér hele Flagship-tilstanden efter en bar."""
+    ensure_registered()
+    try:
+        FLAGSHIP_POSITION_BTC.set(float(position_btc))  # type: ignore[union-attr]
+        FLAGSHIP_PNL_REALIZED.set(float(realized_pnl))  # type: ignore[union-attr]
+        FLAGSHIP_DRAWDOWN_PCT.set(float(drawdown_pct))  # type: ignore[union-attr]
+        FLAGSHIP_DAILY_LOSS_PCT.set(float(daily_loss_pct))  # type: ignore[union-attr]
+    except Exception:
+        return
+
+
 # --------- Dev helpers (emulér trafik) --------------------------------------
 
 
@@ -323,20 +456,13 @@ def emit_sample(
     bars_inc: int = 1,
 ) -> dict:
     """
-    Emulerer ét "tick" for et givent venue/symbol:
-      - inc feed_bars_total
-      - observe feed_transport_latency_ms (histogram)
-      - set feed_bar_close_lag_ms (gauge)
-      - observe feature_compute_ms for 'ema'
-    Bruges af debug-rute. Returnerer et status-dict.
+    Emulerer ét "tick" for et givent venue/symbol.
     """
     ensure_registered()
     try:
-        # bars
         if bars_inc and bars_inc > 0:
             feed_bars_total.labels(venue, symbol).inc(bars_inc)  # type: ignore[union-attr]
 
-        # transport latency
         tms = (
             float(transport_ms)
             if transport_ms is not None
@@ -344,7 +470,6 @@ def emit_sample(
         )
         feed_transport_latency_ms.labels(venue, symbol).observe(tms)  # type: ignore[union-attr]
 
-        # bar close lag
         bl = (
             float(bar_close_lag_ms)
             if bar_close_lag_ms is not None
@@ -352,7 +477,6 @@ def emit_sample(
         )
         feed_bar_close_lag_ms.labels(venue, symbol).set(bl)  # type: ignore[union-attr]
 
-        # feature latency (for dashboards)
         feature_compute_ms.labels("ema", symbol).observe(random.choice([8, 12, 18, 30, 45]))  # type: ignore[union-attr]
 
         return {
@@ -367,9 +491,7 @@ def emit_sample(
 
 
 def emit_sample_dev() -> dict:
-    """
-    Bevarer bagudkompatibel "hurtig emulering" for binance/bootstrap.
-    """
+    """Hurtig emulering for binance/bootstrap."""
     try:
         a = emit_sample("binance")
         b = emit_sample("bootstrap")
@@ -398,22 +520,20 @@ def make_metrics_app():
 
 # --- Valgfri FastAPI router til debug-endpoints ------------------------------
 
-_router = None  # lazy-oprettet
+_ROUTER = None  # lazy-oprettet
 
 
 def get_debug_router():
     """
     Returnér en FastAPI APIRouter med:
       - POST/GET /_debug/emit_sample?venue=&symbol=&transport_ms=&bar_lag_ms=&n=
-    Aktiveres kun hvis ENABLE_DEBUG_ROUTES != 0/false.
-    Returnerer None hvis FastAPI ikke er installeret eller ruter er slået fra.
     """
-    global _router
+    global _ROUTER
     enable = os.getenv("ENABLE_DEBUG_ROUTES", "1").strip().lower() not in {"0", "false"}
     if not enable:
         return None
-    if _router is not None:
-        return _router
+    if _ROUTER is not None:
+        return _ROUTER
 
     try:
         from fastapi import APIRouter, Query
@@ -432,7 +552,6 @@ def get_debug_router():
         bar_lag_ms: Optional[float] = Query(default=None),
         n: int = Query(default=1, ge=0, le=100),
     ):
-        # udfør n gange for at sikre nok samples til rate/window
         out = None
         for _ in range(max(1, n)):
             out = emit_sample(
@@ -444,8 +563,8 @@ def get_debug_router():
             )
         return out or {"ok": False, "error": "emit failed"}
 
-    _router = r
-    return _router
+    _ROUTER = r
+    return _ROUTER
 
 
 __all__ = [
@@ -459,6 +578,11 @@ __all__ = [
     "feature_errors_total",
     "dq_violations_total",
     "dq_freshness_minutes",
+    "FLAGSHIP_TRADES_TOTAL",
+    "FLAGSHIP_PNL_REALIZED",
+    "FLAGSHIP_DRAWDOWN_PCT",
+    "FLAGSHIP_DAILY_LOSS_PCT",
+    "FLAGSHIP_POSITION_BTC",
     # helpers
     "ensure_registered",
     "bootstrap_core_metrics",
@@ -474,6 +598,12 @@ __all__ = [
     "time_feature",
     "inc_dq_violation",
     "set_dq_freshness_minutes",
+    "record_flagship_trade",
+    "set_flagship_position",
+    "set_flagship_pnl",
+    "set_flagship_drawdown",
+    "set_flagship_daily_loss",
+    "update_flagship_state",
     "emit_sample",
     "emit_sample_dev",
     "make_metrics_app",
@@ -487,5 +617,4 @@ try:
         if _BOOTSTRAP:
             bootstrap_core_metrics()
 except Exception:
-    # Skal aldrig vælte processen
     pass
