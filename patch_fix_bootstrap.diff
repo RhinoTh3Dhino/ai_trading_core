@@ -1,0 +1,392 @@
+# Sikrer at filen gemmes som UTF-8 med BOM (vigtigt på Windows PowerShell)
+$enc = if ($PSVersionTable.PSVersion.Major -ge 7) { "utf8BOM" } else { "utf8" }
+
+@'
+# scripts/bootstrap_backlog.ps1
+# Krav: gh installeret og logget ind (gh auth login)
+# Koer: powershell -ExecutionPolicy Bypass -File scripts/bootstrap_backlog.ps1
+
+$ErrorActionPreference = "Stop"
+
+$REPO = "RhinoTh3Dhino/ai_trading_core"
+
+try {
+  [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+  $OutputEncoding = [System.Text.UTF8Encoding]::new()
+} catch {}
+
+Write-Host "==> Tjekker GH auth..."
+gh auth status | Out-Null
+
+Write-Host "==> Opretter labels (safe: --force)..."
+$labels = @(
+  @{ name="type:epic";  color="6f42c1"; desc="Epic (samler stories)"},
+  @{ name="type:story"; color="0e8a16"; desc="Story (konkret leverance)"},
+  @{ name="type:bug";   color="d73a4a"; desc="Bug"},
+  @{ name="type:chore"; color="cfd3d7"; desc="Chore/vedligehold"},
+
+  @{ name="p0"; color="b60205"; desc="P0 - kritisk"},
+  @{ name="p1"; color="d93f0b"; desc="P1 - hoej"},
+  @{ name="p2"; color="fbca04"; desc="P2 - normal"},
+
+  @{ name="area:engine";     color="1d76db"; desc="Engine/orchestration"},
+  @{ name="area:data";       color="1d76db"; desc="Data pipeline"},
+  @{ name="area:features";   color="1d76db"; desc="Features"},
+  @{ name="area:models";     color="1d76db"; desc="Strategier/modeller"},
+  @{ name="area:backtest";   color="1d76db"; desc="Backtest"},
+  @{ name="area:execution";  color="1d76db"; desc="Execution/adapters"},
+  @{ name="area:risk";       color="1d76db"; desc="Risk management"},
+  @{ name="area:monitoring"; color="1d76db"; desc="Observability/monitoring"},
+  @{ name="area:ops";        color="1d76db"; desc="Ops/infra/runbooks"},
+  @{ name="area:api";        color="1d76db"; desc="API"},
+  @{ name="area:ui";         color="1d76db"; desc="UI"}
+)
+
+foreach ($l in $labels) {
+  gh label create $l.name -R $REPO -c $l.color -d $l.desc --force | Out-Null
+}
+
+function Get-Milestones {
+  $raw = gh api "repos/$REPO/milestones?state=all" 2>$null
+  if (-not $raw) { return @() }
+  return ($raw | ConvertFrom-Json)
+}
+
+function Ensure-Milestone {
+  param([Parameter(Mandatory=$true)][string]$Title)
+  $ms = Get-Milestones
+  $found = $ms | Where-Object { $_.title -eq $Title }
+  if (-not $found) {
+    gh api -X POST "repos/$REPO/milestones" -f title="$Title" -f state="open" | Out-Null
+  }
+}
+
+Write-Host "==> Opretter milestones Sprint 0-6 (via gh api)..."
+$milestones = @("Sprint 0","Sprint 1","Sprint 2","Sprint 3","Sprint 4","Sprint 5","Sprint 6")
+foreach ($m in $milestones) { Ensure-Milestone -Title $m }
+
+function Issue-Exists {
+  param([Parameter(Mandatory=$true)][string]$Title)
+  $json = gh issue list -R $REPO --state all --search ("in:title `"" + $Title + "`"") --json number,title 2>$null
+  if (-not $json) { return $false }
+  $items = $json | ConvertFrom-Json
+  return [bool]($items | Where-Object { $_.title -eq $Title })
+}
+
+function Ensure-Issue {
+  param(
+    [Parameter(Mandatory=$true)][string]$Title,
+    [Parameter(Mandatory=$true)][string]$Milestone,
+    [Parameter(Mandatory=$true)][string[]]$Labels,
+    [Parameter(Mandatory=$true)][string]$Body
+  )
+  if (Issue-Exists -Title $Title) {
+    Write-Host ("==> Skip (findes): " + $Title)
+    return
+  }
+
+  $labelArgs = @()
+  foreach ($lab in $Labels) { $labelArgs += @("--label", $lab) }
+
+  $Body | gh issue create -R $REPO --title $Title --milestone $Milestone --body-file - @labelArgs | Out-Null
+  Write-Host ("==> Created: " + $Title)
+}
+
+Write-Host "==> Opretter issues..."
+
+# Sprint 0
+Ensure-Issue -Title "S0-001: Indfoer Issue/PR-standard + Milestones" -Milestone "Sprint 0" -Labels @("type:chore","p0","area:ops") -Body @"
+## Formaal
+Standardisere hvordan vi opretter issues/PRs og hvordan Sprint 0-6 styres som milestones.
+
+## Leverancer
+- Milestones: Sprint-0 ... Sprint-6
+- Issue templates: EPIC + STORY (+ bug/chore hvis oensket)
+- PR-template med krav om Issue-link + testbevis
+
+## Acceptance Criteria
+- Der findes en ensartet skabelon for EPIC og STORY.
+- PRs kan ikke merges uden at "Linked Issue" er udfyldt (proces-krav i template).
+
+## DoD
+- [ ] Templates committed
+- [ ] Milestones oprettet
+- [ ] PR-template committed
+- [ ] README/branch-cheatsheet opdateret med "saadan arbejder vi"
+"@
+
+Ensure-Issue -Title "S0-002: Definer Go/No-Go gates pr. sprint (Sprint 0-6)" -Milestone "Sprint 0" -Labels @("type:chore","p0","area:engine") -Body @"
+## Formaal
+Fastlaeg maalbare gates, saa vi undgaar scope creep og kan traeffe Go/No-Go beslutninger per sprint.
+
+## Acceptance Criteria
+- Hver sprint har 2-5 maalbare gates (tests, scripts, runtime checks)
+- Gates er dokumenteret i docs/SPRINTS_0_6.md
+
+## DoD
+- [ ] docs/SPRINTS_0_6.md committed
+- [ ] Gates refereres fra relevante issues
+"@
+
+Ensure-Issue -Title "S0-003: CI minimum bar (lint + unit tests)" -Milestone "Sprint 0" -Labels @("type:chore","p0","area:monitoring") -Body @"
+## Formaal
+Sikre at hver PR automatisk koerer lint + unit tests.
+
+## Acceptance Criteria
+- CI job koerer paa push/PR til ai_bot_dev
+- Lint + pytest koerer og fejler tydeligt ved brud
+
+## DoD
+- [ ] GitHub Actions workflow findes i .github/workflows/
+- [ ] README beskriver lokale kommandoer (make test / pytest)
+"@
+
+# Sprint 1
+Ensure-Issue -Title "EPIC CORE (V1): Contracts & Engine Orchestration" -Milestone "Sprint 1" -Labels @("type:epic","p0","area:engine") -Body @"
+## Formaal
+Stabilisere core system: contracts + engine orchestration, saa alle moduler kan plugges sikkert ind.
+
+## Scope (V1)
+- Standard contracts (events/typer) + versionering
+- Engine orchestration med deterministisk run-id
+- Happy-path: paper-run paa sample data uden exceptions
+- Baseline logging/metrics hooks (ikke fuld observability endnu)
+
+## Ikke omfattet (til efter V1)
+- Multi-venue og multi-asset orchestration
+- Kompleks strategi-builder eller avanceret RL-traening
+
+## Succes/DoD
+- 1 symbol, 1 timeframe, 1 datasat kan koeres end-to-end i paper/replay uden crash
+- Contracts er testet for serialisering og backwards compatibility
+"@
+
+Ensure-Issue -Title "CORE-101: Harmoniser contracts og serialisering" -Milestone "Sprint 1" -Labels @("type:story","p0","area:engine") -Body @"
+## Context
+Repo har allerede contracts/events og flere moduler. Vi skal sikre en canonical contract surface.
+
+## Acceptance Criteria
+- Canonical datatyper for Bar/Signal/Order/Fill/Position
+- JSON-serialisering + schema-version felt
+- Ingen cirkulaere imports
+
+## DoD
+- [ ] Enhedstest: serialisering/deserialisering
+- [ ] Docs: Contract rules (timestamps/timezone, decimals, ids)
+- [ ] Migrations-note: hvordan vi aendrer contracts uden at bryde runtime
+"@
+
+Ensure-Issue -Title "CORE-102: Engine orchestration: data->features->strategy->risk->execution" -Milestone "Sprint 1" -Labels @("type:story","p0","area:engine") -Body @"
+## Formaal
+Implementere/stramme et tydeligt engine-loop, der kan genbruges til backtest, replay og paper.
+
+## Acceptance Criteria
+- Engine kan koere en happy path uden exceptions
+- Alle steps logger med samme run-id
+- Engine kan stoppe graceful (SAFE_STOP)
+
+## DoD
+- [ ] Tests: engine happy-path
+- [ ] Runbook: koer lokalt + expected outputs
+"@
+
+Ensure-Issue -Title "CORE-103: Config-profiler (DEV/TEST/PROD) + fail-fast secrets" -Milestone "Sprint 1" -Labels @("type:story","p0","area:ops") -Body @"
+## Acceptance Criteria
+- .env.example daekker noedvendige noegler
+- Konfiguration valideres ved opstart (fail-fast)
+- Profile switch: DEV/TEST/PROD
+
+## DoD
+- [ ] Tests for config validation
+- [ ] Docs: hvilke vaerdier findes og hvad de betyder
+"@
+
+# Sprint 2
+Ensure-Issue -Title "DATA-201: Robust OHLCV fetch (incremental + retry/backoff)" -Milestone "Sprint 2" -Labels @("type:story","p0","area:data") -Body @"
+## Acceptance Criteria
+- Fetch kan koere incremental (seneste timestamp -> nyt)
+- Retry/backoff + rate-limit haandtering
+- Deterministisk outputformat i outputs/ eller data-store
+
+## DoD
+- [ ] Tests med syntetisk rate-limit / retries
+- [ ] Docs for filkonventioner og gap-policy
+"@
+
+Ensure-Issue -Title "DATA-202: Data validation: gaps/outliers + policy (warn/halt)" -Milestone "Sprint 2" -Labels @("type:story","p0","area:data") -Body @"
+## Acceptance Criteria
+- Gap-detection (manglende bars) + outlier checks
+- Policy: WARN vs HALT_TRADING (konfigurerbart)
+- Alarm hook (log event + evt. alert)
+
+## DoD
+- [ ] Unit tests med konstruerede gaps/outliers
+- [ ] Dokumentation af thresholds og rationaler
+"@
+
+Ensure-Issue -Title "FEAT-301: Feature set v1 (deterministisk, ingen lookahead)" -Milestone "Sprint 2" -Labels @("type:story","p0","area:features") -Body @"
+## Acceptance Criteria
+- Feature builder producerer samme output givet samme input
+- Windows/rolling korrekt og uden lookahead
+- Feature version tag (v1)
+
+## DoD
+- [ ] Snapshot tests for determinisme
+- [ ] Docs: feature definitioner + windows
+"@
+
+Ensure-Issue -Title "STRAT-302: Baseline flagship (regler foerst, profit senere)" -Milestone "Sprint 2" -Labels @("type:story","p0","area:models") -Body @"
+## Formaal
+En stabil baseline-strategi der producerer Signal korrekt og kan driftes.
+
+## Acceptance Criteria
+- Signal generator med klare entry/exit regler
+- Position sizing (simpel) + risk guard
+- Backtest/paper kan koere end-to-end med strategien
+
+## DoD
+- [ ] Tests paa signal-output
+- [ ] Docs: strategi rationale og parametre
+"@
+
+# Sprint 3
+Ensure-Issue -Title "BT-401: Bar-by-bar backtest loop (no-lookahead)" -Milestone "Sprint 3" -Labels @("type:story","p0","area:backtest") -Body @"
+## Acceptance Criteria
+- Bar-by-bar simulation (timestamp korrekt)
+- Orders/fills simuleres konsistent
+- No-lookahead test der beviser korrekt tidsindeks
+
+## DoD
+- [ ] Test: backtest_no_lookahead
+- [ ] Backtest output: JSON/rapport i reports/ eller outputs/
+"@
+
+Ensure-Issue -Title "BT-402: Fees + slippage model (parameteriseret)" -Milestone "Sprint 3" -Labels @("type:story","p0","area:backtest") -Body @"
+## Acceptance Criteria
+- Fee model + simpel slippage
+- Parametre via config
+- Metrics paavirkes forventeligt
+
+## DoD
+- [ ] Unit tests
+- [ ] Docs: antagelser og default vaerdier
+"@
+
+Ensure-Issue -Title "RISK-503: Kill switch + hard limits (max pos, max DD, max orders/time)" -Milestone "Sprint 3" -Labels @("type:story","p0","area:risk") -Body @"
+## Acceptance Criteria
+- Hard limits blokkerer nye orders
+- Kill switch kan stoppe engine graceful
+- Limit events logges som audit-friendly
+
+## DoD
+- [ ] Test: risk_limits
+- [ ] Runbook: hvad goer jeg naar risk stop trigger
+"@
+
+Ensure-Issue -Title "OBS-601: Structured logging (run-id, order-id, correlation)" -Milestone "Sprint 3" -Labels @("type:story","p0","area:monitoring") -Body @"
+## Acceptance Criteria
+- Ens logformat (JSON eller key-value)
+- run-id paa alle centrale events
+- Log rotation eller retention policy dokumenteret
+
+## DoD
+- [ ] Tests: parse/format sanity
+- [ ] Docs: log felter + eksempler
+"@
+
+# Sprint 4
+Ensure-Issue -Title "EXE-504: Idempotens + execution ledger + reconciliation" -Milestone "Sprint 4" -Labels @("type:story","p0","area:execution") -Body @"
+## Formaal
+Goere execution robust: samme signal maa ikke skabe dublet-ordrer; fills skal kunne afstemmes.
+
+## Acceptance Criteria
+- client_order_id strategi: deterministisk og kollisionsfri
+- Ledger: alle orders/fills persisteres og kan afstemmes
+- Reconciliation job: hvad tror vi vi har vs hvad exchange siger
+
+## DoD
+- [ ] Unit tests for idempotens
+- [ ] Script: reconciliation (dry-run)
+- [ ] Docs: failure modes + recovery steps
+"@
+
+Ensure-Issue -Title "EXE-505: Testnet smoke (tydelig fejl ved manglende keys)" -Milestone "Sprint 4" -Labels @("type:story","p0","area:execution") -Body @"
+## Acceptance Criteria
+- Et script/kommando kan koere testnet smoke
+- Fejler fail-fast hvis keys mangler
+- Output skriver tydeligt order response + status
+
+## DoD
+- [ ] Marker som integration test (pytest -m integration)
+- [ ] Runbook: saadan validerer du execution
+"@
+
+# Sprint 5
+Ensure-Issue -Title "OPS-603: Homelab compose baseline (bot + services + monitoring)" -Milestone "Sprint 5" -Labels @("type:story","p0","area:ops") -Body @"
+## Acceptance Criteria
+- docker compose up giver groen baseline
+- Bot kan koere paper-mode som service
+- Monitoring stack koerer (Prometheus/Grafana/alerts) i V1-minimum
+
+## DoD
+- [ ] Dokumenteret opsaetning (README/runbooks)
+- [ ] Healthcheck endpoints er wired ind
+"@
+
+Ensure-Issue -Title "OBS-602: /health + /metrics (Prometheus)" -Milestone "Sprint 5" -Labels @("type:story","p0","area:monitoring") -Body @"
+## Acceptance Criteria
+- /health returnerer OK/DEGRADED med aarsag
+- /metrics eksponerer centrale noegletal (orders, pnl, errors, data gaps)
+- Grafana dashboard viser mindst: bot status + errors
+
+## DoD
+- [ ] Alarm test: stop bot -> alert fire
+- [ ] Docs: metrics navne og betydning
+"@
+
+Ensure-Issue -Title "OPS-604: Runbooks (incident, exchange down, data gaps)" -Milestone "Sprint 5" -Labels @("type:story","p0","area:ops") -Body @"
+## Acceptance Criteria
+- Runbooks med konkrete kommandoer og beslutningstrae
+- Daekker: incident triage, data gaps, exchange downtime, risk stop
+
+## DoD
+- [ ] Runbooks committed i runbooks/ eller ops/runbooks/
+- [ ] Linket fra README
+"@
+
+# Sprint 6
+Ensure-Issue -Title "API-701: FastAPI skeleton + auth + bot-config CRUD" -Milestone "Sprint 6" -Labels @("type:story","p1","area:api") -Body @"
+## Acceptance Criteria
+- Login (JWT) eller tilsvarende minimal auth
+- CRUD for bot config (symbol, tf, mode, risk limits)
+- Audit log for start/stop/SAFE_STOP
+
+## DoD
+- [ ] API tests
+- [ ] OpenAPI docs tilgaengelig
+"@
+
+Ensure-Issue -Title "UI-702: Streamlit dashboard (status, start/stop, PnL, risk)" -Milestone "Sprint 6" -Labels @("type:story","p1","area:ui") -Body @"
+## Acceptance Criteria
+- Viser live status (feed/bot/risk)
+- Viser PnL/eksponering + seneste trades
+- Start/Stop/SAFE_STOP via API (ingen mock)
+
+## DoD
+- [ ] UI kan startes via homelab-runbook
+- [ ] Fejltilstande vises tydeligt (fx feed nede)
+"@
+
+Ensure-Issue -Title "API-703: Rate limiting + simple permissions" -Milestone "Sprint 6" -Labels @("type:story","p1","area:api") -Body @"
+## Acceptance Criteria
+- Rate limit paa kritiske endpoints (start/stop/config)
+- Basal rolle: admin vs read-only
+- Tests for access control
+
+## DoD
+- [ ] Dokumentation for roller og limits
+"@
+
+Write-Host "==> Done. Verificer i GitHub: Milestones + Issues."
+Write-Host "Tip: gh issue list -R $REPO --milestone `"Sprint 1`""
+'@ | Set-Content -Path "scripts/bootstrap_backlog.ps1" -Encoding $enc
