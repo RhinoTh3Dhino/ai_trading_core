@@ -1,23 +1,30 @@
 ## Linked Issue
 Closes #
 
-## Hvad er ændret?
-- …
+## Hvad ændrer PR’en?
+-
 
-## Hvor i repo?
-- …
+## Hvorfor?
+-
 
-## Testbevis
-- [ ] pytest -q
-- [ ] (evt.) pytest -m integration
-- [ ] (evt.) docker compose up
-Output/logs (kort):
+## Hvordan testes det?
+Kommandoer kørt:
+- [ ] `pytest -q`
 
-## Risiko & rollback
+Test evidence (kort):
+-
+
+## DoD-check (krævet)
+- [ ] AC opfyldt (se issue)
+- [ ] Tests grønne (lokalt eller CI)
+- [ ] Logging/fejlhåndtering ok (hvor relevant)
+- [ ] Docs opdateret hvis relevant (`docs/Definition_of_Done.md`, runbooks, `docs/SPRINTS_0_6.md`)
+- [ ] Ingen secrets i commit
+
+## Go/No-Go gate påvirkning
+- [ ] Denne PR bidrager til gate(r) i Sprint: ___ (fx Sprint 3)
+- Gate reference: `docs/SPRINTS_0_6.md` / Epic #
+
+## Risiko og rollback
 - Risiko:
 - Rollback-plan:
-
-## Checklist
-- [ ] Ingen breaking changes uden migration-noter
-- [ ] Logging/metrics opdateret hvis relevant
-- [ ] Docs/runbooks opdateret hvis relevant
