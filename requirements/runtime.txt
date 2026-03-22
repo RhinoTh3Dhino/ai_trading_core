@@ -1,0 +1,25 @@
+# Runtime profile for the official live connector service
+
+ccxt==4.1.98
+fastapi==0.111.0
+httpx>=0.25.2,<0.26
+numpy==1.26.4
+packaging==23.2
+pandas==2.2.2
+prometheus-client>=0.20,<0.23
+psutil==5.9.8
+pyarrow==11.0.0
+pydantic==2.11.4
+python-binance==1.0.19
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+python-telegram-bot==20.7
+PyYAML>=6.0,<7
+requests==2.32.4
+schedule==1.2.2
+scipy==1.11.4
+ta==0.11.0
+tabulate==0.9.0
+tqdm==4.67.1
+uvicorn[standard]==0.30.1
+websockets==15.0.1

@@ -244,3 +244,18 @@ ai_summary.txt
 # (redundans – sikkerhed)
 __pycache__/
 *.pyc
+
+
+# Diagnostics / scratch
+.prom_multiproc/
+archive/diagnostics/*
+!archive/diagnostics/README.md
+
+metrics.txt
+metrics_compose.txt
+pip.txt
+telegram_log.txt
+ai_summary.txt
+ai_summary.json
+test_plot.png
+*.patch
