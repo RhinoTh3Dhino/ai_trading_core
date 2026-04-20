@@ -962,7 +962,7 @@ def send_live_metrics(
         alarms: List[str] = []
         if check_drawdown_alert(metrics, threshold=thresholds.get("drawdown", -20)):
             alarms.append(
-                f"🚨 ADVARSEL: Max drawdown under {thresholds.get('drawdown', -20)}%! ({metrics.get('drawdown_pct', 0.0)::.2f}%)"
+                f"🚨 ADVARSEL: Max drawdown under {thresholds.get('drawdown', -20)}%! ({metrics.get('drawdown_pct', 0.0):.2f}%)"
             )
         if check_winrate_alert(metrics, threshold=thresholds.get("winrate", 20)):
             alarms.append(
