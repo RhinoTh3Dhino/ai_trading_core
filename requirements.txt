@@ -55,6 +55,9 @@ PyYAML>=6.0,<7
 requests==2.32.4
 schedule==1.2.2
 scipy==1.11.4
+streamlit==1.44.1
+streamlit-autorefresh==1.0.1
+torch==2.3.1
 
 # =========================
 # FEATURE ENG / TA (MVP: EMA/RSI/VWAP/ATR)

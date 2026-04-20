@@ -6,8 +6,24 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-import torch
-from torch.utils.tensorboard import SummaryWriter
+try:
+    import torch
+    from torch.utils.tensorboard import SummaryWriter
+except Exception:  # pragma: no cover
+    torch = None
+
+    class SummaryWriter:  # no-op fallback
+        def __init__(self, *a, **k):
+            self.log_dir = ""
+
+        def add_scalar(self, *a, **k):
+            pass
+
+        def flush(self):
+            pass
+
+        def close(self):
+            pass
 
 from backtest.backtest import calc_backtest_metrics, run_backtest
 from ensemble.ensemble_predict import ensemble_predict
@@ -26,7 +42,7 @@ DEFAULT_THRESHOLD = 0.7
 DEFAULT_WEIGHTS = [1.0, 1.0, 0.7]  # [ML, DL, Rule]
 
 
-class TradingNet(torch.nn.Module):
+class TradingNet(torch.nn.Module if torch is not None else object):
     def __init__(self, input_dim, hidden_dim=64, output_dim=2):
         super().__init__()
         self.net = torch.nn.Sequential(
@@ -54,6 +70,9 @@ def load_trained_feature_list():
 
 
 def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device="cpu"):
+    if torch is None:
+        print("❌ PyTorch er ikke installeret.")
+        return None
     if not os.path.exists(model_path):
         print(f"❌ PyTorch-model ikke fundet: {model_path}")
         return None
@@ -66,6 +85,8 @@ def load_pytorch_model(feature_dim, model_path=PYTORCH_MODEL_PATH, device="cpu")
 
 
 def pytorch_predict(model, X, device="cpu"):
+    if torch is None:
+        raise RuntimeError("PyTorch er ikke installeret.")
     with torch.no_grad():
         X_tensor = torch.tensor(X.values, dtype=torch.float32).to(device)
         logits = model(X_tensor)
@@ -105,6 +126,9 @@ def run_pipeline(
     Kører hele AI trading pipeline: indlæs data, ML/DL/ensemble inference, backtest, visualisering, metrics, TensorBoard og (valgfrit) Telegram.
     Kan kaldes fra både main.py, run_all.py, tests osv.
     """
+    if torch is None:
+        raise RuntimeError("Pipeline kræver PyTorch, men torch kunne ikke importeres.")
+
     # Device management
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -156,9 +180,9 @@ def run_pipeline(
 
     metrics_dict = {}
 
-    # --- ML (random baseline for nu) ---
-    print("🛠️ ML-inference ikke implementeret – bruger random (baseline demo)")
-    ml_signals = np.random.choice([0, 1], size=len(df))
+    # --- ML (kontrolleret neutral fallback) ---
+    print("🛠️ ML-inference ikke implementeret – bruger neutralt signal (0) deterministisk.")
+    ml_signals = np.zeros(len(df), dtype=int)
     df["signal_ml"] = ml_signals
     trades_ml, balance_ml = run_backtest(df, signals=ml_signals)
     metrics_ml = calc_backtest_metrics(trades_ml, balance_ml)
@@ -172,8 +196,7 @@ def run_pipeline(
         dl_signals = (dl_probas[:, 1] > threshold).astype(int)
         print("✅ PyTorch DL-inference klar!")
     else:
-        print("❌ Ingen DL-model fundet – fallback til random signaler")
-        dl_signals = np.random.choice([0, 1], size=len(df))
+        raise RuntimeError("Ingen DL-model fundet. Pipeline stopper kontrolleret.")
     df["signal_dl"] = dl_signals
     trades_dl, balance_dl = run_backtest(df, signals=dl_signals)
     metrics_dl = calc_backtest_metrics(trades_dl, balance_dl)

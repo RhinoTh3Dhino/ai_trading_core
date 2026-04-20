@@ -1122,7 +1122,7 @@ def load_ml_model():
         print(f"[INFO] Loader ML-model og feature-liste: {features}")
         return model, features
     else:
-        print("[ADVARSEL] Ingen trænet ML-model fundet – bruger random baseline.")
+        print("[ADVARSEL] Ingen trænet ML-model fundet.")
         return None, None
 
 
@@ -1550,15 +1550,20 @@ def _append_signals_rows(rows: List[Dict[str, str | int]]) -> None:
 # PAPER TRADING – hovedløb
 # ============================================================
 def _generate_ensemble_signals_for_df(
-    df: pd.DataFrame, threshold: float, device_str: str, use_lstm: bool
+    df: pd.DataFrame,
+    threshold: float,
+    device_str: str,
+    use_lstm: bool,
+    weights: Optional[List[float]] = None,
 ) -> np.ndarray:
+    if weights is None:
+        weights = DEFAULT_WEIGHTS
+
     ml_model, ml_features = load_ml_model()
-    if ml_model is not None and ml_features is not None:
-        X_ml = reconcile_features(df.copy(), ml_features)
-        ml_signals = ml_model.predict(X_ml)
-    else:
-        ml_signals = np.random.choice([0, 1], size=len(df))
-        print("[ADVARSEL] ML fallback: random signaler.")
+    if ml_model is None or ml_features is None:
+        raise RuntimeError("ML-model/artefakter mangler. Stopper for at undgå random signaler.")
+    X_ml = reconcile_features(df.copy(), ml_features)
+    ml_signals = ml_model.predict(X_ml)
 
     trained_features = load_trained_feature_list()
     if trained_features is not None:
@@ -1594,8 +1599,7 @@ def _generate_ensemble_signals_for_df(
             _, dl_probs = pytorch_predict(model, X_dl, device_str=device_str)
             dl_signals = (dl_probs[:, 1] > threshold).astype(int)
         else:
-            print("❌ Ingen DL-model – random signaler.")
-            dl_signals = np.random.choice([0, 1], size=len(df))
+            raise RuntimeError("DL-model mangler. Stopper for at undgå random signaler.")
 
     rsi_signals_raw = rsi_rule_based_signals(df, low=45, high=55)
     rsi_signals = np.where(rsi_signals_raw > 0, 1, 0)
@@ -1604,7 +1608,7 @@ def _generate_ensemble_signals_for_df(
         ml_signals,
         dl_signals,
         rsi_signals,
-        weights=[1.0, 1.0, 0.7],
+        weights=weights,
         voting="majority",
         debug=False,
     )
@@ -1619,6 +1623,7 @@ def run_paper_trading(
     threshold: float,
     device_str: str,
     use_lstm: bool,
+    weights: List[float],
     commission_bp: float,
     slippage_bp: float,
     daily_loss_limit_pct: float,
@@ -1641,7 +1646,9 @@ def run_paper_trading(
     if "close" not in df.columns:
         raise ValueError("Features skal have 'close' kolonne.")
 
-    ens_signals = _generate_ensemble_signals_for_df(df.copy(), threshold, device_str, use_lstm)
+    ens_signals = _generate_ensemble_signals_for_df(
+        df.copy(), threshold, device_str, use_lstm, weights=weights
+    )
     if len(ens_signals) > 0:  # Luk sidste bar → realiser PnL
         ens_signals[-1] = 0
     df["signal_ens"] = ens_signals
@@ -1823,6 +1830,7 @@ def main(
             threshold=threshold,
             device_str=device_str,
             use_lstm=use_lstm,
+            weights=weights,
             commission_bp=commission_bp,
             slippage_bp=slippage_bp,
             daily_loss_limit_pct=daily_loss_limit_pct,
@@ -1857,12 +1865,10 @@ def main(
         # ---- ML ----
         print("🛠️ Loader ML-model ...")
         ml_model, ml_features = load_ml_model()
-        if ml_model is not None and ml_features is not None:
-            X_ml = reconcile_features(df, ml_features)
-            ml_signals = ml_model.predict(X_ml)
-        else:
-            ml_signals = np.random.choice([0, 1], size=len(df))
-            print("[ADVARSEL] ML fallback: bruger random signaler.")
+        if ml_model is None or ml_features is None:
+            raise RuntimeError("ML-model/artefakter mangler. Stopper for at undgå random signaler.")
+        X_ml = reconcile_features(df, ml_features)
+        ml_signals = ml_model.predict(X_ml)
         # Luk sidste bar → realiseret PnL
         if len(ml_signals) > 0:
             ml_signals[-1] = 0
@@ -1925,9 +1931,7 @@ def main(
                 dl_signals = (dl_probas[:, 1] > threshold).astype(int)
                 print("✅ PyTorch DL-inference klar!")
             else:
-                print("❌ Ingen DL-model fundet – fallback til random signaler")
-                dl_signals = np.random.choice([0, 1], size=len(df))
-                dl_probas = np.stack([1 - dl_signals, dl_signals], axis=1)
+                raise RuntimeError("Ingen DL-model fundet. Stopper for at undgå random signaler.")
         if len(dl_signals) > 0:
             dl_signals[-1] = 0
         df["signal_dl"] = dl_signals
@@ -1949,7 +1953,7 @@ def main(
             ml_preds=ml_signals,
             dl_preds=dl_signals,
             rule_preds=rsi_signals,
-            weights=[1.0, 1.0, 0.7],
+            weights=weights,
             voting="majority",
             debug=True,
         )

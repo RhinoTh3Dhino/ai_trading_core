@@ -94,13 +94,17 @@ def pytest_sessionstart(session) -> None:
         # Importér uvicorn først i child-thread for at undgå overhead i collection-fase
         import uvicorn  # type: ignore
 
-        # Peg på din eksisterende app med metrics-route i api/app.py
-        uvicorn.run("api.app:app", host="0.0.0.0", port=port, log_level="warning")
+        # Brug app-factory output fra bot.engine, som eksponerer forventede core metrics.
+        uvicorn.run("bot.engine:app", host="0.0.0.0", port=port, log_level="warning")
 
     t = threading.Thread(target=_run, daemon=True)
     t.start()
-    # kort spin-up buffer (stabil mod flakiness i hurtige CI-miljøer)
-    time.sleep(0.7)
+    # Vent aktivt på at endpoint er oppe (robust mod langsom import/spin-up).
+    deadline = time.time() + 5.0
+    while time.time() < deadline:
+        if not _port_free(port):
+            break
+        time.sleep(0.1)
 
 
 # =========================
